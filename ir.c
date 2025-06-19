@@ -290,11 +290,32 @@ static void free_stmt(IRStmt* stmt) {
             free(decl->var_name);
             if (decl->initializer) ir_free((IRNode*)decl->initializer);
         } break;
-        case IR_STMT_FUNC_CALL: if (((IRStmtFuncCall*)stmt)->call) ir_free((IRNode*)((IRStmtFuncCall*)stmt)->call); break;
-        case IR_STMT_COMMENT: free(((IRStmtComment*)stmt)->text); break;
-        default: fprintf(stderr, "Warning: Unknown IRStmt type in free_stmt: %d\n", stmt->type); break;
+        case IR_STMT_FUNC_CALL:
+            if (((IRStmtFuncCall*)stmt)->call) ir_free((IRNode*)((IRStmtFuncCall*)stmt)->call);
+            break;
+        case IR_STMT_COMMENT:
+            free(((IRStmtComment*)stmt)->text);
+            break;
+        case IR_STMT_WIDGET_ALLOCATE: { // New case
+            IRStmtWidgetAllocate* wa_stmt = (IRStmtWidgetAllocate*)stmt;
+            free(wa_stmt->c_var_name);
+            free(wa_stmt->widget_c_type_name);
+            free(wa_stmt->create_func_name);
+            if (wa_stmt->parent_expr) ir_free((IRNode*)wa_stmt->parent_expr);
+            break;
+        }
+        case IR_STMT_OBJECT_ALLOCATE: { // New case
+            IRStmtObjectAllocate* oa_stmt = (IRStmtObjectAllocate*)stmt;
+            free(oa_stmt->c_var_name);
+            free(oa_stmt->object_c_type_name);
+            free(oa_stmt->init_func_name);
+            break;
+        }
+        default:
+            fprintf(stderr, "Warning: Unknown IRStmt type in free_stmt: %d\n", stmt->type);
+            break;
     }
-    free(stmt);
+    free(stmt); // Free the statement struct itself
 }
 
 void ir_free(IRNode* node) {

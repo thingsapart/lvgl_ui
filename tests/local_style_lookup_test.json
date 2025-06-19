@@ -1,0 +1,12 @@
+[
+  {
+    "type": "label",
+    "id": "@test_label_style_lookup",
+    "named": "my_style_lookup_label",
+    "text": "Direct Prop Test",
+    "width": 150,
+    "align": "left_mid",
+    "radius": 10,
+    "scroll_on_focus": false
+  }
+]
