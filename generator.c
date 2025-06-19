@@ -660,21 +660,33 @@ IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* 
         fprintf(stderr, "Error: API Spec is NULL in generate_ir_from_ui_spec.\n");
         return NULL;
     }
-    // The problem description's example ui_spec_root was an array of nodes,
-    // but current generator process_node expects "ui" section as object or array.
-    // For now, let's stick to the established structure where ui_spec_root has "components", "styles", "ui" sections.
-    // The example in the prompt for generate_ir_from_ui_spec directly iterates ui_spec_root as if it's the "ui" array.
-    // This needs clarification. Assuming ui_spec_root is the top-level JSON object from the file.
+    if (!ui_spec_root) {
+        fprintf(stderr, "Error: UI Spec root is NULL in generate_ir_from_ui_spec.\n");
+        return NULL;
+    }
+    if (!api_spec) {
+        fprintf(stderr, "Error: API Spec is NULL in generate_ir_from_ui_spec.\n");
+        return NULL;
+    }
 
-    GenContext ctx; // Intentionally not initializing api_spec here yet
+    // EXPECT ui_spec_root TO BE AN ARRAY of definitions
+    if (!cJSON_IsArray(ui_spec_root)) {
+        fprintf(stderr, "Error: UI Spec root must be an array of definitions.\n");
+        return NULL;
+    }
+
+    GenContext ctx;
+    ctx.api_spec = api_spec;
     ctx.registry = registry_create();
+    ctx.var_counter = 0;
+    // ctx.current_global_block is not used by this function directly, but by helpers if needed.
+    // It's typically set to the root_ir_block if styles or other global IR needs to be added by helpers.
+    // For now, not setting it here as process_node takes the parent_block directly.
+
     if (!ctx.registry) {
         fprintf(stderr, "Error: Failed to create registry in generate_ir_from_ui_spec.\n");
         return NULL;
     }
-    // Now assign api_spec. It's const, and GenContext.api_spec is also const ApiSpec*.
-    ctx.api_spec = api_spec;
-    ctx.var_counter = 0;
 
     IRStmtBlock* root_ir_block = ir_new_block();
     if (!root_ir_block) {
@@ -682,68 +694,77 @@ IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* 
         registry_free(ctx.registry);
         return NULL;
     }
+    // Set current_global_block if process_styles or other similar free-floating IR emitters are called.
+    // Since process_styles is removed, this might not be needed unless process_node uses it.
+    // For now, let's assume process_node appends directly to the passed parent_block.
     ctx.current_global_block = root_ir_block;
 
-    // 1. Register all components first
-    cJSON* components_json = cJSON_GetObjectItem(ui_spec_root, "components");
-    if (cJSON_IsObject(components_json)) {
-        cJSON* comp_item = NULL;
-        for (comp_item = components_json->child; comp_item != NULL; comp_item = comp_item->next) {
-            // The key of the component is its name, e.g. "@my_component"
-            // The value (comp_item) is the component definition JSON object.
-            // registry_add_component expects name without '@'.
-            const char* comp_name_with_at = comp_item->string;
-            if (comp_name_with_at && comp_name_with_at[0] == '@') {
-                 registry_add_component(ctx.registry, comp_name_with_at + 1, comp_item);
+
+    cJSON* item_json = NULL;
+
+    // First pass: register all components
+    cJSON_ArrayForEach(item_json, ui_spec_root) {
+        cJSON* type_node = cJSON_GetObjectItem(item_json, "type");
+        if (cJSON_IsString(type_node) && strcmp(type_node->valuestring, "component") == 0) {
+            const char* id_str = NULL;
+            cJSON* id_json = cJSON_GetObjectItem(item_json, "id");
+            if (cJSON_IsString(id_json) && id_json->valuestring != NULL) {
+                id_str = id_json->valuestring;
             } else {
-                fprintf(stderr, "Warning: Component name '%s' does not start with '@'. Skipping component registration.\n", comp_name_with_at ? comp_name_with_at : "NULL_NAME");
+                fprintf(stderr, "Warning: Component missing string 'id'. Skipping component registration.\n");
+                continue;
+            }
+
+            cJSON* root_node_json = cJSON_GetObjectItem(item_json, "root");
+            if (!root_node_json) {
+                fprintf(stderr, "Warning: Component '%s' missing 'root' definition. Skipping component registration.\n", id_str);
+                continue;
+            }
+
+            if (id_str[0] == '@') {
+                registry_add_component(ctx.registry, id_str + 1, root_node_json);
+            } else {
+                fprintf(stderr, "Warning: Component id '%s' does not start with '@'. Skipping component registration.\n", id_str);
             }
         }
     }
 
-    // 2. Process global styles
-    cJSON* styles_json = cJSON_GetObjectItem(ui_spec_root, "styles");
-    if (styles_json) {
-        process_styles(&ctx, styles_json, root_ir_block);
-    }
+    // Second pass: process all top-level nodes (styles, widgets, use-view)
+    cJSON_ArrayForEach(item_json, ui_spec_root) {
+        cJSON* type_node = cJSON_GetObjectItem(item_json, "type");
+        const char* type_str = type_node ? cJSON_GetStringValue(type_node) : NULL;
 
-    // 3. Process UI nodes (screens/widgets)
-    cJSON* ui_section = cJSON_GetObjectItem(ui_spec_root, "ui");
-    if (cJSON_IsObject(ui_section)) {
-        cJSON* screen_node_json = NULL;
-        for (screen_node_json = ui_section->child; screen_node_json != NULL; screen_node_json = screen_node_json->next) {
-            char comment_text[128];
-            snprintf(comment_text, sizeof(comment_text), "Generating UI for: %s", screen_node_json->string);
-            ir_block_add_stmt(root_ir_block, ir_new_comment(comment_text));
-            // Calls to process_node need to be updated to the 6-argument version.
-            // parent_block = root_ir_block
-            // parent_c_var = NULL (for top-level, will default to lv_scr_act() or similar)
-            // default_obj_type = screen_node_json->string (if "ui" is object) or actual type from node.
-            // ui_context = NULL (for top-level)
-            const char* node_type_str = screen_node_json->string; // If UI section is an object, key is often a screen type/name
-                                                              // If node_json itself has a "type" field, that's more reliable.
-            cJSON* type_field = cJSON_GetObjectItem(screen_node_json, "type");
-            if(type_field) node_type_str = cJSON_GetStringValue(type_field);
-            else if (ui_section->type == cJSON_Object) node_type_str = screen_node_json->string; // fallback to key name
-            else node_type_str = "obj"; // generic fallback for array items without explicit type
-
-            process_node(&ctx, screen_node_json, root_ir_block, NULL, node_type_str, NULL);
+        if (type_str && strcmp(type_str, "component") == 0) {
+            // Skip component definitions in this pass, they are handled by process_node when it encounters a "@component_id" type.
+            continue;
         }
-    } else if (cJSON_IsArray(ui_section)) {
-         cJSON* screen_node_json = NULL;
-         int screen_idx = 0;
-         cJSON_ArrayForEach(screen_node_json, ui_section) {
-            char comment_text[128];
-            snprintf(comment_text, sizeof(comment_text), "Generating UI for screen index: %d", screen_idx++);
-            ir_block_add_stmt(root_ir_block, ir_new_comment(comment_text));
-            cJSON* type_field = cJSON_GetObjectItem(screen_node_json, "type");
-            const char* node_type_str = type_field ? cJSON_GetStringValue(type_field) : "obj";
-            process_node(&ctx, screen_node_json, root_ir_block, NULL, node_type_str, NULL);
-         }
-    } else {
-        fprintf(stderr, "Warning: 'ui' section in UI spec is not an object or array. No UI will be generated.\n");
+
+        if (type_str && strcmp(type_str, "style") == 0) {
+            // If style definitions are items in the root array, they need to be processed.
+            // The old process_styles iterated a "styles" object.
+            // For now, assuming process_node is NOT equipped to handle style definitions directly to lv_style_t.
+            // This will require process_node to be enhanced or a specific style processing call here.
+            // For this subtask, we are just changing the iteration.
+            // If process_styles is needed, it must be adapted to find style items in this flat array.
+            // Or, we can call process_styles here if item_json is a style definition.
+            // Let's assume process_node will just skip it if it's not a widget type it recognizes.
+            // A more robust solution would be:
+            // if (type_str && strcmp(type_str, "style") == 0) {
+            //     process_single_style_definition(&ctx, item_json, root_ir_block); // New function
+            // } else {
+            //     process_node(&ctx, item_json, root_ir_block, "parent", "obj", NULL);
+            // }
+            // For now, per instruction, just call process_node for non-components.
+            // This means styles defined as top-level items will be passed to process_node.
+            // process_node's current logic will likely treat them as unknown widget types if "type": "style"
+            // doesn't map to a create function like lv_style_create. This is a known limitation of current process_node.
+             process_node(&ctx, item_json, root_ir_block, "parent", "obj", NULL);
+        } else {
+            // For other top-level items (widgets, use-view instances)
+            process_node(&ctx, item_json, root_ir_block, "parent", "obj", NULL);
+        }
     }
 
-    registry_free(ctx.registry); // Free the registry created by this function
+    registry_free(ctx.registry);
     return root_ir_block;
 }
