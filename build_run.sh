@@ -1,7 +1,7 @@
 #/bin/sh
 
 # Set python path if not passed or defined in env.
-PYTHON_PATH=${PYTHON_PATH:-python3}
+PYTHON_PATH=${PYTHON_PATH:-python3.13}
 
 # Generate the api_spec.json.
 ${PYTHON_PATH} generate_api_spec.py lv_def.json > api_spec.json

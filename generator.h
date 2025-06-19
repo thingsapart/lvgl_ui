@@ -4,7 +4,7 @@
 #include "ir.h"
 #include "api_spec.h"
 #include "registry.h"
-#include <cjson/cJSON.h> // Reverting to <cJSON.h>
+#include <cJSON/cJSON.h>
 
 IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_spec);
 

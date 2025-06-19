@@ -1,7 +1,7 @@
 #ifndef REGISTRY_H
 #define REGISTRY_H
 
-#include <cjson/cJSON.h> // Reverting to <cJSON.h>
+#include <cJSON/cJSON.h>
 
 // --- Opaque pointer for the registry ---
 typedef struct Registry Registry;
