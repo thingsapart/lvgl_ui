@@ -32,15 +32,15 @@ int main() {
     // cJSON_Delete(api_spec_json); // This can be problematic if api_spec uses it.
                                  // api_spec_free should handle its cJSON objects.
 
-    char* ui_spec_str = read_file("tests/issue_spec.json"); // Corrected function name
+    char* ui_spec_str = read_file("tests/property_lookup_test.json"); // Corrected function name
     if (!ui_spec_str) {
-        fprintf(stderr, "Failed to read tests/issue_spec.json\n");
+        fprintf(stderr, "Failed to read tests/property_lookup_test.json\n");
         api_spec_free(api_spec);
         return 1;
     }
     cJSON* ui_spec_json = cJSON_Parse(ui_spec_str);
     if (!ui_spec_json) {
-        fprintf(stderr, "Failed to parse tests/issue_spec.json: %s\n", cJSON_GetErrorPtr());
+        fprintf(stderr, "Failed to parse tests/property_lookup_test.json: %s\n", cJSON_GetErrorPtr());
         free(ui_spec_str);
         api_spec_free(api_spec);
         return 1;

@@ -43,25 +43,38 @@ typedef struct WidgetMapNode {
     struct WidgetMapNode* next;
 } WidgetMapNode;
 
-// Assuming FunctionMapNode might be defined elsewhere or needed later for consistency
-// For now, let's assume it's similar if used.
-// typedef struct FunctionMapNode {
-//     struct FunctionDefinition* func; // Assuming FunctionDefinition struct exists
-//     struct FunctionMapNode* next;
-// } FunctionMapNode;
+// --- Function Definition Structures ---
+typedef struct FunctionArg {
+    char* type; // Argument type as string (e.g., "lv_obj_t*", "int32_t")
+    // char* name; // Optional: if argument names are available in JSON in the future
+    struct FunctionArg* next;
+} FunctionArg;
+
+typedef struct {
+    char* name;         // Function name (e.g., "lv_obj_set_width")
+    char* return_type;
+    FunctionArg* args_head;  // Linked list of argument types
+} FunctionDefinition;
+
+// Node for a linked list acting as a map/list of functions
+typedef struct FunctionMapNode {
+    char* name; // Key for the map (function name, e.g. "lv_obj_set_width")
+    FunctionDefinition* func_def; // Pointer to the actual function definition
+    struct FunctionMapNode* next;
+} FunctionMapNode;
 
 
 // Represents the parsed API specification (e.g., from api_spec.json)
 typedef struct ApiSpec {
     WidgetMapNode* widgets_list_head;                   // Head of the linked list for widget definitions
-    // GlobalPropertyDefinitionNode* global_properties_list_head; // Removed
-    struct FunctionMapNode* functions;                  // Head of linked list for functions
+    FunctionMapNode* functions;                  // Head of linked list for functions
     const cJSON* constants;                             // Reference to parsed constants from JSON (owned by main cJSON doc)
     const cJSON* enums;                                 // Reference to parsed enums from JSON (owned by main cJSON doc)
 } ApiSpec;
 
 
 // --- Function Declarations ---
+static void free_function_definition_list(FunctionMapNode* head); // Forward declaration
 
 // Parses the API specification from a cJSON object.
 // Returns a pointer to an ApiSpec structure, or NULL on error.

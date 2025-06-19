@@ -8,10 +8,48 @@ static char* safe_strdup(const char* s) {
     return s ? strdup(s) : NULL;
 }
 
+// Static global for temporary PropertyDefinition from function lookup
+// Note: This is not thread-safe and its content will be overwritten on subsequent calls.
+// A more robust solution might involve the caller managing memory or a context-based allocation.
+static PropertyDefinition global_func_prop_def;
+static char global_func_setter_name[128]; // Buffer for the setter name
+static char global_func_arg_type[64];    // Buffer for inferred C type of property
+
 // Forward declarations for helpers
 static void free_property_definition_list(PropertyDefinitionNode* head);
+static void free_function_arg_list(FunctionArg* head); // Added
+static void free_function_definition_list(FunctionMapNode* head); // Added
 static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node);
 
+
+// Helper function to free a linked list of FunctionArg
+static void free_function_arg_list(FunctionArg* head) {
+    FunctionArg* current = head;
+    while (current) {
+        FunctionArg* next = current->next;
+        free(current->type);
+        // if (current->name) free(current->name); // Name is not currently parsed/stored
+        free(current);
+        current = next;
+    }
+}
+
+// Helper function to free the linked list of FunctionMapNode
+static void free_function_definition_list(FunctionMapNode* head) {
+    FunctionMapNode* current = head;
+    while (current) {
+        FunctionMapNode* next = current->next;
+        free(current->name); // Free the key name
+        if (current->func_def) {
+            free(current->func_def->name);
+            free(current->func_def->return_type);
+            free_function_arg_list(current->func_def->args_head);
+            free(current->func_def);
+        }
+        free(current);
+        current = next;
+    }
+}
 
 // Helper function to parse a widget/object definition from its cJSON node
 static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node) {
@@ -179,7 +217,72 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
 
     spec->constants = cJSON_GetObjectItemCaseSensitive(root_json, "constants");
     spec->enums = cJSON_GetObjectItemCaseSensitive(root_json, "enums");
-    spec->functions = NULL;
+    // spec->functions = NULL; // Initialized by calloc already
+
+    // --- Parse Functions ---
+    cJSON* functions_json_obj = cJSON_GetObjectItemCaseSensitive(root_json, "functions");
+    if (functions_json_obj && cJSON_IsObject(functions_json_obj)) {
+        cJSON* func_json_item = NULL;
+        FunctionMapNode** current_func_node_ptr = &spec->functions; // Pointer to the current 'next' pointer
+
+        cJSON_ArrayForEach(func_json_item, functions_json_obj) {
+            const char* func_name_str = func_json_item->string;
+            if (!cJSON_IsObject(func_json_item)) {
+                fprintf(stderr, "Warning: Function '%s' is not a JSON object. Skipping.\n", func_name_str);
+                continue;
+            }
+
+            FunctionDefinition* fd = (FunctionDefinition*)calloc(1, sizeof(FunctionDefinition));
+            if (!fd) {
+                perror("Failed to allocate FunctionDefinition");
+                continue;
+            }
+            fd->name = safe_strdup(func_name_str);
+
+            cJSON* ret_type_item = cJSON_GetObjectItemCaseSensitive(func_json_item, "return_type");
+            if (cJSON_IsString(ret_type_item)) {
+                fd->return_type = safe_strdup(ret_type_item->valuestring);
+            } else {
+                fd->return_type = safe_strdup("void"); // Default or error
+            }
+
+            cJSON* args_array_json = cJSON_GetObjectItemCaseSensitive(func_json_item, "args");
+            FunctionArg** current_arg_ptr = &fd->args_head;
+            if (cJSON_IsArray(args_array_json)) {
+                cJSON* arg_type_json_item = NULL;
+                cJSON_ArrayForEach(arg_type_json_item, args_array_json) {
+                    if (cJSON_IsString(arg_type_json_item)) {
+                        FunctionArg* fa = (FunctionArg*)calloc(1, sizeof(FunctionArg));
+                        if (!fa) {
+                            perror("Failed to allocate FunctionArg");
+                            break; /* Stop processing args for this function */
+                        }
+                        fa->type = safe_strdup(arg_type_json_item->valuestring);
+                        *current_arg_ptr = fa;
+                        current_arg_ptr = &fa->next;
+                    }
+                }
+            }
+
+            FunctionMapNode* new_fnode = (FunctionMapNode*)calloc(1, sizeof(FunctionMapNode));
+            if (!new_fnode) {
+                perror("Failed to allocate FunctionMapNode");
+                free(fd->name);
+                free(fd->return_type);
+                free_function_arg_list(fd->args_head);
+                free(fd);
+                continue;
+            }
+            new_fnode->name = safe_strdup(func_name_str);
+            new_fnode->func_def = fd;
+            new_fnode->next = NULL;
+
+            *current_func_node_ptr = new_fnode;
+            current_func_node_ptr = &(*current_func_node_ptr)->next;
+        }
+    } else {
+        fprintf(stderr, "Warning: 'functions' section missing or not an object in API spec.\n");
+    }
 
     return spec;
 }
@@ -227,6 +330,11 @@ void api_spec_free(ApiSpec* spec) {
         current_widget_node = next_widget_node;
     }
     spec->widgets_list_head = NULL;
+
+    // Free functions list
+    free_function_definition_list(spec->functions);
+    spec->functions = NULL;
+
     free(spec);
 }
 
@@ -263,7 +371,51 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
             return NULL;
         }
     }
-    return NULL;
+    // If still not found, try to find a global function that could be a setter.
+   if (spec->functions) {
+       FunctionMapNode* func_node = spec->functions;
+       char potential_setter_name[128];
+
+       // Try generic lv_obj_set_<prop_name>
+       snprintf(potential_setter_name, sizeof(potential_setter_name), "lv_obj_set_%s", prop_name);
+       // fprintf(stderr, "DEBUG: Checking global func: %s for prop %s on type %s\n", potential_setter_name, prop_name, type_name);
+
+       while (func_node) {
+           if (func_node->name && strcmp(func_node->name, potential_setter_name) == 0) {
+               // Found a potential global setter. Check if its first arg is lv_obj_t* (or compatible)
+               // and if it has at least two args (obj, value).
+               if (func_node->func_def && func_node->func_def->args_head &&
+                   func_node->func_def->args_head->type &&
+                   (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0)) {
+
+                   FunctionArg* value_arg = func_node->func_def->args_head->next;
+                   if (value_arg && value_arg->type) { // Check if there is a second argument for the value
+                       strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name) - 1);
+                       global_func_setter_name[sizeof(global_func_setter_name) - 1] = '\0';
+
+                       strncpy(global_func_arg_type, value_arg->type, sizeof(global_func_arg_type) - 1);
+                       global_func_arg_type[sizeof(global_func_arg_type) - 1] = '\0';
+
+                       global_func_prop_def.name = (char*)prop_name;
+                       global_func_prop_def.setter = global_func_setter_name;
+                       global_func_prop_def.c_type = global_func_arg_type;
+                       global_func_prop_def.widget_type_hint = "obj";
+                       global_func_prop_def.num_style_args = 0;
+                       global_func_prop_def.style_part_default = NULL;
+                       global_func_prop_def.style_state_default = NULL;
+                       global_func_prop_def.is_style_prop = false;
+
+                       // fprintf(stderr, "DEBUG: Found global match: %s, type %s\n", global_func_prop_def.setter, global_func_prop_def.c_type);
+                       return &global_func_prop_def;
+                   }
+               }
+           }
+           // TODO: Could also try lv_<type_name>_set_<prop_name> if type_name is not "obj"
+           func_node = func_node->next;
+       }
+   }
+   // fprintf(stderr, "DEBUG: api_spec_find_property: Prop '%s' for type '%s' not found.\n", prop_name, type_name);
+    return NULL; // Not found
 }
 
 

@@ -13951,6 +13951,10 @@
       "args": [
         "size_t"
       ]
+    },
+    "lv_obj_set_scroll_on_focus": {
+      "return_type": "void",
+      "args": ["lv_obj_t*", "bool"]
     }
   },
   "objects": {
