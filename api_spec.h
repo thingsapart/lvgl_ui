@@ -32,17 +32,37 @@ typedef struct WidgetDefinition {
     // char* parent_type; // Optional: expected parent type
 } WidgetDefinition;
 
+// Node for the linked list of global property definitions
+typedef struct GlobalPropertyDefinitionNode {
+    char* name;                             // Name of the global property (key)
+    PropertyDefinition* prop_def;           // Pointer to the actual property definition
+    struct GlobalPropertyDefinitionNode* next;
+} GlobalPropertyDefinitionNode;
+
+// Node for the linked list of widget definitions (maps widget type name to its definition)
+typedef struct WidgetMapNode {
+    char* name;                             // Name of the widget type (key, e.g., "button")
+    WidgetDefinition* widget;               // Pointer to the actual widget definition
+    struct WidgetMapNode* next;
+} WidgetMapNode;
+
+// Assuming FunctionMapNode might be defined elsewhere or needed later for consistency
+// For now, let's assume it's similar if used.
+// typedef struct FunctionMapNode {
+//     struct FunctionDefinition* func; // Assuming FunctionDefinition struct exists
+//     struct FunctionMapNode* next;
+// } FunctionMapNode;
+
+
 // Represents the parsed API specification (e.g., from api_spec.json)
 typedef struct ApiSpec {
-    // cJSON* widgets;            // OLD: widget_type_str -> cJSON_Array_of_PropertyDefinition_strings
-                                  // This will be replaced by a map of WidgetDefinitions
-    struct HashTable* widgets_map; // NEW: widget_type_str -> WidgetDefinition*
-    cJSON* properties_map;        // Global map: prop_name_str -> PropertyDefinition* (parsed from "properties" in JSON)
-                                  // This might become redundant if all props are widget-specific, or could hold all unique props.
-                                  // For now, let's assume it still holds all unique PropertyDefinitions globally.
-    cJSON* functions_map;         // Hash map: func_name_str -> FunctionDefinition* (if we add function defs)
-    cJSON* constants;             // Direct cJSON object for "constants" section
-    cJSON* enums;                 // Direct cJSON object for "enums" section
+    WidgetMapNode* widgets_list_head;                   // Head of the linked list for widget definitions
+    GlobalPropertyDefinitionNode* global_properties_list_head; // Head of the linked list for global properties
+    struct FunctionMapNode* functions;                  // Head of linked list for functions
+    const cJSON* constants;                             // Reference to parsed constants from JSON (owned by main cJSON doc)
+    const cJSON* enums;                                 // Reference to parsed enums from JSON (owned by main cJSON doc)
+    // Removed: cJSON* properties_map;
+    // Removed: struct HashTable* widgets_map; (or cJSON* if it was that)
 } ApiSpec;
 
 
