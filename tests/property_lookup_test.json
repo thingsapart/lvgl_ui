@@ -5,7 +5,6 @@
     "named": "my_test_label",
     "text": "Direct Prop Test",
     "width": 200,
-    "align": "center",
-    "scroll_on_focus": true
+    "align": "center"
   }
 ]

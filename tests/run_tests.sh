@@ -41,7 +41,7 @@ for test_file in *.json; do
 
     ../lvgl_ui_generator ../api_spec.json "${test_file}" > "${output_file}" 2>&1
 
-    # diff "${output_file}" "${expected_file}"
+    #diff "${output_file}" "${expected_file}"
     OUT=/dev/null
     #OUT=/tmp/`basename ${output_file}.diff`
 

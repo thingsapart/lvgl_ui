@@ -6,7 +6,6 @@
     "text": "Direct Prop Test",
     "width": 150,
     "align": "left_mid",
-    "radius": 10,
-    "scroll_on_focus": false
+    "radius": 10
   }
 ]

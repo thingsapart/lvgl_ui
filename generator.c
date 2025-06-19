@@ -1,12 +1,14 @@
-#include "generator.h"
-#include "ir.h"
-#include "registry.h"
-#include "api_spec.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
+
+#include "api_spec.h"
+#include "generator.h"
+#include "ir.h"
+#include "registry.h"
+#include "utils.h"
 
 // --- Context for Generation ---
 typedef struct {
@@ -192,9 +194,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
 
 
 static void process_properties(GenContext* ctx, cJSON* node_json_containing_properties, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context) {
-    // fprintf(stderr, "DEBUG: process_properties: START. Target C var: %s, Obj type: %s\n", target_c_var_name, obj_type_for_api_lookup); // DEBUG
+    _dprintf(stderr, "DEBUG: process_properties: START. Target C var: %s, Obj type: %s\n", target_c_var_name, obj_type_for_api_lookup); // DEBUG
     if (!node_json_containing_properties) {
-        // fprintf(stderr, "DEBUG: process_properties: node_json_containing_properties is NULL. Returning.\n"); // DEBUG
+        _dprintf(stderr, "DEBUG: process_properties: node_json_containing_properties is NULL. Returning.\n"); // DEBUG
         return;
     }
 
@@ -313,7 +315,7 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context);
         }
 
-        fprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s\n",
+        _dprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s\n",
                 prop_name, prop_def->name, prop_def->num_style_args, obj_type_for_api_lookup);
 
         // New argument assembly logic:
@@ -358,7 +360,7 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             free(actual_setter_name_allocated);
         }
     }
-    // fprintf(stderr, "DEBUG: process_properties: END. Target C var: %s, Obj type: %s\n", target_c_var_name, obj_type_for_api_lookup); // DEBUG
+    _dprintf(stderr, "DEBUG: process_properties: END. Target C var: %s, Obj type: %s\n", target_c_var_name, obj_type_for_api_lookup); // DEBUG
 }
 
 static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context) {
@@ -494,7 +496,7 @@ static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_
         }
     } else {
         if (strcmp(type_str, "obj") == 0) {
-            // fprintf(stderr, "DEBUG: process_node: Processing generic 'obj' type. C_VAR_NAME: %s\n", c_var_name_for_node); // DEBUG
+            _dprintf(stderr, "DEBUG: process_node: Processing generic 'obj' type. C_VAR_NAME: %s\n", c_var_name_for_node); // DEBUG
             IRExpr* parent_var_expr = NULL;
             if (parent_c_var && parent_c_var[0] != '\0') {
                 parent_var_expr = ir_new_variable(parent_c_var);
@@ -505,7 +507,7 @@ static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_
                                                           "lv_obj_create",
                                                           parent_var_expr));
             process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, "obj", effective_context);
-            // fprintf(stderr, "DEBUG: process_node: Finished processing properties for 'obj' type. C_VAR_NAME: %s\n", c_var_name_for_node); // DEBUG
+            _dprintf(stderr, "DEBUG: process_node: Finished processing properties for 'obj' type. C_VAR_NAME: %s\n", c_var_name_for_node); // DEBUG
             cJSON* children_json = cJSON_GetObjectItem(node_json, "children");
             if (cJSON_IsArray(children_json)) {
                 cJSON* child_node_json;
