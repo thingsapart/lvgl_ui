@@ -26,9 +26,9 @@ typedef struct PropertyDefinitionNode {
 
 typedef struct WidgetDefinition {
     char* name; // e.g., "button", "label"
-    PropertyDefinitionNode* properties; // Linked list of applicable properties
     char* inherits; // Name of the widget type this inherits from (e.g., "button" might inherit from "obj")
-    // char* create_func; // Optional: specific create function for this widget
+    char* create; // Name of the LVGL creation function (e.g., "lv_btn_create")
+    PropertyDefinitionNode* properties; // Linked list of applicable properties
     // char* parent_type; // Optional: expected parent type
 } WidgetDefinition;
 
@@ -77,5 +77,8 @@ const cJSON* api_spec_get_constants(const ApiSpec* spec);
 
 // Retrieves the raw cJSON object for enums.
 const cJSON* api_spec_get_enums(const ApiSpec* spec);
+
+// Retrieves the create function name for a given widget definition.
+const char* widget_get_create_func(const WidgetDefinition* widget);
 
 #endif // API_SPEC_H
