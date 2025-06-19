@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include <cJSON/cJSON.h>
+#include <cJSON.h> // Changed from <cJSON/cJSON.h>
 
 // --- Data Structures for API Spec ---
 

@@ -293,6 +293,37 @@ static void process_properties(GenContext* ctx, cJSON* props_json_input, const c
             value_to_unmarshal = value_json;
         }
 
+        IRExpr* val_expr;
+        if (cJSON_IsNull(value_to_unmarshal)) {
+            // Handle null value based on property type
+            const char* prop_type_str = prop_def->c_type; // Changed from prop_def->type
+            if (prop_type_str) {
+                if (strcmp(prop_type_str, "char*") == 0 || strcmp(prop_type_str, "const char*") == 0 || strcmp(prop_type_str, "string") == 0) {
+                    val_expr = ir_new_literal("NULL");
+                } else if (strcmp(prop_type_str, "lv_color_t") == 0) {
+                    IRExprNode* hex_arg = ir_new_expr_node(ir_new_literal("0"));
+                    val_expr = ir_new_func_call_expr("lv_color_hex", hex_arg);
+                } else if (strstr(prop_type_str, "lv_obj_t*") != NULL || strstr(prop_type_str, "lv_style_t*") != NULL || strstr(prop_type_str, "lv_font_t*") != NULL) {
+                    val_expr = ir_new_literal("NULL");
+                }
+                else { // Default for other types (numbers, enums, bools if they can be null)
+                    val_expr = ir_new_literal("0");
+                }
+            } else {
+                // Fallback heuristic if prop_def->type is not available
+                if (strcmp(prop_name, "text") == 0 || strstr(prop_name, "font") != NULL || strstr(prop_name, "style") != NULL || (actual_setter_name_const && (strstr(actual_setter_name_const, "_font") || strstr(actual_setter_name_const, "_style")))) {
+                    val_expr = ir_new_literal("NULL");
+                } else if (strstr(prop_name, "color") != NULL || (actual_setter_name_const && strstr(actual_setter_name_const, "_color"))) {
+                    IRExprNode* hex_arg = ir_new_expr_node(ir_new_literal("0"));
+                    val_expr = ir_new_func_call_expr("lv_color_hex", hex_arg);
+                } else {
+                    val_expr = ir_new_literal("0");
+                }
+            }
+        } else {
+            val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context);
+        }
+
         if (is_complex_style_prop) {
             if (strcmp(obj_type_for_api_lookup, "style") != 0) {
                  ir_expr_list_add(&args_list, ir_new_literal((char*)part_str));
@@ -300,7 +331,6 @@ static void process_properties(GenContext* ctx, cJSON* props_json_input, const c
             ir_expr_list_add(&args_list, ir_new_literal((char*)state_str));
         }
 
-        IRExpr* val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context);
         ir_expr_list_add(&args_list, val_expr);
         IRStmt* call_stmt = ir_new_func_call_stmt(actual_setter_name_const, args_list);
         ir_block_add_stmt(current_block, call_stmt);
@@ -467,23 +497,53 @@ static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_
             process_node(ctx, (cJSON*)component_root_json, current_node_ir_block, parent_c_var, NULL, effective_context);
         }
     } else {
-        char warning_comment[256];
-        snprintf(warning_comment, sizeof(warning_comment), "Warning: Type '%s' (var %s) not directly instantiable (no create/init_func/component def). Children (if any) will attempt to attach to '%s'.",
-                 type_str, c_var_name_for_node, parent_c_var ? parent_c_var : "default_parent");
-        ir_block_add_stmt(current_node_ir_block, ir_new_comment(warning_comment));
+        // If type_str is "obj" and it reached here, it means api_spec_find_widget didn't find a creatable "obj" definition.
+        // We should create it as a basic lv_obj_t.
+        if (strcmp(type_str, "obj") == 0) {
+            IRExpr* parent_var_expr = NULL;
+            if (parent_c_var && parent_c_var[0] != '\0') {
+                parent_var_expr = ir_new_variable(parent_c_var);
+            }
+            ir_block_add_stmt(current_node_ir_block,
+                              ir_new_widget_allocate_stmt(c_var_name_for_node,
+                                                          "lv_obj_t",
+                                                          "lv_obj_create",
+                                                          parent_var_expr));
 
-        cJSON* children_json = cJSON_GetObjectItem(node_json, "children");
-        if (cJSON_IsArray(children_json)) {
-            cJSON* child_node_json;
-            cJSON_ArrayForEach(child_node_json, children_json) {
-                process_node(ctx, child_node_json, current_node_ir_block, parent_c_var, "obj", effective_context);
+            cJSON* props_json_obj = cJSON_GetObjectItem(node_json, "properties");
+            process_properties(ctx, props_json_obj, c_var_name_for_node, current_node_ir_block, "obj", effective_context);
+
+            cJSON* children_json = cJSON_GetObjectItem(node_json, "children");
+            if (cJSON_IsArray(children_json)) {
+                cJSON* child_node_json;
+                cJSON_ArrayForEach(child_node_json, children_json) {
+                    process_node(ctx, child_node_json, current_node_ir_block, c_var_name_for_node, "obj", effective_context);
+                }
+            }
+        } else {
+            // Original warning logic for types other than "obj" that are not instantiable
+            char warning_comment[256];
+            snprintf(warning_comment, sizeof(warning_comment), "Warning: Type '%s' (var %s) not directly instantiable (no create/init_func/component def). Children (if any) will attempt to attach to '%s'.",
+                     type_str, c_var_name_for_node, parent_c_var ? parent_c_var : "default_parent");
+            ir_block_add_stmt(current_node_ir_block, ir_new_comment(warning_comment));
+
+            cJSON* children_json = cJSON_GetObjectItem(node_json, "children");
+            if (cJSON_IsArray(children_json)) {
+                cJSON* child_node_json;
+                cJSON_ArrayForEach(child_node_json, children_json) {
+                    process_node(ctx, child_node_json, current_node_ir_block, parent_c_var, "obj", effective_context);
+                }
             }
         }
     }
 
-    // Process "with" blocks if a C variable was established for the current node
-    if (c_var_name_for_node &&
-        ( (widget_def && (widget_def->create || widget_def->init_func)) || (strcmp(type_str, "style")==0) ) ) {
+    // Process "with" blocks if a C variable was established for the current node.
+    // This needs to be true if we just created an "obj" as well.
+    bool node_was_created_or_is_style = (widget_def && (widget_def->create || widget_def->init_func)) ||
+                                     (strcmp(type_str, "style") == 0) ||
+                                     (strcmp(type_str, "obj") == 0); // Added "obj" to this condition
+
+    if (c_var_name_for_node && node_was_created_or_is_style) {
         cJSON* with_prop = cJSON_GetObjectItem(node_json, "with");
         if (with_prop) {
             process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context);
@@ -525,8 +585,10 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
     if (obj_expr->type == IR_EXPR_VARIABLE) {
         target_c_var_name = strdup(((IRExprVariable*)obj_expr)->name);
         generated_var_name_to_free = (char*)target_c_var_name;
-        if (strstr(target_c_var_name, "style") != NULL) { // TODO: Better type inference
+        if (strstr(target_c_var_name, "style") != NULL || strstr(target_c_var_name, "s_") == target_c_var_name) { // TODO: Better type inference
             obj_type_for_props = "style";
+        } else if (strstr(target_c_var_name, "label") != NULL || strstr(target_c_var_name, "l_") == target_c_var_name) { // Temp heuristic
+            obj_type_for_props = "label";
         }
         ir_free((IRNode*)obj_expr);
     } else if (obj_expr->type == IR_EXPR_FUNC_CALL || obj_expr->type == IR_EXPR_ADDRESS_OF || obj_expr->type == IR_EXPR_LITERAL) {
