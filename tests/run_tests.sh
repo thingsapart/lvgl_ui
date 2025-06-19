@@ -6,7 +6,7 @@ RED="\033[0;31m"
 NC="\033[0m" # No Color
 
 # API Spec Generation
-PYTHON_PATH=${PYTHON_PATH:-python3}
+PYTHON_PATH=${PYTHON_PATH:-python3.13}
 echo "Generating api_spec.json..."
 ${PYTHON_PATH} generate_api_spec.py lv_def.json > api_spec.json
 if [ ! -f api_spec.json ]; then
@@ -41,13 +41,18 @@ for test_file in *.json; do
 
     ../lvgl_ui_generator ../api_spec.json "${test_file}" > "${output_file}" 2>&1
 
-    if diff -q "${output_file}" "${expected_file}" >/dev/null 2>&1; then
+    # diff "${output_file}" "${expected_file}"
+    OUT=/dev/null
+    #OUT=/tmp/`basename ${output_file}.diff`
+
+    if diff -q "${output_file}" "${expected_file}" > "${OUT}" 2>&1; then
         printf "\r[  ${GREEN}OK   ${NC}] %-40s\n" "${test_name}"
     else
         printf "\r[ ${RED}FAIL  ${NC}] %-40s\n" "${test_name}"
         failed_tests=$((failed_tests + 1))
     fi
 
+    # cp "${output_file}" /tmp
     rm "${output_file}"
 done
 
