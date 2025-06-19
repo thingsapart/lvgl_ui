@@ -28,13 +28,27 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
     }
     def->name = safe_strdup(def_name);
     def->inherits = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(def_json_node, "inherits")));
-    def->create = NULL; // Initialize new field
+    def->create = NULL;
+    def->c_type = NULL;    // Initialize new field
+    def->init_func = NULL; // Initialize new field
     def->properties = NULL;
 
     // Parse "create" field
     cJSON* create_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "create");
     if (create_item && cJSON_IsString(create_item) && create_item->valuestring != NULL && create_item->valuestring[0] != '\0') {
         def->create = safe_strdup(create_item->valuestring);
+    }
+
+    // Parse "c_type" field
+    cJSON* c_type_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "c_type");
+    if (c_type_item && cJSON_IsString(c_type_item) && c_type_item->valuestring != NULL && c_type_item->valuestring[0] != '\0') {
+        def->c_type = safe_strdup(c_type_item->valuestring);
+    }
+
+    // Parse "init_func" field
+    cJSON* init_func_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "init_func");
+    if (init_func_item && cJSON_IsString(init_func_item) && init_func_item->valuestring != NULL && init_func_item->valuestring[0] != '\0') {
+        def->init_func = safe_strdup(init_func_item->valuestring);
     }
 
     cJSON* properties_obj = cJSON_GetObjectItemCaseSensitive(def_json_node, "properties");
@@ -200,7 +214,13 @@ void api_spec_free(ApiSpec* spec) {
             WidgetDefinition* wd = current_widget_node->widget;
             free(wd->name);
             free(wd->inherits);
-            free(wd->create); // Free the new create field
+            free(wd->create);
+            if (wd->c_type) {
+                free(wd->c_type);
+            }
+            if (wd->init_func) {
+                free(wd->init_func);
+            }
             free_property_definition_list(wd->properties);
             free(wd);
         }

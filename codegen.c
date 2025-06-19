@@ -175,6 +175,66 @@ void codegen_stmt_comment(IRNode* node, int indent_level) {
     }
 }
 
+void codegen_stmt_widget_allocate(IRNode* node, int indent_level) {
+    IRStmtWidgetAllocate* stmt = (IRStmtWidgetAllocate*)node;
+    print_indent(indent_level);
+
+    const char* c_type = stmt->widget_c_type_name ? stmt->widget_c_type_name : "lv_obj_t";
+
+    // LVGL create functions return TYPE*, so no '*' needed in c_type here for the variable declaration.
+    // e.g. lv_obj_t * my_btn = lv_btn_create(...); widget_c_type_name should be "lv_obj_t"
+    printf("%s* %s = %s(", c_type, stmt->c_var_name, stmt->create_func_name);
+    if (stmt->parent_expr) {
+        codegen_expr_internal(stmt->parent_expr);
+    } else {
+        // Default to lv_scr_act() if parent_expr is NULL, as most LVGL objects need a parent.
+        // This is a common convention for top-level objects on the current screen.
+        printf("lv_scr_act()");
+    }
+    printf(");\n");
+}
+
+void codegen_stmt_object_allocate(IRNode* node, int indent_level) {
+    IRStmtObjectAllocate* stmt = (IRStmtObjectAllocate*)node;
+
+    // Line 1: TYPE* var_name = (TYPE*)malloc(sizeof(TYPE));
+    print_indent(indent_level);
+    printf("%s* %s = (%s*)malloc(sizeof(%s));\n",
+           stmt->object_c_type_name, // e.g. "lv_style_t"
+           stmt->c_var_name,
+           stmt->object_c_type_name,
+           stmt->object_c_type_name);
+
+    // Line 2: if (var_name != NULL) { ... }
+    print_indent(indent_level);
+    printf("if (%s != NULL) {\n", stmt->c_var_name);
+
+    // Line 3: memset(var_name, 0, sizeof(TYPE));
+    print_indent(indent_level + 1);
+    printf("memset(%s, 0, sizeof(%s));\n",
+           stmt->c_var_name,
+           stmt->object_c_type_name);
+
+    // Line 4: init_func(var_name); // Assumes init_func takes Type*
+    print_indent(indent_level + 1);
+    printf("%s(%s);\n",
+           stmt->init_func_name,
+           stmt->c_var_name); // Pass the pointer directly
+
+    print_indent(indent_level);
+    printf("} else {\n");
+    print_indent(indent_level + 1);
+    // Using __FILE__ and __LINE__ directly in a printf like this might be tricky
+    // if this generated code is then compiled elsewhere.
+    // A simpler error message might be better, or a dedicated error macro.
+    // For now, keeping it simple:
+    printf("fprintf(stderr, \"Error: Failed to malloc for object %%s of type %%s\\n\", \"%s\", \"%s\");\n", // Escaped %s and quotes
+            stmt->c_var_name, stmt->object_c_type_name);
+    print_indent(indent_level);
+    printf("}\n");
+}
+
+
 // --- Internal dispatchers ---
 static void codegen_expr_internal(IRExpr* expr) {
     if (!expr) {

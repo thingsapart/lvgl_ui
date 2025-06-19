@@ -25,9 +25,11 @@ typedef struct PropertyDefinitionNode {
 } PropertyDefinitionNode;
 
 typedef struct WidgetDefinition {
-    char* name; // e.g., "button", "label"
-    char* inherits; // Name of the widget type this inherits from (e.g., "button" might inherit from "obj")
-    char* create; // Name of the LVGL creation function (e.g., "lv_btn_create")
+    char* name;         // Type name from JSON key (e.g., "button", "style")
+    char* inherits;     // Optional parent type name
+    char* create;       // Optional LVGL creation function name (e.g., "lv_btn_create")
+    char* c_type;       // ADDED: C type for objects (e.g., "lv_style_t", "lv_anim_t")
+    char* init_func;    // ADDED: Initialization function for objects (e.g., "lv_style_init")
     PropertyDefinitionNode* properties; // Linked list of applicable properties
     // char* parent_type; // Optional: expected parent type
 } WidgetDefinition;

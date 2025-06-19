@@ -20,9 +20,11 @@ typedef struct IRNode {
         IR_EXPR_ADDRESS_OF,
         // Add other expression types here
         IR_STMT_BLOCK,
-        IR_STMT_VAR_DECL,
-        IR_STMT_FUNC_CALL, // For function calls as statements
+        IR_STMT_VAR_DECL,     // Still useful for general variable declarations if needed elsewhere
+        IR_STMT_FUNC_CALL,
         IR_STMT_COMMENT,
+        IR_STMT_WIDGET_ALLOCATE, // <-- ADDED
+        IR_STMT_OBJECT_ALLOCATE,  // <-- ADDED
         // Add other statement types here
     } type;
     IRFreeFunc free;
@@ -72,7 +74,6 @@ typedef struct {
     IRExpr* expr; // The expression whose address is taken
 } IRExprAddressOf;
 
-
 // --- Statements ---
 
 // Base struct for all statements (all start with IRNode base)
@@ -111,6 +112,23 @@ typedef struct {
     char* text; // The comment text (without // or /* */ markers)
 } IRStmtComment;
 
+// For declaring and creating a standard widget, e.g., lv_obj_t* btn1 = lv_btn_create(parent);
+typedef struct {
+    IRStmt base;
+    char* c_var_name;           // e.g., "btn1"
+    char* widget_c_type_name;   // e.g., "lv_obj_t" (usually this for LVGL post-creation)
+    char* create_func_name;     // e.g., "lv_btn_create"
+    IRExpr* parent_expr;        // Expression for the parent object (e.g., ir_new_variable("parent_ui_obj")). Can be NULL for screen.
+} IRStmtWidgetAllocate;
+
+// For declaring, malloc-ing, and initializing an object, e.g., lv_style_t* style1 = (lv_style_t*)malloc(sizeof(lv_style_t)); if (style1) { lv_style_init(style1); }
+typedef struct {
+    IRStmt base;
+    char* c_var_name;           // e.g., "style1"
+    char* object_c_type_name;   // e.g., "lv_style_t" (the actual type, not pointer)
+    char* init_func_name;       // e.g., "lv_style_init" (assumes it takes Type*)
+} IRStmtObjectAllocate;
+
 
 // --- Factory functions for Expressions ---
 IRExpr* ir_new_literal(const char* value);
@@ -119,6 +137,7 @@ IRExpr* ir_new_func_call_expr(const char* func_name, IRExprNode* args);
 IRExpr* ir_new_array(IRExprNode* elements);
 IRExpr* ir_new_address_of(IRExpr* expr);
 IRExpr* ir_new_literal_string(const char* value);
+// REMOVED: IRExpr* ir_new_cast_expr(const char* target_type_name, IRExpr* expr_to_cast);
 
 
 // --- Factory functions for Statements ---
@@ -128,6 +147,8 @@ void ir_block_add_stmt(IRStmtBlock* block, IRStmt* stmt); // Helper to add to a 
 IRStmt* ir_new_var_decl(const char* type_name, const char* var_name, IRExpr* initializer);
 IRStmt* ir_new_func_call_stmt(const char* func_name, IRExprNode* args);
 IRStmt* ir_new_comment(const char* text);
+// REMOVED: IRStmt* ir_new_assignment_stmt(IRExpr* lvalue, IRExpr* rvalue);
+// REMOVED: IRStmt* ir_new_if_stmt(IRExpr* condition, IRStmtBlock* if_body, IRStmtBlock* else_body);
 
 // --- Factory functions for Linked List Nodes ---
 IRExprNode* ir_new_expr_node(IRExpr* expr);
