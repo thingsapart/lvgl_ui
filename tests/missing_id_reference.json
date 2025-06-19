@@ -1,0 +1,24 @@
+[
+  {
+    "type": "label",
+    "id": "@actual_label",
+    "named": "l_actual_label",
+    "properties": {
+      "text": "Some text"
+    }
+  },
+  {
+    "type": "obj",
+    "named": "obj_referencing_non_existent",
+    "with": {
+      "obj": "@non_existent_id",
+      "do": {
+        "width": 100
+      }
+    }
+  },
+  {
+    "use-view": "@another_missing_component",
+    "named": "uv_missing_comp"
+  }
+]

@@ -1,0 +1,48 @@
+[
+  {
+    "type": "component",
+    "id": "@my_reusable_component",
+    "named": "c_my_reusable_component",
+    "content": {
+      "type": "obj",
+      "children": [
+        {
+          "type": "label",
+          "properties": {
+            "text": "Hello from component"
+          }
+        },
+        {
+          "type": "button",
+          "named": "comp_button",
+          "children": [
+            {
+              "type": "label",
+              "properties": {
+                "text": "Click Me"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "type": "obj",
+    "id": "main_view",
+    "named": "v_main_view",
+    "children": [
+      {
+        "type": "label",
+        "properties": {
+          "text": "Main view label"
+        }
+      },
+      {
+        "use-view": "@my_reusable_component",
+        "id": "instance_of_component",
+        "named": "uv_instance_1"
+      }
+    ]
+  }
+]
