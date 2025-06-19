@@ -16,8 +16,9 @@ typedef struct {
 } GenContext;
 
 // Forward declarations
-static void process_node(GenContext* ctx, cJSON* node_json, const char* parent_var_name, IRStmtBlock* parent_block, cJSON* context_override);
-static void process_properties(GenContext* ctx, cJSON* props_json, const char* widget_var_name, IRStmtBlock* current_block, cJSON* ui_context);
+static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context);
+static void process_properties(GenContext* ctx, cJSON* props_json, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context);
+static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context);
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context);
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 
@@ -145,13 +146,14 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
         }
 
         // 3. Check for known constants/enums from API spec
-        // Ensure api_spec->constants and api_spec->enums are valid cJSON objects
-        if (ctx->api_spec->constants && cJSON_GetObjectItem(ctx->api_spec->constants, s)) {
+        const cJSON* constants = api_spec_get_constants(ctx->api_spec);
+        if (constants && cJSON_GetObjectItem(constants, s)) {
             IRExpr* lit_expr = ir_new_literal(s); // e.g. LV_ALIGN_CENTER
             free(s_duped);
             return lit_expr;
         }
-        if (ctx->api_spec->enums && cJSON_GetObjectItem(ctx->api_spec->enums, s)) {
+        const cJSON* enums = api_spec_get_enums(ctx->api_spec);
+        if (enums && cJSON_GetObjectItem(enums, s)) {
             IRExpr* lit_expr = ir_new_literal(s); // e.g. LV_FLEX_FLOW_ROW
             free(s_duped);
             return lit_expr;
@@ -209,18 +211,18 @@ static void process_properties(GenContext* ctx, cJSON* props_json, const char* t
     cJSON* prop = NULL;
     for (prop = props_json->child; prop != NULL; prop = prop->next) {
         const char* prop_name = prop->string;
-        // Use obj_type_for_api_lookup to get the correct property info
-        const PropertyInfo* prop_info = api_spec_get_property_info_for_type(ctx->api_spec, obj_type_for_api_lookup, prop_name);
+        // Use obj_type_for_api_lookup to get the correct property definition
+        const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, obj_type_for_api_lookup, prop_name);
 
-        if (!prop_info) {
+        if (!prop_def) {
             // Fallback: try generic "obj" type if specific type lookup failed
             if (strcmp(obj_type_for_api_lookup, "obj") != 0) {
-                prop_info = api_spec_get_property_info_for_type(ctx->api_spec, "obj", prop_name);
+                prop_def = api_spec_find_property(ctx->api_spec, "obj", prop_name);
             }
-            if (!prop_info) {
+            if (!prop_def) {
                  if (strncmp(prop_name, "style_", 6) == 0 && strcmp(obj_type_for_api_lookup, "style") != 0) {
                     fprintf(stderr, "Info: Property '%s' on obj_type '%s' looks like a style property. Ensure it's applied to a style object or handled by add_style.\n", prop_name, obj_type_for_api_lookup);
-                 } else if (strcmp(obj_type_for_api_lookup, "style") == 0 && api_spec_get_property_info_for_type(ctx->api_spec, "obj", prop_name)) {
+                 } else if (strcmp(obj_type_for_api_lookup, "style") == 0 && api_spec_find_property(ctx->api_spec, "obj", prop_name)) {
                     // This is a style object, but the property is an obj property (e.g. width on a style) - this is usually not what's intended.
                     fprintf(stderr, "Warning: Property '%s' applied to a style object '%s' is an object property, not a style property. This might be incorrect.\n", prop_name, target_c_var_name);
                  } else {
@@ -230,43 +232,39 @@ static void process_properties(GenContext* ctx, cJSON* props_json, const char* t
             }
         }
 
-        // Determine the actual setter function name (e.g., lv_obj_set_width, lv_style_set_bg_color)
-        const char* actual_setter_name_const = prop_info->setter_func_name; // Store original pointer
-        char* actual_setter_name_allocated = NULL; // For constructed name
+        // Determine the actual setter function name
+        // Assuming PropertyDefinition has a 'setter' field for the function name.
+        const char* actual_setter_name_const = prop_def->setter;
+        char* actual_setter_name_allocated = NULL;
 
         if (!actual_setter_name_const) {
-            // Construct if not directly provided (should be rare if api_spec is complete)
+            // Construct if not directly provided
             char constructed_setter[128];
             if (strcmp(obj_type_for_api_lookup, "style") == 0) {
                  snprintf(constructed_setter, sizeof(constructed_setter), "lv_style_set_%s", prop_name);
             } else {
+                 // Assuming PropertyDefinition has a 'widget_type_hint' field like PropertyInfo did.
                  snprintf(constructed_setter, sizeof(constructed_setter), "lv_%s_set_%s",
-                         prop_info->widget_type_hint ? prop_info->widget_type_hint : obj_type_for_api_lookup,
+                         prop_def->widget_type_hint ? prop_def->widget_type_hint : obj_type_for_api_lookup,
                          prop_name);
             }
             actual_setter_name_allocated = strdup(constructed_setter);
-            actual_setter_name_const = actual_setter_name_allocated; // Use the allocated one
+            actual_setter_name_const = actual_setter_name_allocated;
             fprintf(stderr, "Warning: Setter for '%s' on type '%s' constructed as '%s'. API spec should provide this.\n", prop_name, obj_type_for_api_lookup, actual_setter_name_const);
         }
 
-        IRExprNode* args_list = ir_new_expr_node(ir_new_variable(target_c_var_name)); // First arg is the target C variable
+        IRExprNode* args_list = ir_new_expr_node(ir_new_variable(target_c_var_name));
 
         bool is_complex_style_prop = false;
-        if (prop_info->num_style_args > 0) {
-            // This property expects part/state arguments.
-            // Examples:
-            // - lv_obj_set_style_local_radius(obj, LV_PART_MAIN, LV_STATE_DEFAULT, 5)
-            // - lv_style_set_radius(style, LV_STATE_DEFAULT, 5)
-            // The number of such args (part, state) depends on whether it's an obj or style setter.
+        // Assuming PropertyDefinition has 'num_style_args' field
+        if (prop_def->num_style_args > 0) {
             is_complex_style_prop = true;
         }
 
-
-        // If the JSON value is an object like {"part": "...", "state": "...", "value": ...}
-        // then these override defaults. Otherwise, use defaults and direct value.
-        cJSON* value_to_unmarshal = prop; // By default, unmarshal the prop itself.
-        const char* part_str = prop_info->style_part_default;
-        const char* state_str = prop_info->style_state_default;
+        cJSON* value_to_unmarshal = prop;
+        // Assuming PropertyDefinition has 'style_part_default' and 'style_state_default' fields
+        const char* part_str = prop_def->style_part_default;
+        const char* state_str = prop_def->style_state_default;
 
         if (cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value")) {
             cJSON* part_json = cJSON_GetObjectItem(prop, "part");
@@ -299,9 +297,12 @@ static void process_properties(GenContext* ctx, cJSON* props_json, const char* t
 }
 
 // Processes a single UI node (widget or component instance)
-static void process_node(GenContext* ctx, cJSON* node_json, const char* parent_var_name, IRStmtBlock* parent_block, cJSON* inherited_context) {
+// New signature:
+static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context) {
     if (!cJSON_IsObject(node_json)) return;
 
+    // TODO: Use default_obj_type if type_item is missing, though current logic requires "type".
+    // For now, default_obj_type is unused if "type" is mandatory.
     cJSON* type_item = cJSON_GetObjectItem(node_json, "type");
     if (!cJSON_IsString(type_item)) {
         fprintf(stderr, "Error: Node missing 'type' or type is not a string. Skipping node.\n");
@@ -320,14 +321,15 @@ static void process_node(GenContext* ctx, cJSON* node_json, const char* parent_v
     }
 
     // --- Context Handling ---
+    // Parameter 'ui_context' is the inherited context.
     cJSON* node_specific_context = cJSON_GetObjectItem(node_json, "context");
     cJSON* effective_context = NULL;
     bool own_effective_context = false;
 
-    if (inherited_context && node_specific_context) {
-        effective_context = cJSON_Duplicate(inherited_context, true); // Start with a copy of inherited
+    if (ui_context && node_specific_context) { // inherited_context is now ui_context
+        effective_context = cJSON_Duplicate(ui_context, true);
         cJSON* item;
-        for (item = node_specific_context->child; item != NULL; item = item->next) { // Merge/override with node-specific
+        for (item = node_specific_context->child; item != NULL; item = item->next) {
             if (cJSON_GetObjectItem(effective_context, item->string)) {
                 cJSON_ReplaceItemInObject(effective_context, item->string, cJSON_Duplicate(item, true));
             } else {
@@ -336,14 +338,14 @@ static void process_node(GenContext* ctx, cJSON* node_json, const char* parent_v
         }
         own_effective_context = true;
     } else if (node_specific_context) {
-        effective_context = node_specific_context; // Use directly, no free
-    } else if (inherited_context) {
-        effective_context = inherited_context; // Use directly, no free
+        effective_context = node_specific_context;
+    } else if (ui_context) { // inherited_context is now ui_context
+        effective_context = ui_context;
     }
-    // If neither, effective_context remains NULL. unmarshal_value handles NULL ui_context.
+    // If neither, effective_context remains NULL.
 
     // --- Component Expansion and Property Merging ---
-    cJSON* effective_properties = NULL; // Properties to be applied to this widget
+    cJSON* effective_properties = NULL;
     bool own_effective_properties = false; // If true, effective_properties needs cJSON_Delete
 
     const char* widget_type_str = cJSON_GetStringValue(type_item);
@@ -396,26 +398,17 @@ static void process_node(GenContext* ctx, cJSON* node_json, const char* parent_v
 
 
     // --- Create IR for the widget object itself ---
-    // e.g., lv_obj_t* button_0 = lv_button_create(parent_var_name_str);
-    char parent_var_name_for_create[128];
-    if (parent_var_name) {
-        snprintf(parent_var_name_for_create, sizeof(parent_var_name_for_create), "%s", parent_var_name);
+    char parent_c_var_for_create[128];
+    if (parent_c_var) { // Use new parameter parent_c_var
+        snprintf(parent_c_var_for_create, sizeof(parent_c_var_for_create), "%s", parent_c_var);
     } else {
-        // If parent_var_name is NULL, this is a root widget for a screen.
-        // LVGL create functions often take lv_scr_act() or similar for the current screen.
-        // Or, if we are generating a function for a custom component, parent might be an argument.
-        // For now, assume NULL parent means creating on current active screen (or a specific global screen).
-        // This needs a clear convention: e.g. pass "lv_scr_act()" or a specific screen variable.
-        // Let's use "lv_scr_act()" as a placeholder if parent_var_name is NULL.
-        // A better way would be to pass this from the top-level call (e.g. screen variable).
-        snprintf(parent_var_name_for_create, sizeof(parent_var_name_for_create), "lv_scr_act()");
+        snprintf(parent_c_var_for_create, sizeof(parent_c_var_for_create), "lv_scr_act()");
     }
 
     char create_func_name[128];
     snprintf(create_func_name, sizeof(create_func_name), "lv_%s_create", final_widget_type_for_create);
 
-    IRExprNode* create_args = ir_new_expr_node(ir_new_variable(parent_var_name_for_create));
-    // TODO: Handle optional second 'copy_from' argument for create functions if specified in JSON
+    IRExprNode* create_args = ir_new_expr_node(ir_new_variable(parent_c_var_for_create));
 
     IRStmt* create_stmt = ir_new_var_decl(
         "lv_obj_t*",
@@ -439,7 +432,21 @@ static void process_node(GenContext* ctx, cJSON* node_json, const char* parent_v
     if (cJSON_IsArray(children_json)) {
         cJSON* child_node_json;
         cJSON_ArrayForEach(child_node_json, children_json) {
-            process_node(ctx, child_node_json, current_widget_var, parent_block, effective_context);
+            // Recursive call needs to match the new 6-argument signature.
+            // parent_block is the same.
+            // parent_c_var for child is current_widget_var.
+            // default_obj_type for child: ideally child's actual type, or NULL if it must have a "type" field.
+            // ui_context for child is effective_context.
+            cJSON* child_type_item = cJSON_GetObjectItem(child_node_json, "type");
+            const char* child_default_type = child_type_item ? cJSON_GetStringValue(child_type_item) : "obj"; // Fallback if type missing, though type is usually mandatory
+            if(child_type_item && child_type_item->valuestring[0] == '@'){ // If child is a component, its type for creation is inside component def.
+                 const cJSON* child_comp_def = registry_get_component(ctx->registry, child_type_item->valuestring + 1);
+                 if(child_comp_def) {
+                    cJSON* child_comp_type_item = cJSON_GetObjectItem(child_comp_def, "type");
+                    if(child_comp_type_item) child_default_type = cJSON_GetStringValue(child_comp_type_item);
+                 }
+            }
+            process_node(ctx, child_node_json, parent_block, current_widget_var, child_default_type, effective_context);
         }
     }
 
@@ -551,7 +558,7 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
     // We need to adapt it or make a new one that takes obj_type_for_props.
     // Let's assume we'll modify process_properties to accept obj_type_for_props.
     process_properties(ctx, do_json, target_c_var_name, parent_ir_block, obj_type_for_props, ui_context);
-    // process_properties(ctx, do_json, parent_ir_block, target_c_var_name, obj_type_for_props, ui_context);
+    process_properties(ctx, do_json, target_c_var_name, parent_ir_block, obj_type_for_props, ui_context);
 
 
     if (generated_var_name_to_free) {
@@ -589,19 +596,12 @@ static void process_styles(GenContext* ctx, cJSON* styles_json, IRStmtBlock* glo
         cJSON* prop = NULL;
         for (prop = style_item->child; prop != NULL; prop = prop->next) {
             const char* prop_name = prop->string; // e.g., "bg_color"
-            const PropertyInfo* prop_info = api_spec_get_property_info(ctx->api_spec, prop_name);
+            // For style definitions, we look up the property as a "style" type property
+            const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, "style", prop_name);
 
-            if (!prop_info || !prop_info->is_style_prop) {
-                 // Try checking if it's a style property by "style_" prefix if not in main props
-                if (strncmp(prop_name, "style_", 6) == 0) {
-                    // This case is for properties like "style_text_font" that are not directly style props
-                    // but are set on objects. This block is for *defining* a style.
-                    // So, here we expect properties like "bg_color", "text_font", etc.
-                     fprintf(stderr, "Warning: Property '%s' in style definition '%s' might not be a direct style property or is misformatted. Attempting to proceed.\n", prop_name, style_name_json);
-                } else {
-                    fprintf(stderr, "Warning: Property '%s' in style definition '%s' is not a recognized style property. Skipping.\n", prop_name, style_name_json);
-                    continue;
-                }
+            if (!prop_def || !prop_def->is_style_prop) { // Ensure it's marked as a style property
+                 fprintf(stderr, "Warning: Property '%s' in style definition '%s' is not a recognized style property. Skipping.\n", prop_name, style_name_json);
+                 continue;
             }
 
             // Construct setter: lv_style_set_PROP(&style_0, LV_STATE_DEFAULT, value)
@@ -651,81 +651,99 @@ static void process_styles(GenContext* ctx, cJSON* styles_json, IRStmtBlock* glo
 
 
 // Main function to generate IR from UI specification
-IRStmtBlock* generate_ir_from_ui_spec(const char* ui_spec_json_str, const char* api_spec_json_str) {
-    cJSON* root_ui = cJSON_Parse(ui_spec_json_str);
-    ApiSpec* api_spec = api_spec_load(api_spec_json_str); // api_spec.c needs to provide this
-
-    if (!root_ui) {
-        fprintf(stderr, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
-        if (api_spec) api_spec_free(api_spec);
+IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_spec) {
+    if (!ui_spec_root) {
+        fprintf(stderr, "Error: UI Spec root is NULL in generate_ir_from_ui_spec.\n");
         return NULL;
     }
     if (!api_spec) {
-        fprintf(stderr, "Error loading API spec. Cannot proceed.\n");
-        cJSON_Delete(root_ui);
+        fprintf(stderr, "Error: API Spec is NULL in generate_ir_from_ui_spec.\n");
         return NULL;
     }
+    // The problem description's example ui_spec_root was an array of nodes,
+    // but current generator process_node expects "ui" section as object or array.
+    // For now, let's stick to the established structure where ui_spec_root has "components", "styles", "ui" sections.
+    // The example in the prompt for generate_ir_from_ui_spec directly iterates ui_spec_root as if it's the "ui" array.
+    // This needs clarification. Assuming ui_spec_root is the top-level JSON object from the file.
 
-    GenContext ctx = {0};
+    GenContext ctx; // Intentionally not initializing api_spec here yet
     ctx.registry = registry_create();
+    if (!ctx.registry) {
+        fprintf(stderr, "Error: Failed to create registry in generate_ir_from_ui_spec.\n");
+        return NULL;
+    }
+    // Now assign api_spec. It's const, and GenContext.api_spec is also const ApiSpec*.
     ctx.api_spec = api_spec;
     ctx.var_counter = 0;
 
-    IRStmtBlock* main_block = ir_new_block(); // This will be the function body or global script
-    ctx.current_global_block = main_block; // For now, all generated code goes into one block
+    IRStmtBlock* root_ir_block = ir_new_block();
+    if (!root_ir_block) {
+        fprintf(stderr, "Error: Failed to create root IR block.\n");
+        registry_free(ctx.registry);
+        return NULL;
+    }
+    ctx.current_global_block = root_ir_block;
 
     // 1. Register all components first
-    cJSON* components_json = cJSON_GetObjectItem(root_ui, "components");
+    cJSON* components_json = cJSON_GetObjectItem(ui_spec_root, "components");
     if (cJSON_IsObject(components_json)) {
         cJSON* comp_item = NULL;
         for (comp_item = components_json->child; comp_item != NULL; comp_item = comp_item->next) {
-            registry_add_component(ctx.registry, comp_item->string, comp_item);
+            // The key of the component is its name, e.g. "@my_component"
+            // The value (comp_item) is the component definition JSON object.
+            // registry_add_component expects name without '@'.
+            const char* comp_name_with_at = comp_item->string;
+            if (comp_name_with_at && comp_name_with_at[0] == '@') {
+                 registry_add_component(ctx.registry, comp_name_with_at + 1, comp_item);
+            } else {
+                fprintf(stderr, "Warning: Component name '%s' does not start with '@'. Skipping component registration.\n", comp_name_with_at ? comp_name_with_at : "NULL_NAME");
+            }
         }
     }
 
     // 2. Process global styles
-    cJSON* styles_json = cJSON_GetObjectItem(root_ui, "styles");
+    cJSON* styles_json = cJSON_GetObjectItem(ui_spec_root, "styles");
     if (styles_json) {
-        process_styles(&ctx, styles_json, main_block);
+        process_styles(&ctx, styles_json, root_ir_block);
     }
 
     // 3. Process UI nodes (screens/widgets)
-    // Assuming "ui" is an object where each key is a screen or root widget container
-    cJSON* ui_section = cJSON_GetObjectItem(root_ui, "ui");
+    cJSON* ui_section = cJSON_GetObjectItem(ui_spec_root, "ui");
     if (cJSON_IsObject(ui_section)) {
         cJSON* screen_node_json = NULL;
         for (screen_node_json = ui_section->child; screen_node_json != NULL; screen_node_json = screen_node_json->next) {
-            // Each item in "ui" could be a screen.
-            // The 'parent_var_name' for a screen's top-level widget could be NULL (meaning attach to active screen)
-            // or a specific screen variable if screens are also managed.
-            // For now, assume process_node handles NULL parent_var_name by using lv_scr_act() or similar.
-            // The name of the screen_node_json (key in "ui" object) could be used to generate a function for that screen.
-            // e.g. void create_screen_main(lv_obj_t* parent_screen_or_null_for_default) { ... }
-            // This is a larger architectural decision. For now, just process it into the global block.
-
-            // We could create a comment indicating which screen/UI root we are processing
             char comment_text[128];
             snprintf(comment_text, sizeof(comment_text), "Generating UI for: %s", screen_node_json->string);
-            ir_block_add_stmt(main_block, ir_new_comment(comment_text));
+            ir_block_add_stmt(root_ir_block, ir_new_comment(comment_text));
+            // Calls to process_node need to be updated to the 6-argument version.
+            // parent_block = root_ir_block
+            // parent_c_var = NULL (for top-level, will default to lv_scr_act() or similar)
+            // default_obj_type = screen_node_json->string (if "ui" is object) or actual type from node.
+            // ui_context = NULL (for top-level)
+            const char* node_type_str = screen_node_json->string; // If UI section is an object, key is often a screen type/name
+                                                              // If node_json itself has a "type" field, that's more reliable.
+            cJSON* type_field = cJSON_GetObjectItem(screen_node_json, "type");
+            if(type_field) node_type_str = cJSON_GetStringValue(type_field);
+            else if (ui_section->type == cJSON_Object) node_type_str = screen_node_json->string; // fallback to key name
+            else node_type_str = "obj"; // generic fallback for array items without explicit type
 
-            process_node(&ctx, screen_node_json, NULL, main_block, NULL);
+            process_node(&ctx, screen_node_json, root_ir_block, NULL, node_type_str, NULL);
         }
-    } else if (cJSON_IsArray(ui_section)) { // Alternative: "ui" is an array of screen/root nodes
+    } else if (cJSON_IsArray(ui_section)) {
          cJSON* screen_node_json = NULL;
          int screen_idx = 0;
          cJSON_ArrayForEach(screen_node_json, ui_section) {
             char comment_text[128];
             snprintf(comment_text, sizeof(comment_text), "Generating UI for screen index: %d", screen_idx++);
-            ir_block_add_stmt(main_block, ir_new_comment(comment_text));
-            process_node(&ctx, screen_node_json, NULL, main_block, NULL);
+            ir_block_add_stmt(root_ir_block, ir_new_comment(comment_text));
+            cJSON* type_field = cJSON_GetObjectItem(screen_node_json, "type");
+            const char* node_type_str = type_field ? cJSON_GetStringValue(type_field) : "obj";
+            process_node(&ctx, screen_node_json, root_ir_block, NULL, node_type_str, NULL);
          }
+    } else {
+        fprintf(stderr, "Warning: 'ui' section in UI spec is not an object or array. No UI will be generated.\n");
     }
 
-
-    // Cleanup
-    registry_free(ctx.registry);
-    api_spec_free(ctx.api_spec);
-    cJSON_Delete(root_ui);
-
-    return main_block;
+    registry_free(ctx.registry); // Free the registry created by this function
+    return root_ir_block;
 }
