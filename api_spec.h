@@ -19,12 +19,27 @@ typedef struct {
     bool is_style_prop;           // True if this property is generally set on style objects or via local style setters
 } PropertyDefinition; // Renamed from PropertyInfo
 
+typedef struct PropertyDefinitionNode {
+    PropertyDefinition* prop;
+    struct PropertyDefinitionNode* next;
+} PropertyDefinitionNode;
+
+typedef struct WidgetDefinition {
+    char* name; // e.g., "button", "label"
+    PropertyDefinitionNode* properties; // Linked list of applicable properties
+    char* inherits; // Name of the widget type this inherits from (e.g., "button" might inherit from "obj")
+    // char* create_func; // Optional: specific create function for this widget
+    // char* parent_type; // Optional: expected parent type
+} WidgetDefinition;
+
 // Represents the parsed API specification (e.g., from api_spec.json)
-// This version uses direct cJSON pointers for simplicity for constants/enums.
-// A more robust version might parse these into hash maps too.
 typedef struct ApiSpec {
-    cJSON* widgets;               // Hash map: widget_type_str -> cJSON_Array_of_PropertyDefinition_strings
-    cJSON* properties_map;        // Hash map: prop_name_str -> PropertyDefinition* (parsed from "properties" in JSON)
+    // cJSON* widgets;            // OLD: widget_type_str -> cJSON_Array_of_PropertyDefinition_strings
+                                  // This will be replaced by a map of WidgetDefinitions
+    struct HashTable* widgets_map; // NEW: widget_type_str -> WidgetDefinition*
+    cJSON* properties_map;        // Global map: prop_name_str -> PropertyDefinition* (parsed from "properties" in JSON)
+                                  // This might become redundant if all props are widget-specific, or could hold all unique props.
+                                  // For now, let's assume it still holds all unique PropertyDefinitions globally.
     cJSON* functions_map;         // Hash map: func_name_str -> FunctionDefinition* (if we add function defs)
     cJSON* constants;             // Direct cJSON object for "constants" section
     cJSON* enums;                 // Direct cJSON object for "enums" section
