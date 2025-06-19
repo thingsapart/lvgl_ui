@@ -12,7 +12,7 @@ CFLAGS = -Wall -g -std=c11 -I. $(INC_CJSON) -I./cJSON -D_GNU_SOURCE
 LIBS = $(LIB_CJSON) -lm
 
 TARGET = lvgl_ui_generator
-SOURCES = main.c api_spec.c ir.c registry.c generator.c codegen.c utils.c
+SOURCES = main.c api_spec.c ir.c registry.c generator.c codegen.c utils.c cJSON/cJSON.c
 OBJECTS = $(SOURCES:.c=.o)
 
 .PHONY: all clean
