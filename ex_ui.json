@@ -1,0 +1,21 @@
+[
+  {
+    "type": "style",
+    "id": "@debug",
+    "outline_width": 1,
+    "outline_color": "#ffeeff",
+    "outline_opa": 150,
+    "border_width": 1,
+    "border_color": "#ffeeff",
+    "border_opa": 150,
+    "radius": 0
+  },
+  {
+    "children": [
+      {
+        "type": "label",
+        "text": "TEST"
+      }
+    ]
+  }
+]
