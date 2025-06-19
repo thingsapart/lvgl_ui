@@ -25559,6 +25559,14 @@
         "y": {
           "setter": "lv_obj_set_y",
           "type": "int32_t"
+        },
+        "style_radius": {
+          "setter": "lv_obj_set_style_radius",
+          "type": "int32_t",
+          "is_style_prop": true,
+          "style_part_default": "LV_PART_MAIN",
+          "style_state_default": "LV_STATE_DEFAULT",
+          "num_style_args": 2
         }
       }
     },

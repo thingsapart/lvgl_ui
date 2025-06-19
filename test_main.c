@@ -8,7 +8,7 @@
 #include "utils.h"
 
 int main() {
-    char* api_spec_str = read_file("api_spec.json"); // Corrected function name
+    char* api_spec_str = read_file("api_spec.json");
     if (!api_spec_str) {
         fprintf(stderr, "Failed to read api_spec.json\n");
         return 1;
@@ -19,28 +19,24 @@ int main() {
         free(api_spec_str);
         return 1;
     }
-    ApiSpec* api_spec = api_spec_parse(api_spec_json); // Corrected function name
+    ApiSpec* api_spec = api_spec_parse(api_spec_json);
     if (!api_spec) {
         fprintf(stderr, "Failed to load ApiSpec from cJSON\n");
-        cJSON_Delete(api_spec_json); // Still delete if api_spec_parse fails
+        cJSON_Delete(api_spec_json);
         free(api_spec_str);
         return 1;
     }
     free(api_spec_str);
-    // Assuming api_spec_parse copies data or cJSON_Delete is handled by api_spec_free
-    // For safety, api_spec_parse should not rely on api_spec_json after it returns.
-    // cJSON_Delete(api_spec_json); // This can be problematic if api_spec uses it.
-                                 // api_spec_free should handle its cJSON objects.
 
-    char* ui_spec_str = read_file("tests/property_lookup_test.json"); // Corrected function name
+    char* ui_spec_str = read_file("tests/local_style_lookup_test.json"); // USE THE NEW TEST FILE
     if (!ui_spec_str) {
-        fprintf(stderr, "Failed to read tests/property_lookup_test.json\n");
+        fprintf(stderr, "Failed to read tests/local_style_lookup_test.json\n"); // Corrected error message
         api_spec_free(api_spec);
         return 1;
     }
     cJSON* ui_spec_json = cJSON_Parse(ui_spec_str);
     if (!ui_spec_json) {
-        fprintf(stderr, "Failed to parse tests/property_lookup_test.json: %s\n", cJSON_GetErrorPtr());
+        fprintf(stderr, "Failed to parse tests/local_style_lookup_test.json: %s\n", cJSON_GetErrorPtr()); // Corrected error message
         free(ui_spec_str);
         api_spec_free(api_spec);
         return 1;
@@ -56,7 +52,7 @@ int main() {
     }
 
     printf("// --- Generated C Code Output START --- \n");
-    codegen_generate_c(ir_block, "parent"); // Corrected function name & used "parent" for parent_var_name
+    codegen_generate_c(ir_block, "parent");
     printf("\n// --- Generated C Code Output END --- \n");
 
     ir_free((IRNode*)ir_block);

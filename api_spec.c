@@ -352,10 +352,14 @@ const WidgetDefinition* api_spec_find_widget(const ApiSpec* spec, const char* wi
 
 const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char* type_name, const char* prop_name) {
     if (!spec || !type_name || !prop_name) return NULL;
+
     const char* current_type_to_check = type_name;
+    char style_prop_name[128]; // Buffer for "style_<prop_name>"
+
     while (current_type_to_check != NULL && current_type_to_check[0] != '\0') {
         const WidgetDefinition* widget_def = api_spec_find_widget(spec, current_type_to_check);
         if (widget_def) {
+            // 1. Search for prop_name directly
             PropertyDefinitionNode* p_node = widget_def->properties;
             while(p_node) {
                 if (p_node->prop && p_node->prop->name && strcmp(p_node->prop->name, prop_name) == 0) {
@@ -363,33 +367,46 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                 }
                 p_node = p_node->next;
             }
-            current_type_to_check = widget_def->inherits;
-        } else {
-             if (strcmp(current_type_to_check, "obj") == 0 || strcmp(current_type_to_check, "style") == 0) {
-                break;
+
+            // 2. If not found, search for "style_<prop_name>"
+            snprintf(style_prop_name, sizeof(style_prop_name), "style_%s", prop_name);
+            p_node = widget_def->properties; // Reset p_node to search again
+            while(p_node) {
+                if (p_node->prop && p_node->prop->name && strcmp(p_node->prop->name, style_prop_name) == 0) {
+                    // Found "style_<prop_name>"
+                    // This PropertyDefinition should already have its 'setter' correctly defined
+                    // (e.g., "lv_obj_set_style_radius") and 'is_style_prop' potentially true.
+                    return p_node->prop;
+                }
+                p_node = p_node->next;
             }
-            return NULL;
+
+            current_type_to_check = widget_def->inherits; // Move to parent
+        } else {
+            // If current_type_to_check was, e.g., "obj" and not found by api_spec_find_widget, stop.
+            // Or if type_name itself wasn't found.
+            break;
         }
     }
-    // If still not found, try to find a global function that could be a setter.
-   if (spec->functions) {
+
+    // 3. If not found after inheritance chain (neither direct nor style-prefixed),
+    //    then try to find a matching global function.
+    if (spec->functions) {
        FunctionMapNode* func_node = spec->functions;
        char potential_setter_name[128];
 
-       // Try generic lv_obj_set_<prop_name>
        snprintf(potential_setter_name, sizeof(potential_setter_name), "lv_obj_set_%s", prop_name);
-       // fprintf(stderr, "DEBUG: Checking global func: %s for prop %s on type %s\n", potential_setter_name, prop_name, type_name);
+       // A more sophisticated approach might also try lv_<type_name>_set_<prop_name>
+       // or even lv_style_set_<prop_name> if contextually appropriate (though less likely here)
 
        while (func_node) {
            if (func_node->name && strcmp(func_node->name, potential_setter_name) == 0) {
-               // Found a potential global setter. Check if its first arg is lv_obj_t* (or compatible)
-               // and if it has at least two args (obj, value).
                if (func_node->func_def && func_node->func_def->args_head &&
                    func_node->func_def->args_head->type &&
                    (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0)) {
 
                    FunctionArg* value_arg = func_node->func_def->args_head->next;
-                   if (value_arg && value_arg->type) { // Check if there is a second argument for the value
+                   if (value_arg && value_arg->type) {
                        strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name) - 1);
                        global_func_setter_name[sizeof(global_func_setter_name) - 1] = '\0';
 
@@ -399,22 +416,23 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                        global_func_prop_def.name = (char*)prop_name;
                        global_func_prop_def.setter = global_func_setter_name;
                        global_func_prop_def.c_type = global_func_arg_type;
-                       global_func_prop_def.widget_type_hint = "obj";
+                       global_func_prop_def.widget_type_hint = (char*)type_name;
                        global_func_prop_def.num_style_args = 0;
                        global_func_prop_def.style_part_default = NULL;
                        global_func_prop_def.style_state_default = NULL;
                        global_func_prop_def.is_style_prop = false;
+                       // If the global function is a local style setter like lv_obj_set_style_radius,
+                       // this 'is_style_prop' and 'num_style_args' would need to be set correctly.
+                       // This might require more info in the 'functions' part of api_spec.json
+                       // or more intelligent deduction here. For now, assume global funcs are not local style setters.
 
-                       // fprintf(stderr, "DEBUG: Found global match: %s, type %s\n", global_func_prop_def.setter, global_func_prop_def.c_type);
                        return &global_func_prop_def;
                    }
                }
            }
-           // TODO: Could also try lv_<type_name>_set_<prop_name> if type_name is not "obj"
            func_node = func_node->next;
        }
-   }
-   // fprintf(stderr, "DEBUG: api_spec_find_property: Prop '%s' for type '%s' not found.\n", prop_name, type_name);
+    }
     return NULL; // Not found
 }
 
