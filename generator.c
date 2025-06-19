@@ -15,68 +15,103 @@ typedef struct {
     IRStmtBlock* current_global_block; // For global statements like style declarations
 } GenContext;
 
+#include <ctype.h> // For isalnum, isdigit
+// stdbool.h is already included
+
 // Forward declarations
 static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context);
 static void process_properties(GenContext* ctx, cJSON* props_json, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context);
 static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context);
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context);
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
+static char* sanitize_c_identifier(const char* input_name);
 
 
 // --- Utility Functions ---
 
+// Helper function to sanitize a string to be a valid C identifier.
+// Output is a newly allocated string that must be freed by the caller.
+static char* sanitize_c_identifier(const char* input_name) {
+    if (!input_name || input_name[0] == '\0') {
+        return strdup("unnamed_var");
+    }
+    char* sanitized_name = (char*)malloc(strlen(input_name) + 2);
+    if (!sanitized_name) {
+        perror("Failed to allocate memory for sanitized_name");
+        return strdup("sanitize_fail");
+    }
+    int current_pos = 0;
+    const char* p_in = input_name;
+    if (p_in[0] == '@') {
+        p_in++;
+    }
+    if (*p_in == '\0') {
+        free(sanitized_name);
+        return strdup("unnamed_after_at");
+    }
+    if (isdigit((unsigned char)p_in[0])) {
+        sanitized_name[current_pos++] = '_';
+    }
+    while (*p_in) {
+        if (isalnum((unsigned char)*p_in)) {
+            sanitized_name[current_pos++] = *p_in;
+        } else {
+            if (current_pos == 0 || sanitized_name[current_pos - 1] != '_') {
+                 sanitized_name[current_pos++] = '_';
+            }
+        }
+        p_in++;
+    }
+    sanitized_name[current_pos] = '\0';
+    if (sanitized_name[0] == '\0' || (sanitized_name[0] == '_' && sanitized_name[1] == '\0') ) {
+        if (sanitized_name[0] == '\0') {
+             free(sanitized_name);
+             return strdup("unnamed_sanitized_var");
+        }
+    }
+    return sanitized_name;
+}
+
 // Generates a unique C variable name (e.g., "button_0", "style_1")
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type) {
     char buf[128];
-    // A more robust approach might involve checking for collisions if base_type could be complex
     snprintf(buf, sizeof(buf), "%s_%d", base_type, ctx->var_counter++);
     return strdup(buf);
 }
 
 // --- Core Processing Functions ---
 
-// Unmarshals a JSON value into an IR expression
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context) {
-    if (!value) return ir_new_literal("NULL"); // Handle case where context lookup might yield NULL
-
+    if (!value) return ir_new_literal("NULL");
     if (cJSON_IsString(value)) {
         const char* s_orig = value->valuestring;
-        char* s_duped = strdup(s_orig); // Work with a mutable copy for unescaping/parsing
+        char* s_duped = strdup(s_orig);
         char* s = s_duped;
-
-        // 1. Check for unescaped values first
         size_t len = strlen(s);
         if (len >= 2 && s[0] == s[len - 1]) {
             char boundary_char = s[0];
             if (boundary_char == '$' || boundary_char == '!' || boundary_char == '@' || boundary_char == '#' || boundary_char == '%') {
-                // Check for "%%" specifically for percentage unescaping
-                if (boundary_char == '%' && len > 1 && s[len-2] == '%') { // e.g. "100%%"
-                    s[len - 1] = '\0'; // Remove last '%'
-                    // s now holds "100%" - this will be handled by lv_pct later if it's the N% case
-                    // or be a literal string "100%" if not.
-                } else if (boundary_char != '%') { // For $, !, @, #
-                    s[len - 1] = '\0'; // Remove trailing boundary char
-                    memmove(s, s + 1, len - 1); // Shift string left, len includes new null term
-                                                // s now holds the unescaped inner value
+                if (boundary_char == '%' && len > 1 && s[len-2] == '%') {
+                    s[len - 1] = '\0';
+                } else if (boundary_char != '%') {
+                    s[len - 1] = '\0';
+                    memmove(s, s + 1, len - 1);
                     IRExpr* lit = ir_new_literal_string(s);
                     free(s_duped);
                     return lit;
                 }
-                // If it was "%%", s was modified, fall through to normal processing with the modified s.
             }
         }
-
-        // 2. Handle special prefixes/values
-        if (s[0] == '$') { // Context variable
-            if (ui_context) { // Ensure ui_context is not NULL
+        if (s[0] == '$') {
+            if (ui_context) {
                 cJSON* ctx_val = cJSON_GetObjectItem(ui_context, s + 1);
                 if (ctx_val) {
-                    free(s_duped); // Free before recursive call that will alloc its own
-                    return unmarshal_value(ctx, ctx_val, ui_context); // Recurse
+                    free(s_duped);
+                    return unmarshal_value(ctx, ctx_val, ui_context);
                 } else {
                     fprintf(stderr, "Warning: Context variable '%s' not found.\n", s + 1);
                     free(s_duped);
-                    return ir_new_literal("NULL"); // Or some other representation of "not found"
+                    return ir_new_literal("NULL");
                 }
             } else {
                  fprintf(stderr, "Warning: Attempted to access context variable '%s' with NULL context.\n", s + 1);
@@ -84,11 +119,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                  return ir_new_literal("NULL");
             }
         }
-        if (s[0] == '@') { // Registry reference
+        if (s[0] == '@') {
             const char* registered_c_var = registry_get_generated_var(ctx->registry, s + 1);
             if (registered_c_var) {
-                // Heuristic: if it's a style, return its address
-                // This could be made more robust if styles had a specific type in registry or API spec
                 if (strstr(registered_c_var, "style") != NULL) {
                     IRExpr* var_expr = ir_new_variable(registered_c_var);
                     IRExpr* addr_expr = ir_new_address_of(var_expr);
@@ -99,40 +132,31 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                 free(s_duped);
                 return var_expr;
             }
-            // Not found in generated_vars, assume it's a C-registered pointer/variable
-            // or a named object that will be resolvable in C.
-            IRExpr* var_expr = ir_new_variable(s + 1); // Use name without '@'
+            IRExpr* var_expr = ir_new_variable(s + 1);
             free(s_duped);
             return var_expr;
         }
-        if (s[0] == '#') { // Color e.g. #FF00AA
+        if (s[0] == '#') {
             long hex_val = strtol(s + 1, NULL, 16);
             char hex_str_arg[32];
-            // LVGL's lv_color_hex expects a single integer 0xRRGGBB
             snprintf(hex_str_arg, sizeof(hex_str_arg), "0x%06lX", hex_val);
-
             IRExprNode* args = ir_new_expr_node(ir_new_literal(hex_str_arg));
             IRExpr* call_expr = ir_new_func_call_expr("lv_color_hex", args);
             free(s_duped);
             return call_expr;
         }
-        if (s[0] == '!') { // Static string "!Hello World"
-            // Treat as a regular string literal after removing '!'
-            // The "static" nature refers to its lifetime for LVGL,
-            // a C string literal already has static lifetime.
+        if (s[0] == '!') {
             IRExpr* lit_expr = ir_new_literal_string(s + 1);
             free(s_duped);
             return lit_expr;
         }
-
-        // Check for "N%" percentage, carefully, could be "100%%" which was unescaped to "100%"
-        len = strlen(s); // re-evaluate len as s might have changed
+        len = strlen(s);
         if (len > 0 && s[len - 1] == '%') {
-            char* temp_s = strdup(s); // work on another copy for modification
-            temp_s[len - 1] = '\0'; // Remove '%'
+            char* temp_s = strdup(s);
+            temp_s[len - 1] = '\0';
             char* endptr;
             long num_val = strtol(temp_s, &endptr, 10);
-            if (*endptr == '\0') { // Successfully parsed as a number
+            if (*endptr == '\0') {
                 char num_str_arg[32];
                 snprintf(num_str_arg, sizeof(num_str_arg), "%ld", num_val);
                 IRExprNode* args = ir_new_expr_node(ir_new_literal(num_str_arg));
@@ -142,34 +166,28 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                 return call_expr;
             }
             free(temp_s);
-            // If not a valid number before %, it's just a string ending with %, treat as literal string below
         }
-
-        // 3. Check for known constants/enums from API spec
         const cJSON* constants = api_spec_get_constants(ctx->api_spec);
         if (constants && cJSON_GetObjectItem(constants, s)) {
-            IRExpr* lit_expr = ir_new_literal(s); // e.g. LV_ALIGN_CENTER
+            IRExpr* lit_expr = ir_new_literal(s);
             free(s_duped);
             return lit_expr;
         }
         const cJSON* enums = api_spec_get_enums(ctx->api_spec);
         if (enums && cJSON_GetObjectItem(enums, s)) {
-            IRExpr* lit_expr = ir_new_literal(s); // e.g. LV_FLEX_FLOW_ROW
+            IRExpr* lit_expr = ir_new_literal(s);
             free(s_duped);
             return lit_expr;
         }
-
-        // 4. Default: It's a regular string literal
         IRExpr* lit_expr = ir_new_literal_string(s);
         free(s_duped);
         return lit_expr;
-
     } else if (cJSON_IsNumber(value)) {
         char buf[32];
-        snprintf(buf, sizeof(buf), "%d", (int)value->valuedouble); // Consider if double/float is needed
+        snprintf(buf, sizeof(buf), "%d", (int)value->valuedouble);
         return ir_new_literal(buf);
-    } else if (cJSON_IsBool(value)) { // LVGL uses macros like LV_STATE_CHECKED (int) or bools in C
-        return ir_new_literal(cJSON_IsTrue(value) ? "true" : "false"); // Or "1" / "0" if preferred for C
+    } else if (cJSON_IsBool(value)) {
+        return ir_new_literal(cJSON_IsTrue(value) ? "true" : "false");
     } else if (cJSON_IsArray(value)) {
         IRExprNode* elements = NULL;
         cJSON* elem_json;
@@ -177,10 +195,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
             ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context));
         }
         return ir_new_array(elements);
-    } else if (cJSON_IsObject(value)) { // Function call { "call": "name", "args": [] }
+    } else if (cJSON_IsObject(value)) {
         cJSON* call_item = cJSON_GetObjectItem(value, "call");
         cJSON* args_item = cJSON_GetObjectItem(value, "args");
-
         if (cJSON_IsString(call_item)) {
             const char* call_name = call_item->valuestring;
             IRExprNode* args_list = NULL;
@@ -189,7 +206,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                  cJSON_ArrayForEach(arg_json, args_item) {
                     ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context));
                 }
-            } else if (args_item != NULL) { // Single argument not in an array
+            } else if (args_item != NULL) {
                  ir_expr_list_add(&args_list, unmarshal_value(ctx, args_item, ui_context));
             }
             return ir_new_func_call_expr(call_name, args_list);
@@ -197,25 +214,17 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
     } else if (cJSON_IsNull(value)) {
         return ir_new_literal("NULL");
     }
-
     fprintf(stderr, "Warning: Unhandled JSON type in unmarshal_value or invalid structure. Returning NULL literal.\n");
-    return ir_new_literal("NULL"); // Fallback for unhandled types
+    return ir_new_literal("NULL");
 }
 
-// Processes a "properties" JSON object and adds corresponding IR statements (function calls)
-// The 'obj_type_for_api_lookup' is crucial for finding the correct property info in api_spec
-// (e.g., "obj", "label", "button", "style").
 static void process_properties(GenContext* ctx, cJSON* props_json, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context) {
     if (!props_json) return;
-
     cJSON* prop = NULL;
     for (prop = props_json->child; prop != NULL; prop = prop->next) {
         const char* prop_name = prop->string;
-        // Use obj_type_for_api_lookup to get the correct property definition
         const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, obj_type_for_api_lookup, prop_name);
-
         if (!prop_def) {
-            // Fallback: try generic "obj" type if specific type lookup failed
             if (strcmp(obj_type_for_api_lookup, "obj") != 0) {
                 prop_def = api_spec_find_property(ctx->api_spec, "obj", prop_name);
             }
@@ -223,7 +232,6 @@ static void process_properties(GenContext* ctx, cJSON* props_json, const char* t
                  if (strncmp(prop_name, "style_", 6) == 0 && strcmp(obj_type_for_api_lookup, "style") != 0) {
                     fprintf(stderr, "Info: Property '%s' on obj_type '%s' looks like a style property. Ensure it's applied to a style object or handled by add_style.\n", prop_name, obj_type_for_api_lookup);
                  } else if (strcmp(obj_type_for_api_lookup, "style") == 0 && api_spec_find_property(ctx->api_spec, "obj", prop_name)) {
-                    // This is a style object, but the property is an obj property (e.g. width on a style) - this is usually not what's intended.
                     fprintf(stderr, "Warning: Property '%s' applied to a style object '%s' is an object property, not a style property. This might be incorrect.\n", prop_name, target_c_var_name);
                  } else {
                     fprintf(stderr, "Warning: Property '%s' for object type '%s' (C var '%s') not found in API spec. Skipping.\n", prop_name, obj_type_for_api_lookup, target_c_var_name);
@@ -231,19 +239,13 @@ static void process_properties(GenContext* ctx, cJSON* props_json, const char* t
                 continue;
             }
         }
-
-        // Determine the actual setter function name
-        // Assuming PropertyDefinition has a 'setter' field for the function name.
         const char* actual_setter_name_const = prop_def->setter;
         char* actual_setter_name_allocated = NULL;
-
         if (!actual_setter_name_const) {
-            // Construct if not directly provided
             char constructed_setter[128];
             if (strcmp(obj_type_for_api_lookup, "style") == 0) {
                  snprintf(constructed_setter, sizeof(constructed_setter), "lv_style_set_%s", prop_name);
             } else {
-                 // Assuming PropertyDefinition has a 'widget_type_hint' field like PropertyInfo did.
                  snprintf(constructed_setter, sizeof(constructed_setter), "lv_%s_set_%s",
                          prop_def->widget_type_hint ? prop_def->widget_type_hint : obj_type_for_api_lookup,
                          prop_name);
@@ -252,233 +254,289 @@ static void process_properties(GenContext* ctx, cJSON* props_json, const char* t
             actual_setter_name_const = actual_setter_name_allocated;
             fprintf(stderr, "Warning: Setter for '%s' on type '%s' constructed as '%s'. API spec should provide this.\n", prop_name, obj_type_for_api_lookup, actual_setter_name_const);
         }
-
         IRExprNode* args_list = ir_new_expr_node(ir_new_variable(target_c_var_name));
-
         bool is_complex_style_prop = false;
-        // Assuming PropertyDefinition has 'num_style_args' field
         if (prop_def->num_style_args > 0) {
             is_complex_style_prop = true;
         }
-
         cJSON* value_to_unmarshal = prop;
-        // Assuming PropertyDefinition has 'style_part_default' and 'style_state_default' fields
         const char* part_str = prop_def->style_part_default;
         const char* state_str = prop_def->style_state_default;
-
         if (cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value")) {
             cJSON* part_json = cJSON_GetObjectItem(prop, "part");
             cJSON* state_json = cJSON_GetObjectItem(prop, "state");
             cJSON* value_json = cJSON_GetObjectItem(prop, "value");
-
             if (cJSON_IsString(part_json)) part_str = part_json->valuestring;
             if (cJSON_IsString(state_json)) state_str = state_json->valuestring;
-            value_to_unmarshal = value_json; // Actual value is nested
+            value_to_unmarshal = value_json;
         }
-
         if (is_complex_style_prop) {
-            if (strcmp(obj_type_for_api_lookup, "style") != 0) { // e.g. lv_obj_set_local_...
-                 ir_expr_list_add(&args_list, ir_new_literal((char*)part_str)); // part arg
+            if (strcmp(obj_type_for_api_lookup, "style") != 0) {
+                 ir_expr_list_add(&args_list, ir_new_literal((char*)part_str));
             }
-            // Both obj and style setters with style_args take state
-            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str)); // state arg
+            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str));
         }
-
         IRExpr* val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context);
         ir_expr_list_add(&args_list, val_expr);
-
         IRStmt* call_stmt = ir_new_func_call_stmt(actual_setter_name_const, args_list);
         ir_block_add_stmt(current_block, call_stmt);
-
-        if (actual_setter_name_allocated) { // If we strdup'd for constructed name
+        if (actual_setter_name_allocated) {
             free(actual_setter_name_allocated);
         }
     }
 }
 
-// Processes a single UI node (widget or component instance)
-// New signature:
 static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context) {
     if (!cJSON_IsObject(node_json)) return;
 
-    // TODO: Use default_obj_type if type_item is missing, though current logic requires "type".
-    // For now, default_obj_type is unused if "type" is mandatory.
     cJSON* type_item = cJSON_GetObjectItem(node_json, "type");
-    if (!cJSON_IsString(type_item)) {
-        fprintf(stderr, "Error: Node missing 'type' or type is not a string. Skipping node.\n");
+    const char* type_str = type_item ? cJSON_GetStringValue(type_item) : default_obj_type;
+
+    if (!type_str || type_str[0] == '\0') {
+         fprintf(stderr, "Error: Node missing valid 'type'. Skipping node processing.\n");
+         return;
+    }
+
+    IRStmtBlock* current_node_ir_block = ir_new_block();
+    if (!current_node_ir_block) {
+        fprintf(stderr, "Error: Failed to create IR block for node. Skipping.\n");
         return;
     }
+    ir_block_add_stmt(parent_block, (IRStmt*)current_node_ir_block);
 
-    // Determine current widget variable name
-    char* current_widget_var = NULL;
-    cJSON* id_item = cJSON_GetObjectItem(node_json, "id");
-    if (cJSON_IsString(id_item)) {
-        current_widget_var = strdup(id_item->valuestring);
-        // Register this ID so if it's referenced by '@id', we use the C var name
-        registry_add_generated_var(ctx->registry, id_item->valuestring, current_widget_var);
-    } else {
-        current_widget_var = generate_unique_var_name(ctx, cJSON_GetStringValue(type_item));
-    }
-
-    // --- Context Handling ---
-    // Parameter 'ui_context' is the inherited context.
     cJSON* node_specific_context = cJSON_GetObjectItem(node_json, "context");
     cJSON* effective_context = NULL;
     bool own_effective_context = false;
 
-    if (ui_context && node_specific_context) { // inherited_context is now ui_context
+    if (ui_context && node_specific_context) {
         effective_context = cJSON_Duplicate(ui_context, true);
-        cJSON* item;
-        for (item = node_specific_context->child; item != NULL; item = item->next) {
-            if (cJSON_GetObjectItem(effective_context, item->string)) {
-                cJSON_ReplaceItemInObject(effective_context, item->string, cJSON_Duplicate(item, true));
+        cJSON* item_ctx_iter;
+        for (item_ctx_iter = node_specific_context->child; item_ctx_iter != NULL; item_ctx_iter = item_ctx_iter->next) {
+            if (cJSON_GetObjectItem(effective_context, item_ctx_iter->string)) {
+                cJSON_ReplaceItemInObject(effective_context, item_ctx_iter->string, cJSON_Duplicate(item_ctx_iter, true));
             } else {
-                cJSON_AddItemToObject(effective_context, item->string, cJSON_Duplicate(item, true));
+                cJSON_AddItemToObject(effective_context, item_ctx_iter->string, cJSON_Duplicate(item_ctx_iter, true));
             }
         }
         own_effective_context = true;
     } else if (node_specific_context) {
         effective_context = node_specific_context;
-    } else if (ui_context) { // inherited_context is now ui_context
+    } else if (ui_context) {
         effective_context = ui_context;
     }
-    // If neither, effective_context remains NULL.
 
-    // --- Component Expansion and Property Merging ---
-    cJSON* effective_properties = NULL;
-    bool own_effective_properties = false; // If true, effective_properties needs cJSON_Delete
-
-    const char* widget_type_str = cJSON_GetStringValue(type_item);
-    const char* final_widget_type_for_create = widget_type_str; // Actual LVGL type, e.g. "button", "label"
-
-    cJSON* component_definition = NULL;
-    if (widget_type_str[0] == '@') { // It's a component reference
-        component_definition = (cJSON*)registry_get_component(ctx->registry, widget_type_str + 1);
-        if (!component_definition) {
-            fprintf(stderr, "Error: Component '%s' not found in registry. Skipping node.\n", widget_type_str);
+    if (strcmp(type_str, "style") == 0) {
+        cJSON* id_item_style = cJSON_GetObjectItem(node_json, "id");
+        if (!cJSON_IsString(id_item_style) || !id_item_style->valuestring || id_item_style->valuestring[0] == '\0') {
+            fprintf(stderr, "Error: Style node missing valid 'id' attribute. Skipping.\n");
             if (own_effective_context) cJSON_Delete(effective_context);
-            free(current_widget_var);
             return;
         }
-        // The actual LVGL type is inside the component's definition
-        cJSON* comp_type_item = cJSON_GetObjectItem(component_definition, "type");
-        if (!cJSON_IsString(comp_type_item)) {
-             fprintf(stderr, "Error: Component definition '%s' is missing 'type'. Skipping node.\n", widget_type_str);
-             if (own_effective_context) cJSON_Delete(effective_context);
-             free(current_widget_var);
-             return;
+        const char* json_id_style = id_item_style->valuestring;
+        char* style_c_name = sanitize_c_identifier(json_id_style);
+
+        const char* registry_key_style = (json_id_style[0] == '@') ? json_id_style + 1 : json_id_style;
+        registry_add_generated_var(ctx->registry, registry_key_style, style_c_name);
+
+        ir_block_add_stmt(current_node_ir_block, ir_new_var_decl("static lv_style_t", style_c_name, NULL));
+
+        IRExpr* style_var_addr = ir_new_address_of(ir_new_variable(style_c_name));
+        IRExprNode* init_args = ir_new_expr_node(style_var_addr);
+        ir_block_add_stmt(current_node_ir_block, ir_new_func_call_stmt("lv_style_init", init_args));
+
+        cJSON* props_to_process = cJSON_GetObjectItem(node_json, "properties");
+        if (!props_to_process && cJSON_IsObject(node_json)) {
+            props_to_process = node_json;
         }
-        final_widget_type_for_create = cJSON_GetStringValue(comp_type_item);
+        if(props_to_process){
+             process_properties(ctx, props_to_process, style_c_name, current_node_ir_block, "style", effective_context);
+        }
+        free(style_c_name);
 
-        // Properties: component defaults < node instance properties
-        cJSON* component_props = cJSON_GetObjectItem(component_definition, "properties");
-        cJSON* instance_props = cJSON_GetObjectItem(node_json, "properties");
+    } else if (strcmp(type_str, "use-view") == 0) {
+        cJSON* component_ref_item = cJSON_GetObjectItem(node_json, "view_id");
+        if (!cJSON_IsString(component_ref_item)) {
+            component_ref_item = cJSON_GetObjectItem(node_json, "id");
+            if (cJSON_IsString(component_ref_item)) {
+                fprintf(stderr, "Warning: 'use-view' node is using 'id' ('%s') to specify component. Consider using 'view_id' for clarity.\n", component_ref_item->valuestring);
+            }
+        }
 
-        if (component_props) {
-            effective_properties = cJSON_Duplicate(component_props, true);
-            own_effective_properties = true;
-            if (instance_props) { // Override with instance properties
-                cJSON* prop_iter;
-                for (prop_iter = instance_props->child; prop_iter != NULL; prop_iter = prop_iter->next) {
-                    if (cJSON_GetObjectItem(effective_properties, prop_iter->string)) {
-                        cJSON_ReplaceItemInObject(effective_properties, prop_iter->string, cJSON_Duplicate(prop_iter, true));
-                    } else {
-                        cJSON_AddItemToObject(effective_properties, prop_iter->string, cJSON_Duplicate(prop_iter, true));
+        if (!cJSON_IsString(component_ref_item) || !component_ref_item->valuestring || component_ref_item->valuestring[0] == '\0') {
+            char err_buf[256];
+            snprintf(err_buf, sizeof(err_buf), "Error: 'use-view' node missing 'view_id' (or valid 'id') attribute.");
+            fprintf(stderr, "%s Node: %s\n", err_buf, cJSON_PrintUnformatted(node_json));
+            ir_block_add_stmt(current_node_ir_block, ir_new_comment(err_buf));
+            if (own_effective_context) cJSON_Delete(effective_context);
+            return;
+        }
+        const char* component_def_id_from_json = component_ref_item->valuestring;
+
+        if (component_def_id_from_json[0] != '@') {
+            char err_buf[256];
+            snprintf(err_buf, sizeof(err_buf), "Error: 'use-view' component reference '%s' must start with '@'.", component_def_id_from_json);
+            fprintf(stderr, "%s\n", err_buf);
+            ir_block_add_stmt(current_node_ir_block, ir_new_comment(err_buf));
+            if (own_effective_context) cJSON_Delete(effective_context);
+            return;
+        }
+
+        const cJSON* component_root_json = registry_get_component(ctx->registry, component_def_id_from_json + 1);
+
+        if (!component_root_json) {
+            char err_buf[256];
+            snprintf(err_buf, sizeof(err_buf), "Error: Component definition '%s' not found in registry for 'use-view'.", component_def_id_from_json);
+            fprintf(stderr, "%s\n", err_buf);
+            ir_block_add_stmt(current_node_ir_block, ir_new_comment(err_buf));
+            if (own_effective_context) cJSON_Delete(effective_context);
+            return;
+        }
+
+        process_node(ctx, (cJSON*)component_root_json, current_node_ir_block, parent_c_var,
+                     NULL,
+                     effective_context);
+
+        cJSON* use_view_prop_iter = node_json->child;
+        bool has_override_props = false;
+        while(use_view_prop_iter){
+            const char* key = use_view_prop_iter->string;
+            if(key && strcmp(key, "type") != 0 && strcmp(key, "view_id") != 0 && strcmp(key, "id") != 0 &&
+               strcmp(key, "context") != 0 && strcmp(key, "named") != 0 && strcmp(key, "children") != 0 ) {
+                has_override_props = true;
+                break;
+            }
+            use_view_prop_iter = use_view_prop_iter->next;
+        }
+        if(has_override_props){
+            char comment_buf[256];
+            snprintf(comment_buf, sizeof(comment_buf), "Info: Properties on 'use-view' node ('%s') itself are currently ignored. Apply overrides within component or use 'with'.", component_def_id_from_json);
+            ir_block_add_stmt(current_node_ir_block, ir_new_comment(comment_buf));
+        }
+
+    } else {
+        char* current_widget_c_var = NULL;
+        cJSON* named_item = cJSON_GetObjectItem(node_json, "named");
+        cJSON* id_item = cJSON_GetObjectItem(node_json, "id");
+
+        if (cJSON_IsString(named_item) && named_item->valuestring[0] != '\0') {
+            current_widget_c_var = sanitize_c_identifier(named_item->valuestring);
+            const char* registry_key_named = (named_item->valuestring[0] == '@') ? named_item->valuestring + 1 : named_item->valuestring;
+            registry_add_generated_var(ctx->registry, registry_key_named, current_widget_c_var);
+            if (cJSON_IsString(id_item) && id_item->valuestring[0] != '\0' && strcmp(id_item->valuestring, named_item->valuestring) != 0) {
+                 const char* registry_key_id = (id_item->valuestring[0] == '@') ? id_item->valuestring + 1 : id_item->valuestring;
+                 registry_add_generated_var(ctx->registry, registry_key_id, current_widget_c_var);
+            }
+        } else if (cJSON_IsString(id_item) && id_item->valuestring[0] != '\0') {
+            current_widget_c_var = sanitize_c_identifier(id_item->valuestring);
+            const char* registry_key_id = (id_item->valuestring[0] == '@') ? id_item->valuestring + 1 : id_item->valuestring;
+            registry_add_generated_var(ctx->registry, registry_key_id, current_widget_c_var);
+        } else {
+            current_widget_c_var = generate_unique_var_name(ctx, type_str ? type_str : "widget");
+        }
+
+        cJSON* effective_properties = NULL;
+        bool own_effective_properties = false;
+        const char* final_widget_type_for_create = type_str;
+        cJSON* component_definition = NULL;
+
+        if (type_str[0] == '@') {
+            component_definition = (cJSON*)registry_get_component(ctx->registry, type_str + 1);
+            if (!component_definition) {
+                fprintf(stderr, "Error: Component '%s' not found in registry. Skipping node.\n", type_str);
+                if (own_effective_context) cJSON_Delete(effective_context);
+                free(current_widget_c_var);
+                return;
+            }
+            cJSON* comp_type_item = cJSON_GetObjectItem(component_definition, "type");
+            if (!cJSON_IsString(comp_type_item)) {
+                 fprintf(stderr, "Error: Component definition '%s' is missing 'type'. Skipping node.\n", type_str);
+                 if (own_effective_context) cJSON_Delete(effective_context);
+                 free(current_widget_c_var);
+                 return;
+            }
+            final_widget_type_for_create = cJSON_GetStringValue(comp_type_item);
+
+            cJSON* component_props = cJSON_GetObjectItem(component_definition, "properties");
+            cJSON* instance_props = cJSON_GetObjectItem(node_json, "properties");
+
+            if (component_props) {
+                effective_properties = cJSON_Duplicate(component_props, true);
+                own_effective_properties = true;
+                if (instance_props) {
+                    cJSON* prop_iter;
+                    for (prop_iter = instance_props->child; prop_iter != NULL; prop_iter = prop_iter->next) {
+                        if (cJSON_GetObjectItem(effective_properties, prop_iter->string)) {
+                            cJSON_ReplaceItemInObject(effective_properties, prop_iter->string, cJSON_Duplicate(prop_iter, true));
+                        } else {
+                            cJSON_AddItemToObject(effective_properties, prop_iter->string, cJSON_Duplicate(prop_iter, true));
+                        }
                     }
                 }
+            } else if (instance_props) {
+                effective_properties = instance_props;
+                own_effective_properties = false;
             }
-        } else if (instance_props) {
-            effective_properties = instance_props; // Use directly, no free by this block
+        } else {
+            final_widget_type_for_create = type_str;
+            effective_properties = cJSON_GetObjectItem(node_json, "properties");
             own_effective_properties = false;
         }
-    } else { // It's a direct widget type
-        effective_properties = cJSON_GetObjectItem(node_json, "properties"); // Use directly
-        own_effective_properties = false;
-    }
 
-
-    // --- Create IR for the widget object itself ---
-    char parent_c_var_for_create[128];
-    if (parent_c_var) { // Use new parameter parent_c_var
-        snprintf(parent_c_var_for_create, sizeof(parent_c_var_for_create), "%s", parent_c_var);
-    } else {
-        snprintf(parent_c_var_for_create, sizeof(parent_c_var_for_create), "lv_scr_act()");
-    }
-
-    char create_func_name[128];
-    snprintf(create_func_name, sizeof(create_func_name), "lv_%s_create", final_widget_type_for_create);
-
-    IRExprNode* create_args = ir_new_expr_node(ir_new_variable(parent_c_var_for_create));
-
-    IRStmt* create_stmt = ir_new_var_decl(
-        "lv_obj_t*",
-        current_widget_var,
-        ir_new_func_call_expr(create_func_name, create_args)
-    );
-    ir_block_add_stmt(parent_block, create_stmt);
-
-    // Process properties (setters) using effective_properties and effective_context
-    // The obj_type_for_api_lookup for a newly created widget is its final_widget_type_for_create (e.g. "button", "label")
-    if (effective_properties) {
-        process_properties(ctx, effective_properties, current_widget_var, parent_block, final_widget_type_for_create, effective_context);
-    }
-
-    // Process children, passing current_widget_var as their parent and effective_context
-    cJSON* children_json = cJSON_GetObjectItem(component_definition ? component_definition : node_json, "children");
-    // If it's a component, its defined children are processed. Node's "children" are ignored if it's a component instance.
-    // This behavior might need refinement: should component instance be able to add more children?
-    // For now, component's structure is fixed.
-
-    if (cJSON_IsArray(children_json)) {
-        cJSON* child_node_json;
-        cJSON_ArrayForEach(child_node_json, children_json) {
-            // Recursive call needs to match the new 6-argument signature.
-            // parent_block is the same.
-            // parent_c_var for child is current_widget_var.
-            // default_obj_type for child: ideally child's actual type, or NULL if it must have a "type" field.
-            // ui_context for child is effective_context.
-            cJSON* child_type_item = cJSON_GetObjectItem(child_node_json, "type");
-            const char* child_default_type = child_type_item ? cJSON_GetStringValue(child_type_item) : "obj"; // Fallback if type missing, though type is usually mandatory
-            if(child_type_item && child_type_item->valuestring[0] == '@'){ // If child is a component, its type for creation is inside component def.
-                 const cJSON* child_comp_def = registry_get_component(ctx->registry, child_type_item->valuestring + 1);
-                 if(child_comp_def) {
-                    cJSON* child_comp_type_item = cJSON_GetObjectItem(child_comp_def, "type");
-                    if(child_comp_type_item) child_default_type = cJSON_GetStringValue(child_comp_type_item);
-                 }
-            }
-            process_node(ctx, child_node_json, parent_block, current_widget_var, child_default_type, effective_context);
+        char parent_c_var_for_create[128];
+        if (parent_c_var) {
+            snprintf(parent_c_var_for_create, sizeof(parent_c_var_for_create), "%s", parent_c_var);
+        } else {
+            snprintf(parent_c_var_for_create, sizeof(parent_c_var_for_create), "lv_scr_act()");
         }
+
+        char create_func_name[128];
+        snprintf(create_func_name, sizeof(create_func_name), "lv_%s_create", final_widget_type_for_create);
+        IRExprNode* create_args = ir_new_expr_node(ir_new_variable(parent_c_var_for_create));
+        IRStmt* create_stmt = ir_new_var_decl("lv_obj_t*", current_widget_c_var, ir_new_func_call_expr(create_func_name, create_args));
+        ir_block_add_stmt(current_node_ir_block, create_stmt);
+
+        if (effective_properties) {
+            process_properties(ctx, effective_properties, current_widget_c_var, current_node_ir_block, final_widget_type_for_create, effective_context);
+        }
+
+        cJSON* children_json = cJSON_GetObjectItem(component_definition ? component_definition : node_json, "children");
+        if (cJSON_IsArray(children_json)) {
+            cJSON* child_node_json;
+            cJSON_ArrayForEach(child_node_json, children_json) {
+                cJSON* child_type_item = cJSON_GetObjectItem(child_node_json, "type");
+                const char* child_default_type = child_type_item ? cJSON_GetStringValue(child_type_item) : "obj";
+                if(child_type_item && child_type_item->valuestring[0] == '@'){
+                     const cJSON* child_comp_def = registry_get_component(ctx->registry, child_type_item->valuestring + 1);
+                     if(child_comp_def) {
+                        cJSON* child_comp_type_item = cJSON_GetObjectItem(child_comp_def, "type");
+                        if(child_comp_type_item) child_default_type = cJSON_GetStringValue(child_comp_type_item);
+                     }
+                }
+                process_node(ctx, child_node_json, current_node_ir_block, current_widget_c_var, child_default_type, effective_context);
+            }
+        }
+
+        cJSON* with_prop = cJSON_GetObjectItem(node_json, "with");
+        if (with_prop) {
+            cJSON* current_with_item = NULL;
+            if (cJSON_IsArray(with_prop)) {
+                cJSON_ArrayForEach(current_with_item, with_prop) {
+                    process_single_with_block(ctx, current_with_item, current_node_ir_block, effective_context);
+                }
+            } else if (cJSON_IsObject(with_prop)) {
+                process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context);
+            }
+        }
+
+        if (own_effective_properties) {
+            cJSON_Delete(effective_properties);
+        }
+        free(current_widget_c_var);
     }
 
-    // Cleanup
-    if (own_effective_properties) {
-        cJSON_Delete(effective_properties);
-    }
     if (own_effective_context) {
         cJSON_Delete(effective_context);
     }
-    // --- Process "with" blocks (after main properties and children of original node) ---
-    // "with" is on the instance node_json (which could be a component instance or direct widget)
-    cJSON* with_prop = cJSON_GetObjectItem(node_json, "with");
-    if (with_prop) {
-        cJSON* current_with_item = NULL;
-        if (cJSON_IsArray(with_prop)) {
-            cJSON_ArrayForEach(current_with_item, with_prop) {
-                // parent_block is the block where the current widget (node_json) was created.
-                process_single_with_block(ctx, current_with_item, parent_block, effective_context);
-            }
-        } else if (cJSON_IsObject(with_prop)) {
-            process_single_with_block(ctx, with_prop, parent_block, effective_context);
-        }
-    }
-
-    if (own_effective_properties) { // Cleanup effective_properties if it was duplicated
-        cJSON_Delete(effective_properties);
-    }
-    if (own_effective_context) { // Cleanup effective_context if it was duplicated/merged
-        cJSON_Delete(effective_context);
-    }
-    free(current_widget_var);
 }
 
 // New helper function for "with" blocks:
@@ -768,3 +826,5 @@ IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* 
     registry_free(ctx.registry);
     return root_ir_block;
 }
+
+[end of generator.c]
