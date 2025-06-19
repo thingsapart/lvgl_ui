@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -g -std=c11 -I. -I/usr/include/cjson -I./cJSON -D_GNU_SOURCE
-LIBS = ./cJSON/libcjson.a -lm
+CFLAGS = -Wall -g -std=c11 -I. -I/usr/include/cjson -D_GNU_SOURCE
+LIBS = -lcjson -lm
 
 TARGET = lvgl_ui_generator
 SOURCES = main.c api_spec.c ir.c registry.c generator.c codegen.c utils.c

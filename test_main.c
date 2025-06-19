@@ -28,15 +28,15 @@ int main() {
     }
     free(api_spec_str);
 
-    char* ui_spec_str = read_file("tests/local_style_lookup_test.json"); // USE THE NEW TEST FILE
+    char* ui_spec_str = read_file("tests/selector_generation_test.json"); // USE THE NEW TEST FILE
     if (!ui_spec_str) {
-        fprintf(stderr, "Failed to read tests/local_style_lookup_test.json\n"); // Corrected error message
+        fprintf(stderr, "Failed to read tests/selector_generation_test.json\n"); // Corrected error message
         api_spec_free(api_spec);
         return 1;
     }
     cJSON* ui_spec_json = cJSON_Parse(ui_spec_str);
     if (!ui_spec_json) {
-        fprintf(stderr, "Failed to parse tests/local_style_lookup_test.json: %s\n", cJSON_GetErrorPtr()); // Corrected error message
+        fprintf(stderr, "Failed to parse tests/selector_generation_test.json: %s\n", cJSON_GetErrorPtr()); // Corrected error message
         free(ui_spec_str);
         api_spec_free(api_spec);
         return 1;

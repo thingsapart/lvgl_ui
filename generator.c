@@ -269,7 +269,7 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
         }
 
         IRExprNode* args_list = ir_new_expr_node(ir_new_variable(target_c_var_name));
-        bool is_complex_style_prop = (prop_def->num_style_args > 0);
+        // bool is_complex_style_prop = (prop_def->num_style_args > 0); // Removed as it's now handled by the new logic directly
 
         cJSON* value_to_unmarshal = prop;
         const char* part_str = prop_def->style_part_default ? prop_def->style_part_default : "LV_PART_MAIN";
@@ -313,14 +313,44 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context);
         }
 
-        if (is_complex_style_prop) {
-            if (strcmp(obj_type_for_api_lookup, "style") != 0) {
-                 ir_expr_list_add(&args_list, ir_new_literal((char*)part_str));
-            }
-            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str));
+        fprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s\n",
+                prop_name, prop_def->name, prop_def->num_style_args, obj_type_for_api_lookup);
+
+        // New argument assembly logic:
+        if (prop_def->num_style_args == -1 && strcmp(obj_type_for_api_lookup, "style") != 0) {
+            // Case: Object local style property expecting a combined selector (e.g., lv_obj_set_style_radius(obj, value, selector))
+            ir_expr_list_add(&args_list, val_expr); // Add value first: obj, value
+
+            char selector_str[128];
+            snprintf(selector_str, sizeof(selector_str), "%s | %s", part_str, state_str);
+            ir_expr_list_add(&args_list, ir_new_literal(selector_str)); // Then add combined selector: obj, value, part|state
+
+        } else if (prop_def->num_style_args == 1 && strcmp(obj_type_for_api_lookup, "style") == 0) {
+            // Case: Style object property with one selector arg (typically state) (e.g., lv_style_set_radius(style, state, value))
+            // Note: Based on previous subtask, lv_style_set_radius is (style, value), so num_style_args should be 0 for it.
+            // This branch would be for actual (style, state, value) setters if they exist for a style property.
+            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str)); // Add state: style, state
+            ir_expr_list_add(&args_list, val_expr);                        // Add value: style, state, value
+
+        } else if (prop_def->num_style_args == 2 && strcmp(obj_type_for_api_lookup, "style") != 0) {
+            // Case: Object local style property with separate part and state (e.g., lv_obj_set_style_local_bg_color(obj, part, state, value))
+            ir_expr_list_add(&args_list, ir_new_literal((char*)part_str)); // Add part: obj, part
+            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str)); // Add state: obj, part, state
+            ir_expr_list_add(&args_list, val_expr);                        // Add value: obj, part, state, value
+
+        } else if (prop_def->num_style_args == 0) {
+            // Case: Simple property with no extra selector/part/state args (e.g., lv_obj_set_width(obj, value) or lv_style_set_transition(style, value))
+            ir_expr_list_add(&args_list, val_expr); // Add value: obj_or_style, value
+
+        } else {
+            // Fallback or unhandled num_style_args combination.
+            // This might be an error, or could default to just value, or the old logic if it was more general.
+            // For now, treat as simple value addition, but print a warning.
+            fprintf(stderr, "Warning: Unhandled num_style_args (%d) for property '%s' on type '%s'. Adding value only.\n",
+                    prop_def->num_style_args, prop_name, obj_type_for_api_lookup);
+            ir_expr_list_add(&args_list, val_expr);
         }
 
-        ir_expr_list_add(&args_list, val_expr);
         IRStmt* call_stmt = ir_new_func_call_stmt(actual_setter_name_const, args_list);
         ir_block_add_stmt(current_block, call_stmt);
 
