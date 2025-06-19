@@ -32,13 +32,6 @@ typedef struct WidgetDefinition {
     // char* parent_type; // Optional: expected parent type
 } WidgetDefinition;
 
-// Node for the linked list of global property definitions
-typedef struct GlobalPropertyDefinitionNode {
-    char* name;                             // Name of the global property (key)
-    PropertyDefinition* prop_def;           // Pointer to the actual property definition
-    struct GlobalPropertyDefinitionNode* next;
-} GlobalPropertyDefinitionNode;
-
 // Node for the linked list of widget definitions (maps widget type name to its definition)
 typedef struct WidgetMapNode {
     char* name;                             // Name of the widget type (key, e.g., "button")
@@ -57,12 +50,10 @@ typedef struct WidgetMapNode {
 // Represents the parsed API specification (e.g., from api_spec.json)
 typedef struct ApiSpec {
     WidgetMapNode* widgets_list_head;                   // Head of the linked list for widget definitions
-    GlobalPropertyDefinitionNode* global_properties_list_head; // Head of the linked list for global properties
+    // GlobalPropertyDefinitionNode* global_properties_list_head; // Removed
     struct FunctionMapNode* functions;                  // Head of linked list for functions
     const cJSON* constants;                             // Reference to parsed constants from JSON (owned by main cJSON doc)
     const cJSON* enums;                                 // Reference to parsed enums from JSON (owned by main cJSON doc)
-    // Removed: cJSON* properties_map;
-    // Removed: struct HashTable* widgets_map; (or cJSON* if it was that)
 } ApiSpec;
 
 

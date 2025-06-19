@@ -24,35 +24,9 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
     spec->widgets_list_head = NULL;
     spec->functions = NULL; // Initialize functions list head
 
-    // --- Parse global "properties" definitions ---
-    cJSON* global_props_json = cJSON_GetObjectItemCaseSensitive(root_json, "properties");
-    if (cJSON_IsObject(global_props_json)) {
-        cJSON* prop_item_json = NULL;
-        cJSON_ArrayForEach(prop_item_json, global_props_json) {
-            PropertyDefinition* p_def = (PropertyDefinition*)calloc(1, sizeof(PropertyDefinition));
-            if (!p_def) { /* error handling */ api_spec_free(spec); return NULL; }
-            p_def->name = safe_strdup(prop_item_json->string);
-            cJSON* details = prop_item_json;
-            p_def->c_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(details, "type")));
-            p_def->setter = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(details, "setter")));
-            p_def->widget_type_hint = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(details, "widget_hint")));
-            cJSON* style_args_json = cJSON_GetObjectItem(details, "style_args");
-            if (cJSON_IsNumber(style_args_json)) p_def->num_style_args = style_args_json->valueint;
-            p_def->style_part_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(details, "style_part_default")));
-            p_def->style_state_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(details, "style_state_default")));
-            cJSON* is_style_json = cJSON_GetObjectItem(details, "is_style_prop");
-            p_def->is_style_prop = cJSON_IsTrue(is_style_json);
-
-            GlobalPropertyDefinitionNode* new_global_node = (GlobalPropertyDefinitionNode*)calloc(1, sizeof(GlobalPropertyDefinitionNode));
-            if (!new_global_node) { /* error handling */ free(p_def->name); free(p_def); api_spec_free(spec); return NULL; }
-            new_global_node->name = safe_strdup(p_def->name);
-            new_global_node->prop_def = p_def;
-            new_global_node->next = spec->global_properties_list_head;
-            spec->global_properties_list_head = new_global_node;
-        }
-    } else {
-        fprintf(stderr, "Warning: Global 'properties' section is missing or not an object in API spec.\n");
-    }
+    // --- Global "properties" section is no longer parsed into a separate list ---
+    // The logic for spec->global_properties_list_head has been removed.
+    // Properties are now expected to be defined within each widget in the "widgets" section.
 
     // --- Parse "widgets" section for WidgetDefinitions ---
     cJSON* widgets_json_obj = cJSON_GetObjectItemCaseSensitive(root_json, "widgets");
@@ -138,24 +112,8 @@ static void free_property_definition_list(PropertyDefinitionNode* head) {
 void api_spec_free(ApiSpec* spec) {
     if (!spec) return;
 
-    // Free global properties
-    GlobalPropertyDefinitionNode* current_global_prop = spec->global_properties_list_head;
-    while (current_global_prop) {
-        GlobalPropertyDefinitionNode* next_global_prop = current_global_prop->next;
-        free(current_global_prop->name);
-        if (current_global_prop->prop_def) {
-            free(current_global_prop->prop_def->name);
-            free(current_global_prop->prop_def->c_type);
-            free(current_global_prop->prop_def->setter);
-            free(current_global_prop->prop_def->widget_type_hint);
-            free(current_global_prop->prop_def->style_part_default);
-            free(current_global_prop->prop_def->style_state_default);
-            free(current_global_prop->prop_def);
-        }
-        free(current_global_prop);
-        current_global_prop = next_global_prop;
-    }
-    spec->global_properties_list_head = NULL;
+    // Global properties list (spec->global_properties_list_head) was removed.
+    // No freeing logic needed for it here anymore.
 
     // Free widget definitions
     WidgetMapNode* current_widget_node = spec->widgets_list_head;
@@ -223,31 +181,8 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
         next_widget_type_check:;
     }
 
-    // Fallback to global properties_list_head
-    GlobalPropertyDefinitionNode* gp_node = spec->global_properties_list_head;
-    while(gp_node) {
-        if (gp_node->prop_def && strcmp(gp_node->prop_def->name, prop_name) == 0) {
-            const PropertyDefinition* p_def = gp_node->prop_def;
-            // Apply original filtering logic for global properties
-            if (strcmp(type_name, "style") == 0) {
-                return p_def->is_style_prop ? p_def : NULL;
-            }
-            if (strcmp(type_name, "obj") == 0 && !p_def->is_style_prop) {
-                return p_def;
-            }
-            if (p_def->widget_type_hint &&
-                (strcmp(p_def->widget_type_hint, type_name) == 0 || strcmp(p_def->widget_type_hint, "obj") == 0)) {
-                if (strcmp(type_name, "style") != 0 && p_def->is_style_prop) {
-                    return NULL;
-                }
-                return p_def;
-            }
-            // If it's a global property and no specific type match, but it's requested by a non-"obj"/"style" type,
-            // we might not want to return it unless widget_type_hint was very generic or matched.
-            // The current logic is already quite permissive with widget_type_hint check.
-        }
-        gp_node = gp_node->next;
-    }
+    // Global properties list fallback has been removed.
+    // If not found in the inheritance chain, property is not found.
     return NULL;
 }
 
