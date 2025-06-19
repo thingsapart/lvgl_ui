@@ -150,9 +150,14 @@ void codegen_stmt_func_call_stmt(IRNode* node, int indent_level) {
     IRStmtFuncCall* stmt_call = (IRStmtFuncCall*)node;
     print_indent(indent_level);
     if (stmt_call->call) {
-        // An IRExprFuncCall node has its own codegen function.
-        // So we call its codegen method.
-        stmt_call->call->base.base.codegen((IRNode*)stmt_call->call, indent_level);
+        IRNode* call_as_node = (IRNode*)stmt_call->call; // Cast IRExprFuncCall* to IRNode*
+        if (call_as_node && call_as_node->codegen) {    // Check for NULL before calling
+            call_as_node->codegen(call_as_node, indent_level);
+        } else if (stmt_call->call) { // If call_as_node is NULL but stmt_call->call wasn't, it implies codegen ptr was NULL
+             printf("/* codegen function pointer missing for func_call_expr */");
+        } else {
+             printf("/* NULL func_call_expr in stmt */");
+        }
         // A function call used as a statement needs a semicolon.
         printf(";\n");
     } else {
@@ -172,20 +177,31 @@ void codegen_stmt_comment(IRNode* node, int indent_level) {
 
 // --- Internal dispatchers ---
 static void codegen_expr_internal(IRExpr* expr) {
-    if (!expr || !expr->base.codegen) {
-        printf("/* invalid or uncodegennable expr */");
+    if (!expr) {
+        printf("/* invalid expr (NULL) */");
         return;
     }
-    expr->base.codegen((IRNode*)expr, 0); // Indent level not really used by exprs
+    IRNode* expr_as_node = (IRNode*)expr; // Cast IRExpr* to IRNode*
+    if (expr_as_node->codegen) {
+        expr_as_node->codegen(expr_as_node, 0); // Indent level not really used by exprs
+    } else {
+        printf("/* codegen function pointer missing for expr */");
+    }
 }
 
 static void codegen_stmt_internal(IRStmt* stmt, int indent_level) {
-    if (!stmt || !stmt->base.codegen) {
+    if (!stmt) {
         print_indent(indent_level);
-        printf("/* invalid or uncodegennable stmt */;\n");
+        printf("/* invalid stmt (NULL) */;\n");
         return;
     }
-    stmt->base.codegen((IRNode*)stmt, indent_level);
+    IRNode* stmt_as_node = (IRNode*)stmt; // Cast IRStmt* to IRNode*
+    if (stmt_as_node->codegen) {
+        stmt_as_node->codegen(stmt_as_node, indent_level);
+    } else {
+        print_indent(indent_level);
+        printf("/* codegen function pointer missing for stmt */;\n");
+    }
 }
 
 

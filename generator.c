@@ -10,7 +10,7 @@
 // --- Context for Generation ---
 typedef struct {
     Registry* registry;
-    ApiSpec* api_spec;
+    const ApiSpec* api_spec; // Changed to const ApiSpec*
     int var_counter; // For generating unique variable names
     IRStmtBlock* current_global_block; // For global statements like style declarations
 } GenContext;
@@ -620,7 +620,7 @@ static void process_styles(GenContext* ctx, cJSON* styles_json, IRStmtBlock* glo
 
             IRExprNode* style_setter_args = ir_new_expr_node(ir_new_address_of(ir_new_variable(style_c_var)));
 
-            IRExpr* value_expr;
+            IRExpr* value_expr = NULL; // Initialize to NULL
             const char* state_str = "LV_STATE_DEFAULT"; // Default state
 
             if (cJSON_IsObject(prop)) { // Check for explicit state: "prop_name": { "state": "...", "value": "..." }
