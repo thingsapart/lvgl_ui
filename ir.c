@@ -275,7 +275,6 @@ static void free_expr(IRExpr* expr) {
         } break;
         case IR_EXPR_ARRAY: free_expr_list(((IRExprArray*)expr)->elements); break;
         case IR_EXPR_ADDRESS_OF: if (((IRExprAddressOf*)expr)->expr) ir_free((IRNode*)((IRExprAddressOf*)expr)->expr); break;
-        case IR_EXPR_CAST: {
         default: fprintf(stderr, "Warning: Unknown IRExpr type in free_expr: %d\n", expr->type); break;
     }
     free(expr);
@@ -293,8 +292,6 @@ static void free_stmt(IRStmt* stmt) {
         } break;
         case IR_STMT_FUNC_CALL: if (((IRStmtFuncCall*)stmt)->call) ir_free((IRNode*)((IRStmtFuncCall*)stmt)->call); break;
         case IR_STMT_COMMENT: free(((IRStmtComment*)stmt)->text); break;
-        case IR_STMT_ASSIGNMENT: {
-            IRStmtAssignment* assign_stmt = (IRStmtAssignment*)stmt;
         default: fprintf(stderr, "Warning: Unknown IRStmt type in free_stmt: %d\n", stmt->type); break;
     }
     free(stmt);

@@ -149,6 +149,8 @@ IRStmt* ir_new_func_call_stmt(const char* func_name, IRExprNode* args);
 IRStmt* ir_new_comment(const char* text);
 // REMOVED: IRStmt* ir_new_assignment_stmt(IRExpr* lvalue, IRExpr* rvalue);
 // REMOVED: IRStmt* ir_new_if_stmt(IRExpr* condition, IRStmtBlock* if_body, IRStmtBlock* else_body);
+IRStmt* ir_new_widget_allocate_stmt(const char* c_var_name, const char* widget_c_type_name, const char* create_func_name, IRExpr* parent_expr);
+IRStmt* ir_new_object_allocate_stmt(const char* c_var_name, const char* object_c_type_name, const char* init_func_name);
 
 // --- Factory functions for Linked List Nodes ---
 IRExprNode* ir_new_expr_node(IRExpr* expr);

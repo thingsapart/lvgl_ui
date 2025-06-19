@@ -1,7 +1,9 @@
 #ifndef API_SPEC_H
 #define API_SPEC_H
 
-#include <cjson/cJSON.h>
+#include <stdbool.h>
+
+#include <cJSON/cJSON.h>
 
 // --- Data Structures for API Spec ---
 
@@ -67,6 +69,8 @@ ApiSpec* api_spec_parse(const cJSON* root_json);
 
 // Frees the ApiSpec structure and all its contents.
 void api_spec_free(ApiSpec* spec);
+
+const WidgetDefinition* api_spec_find_widget(const ApiSpec* spec, const char* widget_name);
 
 // Retrieves property definition for a specific widget type or API object type.
 // type_name: e.g., "button", "label", "obj" (for common ones), "style"

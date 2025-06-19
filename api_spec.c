@@ -10,7 +10,6 @@ static char* safe_strdup(const char* s) {
 
 // Forward declarations for helpers
 static void free_property_definition_list(PropertyDefinitionNode* head);
-static const WidgetDefinition* api_spec_find_widget(const ApiSpec* spec, const char* widget_name);
 static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node);
 
 
@@ -46,7 +45,7 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
     }
 
     // Parse "init_func" field
-    cJSON* init_func_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "init_func");
+    cJSON* init_func_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "init");
     if (init_func_item && cJSON_IsString(init_func_item) && init_func_item->valuestring != NULL && init_func_item->valuestring[0] != '\0') {
         def->init_func = safe_strdup(init_func_item->valuestring);
     }
@@ -231,7 +230,7 @@ void api_spec_free(ApiSpec* spec) {
     free(spec);
 }
 
-static const WidgetDefinition* api_spec_find_widget(const ApiSpec* spec, const char* widget_name) {
+const WidgetDefinition* api_spec_find_widget(const ApiSpec* spec, const char* widget_name) {
     if (!spec || !widget_name) return NULL;
     WidgetMapNode* current_wnode = spec->widgets_list_head;
     while (current_wnode) {

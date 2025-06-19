@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <cjson/cJSON.h>
+#include <stdbool.h>
+#include <cJSON/cJSON.h>
 
 #include "utils.h"    // For read_file
 #include "api_spec.h" // For ApiSpec & functions
