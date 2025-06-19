@@ -1,8 +1,9 @@
 [
   {
     "type": "style",
-    "id": "s_debug_style",
+    "id": "@s_debug_style",
     "named": "s_debug",
+    "//style_comment": "This is a comment for the style object.",
     "outline_width": 1,
     "outline_color": "#ffeeff",
     "outline_opa": 150,
@@ -12,17 +13,14 @@
     "radius": 0
   },
   {
-    "//": "This is the object that was causing the instantiation warning.",
-    "//": "It defaults to type 'obj' because no 'type' is specified.",
-    "//": "It will get a generated name like obj_0 or similar.",
+    "//comment_for_object": "This is the object that was causing the instantiation warning. It defaults to type 'obj' because no 'type' is specified. It will get a generated name like obj_0 or similar.",
     "children": [
       {
         "type": "label",
-        "id": "label_1_in_obj",
+        "id": "@label_1_in_obj",
         "named": "l_label_1",
-        "properties": {
-          "text": "TEST"
-        }
+        "//label_comment": "This is a comment for the label object.",
+        "text": "TEST"
       }
     ]
   }

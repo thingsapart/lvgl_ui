@@ -1,0 +1,17 @@
+[
+  {
+    "type": "style",
+    "id": "@test_style_selectors",
+    "named": "my_test_style_selectors",
+    "transition": {"call": "get_my_transition_dsc"},
+    "text_font": "@my_font"
+  },
+  {
+    "type": "label",
+    "id": "@test_label_selectors",
+    "named": "my_test_label_selectors",
+    "width": 100,
+    "radius": 5,
+    "local_opacity": 128
+  }
+]
