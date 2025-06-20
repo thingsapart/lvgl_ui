@@ -8,6 +8,12 @@ Notes:
 * Run all tests (`make; cd ./tests; sh run_tests.sh`) to make sure changes are ok, 1-2 test failures are ok and will be fixed by repo owner afterwards.
 * A semi-informal specification of the UI-SPEC format is in the file "./docs/ui_spec.md".
 
+# Code
+
+## Debug statements
+
+If you need to add debug statements, always use `_dprintf(stderr, ...);` instead of `fprintf(stderr, ...)` and enable them by defining `#define __DEBUG=1`.
+
 # Tasks
 
 ## Building
