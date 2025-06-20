@@ -3,11 +3,11 @@
 
 char* read_file(const char* filename);
 
-#ifdef __DEBUG
-  #define _dprintf fprint
-#else
-  #define _dprintf(...)
-#endif
+// Ensure _dprintf is always disabled unless explicitly re-enabled for debugging
+#define _dprintf(...) do {} while (0)
+
+// Define DEBUG_PRINT similarly to be disabled
+#define DEBUG_PRINT(...) do {} while (0)
 
 // Converts a C type string (e.g., "lv_label_t*", "lv_btn_t*")
 // into the simplified object type string used by api_spec_find_property

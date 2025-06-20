@@ -1,0 +1,126 @@
+DEBUG_PRINT: unmarshal_value: String 'Initial Text for With' falling back to IR_EXPR_LITERAL_STRING
+DEBUG_PRINT: unmarshal_value: String 'Target 1' falling back to IR_EXPR_LITERAL_STRING
+DEBUG_PRINT: process_single_with_block: START with_node: {"obj":"@style_for_with_test","do":{"bg_opa":255,"radius":5,"border_width":null}}, target: with_style_applier, declare: 1, hint: obj
+DEBUG_PRINT: process_single_with_block: obj_json from with_node: "@style_for_with_test"
+DEBUG_PRINT: process_single_with_block: obj_expr unmarshalled to IR type: UNKNOWN_EXPR_TYPE for target with_style_applier
+DEBUG_PRINT: Using type 'style' (from obj_expr or already specific hint) for explicit target 'with_style_applier' (node_widget_type_hint was 'obj').
+DEBUG_PRINT: process_single_with_block: Declaring var 'with_style_applier' with type 'lv_obj_t*'.
+DEBUG_PRINT: process_single_with_block: final target_c_var_name: 'with_style_applier', temp_var_c_type: 'lv_obj_t*' for original target with_style_applier
+DEBUG_PRINT: process_single_with_block: START with_node: {"obj":"@label_for_with_test","do":{"text":"Updated Text via With","long_mode":"SCROLL_CIRCULAR","align":"CENTER","x":null}}, target: with_label_modifier, declare: 1, hint: obj
+DEBUG_PRINT: process_single_with_block: obj_json from with_node: "@label_for_with_test"
+DEBUG_PRINT: process_single_with_block: obj_expr unmarshalled to IR type: IR_EXPR_VARIABLE for target with_label_modifier
+DEBUG_PRINT: Using type 'label' (from obj_expr or already specific hint) for explicit target 'with_label_modifier' (node_widget_type_hint was 'obj').
+DEBUG_PRINT: process_single_with_block: Declaring var 'with_label_modifier' with type 'lv_obj_t*'.
+DEBUG_PRINT: process_single_with_block: final target_c_var_name: 'with_label_modifier', temp_var_c_type: 'lv_obj_t*' for original target with_label_modifier
+DEBUG_PRINT: unmarshal_value: String 'Updated Text via With' falling back to IR_EXPR_LITERAL_STRING
+DEBUG_PRINT: unmarshal_value: String 'SCROLL_CIRCULAR' falling back to IR_EXPR_LITERAL_STRING
+DEBUG_PRINT: unmarshal_value: String 'CENTER' falling back to IR_EXPR_LITERAL_STRING
+DEBUG_PRINT: process_single_with_block: START with_node: {"obj":"@target_button_1","do":{"width":100,"height":50,"align":"TOP_LEFT"}}, target: with_button_in_container_modifier, declare: 1, hint: obj
+DEBUG_PRINT: process_single_with_block: obj_json from with_node: "@target_button_1"
+DEBUG_PRINT: process_single_with_block: obj_expr unmarshalled to IR type: IR_EXPR_VARIABLE for target with_button_in_container_modifier
+DEBUG_PRINT: Using type 'obj' (from obj_expr or already specific hint) for explicit target 'with_button_in_container_modifier' (node_widget_type_hint was 'obj').
+DEBUG_PRINT: process_single_with_block: Declaring var 'with_button_in_container_modifier' with type 'lv_obj_t*'.
+DEBUG_PRINT: process_single_with_block: final target_c_var_name: 'with_button_in_container_modifier', temp_var_c_type: 'lv_obj_t*' for original target with_button_in_container_modifier
+DEBUG_PRINT: unmarshal_value: String 'TOP_LEFT' falling back to IR_EXPR_LITERAL_STRING
+DEBUG_PRINT: process_single_with_block: START with_node: {"obj":"@label_for_with_test","do":null}, target: with_null_do, declare: 1, hint: obj
+DEBUG_PRINT: process_single_with_block: obj_json from with_node: "@label_for_with_test"
+DEBUG_PRINT: process_single_with_block: obj_expr unmarshalled to IR type: IR_EXPR_VARIABLE for target with_null_do
+DEBUG_PRINT: Using type 'label' (from obj_expr or already specific hint) for explicit target 'with_null_do' (node_widget_type_hint was 'obj').
+DEBUG_PRINT: process_single_with_block: Declaring var 'with_null_do' with type 'lv_obj_t*'.
+DEBUG_PRINT: process_single_with_block: final target_c_var_name: 'with_null_do', temp_var_c_type: 'lv_obj_t*' for original target with_null_do
+DEBUG_PRINT: process_single_with_block: START with_node: {"obj":"@label_for_with_test","do":{}}, target: with_empty_do, declare: 1, hint: obj
+DEBUG_PRINT: process_single_with_block: obj_json from with_node: "@label_for_with_test"
+DEBUG_PRINT: process_single_with_block: obj_expr unmarshalled to IR type: IR_EXPR_VARIABLE for target with_empty_do
+DEBUG_PRINT: Using type 'label' (from obj_expr or already specific hint) for explicit target 'with_empty_do' (node_widget_type_hint was 'obj').
+DEBUG_PRINT: process_single_with_block: Declaring var 'with_empty_do' with type 'lv_obj_t*'.
+DEBUG_PRINT: process_single_with_block: final target_c_var_name: 'with_empty_do', temp_var_c_type: 'lv_obj_t*' for original target with_empty_do
+DEBUG_PRINT: process_single_with_block: START with_node: {"obj":{"call":"lv_obj_get_child","args":["@obj_container_with",0]},"do":{"text":"Text Set via Func Call With","align":"BOTTOM_MID","width":150}}, target: with_func_call_obj_modifier, declare: 1, hint: obj
+DEBUG_PRINT: process_single_with_block: obj_json from with_node: {"call":"lv_obj_get_child","args":["@obj_container_with",0]}
+DEBUG_PRINT: unmarshal_value: Processing 'call' object. Function name: 'lv_obj_get_child'
+DEBUG_PRINT: unmarshal_value: 'call' lv_obj_get_child, arg[0] JSON: "@obj_container_with"
+DEBUG_PRINT: unmarshal_value: 'call' lv_obj_get_child, arg[0] unmarshalled to IR type: IR_EXPR_VARIABLE
+DEBUG_PRINT: unmarshal_value: 'call' lv_obj_get_child, arg[1] JSON: 0
+DEBUG_PRINT: unmarshal_value: 'call' lv_obj_get_child, arg[1] unmarshalled to IR type: IR_EXPR_LITERAL
+DEBUG_PRINT: process_single_with_block: obj_expr unmarshalled to IR type: IR_EXPR_FUNC_CALL for target with_func_call_obj_modifier
+DEBUG_PRINT: process_single_with_block: obj_expr is func_call: lv_obj_get_child for target with_func_call_obj_modifier
+Info: Could not find specific widget type for func 'lv_obj_get_child' (resolved 'lv_obj_get_child'). Using general type 'obj' (from C type 'lv_obj_t*').
+DEBUG_PRINT: Using type 'obj' (from obj_expr or already specific hint) for explicit target 'with_func_call_obj_modifier' (node_widget_type_hint was 'obj').
+DEBUG_PRINT: process_single_with_block: Declaring var 'with_func_call_obj_modifier' with type 'lv_obj_t*'.
+DEBUG_PRINT: process_single_with_block: final target_c_var_name: 'with_func_call_obj_modifier', temp_var_c_type: 'lv_obj_t*' for original target with_func_call_obj_modifier
+Warning: Property 'text' for object type 'obj' (C var 'with_func_call_obj_modifier') not found in API spec. Skipping.
+DEBUG_PRINT: unmarshal_value: String 'BOTTOM_MID' falling back to IR_EXPR_LITERAL_STRING
+// Code generated by LVGL UI Generator
+
+#include "lvgl.h"
+
+// Forward declaration for any registered C pointers you might have from your application.
+// Example: extern const lv_font_t my_custom_font;
+void create_ui(lv_obj_t* parent) {
+    {
+        lv_style_t* s_style_with = (lv_style_t*)malloc(sizeof(lv_style_t));
+        if (s_style_with != NULL) {
+            memset(s_style_with, 0, sizeof(lv_style_t));
+            lv_style_init(s_style_with);
+        } else {
+            fprintf(stderr, "Error: Failed to malloc for object %s of type %s\n", "s_style_with", "lv_style_t");
+        }
+        lv_style_set_bg_color(s_style_with, lv_color_hex(0xFF0000));
+        lv_style_set_text_color(s_style_with, lv_color_hex(0x00FF00));
+        registry_add_pointer(ui_registry, s_style_with, "style_for_with_test", "style");
+    }
+    {
+        lv_obj_t* l_label_with = lv_label_create(parent);
+        lv_label_set_text(l_label_with, "Initial Text for With");
+        lv_obj_set_style_x(l_label_with, 10);
+        lv_obj_set_style_y(l_label_with, 10);
+        registry_add_pointer(ui_registry, l_label_with, "label_for_with_test", "label");
+    }
+    {
+        lv_obj_t* obj_container_with = lv_obj_create(parent);
+        {
+            lv_obj_t* l_target_1 = lv_label_create(obj_container_with);
+            lv_label_set_text(l_target_1, "Target 1");
+            registry_add_pointer(ui_registry, l_target_1, "target_label_1", "label");
+        }
+        {
+            lv_obj_t* b_target_1 = lv_button_create(obj_container_with);
+            registry_add_pointer(ui_registry, b_target_1, "target_button_1", "button");
+        }
+    }
+    {
+        // // Node is a 'with' assignment target. Allocation skipped for now.
+        lv_obj_t* with_style_applier = &s_style_with;
+        lv_style_set_bg_opa(with_style_applier, 255);
+        lv_style_set_radius(with_style_applier, 5);
+        lv_style_set_border_width(with_style_applier, 0);
+    }
+    {
+        // // Node is a 'with' assignment target. Allocation skipped for now.
+        lv_obj_t* with_label_modifier = l_label_with;
+        lv_label_set_text(with_label_modifier, "Updated Text via With");
+        lv_label_set_long_mode(with_label_modifier, "SCROLL_CIRCULAR");
+        lv_obj_set_style_align(with_label_modifier, "CENTER");
+        lv_obj_set_style_x(with_label_modifier, 0);
+    }
+    {
+        // // Node is a 'with' assignment target. Allocation skipped for now.
+        lv_obj_t* with_button_in_container_modifier = b_target_1;
+        lv_obj_set_style_width(with_button_in_container_modifier, 100);
+        lv_obj_set_style_height(with_button_in_container_modifier, 50);
+        lv_obj_set_style_align(with_button_in_container_modifier, "TOP_LEFT");
+    }
+    {
+        // // Node is a 'with' assignment target. Allocation skipped for now.
+        lv_obj_t* with_null_do = l_label_with;
+    }
+    {
+        // // Node is a 'with' assignment target. Allocation skipped for now.
+        lv_obj_t* with_empty_do = l_label_with;
+    }
+    {
+        // // Node is a 'with' assignment target. Allocation skipped for now.
+        lv_obj_t* with_func_call_obj_modifier = lv_obj_get_child(obj_container_with, 0);
+        lv_obj_set_style_align(with_func_call_obj_modifier, "BOTTOM_MID");
+        lv_obj_set_style_width(with_func_call_obj_modifier, 150);
+    }
+}

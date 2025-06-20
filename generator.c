@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <ctype.h>
 
+// #define ENABLE_GENERATOR_DEBUG_PRINT 1
+
 #include "api_spec.h"
 #include "generator.h"
 #include "ir.h"
@@ -165,7 +167,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
             }
         }
         // If not found in constants or any enum definitions, then treat as a string literal by default.
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
         fprintf(stderr, "DEBUG_PRINT: unmarshal_value: String '%s' falling back to IR_EXPR_LITERAL_STRING\n", s_orig);
+#endif
         return ir_new_literal_string(s_orig);
 
     } else if (cJSON_IsNumber(value)) {
@@ -186,14 +190,18 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
         cJSON* args_item = cJSON_GetObjectItem(value, "args");
         if (cJSON_IsString(call_item)) {
             const char* call_name = call_item->valuestring;
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
             fprintf(stderr, "DEBUG_PRINT: unmarshal_value: Processing 'call' object. Function name: '%s'\n", call_name);
+#endif
             IRExprNode* args_list = NULL;
             if (cJSON_IsArray(args_item)) {
                  cJSON* arg_json;
                  int arg_idx = 0;
                  cJSON_ArrayForEach(arg_json, args_item) {
                     char* arg_json_str = cJSON_PrintUnformatted(arg_json);
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
                     fprintf(stderr, "DEBUG_PRINT: unmarshal_value: 'call' %s, arg[%d] JSON: %s\n", call_name, arg_idx, arg_json_str);
+#endif
                     IRExpr* arg_expr = unmarshal_value(ctx, arg_json, ui_context);
                     if(arg_expr) {
                         const char* arg_expr_type_str = "UNKNOWN_EXPR_TYPE";
@@ -202,9 +210,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                         else if(arg_expr->type == IR_EXPR_FUNC_CALL) arg_expr_type_str = "IR_EXPR_FUNC_CALL";
                         else if(arg_expr->type == IR_EXPR_ARRAY) arg_expr_type_str = "IR_EXPR_ARRAY";
                         else if(arg_expr->type == IR_EXPR_ADDRESS_OF) arg_expr_type_str = "IR_EXPR_ADDRESS_OF";
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
                         fprintf(stderr, "DEBUG_PRINT: unmarshal_value: 'call' %s, arg[%d] unmarshalled to IR type: %s\n", call_name, arg_idx, arg_expr_type_str);
+#endif
                     } else {
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
                         fprintf(stderr, "DEBUG_PRINT: unmarshal_value: 'call' %s, arg[%d] unmarshalled to NULL IR expression\n", call_name, arg_idx);
+#endif
                     }
                     if(arg_json_str) free(arg_json_str);
                     ir_expr_list_add(&args_list, arg_expr);
@@ -212,7 +224,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                 }
             } else if (args_item != NULL) {
                  char* arg_json_str = cJSON_PrintUnformatted(args_item);
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
                  fprintf(stderr, "DEBUG_PRINT: unmarshal_value: 'call' %s, single arg JSON: %s\n", call_name, arg_json_str);
+#endif
                  IRExpr* arg_expr = unmarshal_value(ctx, args_item, ui_context);
                  if(arg_expr) {
                      const char* arg_expr_type_str = "UNKNOWN_EXPR_TYPE";
@@ -221,9 +235,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                      else if(arg_expr->type == IR_EXPR_FUNC_CALL) arg_expr_type_str = "IR_EXPR_FUNC_CALL";
                      else if(arg_expr->type == IR_EXPR_ARRAY) arg_expr_type_str = "IR_EXPR_ARRAY";
                      else if(arg_expr->type == IR_EXPR_ADDRESS_OF) arg_expr_type_str = "IR_EXPR_ADDRESS_OF";
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
                      fprintf(stderr, "DEBUG_PRINT: unmarshal_value: 'call' %s, single arg unmarshalled to IR type: %s\n", call_name, arg_expr_type_str);
+#endif
                  } else {
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
                      fprintf(stderr, "DEBUG_PRINT: unmarshal_value: 'call' %s, single arg unmarshalled to NULL IR expression\n", call_name);
+#endif
                  }
                  if(arg_json_str) free(arg_json_str);
                  ir_expr_list_add(&args_list, arg_expr);
@@ -938,12 +956,16 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
         return;
     }
     char* with_node_str = cJSON_PrintUnformatted(with_node);
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
     fprintf(stderr, "DEBUG_PRINT: process_single_with_block: START with_node: %s\n", with_node_str);
+#endif
     if(with_node_str) free(with_node_str);
 
     cJSON* obj_json = cJSON_GetObjectItem(with_node, "obj");
     char* obj_json_str = obj_json ? cJSON_PrintUnformatted(obj_json) : strdup("NULL");
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
     fprintf(stderr, "DEBUG_PRINT: process_single_with_block: obj_json from with_node: %s\n", obj_json_str);
+#endif
     if(obj_json && obj_json_str) free(obj_json_str); else if (!obj_json) free(obj_json_str);
 
     if (!obj_json) { // This check was already here and is fine
@@ -957,13 +979,19 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
         if(obj_expr->type == IR_EXPR_LITERAL) obj_expr_type_str = "IR_EXPR_LITERAL";
         else if(obj_expr->type == IR_EXPR_VARIABLE) obj_expr_type_str = "IR_EXPR_VARIABLE";
         else if(obj_expr->type == IR_EXPR_FUNC_CALL) obj_expr_type_str = "IR_EXPR_FUNC_CALL";
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
         fprintf(stderr, "DEBUG_PRINT: process_single_with_block: obj_expr unmarshalled to IR type: %s\n", obj_expr_type_str);
+#endif
         if (obj_expr->type == IR_EXPR_FUNC_CALL) {
             IRExprFuncCall* fc = (IRExprFuncCall*)obj_expr;
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
             fprintf(stderr, "DEBUG_PRINT: process_single_with_block: obj_expr is func_call: %s\n", fc->func_name);
+#endif
         }
     } else {
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
         fprintf(stderr, "DEBUG_PRINT: process_single_with_block: obj_expr unmarshalled to NULL IR expression!\n");
+#endif
     }
     if (!obj_expr) {
         fprintf(stderr, "Error: Failed to unmarshal 'obj' in 'with' block (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
@@ -1020,7 +1048,9 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
         // to assign the result of obj_expr.
         // Example: lv_obj_t* my_named_var = lv_obj_get_child(...);
         // Or: lv_obj_t* my_named_var = existing_label; (alias)
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
         fprintf(stderr, "DEBUG_PRINT: process_single_with_block: About to create var_decl for '%s' with type '%s' from obj_expr.\n", target_c_var_name, temp_var_c_type);
+#endif
         IRStmt* var_decl_stmt = ir_new_var_decl(temp_var_c_type, target_c_var_name, obj_expr);
         ir_block_add_stmt(parent_ir_block, var_decl_stmt);
         // obj_expr is now owned by var_decl_stmt, so it should not be freed separately.
@@ -1038,13 +1068,17 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
             // A new temporary variable is created.
             generated_var_name_to_free = generate_unique_var_name(ctx, obj_type_for_props);
             target_c_var_name = generated_var_name_to_free;
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
             fprintf(stderr, "DEBUG_PRINT: process_single_with_block: About to create var_decl for '%s' with type '%s' from obj_expr.\n", target_c_var_name, temp_var_c_type);
+#endif
             IRStmt* var_decl_stmt = ir_new_var_decl(temp_var_c_type, target_c_var_name, obj_expr);
             ir_block_add_stmt(parent_ir_block, var_decl_stmt);
             // obj_expr is now owned by var_decl_stmt.
         }
     }
+#ifdef ENABLE_GENERATOR_DEBUG_PRINT
     fprintf(stderr, "DEBUG_PRINT: process_single_with_block: target_c_var_name: '%s', temp_var_c_type: '%s'\n", target_c_var_name ? target_c_var_name : "NULL", temp_var_c_type ? temp_var_c_type : "NULL");
+#endif
 
     if (!target_c_var_name) {
          fprintf(stderr, "Error: target_c_var_name could not be determined in 'with' block (explicit: %s).\n", explicit_target_var_name ? explicit_target_var_name : "NULL");
