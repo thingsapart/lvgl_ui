@@ -23,9 +23,9 @@ while [ "$#" -gt 0 ]; do
 done
 
 # API Spec Generation
-PYTHON_PATH=${PYTHON_PATH:-python3}
-echo "Generating api_spec.json..."
-${PYTHON_PATH} ../generate_api_spec.py ../lv_def.json > ../api_spec.json
+# PYTHON_PATH=${PYTHON_PATH:-python3}
+# echo "Generating api_spec.json..."
+# ${PYTHON_PATH} ../generate_api_spec.py ../lv_def.json > ../api_spec.json
 if [ ! -f ../api_spec.json ]; then
     echo "${RED}Error: api_spec.json not generated. Make sure generate_api_spec.py and lv_def.json are present.${NC}"
     exit 1
@@ -37,6 +37,11 @@ fi
 failed_tests=0
 test_count=0
 
+GEN=./lvgl_ui_generator
+if [ ! -x ${GEN} ]; then
+  GEN=../lvgl_ui_generator
+fi
+
 for test_file in *.json; do
     test_count=$((test_count + 1))
     test_name=$(basename "${test_file}" .json)
@@ -45,7 +50,7 @@ for test_file in *.json; do
 
     printf "[RUNNING] %-40s" "${test_name}"
 
-    if [ ! -x ../lvgl_ui_generator ]; then
+    if [ ! -x ${GEN} ]; then
         printf "\r[ ${RED}ERROR ${NC}] %-40s (lvgl_ui_generator not found or not executable. Please build it first.)\n" "${test_name}"
         exit 1
     fi
@@ -56,7 +61,7 @@ for test_file in *.json; do
         continue
     fi
 
-    ../lvgl_ui_generator ../api_spec.json "${test_file}" > "${output_file}" 2>&1
+    ${GEN} ../api_spec.json "${test_file}" > "${output_file}" 2>&1
 
     #diff "${output_file}" "${expected_file}"
     OUT=/dev/null
