@@ -5,6 +5,6 @@
     "named": "my_test_label",
     "text": "Direct Prop Test",
     "width": 200,
-    "align": "center"
+    "align": "LV_ALIGN_CENTER"
   }
 ]

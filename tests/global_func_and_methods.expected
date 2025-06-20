@@ -6,12 +6,22 @@
 // Example: extern const lv_font_t my_custom_font;
 void create_ui(lv_obj_t* parent) {
     {
+        lv_style_t* action_button = (lv_style_t*)malloc(sizeof(lv_style_t));
+        if (action_button != NULL) {
+            memset(action_button, 0, sizeof(lv_style_t));
+            lv_style_init(action_button);
+        } else {
+            fprintf(stderr, "Error: Failed to malloc for object %s of type %s\n", "action_button", "lv_style_t");
+        }
+        registry_add_pointer(ui_registry, action_button, "action_button", "style");
+    }
+    {
         lv_obj_t* dropdown_0 = lv_dropdown_create(parent);
         lv_dropdown_set_options(dropdown_0, "Home\nZero\nG54\nG55\nG56\nG57\nG58");
-        lv_obj_add_style(dropdown_0, {action_button, 0}, 0);
+        lv_obj_add_style(dropdown_0, {action_button, 0});
         lv_obj_align(dropdown_0, LV_ALIGN_BOTTOM_LEFT, 90, -10);
         lv_obj_add_flag(dropdown_0, LV_OBJ_FLAG_FLOATING);
-        lv_dropdown_set_text(dropdown_0, "test-text")
+        lv_dropdown_set_text(dropdown_0, "test-text");
         lv_dropdown_set_symbol(dropdown_0, 0);
         lv_obj_move_foreground(dropdown_0);
     }

@@ -1,5 +1,9 @@
 [
   {
+    "type": "style",
+    "id": "@action_button"
+  },
+  {
     "type": "dropdown",
     "options": "Home\nZero\nG54\nG55\nG56\nG57\nG58",
     "add_style": [

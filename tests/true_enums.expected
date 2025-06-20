@@ -7,11 +7,13 @@
 void create_ui(lv_obj_t* parent) {
     {
         lv_obj_t* test_obj = lv_obj_create(parent);
-        lv_obj_set_align(test_obj, LV_ALIGN_DEFAULT);
+        lv_obj_set_style_align(test_obj, LV_ALIGN_DEFAULT);
         {
             lv_obj_t* test_label = lv_label_create(test_obj);
             lv_label_set_text(test_label, "Enum Test");
-            lv_obj_set_align(test_label, LV_ALIGN_OUT_TOP_LEFT);
+            lv_obj_set_style_align(test_label, LV_ALIGN_OUT_TOP_LEFT);
+            registry_add_pointer(ui_registry, test_label, "label_for_enum_test", "label");
         }
+        registry_add_pointer(ui_registry, test_obj, "test_obj_for_enum", "obj");
     }
 }

@@ -8,8 +8,9 @@ void create_ui(lv_obj_t* parent) {
     {
         lv_obj_t* my_style_lookup_label = lv_label_create(parent);
         lv_label_set_text(my_style_lookup_label, "Direct Prop Test");
-        lv_obj_set_width(my_style_lookup_label, 150);
-        lv_obj_set_align(my_style_lookup_label, "left_mid");
+        lv_obj_set_style_width(my_style_lookup_label, 150);
+        lv_obj_set_style_align(my_style_lookup_label, "left_mid");
         lv_obj_set_style_radius(my_style_lookup_label, 10);
+        registry_add_pointer(ui_registry, my_style_lookup_label, "test_label_style_lookup", "label");
     }
 }
