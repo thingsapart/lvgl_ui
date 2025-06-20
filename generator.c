@@ -295,72 +295,148 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             _dprintf(stderr, "Info: Setter for '%s' on type '%s' constructed as '%s'. API spec should provide this.\n", prop_name, obj_type_for_api_lookup, actual_setter_name_const);
         }
 
-        IRExprNode* args_list = ir_new_expr_node(ir_new_variable(target_c_var_name));
+        IRExprNode* args_list = NULL; // Initialize earlier
 
-        cJSON* value_to_unmarshal = prop;
-        const char* part_str = prop_def->style_part_default ? prop_def->style_part_default : "LV_PART_MAIN";
-        const char* state_str = prop_def->style_state_default ? prop_def->style_state_default : "LV_STATE_DEFAULT";
+        // --- NEW ARGUMENT HANDLING LOGIC ---
+        if (prop_def->func_args != NULL) {
+            _dprintf(stderr, "DEBUG: Property '%s' has func_args. Using signature-based arg generation.\n", prop_name);
+            FunctionArg* current_func_arg = prop_def->func_args;
 
-        if (cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value")) {
-            cJSON* part_json = cJSON_GetObjectItem(prop, "part");
-            cJSON* state_json = cJSON_GetObjectItem(prop, "state");
-            cJSON* value_json = cJSON_GetObjectItem(prop, "value");
-            if (cJSON_IsString(part_json)) part_str = part_json->valuestring;
-            if (cJSON_IsString(state_json)) state_str = state_json->valuestring;
-            value_to_unmarshal = value_json;
-        }
-
-        IRExpr* val_expr;
-        if (cJSON_IsNull(value_to_unmarshal)) {
-            const char* prop_type_str = prop_def->c_type;
-            if (prop_type_str) {
-                if (strcmp(prop_type_str, "char*") == 0 || strcmp(prop_type_str, "const char*") == 0 || strcmp(prop_type_str, "string") == 0) {
-                    val_expr = ir_new_literal("NULL");
-                } else if (strcmp(prop_type_str, "lv_color_t") == 0) {
-                    IRExprNode* hex_arg = ir_new_expr_node(ir_new_literal("0"));
-                    val_expr = ir_new_func_call_expr("lv_color_hex", hex_arg);
-                } else if (strstr(prop_type_str, "lv_obj_t*") != NULL || strstr(prop_type_str, "lv_style_t*") != NULL || strstr(prop_type_str, "lv_font_t*") != NULL) {
-                    val_expr = ir_new_literal("NULL");
-                }
-                else {
-                    val_expr = ir_new_literal("0");
-                }
+            // 1. Add target object as the first argument if the function expects it
+            if (current_func_arg && strstr(current_func_arg->type, "_t*") != NULL) { // Heuristic: is it an LVGL object pointer?
+                ir_expr_list_add(&args_list, ir_new_variable(target_c_var_name));
+                current_func_arg = current_func_arg->next; // Move to next expected arg from JSON
             } else {
-                if (strcmp(prop_name, "text") == 0 || strstr(prop_name, "font") != NULL || strstr(prop_name, "style") != NULL || (actual_setter_name_const && (strstr(actual_setter_name_const, "_font") || strstr(actual_setter_name_const, "_style")))) {
-                    val_expr = ir_new_literal("NULL");
-                } else if (strstr(prop_name, "color") != NULL || (actual_setter_name_const && strstr(actual_setter_name_const, "_color"))) {
-                    IRExprNode* hex_arg = ir_new_expr_node(ir_new_literal("0"));
-                    val_expr = ir_new_func_call_expr("lv_color_hex", hex_arg);
-                } else {
-                    val_expr = ir_new_literal("0");
+                // This case implies a global function that doesn't take the target_c_var_name as its first param.
+                // Or, the first param is the target_c_var_name but func_args didn't list it (less likely if populated correctly).
+                // For now, if it's not clearly an object, we assume the JSON must provide all args.
+                // If setter is for a style object, target_c_var_name is still the style object.
+                if (strcmp(obj_type_for_api_lookup, "style") == 0 && current_func_arg && strstr(current_func_arg->type, "lv_style_t*") != NULL) {
+                    ir_expr_list_add(&args_list, ir_new_variable(target_c_var_name));
+                    current_func_arg = current_func_arg->next;
+                }
+                // If it's a global function not operating on target_c_var_name, args_list starts empty for JSON values.
+            }
+
+            // Unmarshal values from JSON for the remaining arguments
+            if (cJSON_IsArray(prop)) { // Case: "prop_name": [val1, val2, ...]
+                cJSON* val_item_json;
+                cJSON_ArrayForEach(val_item_json, prop) {
+                    if (!current_func_arg) {
+                        fprintf(stderr, "Warning: Too many values in JSON array for function %s, property %s. Ignoring extra.\n", actual_setter_name_const, prop_name);
+                        break;
+                    }
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context));
+                    current_func_arg = current_func_arg->next;
+                }
+            } else if (cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value")) { // Case: "prop_name": {"value": X, "part": Y, "state": Z}
+                cJSON* value_json = cJSON_GetObjectItem(prop, "value");
+                cJSON* part_json = cJSON_GetObjectItem(prop, "part");
+                cJSON* state_json = cJSON_GetObjectItem(prop, "state");
+
+                if (value_json && current_func_arg) {
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, value_json, ui_context));
+                    current_func_arg = current_func_arg->next;
+                }
+                if (part_json && current_func_arg) {
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, part_json, ui_context));
+                    current_func_arg = current_func_arg->next;
+                } else if (!part_json && current_func_arg && prop_def->style_part_default &&
+                           (prop_def->num_style_args == 2 || prop_def->num_style_args == -1)) {
+                     _dprintf(stderr, "DEBUG: Potentially using default part for %s with func_args.\n", prop_name);
+                }
+
+                if (state_json && current_func_arg) {
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, state_json, ui_context));
+                    current_func_arg = current_func_arg->next;
+                } else if (!state_json && current_func_arg && prop_def->style_state_default &&
+                           prop_def->num_style_args > 0) {
+                     _dprintf(stderr, "DEBUG: Potentially using default state for %s with func_args.\n", prop_name);
+                }
+            } else { // Case: "prop_name": "simple_value" or other direct value
+                if (current_func_arg) { // If there's an expected argument slot
+                    IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context);
+                    ir_expr_list_add(&args_list, val_expr_func_arg);
+                    current_func_arg = current_func_arg->next;
+                } else if (!args_list && strcmp(obj_type_for_api_lookup, "style") != 0) {
+                     IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context);
+                     ir_expr_list_add(&args_list, val_expr_func_arg);
                 }
             }
-        } else {
-            val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context);
-        }
 
-        _dprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s, setter: %s, obj_setter_prefix: %s\n",
-                prop_name, prop_def->name, prop_def->num_style_args, obj_type_for_api_lookup, prop_def->setter ? prop_def->setter : "NULL", prop_def->obj_setter_prefix ? prop_def->obj_setter_prefix : "NULL");
+            if (current_func_arg != NULL) {
+                _dprintf(stderr, "Warning: Not all arguments for function %s (prop %s) were provided by the JSON value.\n", actual_setter_name_const, prop_name);
+            }
 
-        if (prop_def->num_style_args == -1 && strcmp(obj_type_for_api_lookup, "style") != 0) {
-            ir_expr_list_add(&args_list, val_expr);
-            char selector_str[128];
-            snprintf(selector_str, sizeof(selector_str), "%s | %s", part_str, state_str);
-            ir_expr_list_add(&args_list, ir_new_literal(selector_str));
-        } else if (prop_def->num_style_args == 1 && strcmp(obj_type_for_api_lookup, "style") == 0) {
-            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str));
-            ir_expr_list_add(&args_list, val_expr);
-        } else if (prop_def->num_style_args == 2 && strcmp(obj_type_for_api_lookup, "style") != 0) {
-            ir_expr_list_add(&args_list, ir_new_literal((char*)part_str));
-            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str));
-            ir_expr_list_add(&args_list, val_expr);
-        } else if (prop_def->num_style_args == 0) {
-            ir_expr_list_add(&args_list, val_expr);
         } else {
-            fprintf(stderr, "Warning: Unhandled num_style_args (%d) for property '%s' on type '%s'. Adding value only.\n",
-                    prop_def->num_style_args, prop_name, obj_type_for_api_lookup);
-            ir_expr_list_add(&args_list, val_expr);
-        }
+            // --- EXISTING ARGUMENT HANDLING LOGIC (when prop_def->func_args is NULL) ---
+            ir_expr_list_add(&args_list, ir_new_variable(target_c_var_name)); // First arg is always the target object
+
+            cJSON* value_to_unmarshal = prop;
+            const char* part_str = prop_def->style_part_default ? prop_def->style_part_default : "LV_PART_MAIN";
+            const char* state_str = prop_def->style_state_default ? prop_def->style_state_default : "LV_STATE_DEFAULT";
+
+            if (cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value")) {
+                cJSON* part_json = cJSON_GetObjectItem(prop, "part");
+                cJSON* state_json = cJSON_GetObjectItem(prop, "state");
+                cJSON* value_json = cJSON_GetObjectItem(prop, "value");
+                if (cJSON_IsString(part_json)) part_str = part_json->valuestring;
+                if (cJSON_IsString(state_json)) state_str = state_json->valuestring;
+                value_to_unmarshal = value_json;
+            }
+
+            IRExpr* val_expr;
+            if (cJSON_IsNull(value_to_unmarshal)) {
+                const char* prop_type_str = prop_def->c_type;
+                if (prop_type_str) {
+                    if (strcmp(prop_type_str, "char*") == 0 || strcmp(prop_type_str, "const char*") == 0 || strcmp(prop_type_str, "string") == 0) {
+                        val_expr = ir_new_literal("NULL");
+                    } else if (strcmp(prop_type_str, "lv_color_t") == 0) {
+                        IRExprNode* hex_arg = ir_new_expr_node(ir_new_literal("0"));
+                        val_expr = ir_new_func_call_expr("lv_color_hex", hex_arg);
+                    } else if (strstr(prop_type_str, "lv_obj_t*") != NULL || strstr(prop_type_str, "lv_style_t*") != NULL || strstr(prop_type_str, "lv_font_t*") != NULL) {
+                        val_expr = ir_new_literal("NULL");
+                    }
+                    else {
+                        val_expr = ir_new_literal("0");
+                    }
+                } else {
+                    if (strcmp(prop_name, "text") == 0 || strstr(prop_name, "font") != NULL || strstr(prop_name, "style") != NULL || (actual_setter_name_const && (strstr(actual_setter_name_const, "_font") || strstr(actual_setter_name_const, "_style")))) {
+                        val_expr = ir_new_literal("NULL");
+                    } else if (strstr(prop_name, "color") != NULL || (actual_setter_name_const && strstr(actual_setter_name_const, "_color"))) {
+                        IRExprNode* hex_arg = ir_new_expr_node(ir_new_literal("0"));
+                        val_expr = ir_new_func_call_expr("lv_color_hex", hex_arg);
+                    } else {
+                        val_expr = ir_new_literal("0");
+                    }
+                }
+            } else {
+                val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context);
+            }
+
+            _dprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s, setter: %s, obj_setter_prefix: %s\n",
+                    prop_name, prop_def->name, prop_def->num_style_args, obj_type_for_api_lookup, prop_def->setter ? prop_def->setter : "NULL", prop_def->obj_setter_prefix ? prop_def->obj_setter_prefix : "NULL");
+
+            if (prop_def->num_style_args == -1 && strcmp(obj_type_for_api_lookup, "style") != 0) {
+                ir_expr_list_add(&args_list, val_expr);
+                char selector_str[128];
+                snprintf(selector_str, sizeof(selector_str), "%s | %s", part_str, state_str);
+                ir_expr_list_add(&args_list, ir_new_literal(selector_str));
+            } else if (prop_def->num_style_args == 1 && strcmp(obj_type_for_api_lookup, "style") == 0) {
+                ir_expr_list_add(&args_list, ir_new_literal((char*)state_str));
+                ir_expr_list_add(&args_list, val_expr);
+            } else if (prop_def->num_style_args == 2 && strcmp(obj_type_for_api_lookup, "style") != 0) {
+                ir_expr_list_add(&args_list, ir_new_literal((char*)part_str));
+                ir_expr_list_add(&args_list, ir_new_literal((char*)state_str));
+                ir_expr_list_add(&args_list, val_expr);
+            } else if (prop_def->num_style_args == 0) {
+                ir_expr_list_add(&args_list, val_expr);
+            } else {
+                fprintf(stderr, "Warning: Unhandled num_style_args (%d) for property '%s' on type '%s' (no func_args). Adding value only after target.\n",
+                        prop_def->num_style_args, prop_name, obj_type_for_api_lookup);
+                ir_expr_list_add(&args_list, val_expr);
+            }
+        } // End of if/else for prop_def->func_args
 
         IRStmt* call_stmt = ir_new_func_call_stmt(actual_setter_name_const, args_list);
         ir_block_add_stmt(current_block, call_stmt);
@@ -603,12 +679,28 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
             char warning_comment[256];
             snprintf(warning_comment, sizeof(warning_comment), "Warning: Type '%s' (var %s) not directly instantiable. Children attach to '%s'.",
                      type_str, c_var_name_for_node, parent_c_var ? parent_c_var : "default_parent");
-            ir_block_add_stmt(current_node_ir_block, ir_new_comment(warning_comment));
+            char info_comment[256]; // Changed from warning_comment for clarity
+            snprintf(info_comment, sizeof(info_comment), "Info: Type '%s' (var %s) has no specific create/init. Creating as lv_obj_t and applying properties.", type_str, c_var_name_for_node);
+            ir_block_add_stmt(current_node_ir_block, ir_new_comment(info_comment));
+
+            IRExpr* parent_var_expr = (parent_c_var && parent_c_var[0] != '\0') ? ir_new_variable(parent_c_var) : NULL;
+            // Default to lv_obj_t and lv_obj_create if no specific functions are defined for the type
+            const char* c_type_for_alloc = (widget_def && widget_def->c_type && widget_def->c_type[0] != '\0') ? widget_def->c_type : "lv_obj_t";
+            // If widget_def->create is NULL/empty, but we are in this path, we default to lv_obj_create.
+            // This branch is for types that are not 'obj' but lack their own create/init.
+            ir_block_add_stmt(current_node_ir_block,
+                              ir_new_widget_allocate_stmt(c_var_name_for_node,
+                                                          c_type_for_alloc,
+                                                          "lv_obj_create", // Default create
+                                                          parent_var_expr));
+            process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, type_str, effective_context);
+
+            // Process children (this part was outside the original 'else' for this specific case, ensuring it always runs if not handled before)
             cJSON* children_json = cJSON_GetObjectItem(node_json, "children");
             if (cJSON_IsArray(children_json)) {
                 cJSON* child_node_json;
                 cJSON_ArrayForEach(child_node_json, children_json) {
-                    process_node_internal(ctx, child_node_json, current_node_ir_block, parent_c_var, "obj", effective_context, NULL);
+                    process_node_internal(ctx, child_node_json, current_node_ir_block, c_var_name_for_node, "obj", effective_context, NULL);
                 }
             }
         }

@@ -21,6 +21,11 @@ static char global_prop_widget_type_hint_buf[64];
 static char global_prop_part_default_buf[64];
 static char global_prop_state_default_buf[64];
 
+// New static variables for method-derived properties
+static PropertyDefinition method_prop_def;
+static char method_setter_name[128];
+static char method_arg_type[64];
+
 static void free_property_definition_list(PropertyDefinitionNode* head);
 static void free_function_arg_list(FunctionArg* head);
 static void free_function_definition_list(FunctionMapNode* head);
@@ -69,6 +74,7 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
     def->c_type = NULL;
     def->init_func = NULL;
     def->properties = NULL;
+    def->methods = NULL;    // ADDED: initialize methods list
 
     cJSON* create_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "create");
     if (create_item && cJSON_IsString(create_item) && create_item->valuestring != NULL && create_item->valuestring[0] != '\0') {
@@ -109,6 +115,7 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             pd->style_part_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_part_default")));
             pd->style_state_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_state_default")));
             pd->is_style_prop = cJSON_IsTrue(cJSON_GetObjectItem(prop_detail_json, "is_style_prop"));
+            pd->func_args = NULL; // Initialize new field
 
             *current_prop_list_node = (struct PropertyDefinitionNode*)calloc(1, sizeof(struct PropertyDefinitionNode));
             if (!*current_prop_list_node) {
@@ -119,6 +126,48 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             (*current_prop_list_node)->prop = pd;
             (*current_prop_list_node)->next = NULL;
             current_prop_list_node = &(*current_prop_list_node)->next;
+        }
+    }
+
+    // Parse "methods"
+    cJSON* methods_obj = cJSON_GetObjectItemCaseSensitive(def_json_node, "methods");
+    if (cJSON_IsObject(methods_obj)) {
+        cJSON* method_json_item;
+        FunctionMapNode** current_method_node_ptr = &def->methods;
+        cJSON_ArrayForEach(method_json_item, methods_obj) {
+            const char* method_name_str = method_json_item->string;
+            if (!cJSON_IsObject(method_json_item)) continue;
+
+            FunctionDefinition* fd = (FunctionDefinition*)calloc(1, sizeof(FunctionDefinition));
+            if (!fd) continue;
+            fd->name = safe_strdup(method_name_str);
+            fd->return_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(method_json_item, "return_type")));
+            if(!fd->return_type) fd->return_type = safe_strdup("void");
+
+            cJSON* args_array_json = cJSON_GetObjectItemCaseSensitive(method_json_item, "args");
+            FunctionArg** current_arg_ptr = &fd->args_head;
+            if (cJSON_IsArray(args_array_json)) {
+                cJSON* arg_type_json_item = NULL;
+                cJSON_ArrayForEach(arg_type_json_item, args_array_json) {
+                    if (cJSON_IsString(arg_type_json_item)) {
+                        FunctionArg* fa = (FunctionArg*)calloc(1, sizeof(FunctionArg));
+                        if (!fa) break;
+                        fa->type = safe_strdup(arg_type_json_item->valuestring);
+                        *current_arg_ptr = fa;
+                        current_arg_ptr = &fa->next;
+                    }
+                }
+            }
+            FunctionMapNode* new_mnode = (FunctionMapNode*)calloc(1, sizeof(FunctionMapNode));
+            if (!new_mnode) {
+                free(fd->name); free(fd->return_type); free_function_arg_list(fd->args_head); free(fd);
+                continue;
+            }
+            new_mnode->name = safe_strdup(method_name_str);
+            new_mnode->func_def = fd;
+            new_mnode->next = NULL;
+            *current_method_node_ptr = new_mnode;
+            current_method_node_ptr = &(*current_method_node_ptr)->next;
         }
     }
     return def;
@@ -250,6 +299,7 @@ void api_spec_free(ApiSpec* spec) {
             if (wd->c_type) free(wd->c_type);
             if (wd->init_func) free(wd->init_func);
             free_property_definition_list(wd->properties);
+            free_function_definition_list(wd->methods); // ADDED: free methods list
             free(wd);
         }
         free(current_widget_node);
@@ -277,164 +327,146 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
     if (!spec || !type_name || !prop_name) return NULL;
 
     const char* current_type_to_check = type_name;
-    char style_prop_name[128];
-    char potential_setter_name[128];
-    FunctionMapNode* func_node = NULL;
+    char constructed_name[128]; // For lv_obj_<prop_name>
 
-    // 1. Search for prop_name directly on the widget and its ancestors.
+    // --- STEP 1: Iterate through widget type and its parents ---
     while (current_type_to_check != NULL && current_type_to_check[0] != '\0') {
         const WidgetDefinition* widget_def = api_spec_find_widget(spec, current_type_to_check);
         if (widget_def) {
+            // 1.1 Check declared "properties"
             PropertyDefinitionNode* p_node = widget_def->properties;
             while(p_node) {
                 if (p_node->prop && p_node->prop->name && strcmp(p_node->prop->name, prop_name) == 0) {
-                    return p_node->prop;
+                    return p_node->prop; // Found in properties
                 }
                 p_node = p_node->next;
             }
-            current_type_to_check = widget_def->inherits;
+
+            // 1.2 Check "methods" for prop_name
+            FunctionMapNode* m_node = widget_def->methods;
+            while(m_node) {
+                if (m_node->name && strcmp(m_node->name, prop_name) == 0) {
+                    // Found as a direct method. Construct PropertyDefinition.
+                    memset(&method_prop_def, 0, sizeof(PropertyDefinition));
+                    strncpy(method_setter_name, m_node->name, sizeof(method_setter_name) - 1);
+                    method_setter_name[sizeof(method_setter_name) - 1] = '\0';
+
+                    method_prop_def.name = (char*)prop_name;
+                    method_prop_def.setter = method_setter_name;
+                    if (m_node->func_def && m_node->func_def->args_head && m_node->func_def->args_head->next) { // Assuming first arg is obj instance
+                        strncpy(method_arg_type, m_node->func_def->args_head->next->type, sizeof(method_arg_type) - 1);
+                         method_arg_type[sizeof(method_arg_type) -1] = '\0';
+                    } else {
+                        strcpy(method_arg_type, "unknown"); // Placeholder
+                    }
+                    method_prop_def.c_type = method_arg_type;
+                    method_prop_def.widget_type_hint = (char*)current_type_to_check;
+                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL; // Set func_args
+                    return &method_prop_def;
+                }
+                m_node = m_node->next;
+            }
+
+            // 1.3 Check "methods" for "lv_obj_" + prop_name
+            snprintf(constructed_name, sizeof(constructed_name), "lv_obj_%s", prop_name);
+            m_node = widget_def->methods;
+            while(m_node) {
+                if (m_node->name && strcmp(m_node->name, constructed_name) == 0) {
+                    // Found as lv_obj_method. Construct PropertyDefinition.
+                    memset(&method_prop_def, 0, sizeof(PropertyDefinition));
+                    strncpy(method_setter_name, m_node->name, sizeof(method_setter_name) - 1);
+                    method_setter_name[sizeof(method_setter_name) -1] = '\0';
+
+                    method_prop_def.name = (char*)prop_name;
+                    method_prop_def.setter = method_setter_name;
+                    if (m_node->func_def && m_node->func_def->args_head && m_node->func_def->args_head->next) { // Assuming first arg is obj instance
+                         strncpy(method_arg_type, m_node->func_def->args_head->next->type, sizeof(method_arg_type) - 1);
+                         method_arg_type[sizeof(method_arg_type) -1] = '\0';
+                    } else {
+                        strcpy(method_arg_type, "unknown");
+                    }
+                    method_prop_def.c_type = method_arg_type;
+                    method_prop_def.widget_type_hint = (char*)current_type_to_check;
+                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL; // Set func_args
+                    return &method_prop_def;
+                }
+                m_node = m_node->next;
+            }
+            current_type_to_check = widget_def->inherits; // Move to parent
         } else {
             break;
         }
     }
 
-    // 2. If not found by direct match, check global #/properties.
-    if (spec->global_properties_json_node && cJSON_IsObject(spec->global_properties_json_node)) {
-        cJSON* prop_detail_json = cJSON_GetObjectItemCaseSensitive(spec->global_properties_json_node, prop_name);
-        if (prop_detail_json && cJSON_IsObject(prop_detail_json)) {
-            memset(&global_prop_def_from_root, 0, sizeof(PropertyDefinition));
-            global_prop_name_buf[0] = '\0'; global_prop_c_type_buf[0] = '\0'; global_prop_setter_buf[0] = '\0';
-            global_prop_obj_setter_prefix_buf[0] = '\0'; global_prop_widget_type_hint_buf[0] = '\0';
-            global_prop_part_default_buf[0] = '\0'; global_prop_state_default_buf[0] = '\0';
+    // --- STEP 2: Search global functions ---
+    FunctionMapNode* func_node = NULL;
 
-            strncpy(global_prop_name_buf, prop_name, sizeof(global_prop_name_buf) - 1);
-            global_prop_name_buf[sizeof(global_prop_name_buf)-1] = '\0';
-            global_prop_def_from_root.name = global_prop_name_buf;
-
-            cJSON* type_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "type");
-            if (!type_item_json) type_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "c_type");
-            if (cJSON_IsString(type_item_json)) {
-                strncpy(global_prop_c_type_buf, type_item_json->valuestring, sizeof(global_prop_c_type_buf) - 1);
-                global_prop_c_type_buf[sizeof(global_prop_c_type_buf)-1] = '\0';
-                global_prop_def_from_root.c_type = global_prop_c_type_buf;
-            } else { global_prop_def_from_root.c_type = NULL; }
-
-            cJSON* setter_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "setter");
-            if (cJSON_IsString(setter_item_json)) {
-                strncpy(global_prop_setter_buf, setter_item_json->valuestring, sizeof(global_prop_setter_buf) - 1);
-                global_prop_setter_buf[sizeof(global_prop_setter_buf)-1] = '\0';
-                global_prop_def_from_root.setter = global_prop_setter_buf;
-            } else { global_prop_def_from_root.setter = NULL; }
-
-            cJSON* prefix_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "obj_setter_prefix");
-            if (cJSON_IsString(prefix_item_json)) {
-                strncpy(global_prop_obj_setter_prefix_buf, prefix_item_json->valuestring, sizeof(global_prop_obj_setter_prefix_buf) - 1);
-                global_prop_obj_setter_prefix_buf[sizeof(global_prop_obj_setter_prefix_buf)-1] = '\0';
-                global_prop_def_from_root.obj_setter_prefix = global_prop_obj_setter_prefix_buf;
-            } else { global_prop_def_from_root.obj_setter_prefix = NULL; }
-
-            cJSON* style_args_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "style_args");
-             if (!style_args_item_json) style_args_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "num_style_args");
-            if (cJSON_IsNumber(style_args_item_json)) {
-                global_prop_def_from_root.num_style_args = style_args_item_json->valueint;
-            } else { global_prop_def_from_root.num_style_args = 0; }
-
-            cJSON* part_default_item = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "style_part_default");
-            if (cJSON_IsString(part_default_item)) {
-                strncpy(global_prop_part_default_buf, part_default_item->valuestring, sizeof(global_prop_part_default_buf) - 1);
-                global_prop_part_default_buf[sizeof(global_prop_part_default_buf)-1] = '\0';
-                global_prop_def_from_root.style_part_default = global_prop_part_default_buf;
-            } else {
-                 if (global_prop_def_from_root.num_style_args == -1 || global_prop_def_from_root.num_style_args == 2) {
-                    strncpy(global_prop_part_default_buf, "LV_PART_MAIN", sizeof(global_prop_part_default_buf) -1);
-                    global_prop_part_default_buf[sizeof(global_prop_part_default_buf)-1] = '\0';
-                    global_prop_def_from_root.style_part_default = global_prop_part_default_buf;
-                 } else { global_prop_def_from_root.style_part_default = NULL; }
-            }
-
-            cJSON* state_default_item = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "style_state_default");
-            if (cJSON_IsString(state_default_item)) {
-                strncpy(global_prop_state_default_buf, state_default_item->valuestring, sizeof(global_prop_state_default_buf) - 1);
-                global_prop_state_default_buf[sizeof(global_prop_state_default_buf)-1] = '\0';
-                global_prop_def_from_root.style_state_default = global_prop_state_default_buf;
-            } else {
-                if (global_prop_def_from_root.num_style_args != 0) {
-                    strncpy(global_prop_state_default_buf, "LV_STATE_DEFAULT", sizeof(global_prop_state_default_buf) -1);
-                    global_prop_state_default_buf[sizeof(global_prop_state_default_buf)-1] = '\0';
-                    global_prop_def_from_root.style_state_default = global_prop_state_default_buf;
-                } else { global_prop_def_from_root.style_state_default = NULL; }
-            }
-
-            if (global_prop_def_from_root.obj_setter_prefix) {
-                 strncpy(global_prop_widget_type_hint_buf, "obj", sizeof(global_prop_widget_type_hint_buf) -1);
-                 global_prop_widget_type_hint_buf[sizeof(global_prop_widget_type_hint_buf)-1] = '\0';
-                 global_prop_def_from_root.widget_type_hint = global_prop_widget_type_hint_buf;
-            } else { global_prop_def_from_root.widget_type_hint = NULL; }
-
-            cJSON* is_style_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "is_style_prop");
-            global_prop_def_from_root.is_style_prop = cJSON_IsTrue(is_style_item_json);
-
-            if(global_prop_def_from_root.obj_setter_prefix != NULL) {
-                 return &global_prop_def_from_root;
-            }
-        }
-    }
-
-    // 3. If not found by direct name or suitable global property, THEN try style_ prefix on widget/ancestors.
-    current_type_to_check = type_name;
-    while (current_type_to_check != NULL && current_type_to_check[0] != '\0') {
-        const WidgetDefinition* widget_def = api_spec_find_widget(spec, current_type_to_check);
-        if (widget_def) {
-            snprintf(style_prop_name, sizeof(style_prop_name), "style_%s", prop_name);
-            PropertyDefinitionNode* p_node = widget_def->properties;
-            while(p_node) {
-                if (p_node->prop && p_node->prop->name && strcmp(p_node->prop->name, style_prop_name) == 0) {
-                    return p_node->prop;
-                }
-                p_node = p_node->next;
-            }
-            current_type_to_check = widget_def->inherits;
-        } else {
-            break;
-        }
-    }
-
-    // 4. Finally, if not found anywhere else, try to find a matching global function.
+    // 2.1 Check global functions for prop_name verbatim
     if (spec->functions) {
        func_node = spec->functions;
-       snprintf(potential_setter_name, sizeof(potential_setter_name), "lv_obj_set_%s", prop_name);
        while (func_node) {
-           if (func_node->name && strcmp(func_node->name, potential_setter_name) == 0) {
-               if (func_node->func_def && func_node->func_def->args_head &&
-                   func_node->func_def->args_head->type &&
-                   (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0)) {
+           if (func_node->name && strcmp(func_node->name, prop_name) == 0) {
+               memset(&global_func_prop_def, 0, sizeof(PropertyDefinition));
+               strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name) - 1);
+               global_func_setter_name[sizeof(global_func_setter_name) -1] = '\0';
 
-                   FunctionArg* value_arg = func_node->func_def->args_head->next;
-                   if (value_arg && value_arg->type) {
-                       memset(&global_func_prop_def, 0, sizeof(PropertyDefinition));
-                       strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name) - 1);
-                       global_func_setter_name[sizeof(global_func_setter_name) - 1] = '\0';
-                       strncpy(global_func_arg_type, value_arg->type, sizeof(global_func_arg_type) - 1);
-                       global_func_arg_type[sizeof(global_func_arg_type) - 1] = '\0';
-
-                       global_func_prop_def.name = (char*)prop_name;
-                       global_func_prop_def.setter = global_func_setter_name;
-                       global_func_prop_def.c_type = global_func_arg_type;
-                       global_func_prop_def.widget_type_hint = (char*)type_name;
-                       global_func_prop_def.num_style_args = 0;
-                       global_func_prop_def.obj_setter_prefix = NULL;
-                       global_func_prop_def.style_part_default = NULL;
-                       global_func_prop_def.style_state_default = NULL;
-                       global_func_prop_def.is_style_prop = false;
-
-                       return &global_func_prop_def;
+               global_func_prop_def.name = (char*)prop_name;
+               global_func_prop_def.setter = global_func_setter_name;
+               if (func_node->func_def && func_node->func_def->args_head) {
+                   bool first_arg_is_obj = (func_node->func_def->args_head->type && (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0));
+                   FunctionArg* relevant_arg = first_arg_is_obj ? func_node->func_def->args_head->next : func_node->func_def->args_head;
+                   if (relevant_arg && relevant_arg->type) {
+                       strncpy(global_func_arg_type, relevant_arg->type, sizeof(global_func_arg_type) - 1);
+                       global_func_arg_type[sizeof(global_func_arg_type)-1] = '\0';
+                   } else {
+                       strcpy(global_func_arg_type, "unknown");
                    }
+               } else {
+                   strcpy(global_func_arg_type, "unknown");
                }
+               global_func_prop_def.c_type = global_func_arg_type;
+               global_func_prop_def.widget_type_hint = (char*)type_name;
+               global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL; // Set func_args
+               return &global_func_prop_def;
            }
            func_node = func_node->next;
        }
     }
-    return NULL;
+
+    // 2.2 Check global functions for "lv_obj_" + prop_name
+    snprintf(constructed_name, sizeof(constructed_name), "lv_obj_%s", prop_name);
+    if (spec->functions) {
+       func_node = spec->functions;
+       while (func_node) {
+           if (func_node->name && strcmp(func_node->name, constructed_name) == 0) {
+               memset(&global_func_prop_def, 0, sizeof(PropertyDefinition));
+               strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name) - 1);
+               global_func_setter_name[sizeof(global_func_setter_name)-1] = '\0';
+
+               global_func_prop_def.name = (char*)prop_name;
+               global_func_prop_def.setter = global_func_setter_name;
+                if (func_node->func_def && func_node->func_def->args_head) {
+                   bool first_arg_is_obj = (func_node->func_def->args_head->type && (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0));
+                   FunctionArg* relevant_arg = first_arg_is_obj ? func_node->func_def->args_head->next : func_node->func_def->args_head;
+                   if (relevant_arg && relevant_arg->type) {
+                       strncpy(global_func_arg_type, relevant_arg->type, sizeof(global_func_arg_type) - 1);
+                       global_func_arg_type[sizeof(global_func_arg_type)-1] = '\0';
+                   } else {
+                       strcpy(global_func_arg_type, "unknown");
+                   }
+               } else {
+                   strcpy(global_func_arg_type, "unknown");
+               }
+               global_func_prop_def.c_type = global_func_arg_type;
+               global_func_prop_def.widget_type_hint = (char*)type_name;
+               global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL; // Set func_args
+               return &global_func_prop_def;
+           }
+           func_node = func_node->next;
+       }
+    }
+
+    return NULL; // Not found
 }
 
 const cJSON* api_spec_get_constants(const ApiSpec* spec) {

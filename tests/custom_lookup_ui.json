@@ -1,0 +1,20 @@
+[
+    {
+        "id": "@test_obj",
+        "type": "derived_widget",
+        "children": [
+            {
+                "type": "derived_widget",
+                "named": "my_derived",
+                "base_prop": 10,
+                "derived_prop": true,
+                "base_method": 20,
+                "derived_method": [30, 40],
+                "specific_method": 50,
+                "global_func_direct": 60,
+                "global_func_prefixed": "hello",
+                "other_method": "world"
+            }
+        ]
+    }
+]
