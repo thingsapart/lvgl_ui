@@ -1,0 +1,31 @@
+{
+    "widgets": {
+        "base_widget": {
+            "properties": {
+                "base_prop": { "setter": "lv_base_set_base_prop", "type": "int" }
+            },
+            "methods": {
+                "base_method": { "args": ["lv_obj_t*", "int"], "return_type": "void" },
+                "other_method": { "args": ["lv_obj_t*", "const char*"], "return_type": "void"}
+            }
+        },
+        "derived_widget": {
+            "inherits": "base_widget",
+            "properties": {
+                "derived_prop": { "setter": "lv_derived_set_derived_prop", "type": "bool" }
+            },
+            "methods": {
+                "derived_method": { "args": ["lv_obj_t*", "int", "int"], "return_type": "void" },
+                "lv_obj_specific_method": { "args": ["lv_obj_t*", "int"], "return_type": "void" }
+            }
+        }
+    },
+    "functions": {
+        "global_func_direct": { "args": ["lv_obj_t*", "int"], "return_type": "void" },
+        "lv_obj_global_func_prefixed": { "args": ["lv_obj_t*", "const char*"], "return_type": "void" },
+        "custom_global_no_obj": {"args": ["int", "int"], "return_type": "void"}
+    },
+    "objects": {},
+    "constants": {},
+    "enums": {}
+}

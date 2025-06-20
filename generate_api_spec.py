@@ -198,6 +198,14 @@ class LVGLApiParser:
                         "setter": func_name,
                         "type": prop_type
                     }
+                    # Alias "style_xyz" to just "xyz".
+                    if prop_name.startswith('style_'):
+                        prop_name = prop_name[6:]
+                        self.result['widgets'][target_name]['properties'][prop_name] = {
+                            "setter": func_name,
+                            "type": prop_type
+                        }
+
 
             elif target_name in self.object_types:
                 # All functions starting with lv_<object>_* are methods

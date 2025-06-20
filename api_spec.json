@@ -24938,8 +24938,136 @@
           "type": "lv_style_t*"
         },
         "align": {
-          "setter": "lv_obj_set_align",
+          "setter": "lv_obj_set_style_align",
           "type": "lv_align_t"
+        },
+        "anim": {
+          "setter": "lv_obj_set_style_anim",
+          "type": "lv_anim_t*"
+        },
+        "anim_duration": {
+          "setter": "lv_obj_set_style_anim_duration",
+          "type": "uint32_t"
+        },
+        "arc_color": {
+          "setter": "lv_obj_set_style_arc_color",
+          "type": "lv_color_t"
+        },
+        "arc_image_src": {
+          "setter": "lv_obj_set_style_arc_image_src",
+          "type": "void*"
+        },
+        "arc_opa": {
+          "setter": "lv_obj_set_style_arc_opa",
+          "type": "lv_opa_t"
+        },
+        "arc_rounded": {
+          "setter": "lv_obj_set_style_arc_rounded",
+          "type": "bool"
+        },
+        "arc_width": {
+          "setter": "lv_obj_set_style_arc_width",
+          "type": "int32_t"
+        },
+        "base_dir": {
+          "setter": "lv_obj_set_style_base_dir",
+          "type": "lv_base_dir_t"
+        },
+        "bg_color": {
+          "setter": "lv_obj_set_style_bg_color",
+          "type": "lv_color_t"
+        },
+        "bg_grad": {
+          "setter": "lv_obj_set_style_bg_grad",
+          "type": "lv_grad_dsc_t*"
+        },
+        "bg_grad_color": {
+          "setter": "lv_obj_set_style_bg_grad_color",
+          "type": "lv_color_t"
+        },
+        "bg_grad_dir": {
+          "setter": "lv_obj_set_style_bg_grad_dir",
+          "type": "lv_grad_dir_t"
+        },
+        "bg_grad_opa": {
+          "setter": "lv_obj_set_style_bg_grad_opa",
+          "type": "lv_opa_t"
+        },
+        "bg_grad_stop": {
+          "setter": "lv_obj_set_style_bg_grad_stop",
+          "type": "int32_t"
+        },
+        "bg_image_opa": {
+          "setter": "lv_obj_set_style_bg_image_opa",
+          "type": "lv_opa_t"
+        },
+        "bg_image_recolor": {
+          "setter": "lv_obj_set_style_bg_image_recolor",
+          "type": "lv_color_t"
+        },
+        "bg_image_recolor_opa": {
+          "setter": "lv_obj_set_style_bg_image_recolor_opa",
+          "type": "lv_opa_t"
+        },
+        "bg_image_src": {
+          "setter": "lv_obj_set_style_bg_image_src",
+          "type": "void*"
+        },
+        "bg_image_tiled": {
+          "setter": "lv_obj_set_style_bg_image_tiled",
+          "type": "bool"
+        },
+        "bg_main_opa": {
+          "setter": "lv_obj_set_style_bg_main_opa",
+          "type": "lv_opa_t"
+        },
+        "bg_main_stop": {
+          "setter": "lv_obj_set_style_bg_main_stop",
+          "type": "int32_t"
+        },
+        "bg_opa": {
+          "setter": "lv_obj_set_style_bg_opa",
+          "type": "lv_opa_t"
+        },
+        "bitmap_mask_src": {
+          "setter": "lv_obj_set_style_bitmap_mask_src",
+          "type": "void*"
+        },
+        "blend_mode": {
+          "setter": "lv_obj_set_style_blend_mode",
+          "type": "lv_blend_mode_t"
+        },
+        "border_color": {
+          "setter": "lv_obj_set_style_border_color",
+          "type": "lv_color_t"
+        },
+        "border_opa": {
+          "setter": "lv_obj_set_style_border_opa",
+          "type": "lv_opa_t"
+        },
+        "border_post": {
+          "setter": "lv_obj_set_style_border_post",
+          "type": "bool"
+        },
+        "border_side": {
+          "setter": "lv_obj_set_style_border_side",
+          "type": "lv_border_side_t"
+        },
+        "border_width": {
+          "setter": "lv_obj_set_style_border_width",
+          "type": "int32_t"
+        },
+        "clip_corner": {
+          "setter": "lv_obj_set_style_clip_corner",
+          "type": "bool"
+        },
+        "color_filter_dsc": {
+          "setter": "lv_obj_set_style_color_filter_dsc",
+          "type": "lv_color_filter_dsc_t*"
+        },
+        "color_filter_opa": {
+          "setter": "lv_obj_set_style_color_filter_opa",
+          "type": "lv_opa_t"
         },
         "content_height": {
           "setter": "lv_obj_set_content_height",
@@ -24961,13 +25089,25 @@
           "setter": "lv_obj_set_flex_align",
           "type": "lv_flex_align_t"
         },
+        "flex_cross_place": {
+          "setter": "lv_obj_set_style_flex_cross_place",
+          "type": "lv_flex_align_t"
+        },
         "flex_flow": {
-          "setter": "lv_obj_set_flex_flow",
+          "setter": "lv_obj_set_style_flex_flow",
           "type": "lv_flex_flow_t"
         },
         "flex_grow": {
-          "setter": "lv_obj_set_flex_grow",
+          "setter": "lv_obj_set_style_flex_grow",
           "type": "uint8_t"
+        },
+        "flex_main_place": {
+          "setter": "lv_obj_set_style_flex_main_place",
+          "type": "lv_flex_align_t"
+        },
+        "flex_track_place": {
+          "setter": "lv_obj_set_style_flex_track_place",
+          "type": "lv_flex_align_t"
         },
         "grid_align": {
           "setter": "lv_obj_set_grid_align",
@@ -24977,25 +25117,217 @@
           "setter": "lv_obj_set_grid_cell",
           "type": "lv_grid_align_t"
         },
+        "grid_cell_column_pos": {
+          "setter": "lv_obj_set_style_grid_cell_column_pos",
+          "type": "int32_t"
+        },
+        "grid_cell_column_span": {
+          "setter": "lv_obj_set_style_grid_cell_column_span",
+          "type": "int32_t"
+        },
+        "grid_cell_row_pos": {
+          "setter": "lv_obj_set_style_grid_cell_row_pos",
+          "type": "int32_t"
+        },
+        "grid_cell_row_span": {
+          "setter": "lv_obj_set_style_grid_cell_row_span",
+          "type": "int32_t"
+        },
+        "grid_cell_x_align": {
+          "setter": "lv_obj_set_style_grid_cell_x_align",
+          "type": "lv_grid_align_t"
+        },
+        "grid_cell_y_align": {
+          "setter": "lv_obj_set_style_grid_cell_y_align",
+          "type": "lv_grid_align_t"
+        },
+        "grid_column_align": {
+          "setter": "lv_obj_set_style_grid_column_align",
+          "type": "lv_grid_align_t"
+        },
+        "grid_column_dsc_array": {
+          "setter": "lv_obj_set_style_grid_column_dsc_array",
+          "type": "int32_t*"
+        },
         "grid_dsc_array": {
           "setter": "lv_obj_set_grid_dsc_array",
           "type": "int32_t"
         },
+        "grid_row_align": {
+          "setter": "lv_obj_set_style_grid_row_align",
+          "type": "lv_grid_align_t"
+        },
+        "grid_row_dsc_array": {
+          "setter": "lv_obj_set_style_grid_row_dsc_array",
+          "type": "int32_t*"
+        },
         "height": {
-          "setter": "lv_obj_set_height",
+          "setter": "lv_obj_set_style_height",
           "type": "int32_t"
         },
         "id": {
           "setter": "lv_obj_set_id",
           "type": "void*"
         },
+        "image_opa": {
+          "setter": "lv_obj_set_style_image_opa",
+          "type": "lv_opa_t"
+        },
+        "image_recolor": {
+          "setter": "lv_obj_set_style_image_recolor",
+          "type": "lv_color_t"
+        },
+        "image_recolor_opa": {
+          "setter": "lv_obj_set_style_image_recolor_opa",
+          "type": "lv_opa_t"
+        },
         "layout": {
-          "setter": "lv_obj_set_layout",
-          "type": "uint32_t"
+          "setter": "lv_obj_set_style_layout",
+          "type": "uint16_t"
+        },
+        "length": {
+          "setter": "lv_obj_set_style_length",
+          "type": "int32_t"
+        },
+        "line_color": {
+          "setter": "lv_obj_set_style_line_color",
+          "type": "lv_color_t"
+        },
+        "line_dash_gap": {
+          "setter": "lv_obj_set_style_line_dash_gap",
+          "type": "int32_t"
+        },
+        "line_dash_width": {
+          "setter": "lv_obj_set_style_line_dash_width",
+          "type": "int32_t"
+        },
+        "line_opa": {
+          "setter": "lv_obj_set_style_line_opa",
+          "type": "lv_opa_t"
+        },
+        "line_rounded": {
+          "setter": "lv_obj_set_style_line_rounded",
+          "type": "bool"
+        },
+        "line_width": {
+          "setter": "lv_obj_set_style_line_width",
+          "type": "int32_t"
         },
         "local_style_prop": {
           "setter": "lv_obj_set_local_style_prop",
           "type": "lv_style_prop_t"
+        },
+        "margin_all": {
+          "setter": "lv_obj_set_style_margin_all",
+          "type": "int32_t"
+        },
+        "margin_bottom": {
+          "setter": "lv_obj_set_style_margin_bottom",
+          "type": "int32_t"
+        },
+        "margin_hor": {
+          "setter": "lv_obj_set_style_margin_hor",
+          "type": "int32_t"
+        },
+        "margin_left": {
+          "setter": "lv_obj_set_style_margin_left",
+          "type": "int32_t"
+        },
+        "margin_right": {
+          "setter": "lv_obj_set_style_margin_right",
+          "type": "int32_t"
+        },
+        "margin_top": {
+          "setter": "lv_obj_set_style_margin_top",
+          "type": "int32_t"
+        },
+        "margin_ver": {
+          "setter": "lv_obj_set_style_margin_ver",
+          "type": "int32_t"
+        },
+        "max_height": {
+          "setter": "lv_obj_set_style_max_height",
+          "type": "int32_t"
+        },
+        "max_width": {
+          "setter": "lv_obj_set_style_max_width",
+          "type": "int32_t"
+        },
+        "min_height": {
+          "setter": "lv_obj_set_style_min_height",
+          "type": "int32_t"
+        },
+        "min_width": {
+          "setter": "lv_obj_set_style_min_width",
+          "type": "int32_t"
+        },
+        "opa": {
+          "setter": "lv_obj_set_style_opa",
+          "type": "lv_opa_t"
+        },
+        "opa_layered": {
+          "setter": "lv_obj_set_style_opa_layered",
+          "type": "lv_opa_t"
+        },
+        "outline_color": {
+          "setter": "lv_obj_set_style_outline_color",
+          "type": "lv_color_t"
+        },
+        "outline_opa": {
+          "setter": "lv_obj_set_style_outline_opa",
+          "type": "lv_opa_t"
+        },
+        "outline_pad": {
+          "setter": "lv_obj_set_style_outline_pad",
+          "type": "int32_t"
+        },
+        "outline_width": {
+          "setter": "lv_obj_set_style_outline_width",
+          "type": "int32_t"
+        },
+        "pad_all": {
+          "setter": "lv_obj_set_style_pad_all",
+          "type": "int32_t"
+        },
+        "pad_bottom": {
+          "setter": "lv_obj_set_style_pad_bottom",
+          "type": "int32_t"
+        },
+        "pad_column": {
+          "setter": "lv_obj_set_style_pad_column",
+          "type": "int32_t"
+        },
+        "pad_gap": {
+          "setter": "lv_obj_set_style_pad_gap",
+          "type": "int32_t"
+        },
+        "pad_hor": {
+          "setter": "lv_obj_set_style_pad_hor",
+          "type": "int32_t"
+        },
+        "pad_left": {
+          "setter": "lv_obj_set_style_pad_left",
+          "type": "int32_t"
+        },
+        "pad_radial": {
+          "setter": "lv_obj_set_style_pad_radial",
+          "type": "int32_t"
+        },
+        "pad_right": {
+          "setter": "lv_obj_set_style_pad_right",
+          "type": "int32_t"
+        },
+        "pad_row": {
+          "setter": "lv_obj_set_style_pad_row",
+          "type": "int32_t"
+        },
+        "pad_top": {
+          "setter": "lv_obj_set_style_pad_top",
+          "type": "int32_t"
+        },
+        "pad_ver": {
+          "setter": "lv_obj_set_style_pad_ver",
+          "type": "int32_t"
         },
         "parent": {
           "setter": "lv_obj_set_parent",
@@ -25004,6 +25336,26 @@
         "pos": {
           "setter": "lv_obj_set_pos",
           "type": "int32_t"
+        },
+        "radial_offset": {
+          "setter": "lv_obj_set_style_radial_offset",
+          "type": "int32_t"
+        },
+        "radius": {
+          "setter": "lv_obj_set_style_radius",
+          "type": "int32_t"
+        },
+        "recolor": {
+          "setter": "lv_obj_set_style_recolor",
+          "type": "lv_color_t"
+        },
+        "recolor_opa": {
+          "setter": "lv_obj_set_style_recolor_opa",
+          "type": "lv_opa_t"
+        },
+        "rotary_sensitivity": {
+          "setter": "lv_obj_set_style_rotary_sensitivity",
+          "type": "uint32_t"
         },
         "scroll_dir": {
           "setter": "lv_obj_set_scroll_dir",
@@ -25021,8 +25373,32 @@
           "setter": "lv_obj_set_scrollbar_mode",
           "type": "lv_scrollbar_mode_t"
         },
+        "shadow_color": {
+          "setter": "lv_obj_set_style_shadow_color",
+          "type": "lv_color_t"
+        },
+        "shadow_offset_x": {
+          "setter": "lv_obj_set_style_shadow_offset_x",
+          "type": "int32_t"
+        },
+        "shadow_offset_y": {
+          "setter": "lv_obj_set_style_shadow_offset_y",
+          "type": "int32_t"
+        },
+        "shadow_opa": {
+          "setter": "lv_obj_set_style_shadow_opa",
+          "type": "lv_opa_t"
+        },
+        "shadow_spread": {
+          "setter": "lv_obj_set_style_shadow_spread",
+          "type": "int32_t"
+        },
+        "shadow_width": {
+          "setter": "lv_obj_set_style_shadow_width",
+          "type": "int32_t"
+        },
         "size": {
-          "setter": "lv_obj_set_size",
+          "setter": "lv_obj_set_style_size",
           "type": "int32_t"
         },
         "state": {
@@ -25537,24 +25913,120 @@
           "setter": "lv_obj_set_style_y",
           "type": "int32_t"
         },
+        "text_align": {
+          "setter": "lv_obj_set_style_text_align",
+          "type": "lv_text_align_t"
+        },
+        "text_color": {
+          "setter": "lv_obj_set_style_text_color",
+          "type": "lv_color_t"
+        },
+        "text_decor": {
+          "setter": "lv_obj_set_style_text_decor",
+          "type": "lv_text_decor_t"
+        },
+        "text_font": {
+          "setter": "lv_obj_set_style_text_font",
+          "type": "lv_font_t*"
+        },
+        "text_letter_space": {
+          "setter": "lv_obj_set_style_text_letter_space",
+          "type": "int32_t"
+        },
+        "text_line_space": {
+          "setter": "lv_obj_set_style_text_line_space",
+          "type": "int32_t"
+        },
+        "text_opa": {
+          "setter": "lv_obj_set_style_text_opa",
+          "type": "lv_opa_t"
+        },
+        "text_outline_stroke_color": {
+          "setter": "lv_obj_set_style_text_outline_stroke_color",
+          "type": "lv_color_t"
+        },
+        "text_outline_stroke_opa": {
+          "setter": "lv_obj_set_style_text_outline_stroke_opa",
+          "type": "lv_opa_t"
+        },
+        "text_outline_stroke_width": {
+          "setter": "lv_obj_set_style_text_outline_stroke_width",
+          "type": "int32_t"
+        },
         "transform": {
           "setter": "lv_obj_set_transform",
           "type": "lv_matrix_t*"
+        },
+        "transform_height": {
+          "setter": "lv_obj_set_style_transform_height",
+          "type": "int32_t"
+        },
+        "transform_pivot_x": {
+          "setter": "lv_obj_set_style_transform_pivot_x",
+          "type": "int32_t"
+        },
+        "transform_pivot_y": {
+          "setter": "lv_obj_set_style_transform_pivot_y",
+          "type": "int32_t"
+        },
+        "transform_rotation": {
+          "setter": "lv_obj_set_style_transform_rotation",
+          "type": "int32_t"
+        },
+        "transform_scale": {
+          "setter": "lv_obj_set_style_transform_scale",
+          "type": "int32_t"
+        },
+        "transform_scale_x": {
+          "setter": "lv_obj_set_style_transform_scale_x",
+          "type": "int32_t"
+        },
+        "transform_scale_y": {
+          "setter": "lv_obj_set_style_transform_scale_y",
+          "type": "int32_t"
+        },
+        "transform_skew_x": {
+          "setter": "lv_obj_set_style_transform_skew_x",
+          "type": "int32_t"
+        },
+        "transform_skew_y": {
+          "setter": "lv_obj_set_style_transform_skew_y",
+          "type": "int32_t"
+        },
+        "transform_width": {
+          "setter": "lv_obj_set_style_transform_width",
+          "type": "int32_t"
+        },
+        "transition": {
+          "setter": "lv_obj_set_style_transition",
+          "type": "lv_style_transition_dsc_t*"
+        },
+        "translate_radial": {
+          "setter": "lv_obj_set_style_translate_radial",
+          "type": "int32_t"
+        },
+        "translate_x": {
+          "setter": "lv_obj_set_style_translate_x",
+          "type": "int32_t"
+        },
+        "translate_y": {
+          "setter": "lv_obj_set_style_translate_y",
+          "type": "int32_t"
         },
         "user_data": {
           "setter": "lv_obj_set_user_data",
           "type": "void*"
         },
         "width": {
-          "setter": "lv_obj_set_width",
+          "setter": "lv_obj_set_style_width",
           "type": "int32_t"
         },
         "x": {
-          "setter": "lv_obj_set_x",
+          "setter": "lv_obj_set_style_x",
           "type": "int32_t"
         },
         "y": {
-          "setter": "lv_obj_set_y",
+          "setter": "lv_obj_set_style_y",
           "type": "int32_t"
         }
       }

@@ -2,49 +2,10 @@
 #define API_SPEC_H
 
 #include <stdbool.h>
-
 #include <cJSON/cJSON.h>
 
-// --- Data Structures for API Spec ---
-
-// Holds information about a single property (e.g., width, text, bg_color)
-typedef struct {
-    char* name;                   // Property name (e.g., "width")
-    char* c_type;                 // Corresponding C type (e.g., "int", "const char*", "lv_color_t")
-    char* setter;                 // Name of the LVGL setter function (e.g., "lv_obj_set_width")
-    char* widget_type_hint;       // For which widget type this setter is primarily for (e.g. "obj", "label", "style") helps construct setter if not explicit
-    int num_style_args;           // For style properties, indicates number of leading lv_style_selector_t/lv_part_t args (0, 1, or 2 typically)
-                                  // e.g. lv_style_set_radius(style, state, value) -> 1 (state)
-                                  // e.g. lv_obj_set_style_local_radius(obj, part, state, value) -> 2 (part, state)
-    char* style_part_default;     // Default part for style properties (e.g. "LV_PART_MAIN", "LV_PART_SCROLLBAR")
-    char* style_state_default;    // Default state for style properties (e.g. "LV_STATE_DEFAULT", "LV_STATE_PRESSED")
-    bool is_style_prop;           // True if this property is generally set on style objects or via local style setters
-    char* obj_setter_prefix;      // For global properties, e.g. "lv_obj_set_style" for "text_color" -> "lv_obj_set_style_text_color"
-} PropertyDefinition; // Renamed from PropertyInfo
-
-typedef struct PropertyDefinitionNode {
-    PropertyDefinition* prop;
-    struct PropertyDefinitionNode* next;
-} PropertyDefinitionNode;
-
-typedef struct WidgetDefinition {
-    char* name;         // Type name from JSON key (e.g., "button", "style")
-    char* inherits;     // Optional parent type name
-    char* create;       // Optional LVGL creation function name (e.g., "lv_btn_create")
-    char* c_type;       // ADDED: C type for objects (e.g., "lv_style_t", "lv_anim_t")
-    char* init_func;    // ADDED: Initialization function for objects (e.g., "lv_style_init")
-    PropertyDefinitionNode* properties; // Linked list of applicable properties
-    // char* parent_type; // Optional: expected parent type
-} WidgetDefinition;
-
-// Node for the linked list of widget definitions (maps widget type name to its definition)
-typedef struct WidgetMapNode {
-    char* name;                             // Name of the widget type (key, e.g., "button")
-    WidgetDefinition* widget;               // Pointer to the actual widget definition
-    struct WidgetMapNode* next;
-} WidgetMapNode;
-
 // --- Function Definition Structures ---
+// (Moved before PropertyDefinition and WidgetDefinition)
 typedef struct FunctionArg {
     char* type; // Argument type as string (e.g., "lv_obj_t*", "int32_t")
     // char* name; // Optional: if argument names are available in JSON in the future
@@ -65,6 +26,48 @@ typedef struct FunctionMapNode {
 } FunctionMapNode;
 
 
+// --- Data Structures for API Spec ---
+
+// Holds information about a single property (e.g., width, text, bg_color)
+typedef struct {
+    char* name;                   // Property name (e.g., "width")
+    char* c_type;                 // Corresponding C type (e.g., "int", "const char*", "lv_color_t")
+    char* setter;                 // Name of the LVGL setter function (e.g., "lv_obj_set_width")
+    char* widget_type_hint;       // For which widget type this setter is primarily for (e.g. "obj", "label", "style") helps construct setter if not explicit
+    int num_style_args;           // For style properties, indicates number of leading lv_style_selector_t/lv_part_t args (0, 1, or 2 typically)
+                                  // e.g. lv_style_set_radius(style, state, value) -> 1 (state)
+                                  // e.g. lv_obj_set_style_local_radius(obj, part, state, value) -> 2 (part, state)
+    char* style_part_default;     // Default part for style properties (e.g. "LV_PART_MAIN", "LV_PART_SCROLLBAR")
+    char* style_state_default;    // Default state for style properties (e.g. "LV_STATE_DEFAULT", "LV_STATE_PRESSED")
+    bool is_style_prop;           // True if this property is generally set on style objects or via local style setters
+    char* obj_setter_prefix;      // For global properties, e.g. "lv_obj_set_style" for "text_color" -> "lv_obj_set_style_text_color"
+    FunctionArg* func_args;       // NEW FIELD: Linked list of arguments if this property resolves to a function/method with a known signature.
+} PropertyDefinition;
+
+typedef struct PropertyDefinitionNode {
+    PropertyDefinition* prop;
+    struct PropertyDefinitionNode* next;
+} PropertyDefinitionNode;
+
+typedef struct WidgetDefinition {
+    char* name;         // Type name from JSON key (e.g., "button", "style")
+    char* inherits;     // Optional parent type name
+    char* create;       // Optional LVGL creation function name (e.g., "lv_btn_create")
+    char* c_type;       // ADDED: C type for objects (e.g., "lv_style_t", "lv_anim_t")
+    char* init_func;    // ADDED: Initialization function for objects (e.g., "lv_style_init")
+    PropertyDefinitionNode* properties; // Linked list of applicable properties
+    FunctionMapNode* methods; // Linked list of methods specific to this widget
+    // char* parent_type; // Optional: expected parent type
+} WidgetDefinition;
+
+// Node for the linked list of widget definitions (maps widget type name to its definition)
+typedef struct WidgetMapNode {
+    char* name;                             // Name of the widget type (key, e.g., "button")
+    WidgetDefinition* widget;               // Pointer to the actual widget definition
+    struct WidgetMapNode* next;
+} WidgetMapNode;
+
+
 // Represents the parsed API specification (e.g., from api_spec.json)
 typedef struct ApiSpec {
     WidgetMapNode* widgets_list_head;                   // Head of the linked list for widget definitions
@@ -76,7 +79,6 @@ typedef struct ApiSpec {
 
 
 // --- Function Declarations ---
-static void free_function_definition_list(FunctionMapNode* head); // Forward declaration
 
 // Parses the API specification from a cJSON object.
 // Returns a pointer to an ApiSpec structure, or NULL on error.
