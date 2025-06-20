@@ -22,7 +22,7 @@ typedef struct {
 static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context, const char* forced_c_var_name);
 static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context); // Wrapper
 static void process_properties(GenContext* ctx, cJSON* props_json, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context);
-static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context);
+static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context, const char* explicit_target_var_name);
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context);
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
@@ -486,6 +486,8 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
 
     char* c_var_name_for_node = NULL;
     char* allocated_c_var_name = NULL;
+    const char* type_str = NULL; // MODIFIED: Moved declaration earlier
+    const WidgetDefinition* widget_def = NULL; // MODIFIED: Moved declaration earlier
 
     if (forced_c_var_name) {
         c_var_name_for_node = (char*)forced_c_var_name;
@@ -531,6 +533,33 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
         }
     }
 
+    // --- MODIFICATION START: Check for 'with-only' assignment node ---
+    bool is_with_assignment_node = false;
+    cJSON* named_attr_for_check = cJSON_GetObjectItem(node_json, "named");
+    cJSON* with_attr_for_check = cJSON_GetObjectItem(node_json, "with");
+
+    if (named_attr_for_check && cJSON_IsString(named_attr_for_check) && named_attr_for_check->valuestring[0] != '\0' && with_attr_for_check) {
+        is_with_assignment_node = true; // Assume true initially
+        cJSON* item = NULL;
+        for (item = node_json->child; item != NULL; item = item->next) {
+            const char* key = item->string;
+            if (strcmp(key, "type") != 0 &&
+                strcmp(key, "id") != 0 &&
+                strcmp(key, "named") != 0 &&
+                strcmp(key, "with") != 0 &&
+                strcmp(key, "context") != 0 &&
+                strncmp(key, "//", 2) != 0) {
+                is_with_assignment_node = false; // Found a non-allowed key
+                break;
+            }
+        }
+    }
+    // --- MODIFICATION END ---
+
+    // MODIFIED: type_str and widget_def are now declared above.
+    // Their assignment will happen inside the 'else' of the 'is_with_assignment_node' block
+    // or if type is an allowed key for with_assignment_node.
+
     cJSON* use_view_item = cJSON_GetObjectItemCaseSensitive(node_json, "use-view");
     if (use_view_item && cJSON_IsString(use_view_item)) {
         const char* component_id_to_use = use_view_item->valuestring;
@@ -558,8 +587,21 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
         return;
     }
 
-    cJSON* type_item = cJSON_GetObjectItem(node_json, "type");
-    const char* type_str = type_item ? cJSON_GetStringValue(type_item) : default_obj_type;
+
+    // --- MODIFICATION START: Conditional object allocation ---
+    if (is_with_assignment_node) {
+        // For a 'with-assignment' node, c_var_name_for_node is expected to be assigned
+        // directly from the result of the 'with.obj' expression.
+        // No separate lv_obj_create or similar is done for c_var_name_for_node itself.
+        // The actual assignment logic will be handled when processing the 'with' block.
+        ir_block_add_stmt(current_node_ir_block, ir_new_comment( "// Node is a 'with' assignment target. Allocation skipped for now."));
+        // Ensure properties from the main node (if any, though disallowed by current check) aren't processed here.
+        // Children processing also needs careful consideration for this type of node.
+    } else {
+    // --- MODIFICATION END ---
+        // MODIFIED: type_str and widget_def are assigned here for the non-assignment path
+        cJSON* type_item_local = cJSON_GetObjectItem(node_json, "type"); // Use local var to avoid confusion with earlier type_str
+        type_str = type_item_local ? cJSON_GetStringValue(type_item_local) : default_obj_type;
 
     if (!type_str || type_str[0] == '\0') {
          fprintf(stderr, "Error: Node missing valid 'type' (or default_obj_type for component root). C var: %s. Skipping node processing.\n", c_var_name_for_node);
@@ -705,16 +747,44 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
             }
         }
     }
+    // --- MODIFICATION START: Closing brace for conditional allocation ---
+    } // End of if(!is_with_assignment_node)
+    // --- MODIFICATION END ---
 
-    bool node_type_can_have_with = (widget_def && (widget_def->create || widget_def->init_func)) ||
-                                 (strcmp(type_str, "style") == 0) ||
-                                 (strcmp(type_str, "obj") == 0) ||
-                                 forced_c_var_name;
+
+    // The 'with' block processing happens regardless of whether it was a with-assignment node or a regular node.
+    // If it was a with-assignment node, c_var_name_for_node was not allocated above,
+    // and process_single_with_block will need to be adapted or this call made conditional.
+    // For now, the logic proceeds. Step 2 will refine this.
+    // TODO: Re-evaluate this 'with' processing for 'is_with_assignment_node == true' in the next step.
+    // The current process_single_with_block creates a *new* temp variable for with.obj.
+    // For with-assignment, c_var_name_for_node should *become* that variable.
+    bool node_type_can_have_with = (widget_def && (widget_def->create || widget_def->init_func)) || // widget_def could be NULL if is_with_assignment_node
+                                 (type_str && strcmp(type_str, "style") == 0) ||
+                                 (type_str && strcmp(type_str, "obj") == 0) ||
+                                 forced_c_var_name || is_with_assignment_node; // Allow 'with' for assignment nodes
 
     if (c_var_name_for_node && node_type_can_have_with) {
-        cJSON* with_prop = cJSON_GetObjectItem(node_json, "with");
+        cJSON* with_prop = cJSON_GetObjectItem(node_json, "with"); // Already fetched by is_with_assignment_node logic if it was true
         if (with_prop) {
-            process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context);
+            if (is_with_assignment_node) {
+                 // If it's an assignment node, process_single_with_block needs to know it's assigning to c_var_name_for_node
+                 char comment_buf[256];
+                 snprintf(comment_buf, sizeof(comment_buf), "// TODO: process_single_with_block for assignment to %s", c_var_name_for_node);
+                 ir_block_add_stmt(current_node_ir_block, ir_new_comment(comment_buf));
+                 // Temporarily, we might call the original one, though it will create a temp var we don't want.
+                 // Or, we skip it if the next step will replace it. For safety, let's call it but acknowledge its current behavior.
+                 // process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context, c_var_name_for_node);
+                 // For this step, the key is skipping the *initial* allocation.
+                 // The existing process_single_with_block will still run and create its own temp var.
+                 // This is not ideal but will be fixed in the next step.
+                 // The task stated: "The existing process_single_with_block call might proceed... The immediate goal is to skip the initial incorrect allocation."
+                 // "For now, let's ensure the lv_obj_create(parent) for c_var_name_for_node is skipped. The later call to process_single_with_block will be the focus of the next plan step."
+                process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context, c_var_name_for_node);
+
+            } else { // Original path for 'with' blocks not part of an assignment node
+                process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context, NULL);
+            }
         }
     }
 
@@ -727,122 +797,121 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
     }
 }
 
-static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context) {
+static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context, const char* explicit_target_var_name) {
     if (!cJSON_IsObject(with_node)) {
-        fprintf(stderr, "Error: 'with' block item must be an object.\n");
+        fprintf(stderr, "Error: 'with' block item must be an object (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
         return;
     }
     cJSON* obj_json = cJSON_GetObjectItem(with_node, "obj");
     cJSON* do_json = cJSON_GetObjectItem(with_node, "do");
     if (!obj_json) {
-        fprintf(stderr, "Error: 'with' block missing 'obj' key.\n");
+        fprintf(stderr, "Error: 'with' block missing 'obj' key (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
         return;
     }
     if (!cJSON_IsObject(do_json)) {
-        fprintf(stderr, "Error: 'with' block missing 'do' object or 'do' is not an object.\n");
+        fprintf(stderr, "Error: 'with' block missing 'do' object or 'do' is not an object (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
         return;
     }
+
     IRExpr* obj_expr = unmarshal_value(ctx, obj_json, ui_context);
     if (!obj_expr) {
-        fprintf(stderr, "Error: Failed to unmarshal 'obj' in 'with' block.\n");
+        fprintf(stderr, "Error: Failed to unmarshal 'obj' in 'with' block (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
         return;
     }
+
     const char* target_c_var_name = NULL;
     char* generated_var_name_to_free = NULL;
-    const char* obj_type_for_props = "obj"; // Default
-    const char* temp_var_c_type = "lv_obj_t*"; // Default C type for temp var
+    const char* obj_type_for_props = "obj";     // Default
+    const char* temp_var_c_type = "lv_obj_t*"; // Default C type for the variable being declared/assigned
 
+    // Determine obj_type_for_props and temp_var_c_type based on obj_expr
+    // This logic needs to run before deciding on target_c_var_name generation for the NULL explicit_target_var_name case.
     if (obj_expr->type == IR_EXPR_VARIABLE) {
-        target_c_var_name = strdup(((IRExprVariable*)obj_expr)->name);
-        generated_var_name_to_free = (char*)target_c_var_name;
-
-        if (strstr(target_c_var_name, "style") != NULL || strncmp(target_c_var_name, "s_", 2) == 0) {
+        const char* var_name = ((IRExprVariable*)obj_expr)->name;
+        if (strstr(var_name, "style") != NULL || strncmp(var_name, "s_", 2) == 0) {
             obj_type_for_props = "style";
-            // temp_var_c_type remains lv_obj_t* because we are not creating a new var, just using existing one.
+            temp_var_c_type = "lv_style_t*"; // Type of the variable we are aliasing
+        } else if (strstr(var_name, "label") != NULL || strncmp(var_name, "l_", 2) == 0) {
+            obj_type_for_props = "label";
+            temp_var_c_type = "lv_obj_t*"; // Assuming labels are lv_obj_t*
         } else {
-            // For other known variable types, we might try to infer, but it's less critical as properties are looked up by this obj_type_for_props
-            // For now, default to "obj" if not obviously a style. A more robust type inference for variables could be added.
-            // Example: if we had a way to know `my_label` is `lv_label_t*`, we could set `obj_type_for_props = "label";`
-            // For now, the existing heuristic is kept.
-             if (strstr(target_c_var_name, "label") != NULL || strncmp(target_c_var_name, "l_", 2) == 0) {
-                obj_type_for_props = "label";
-            }
-            // else it remains "obj"
+            obj_type_for_props = "obj";
+            temp_var_c_type = "lv_obj_t*";
         }
-        ir_free((IRNode*)obj_expr); // Free the unmarshalled expression as we only need its name
     } else if (obj_expr->type == IR_EXPR_FUNC_CALL) {
         IRExprFuncCall* func_call_expr = (IRExprFuncCall*)obj_expr;
         const char* func_name = func_call_expr->func_name;
-
         const char* c_return_type_str = api_spec_get_function_return_type(ctx->api_spec, func_name);
         if (c_return_type_str && c_return_type_str[0] != '\0') {
-            temp_var_c_type = (char*)c_return_type_str; // Use the dynamically fetched type
+            temp_var_c_type = c_return_type_str;
         } else {
-            // Default to "lv_obj_t*" if function not found or no return type.
-            // A warning could be logged here.
             fprintf(stderr, "Warning: Could not determine return type for function '%s'. Defaulting to '%s'.\n", func_name, temp_var_c_type);
         }
         obj_type_for_props = get_obj_type_from_c_type(temp_var_c_type);
-
-        generated_var_name_to_free = generate_unique_var_name(ctx, obj_type_for_props);
-        target_c_var_name = generated_var_name_to_free;
-        IRStmt* var_decl_stmt = ir_new_var_decl(temp_var_c_type, target_c_var_name, obj_expr); // obj_expr is the func call itself
-        ir_block_add_stmt(parent_ir_block, var_decl_stmt);
-
-    } else if (obj_expr->type == IR_EXPR_ADDRESS_OF) { // Typically for &style_var
+    } else if (obj_expr->type == IR_EXPR_ADDRESS_OF) {
         IRExprAddressOf* addr_of_expr = (IRExprAddressOf*)obj_expr;
-        // Try to infer type from the variable being addressed if it's a simple variable.
         if (addr_of_expr->expr && addr_of_expr->expr->type == IR_EXPR_VARIABLE) {
             const char* addressed_var_name = ((IRExprVariable*)addr_of_expr->expr)->name;
             if (strstr(addressed_var_name, "style") != NULL || strncmp(addressed_var_name, "s_", 2) == 0) {
-                temp_var_c_type = "lv_style_t*"; // The temp variable will hold a pointer to lv_style_t
+                temp_var_c_type = "lv_style_t*";
                 obj_type_for_props = "style";
-            }
-            // Add more heuristics if needed e.g. for lv_font_t* etc.
+            } // Else defaults are lv_obj_t* and obj
         }
-        // If it's not a known pattern, defaults (lv_obj_t*, obj) will be used.
-        // This is okay because process_properties for &style_x will use "style" type for lookup.
-
-        generated_var_name_to_free = generate_unique_var_name(ctx, obj_type_for_props);
-        target_c_var_name = generated_var_name_to_free;
-        IRStmt* var_decl_stmt = ir_new_var_decl(temp_var_c_type, target_c_var_name, obj_expr);
-        ir_block_add_stmt(parent_ir_block, var_decl_stmt);
-
-    } else if (obj_expr->type == IR_EXPR_LITERAL) { // e.g. with: obj: NULL
-        // This is a bit of an edge case. What properties can be set on NULL?
-        // For now, treat as generic lv_obj_t* and "obj" type.
-        obj_type_for_props = "obj";
-        temp_var_c_type = "lv_obj_t*"; // Or void*? lv_obj_t* seems safer for LVGL operations.
-        generated_var_name_to_free = generate_unique_var_name(ctx, "null_target");
-        target_c_var_name = generated_var_name_to_free;
-        IRStmt* var_decl_stmt = ir_new_var_decl(temp_var_c_type, target_c_var_name, obj_expr);
-        ir_block_add_stmt(parent_ir_block, var_decl_stmt);
+    } else if (obj_expr->type == IR_EXPR_LITERAL) {
+        // obj_type_for_props remains "obj", temp_var_c_type remains "lv_obj_t*" (e.g. for NULL)
     }
-    else {
-        fprintf(stderr, "Error: 'obj' expression in 'with' block yielded an unexpected IR type: %d.\n", obj_expr->type);
-        ir_free((IRNode*)obj_expr);
-        return;
+
+
+    // Now, determine target_c_var_name
+    if (explicit_target_var_name) {
+        target_c_var_name = explicit_target_var_name;
+        // We will always create a new variable declaration for explicit_target_var_name
+        // to assign the result of obj_expr.
+        // Example: lv_obj_t* my_named_var = lv_obj_get_child(...);
+        // Or: lv_obj_t* my_named_var = existing_label; (alias)
+        IRStmt* var_decl_stmt = ir_new_var_decl(temp_var_c_type, target_c_var_name, obj_expr);
+        ir_block_add_stmt(parent_ir_block, var_decl_stmt);
+        // obj_expr is now owned by var_decl_stmt, so it should not be freed separately.
+    } else {
+        // Original behavior: create a temporary variable or directly use the name if obj_expr is a variable.
+        if (obj_expr->type == IR_EXPR_VARIABLE) {
+            // This is the tricky case from before. We are NOT creating an alias here,
+            // just using the existing variable's name directly for property processing.
+            // No new IR declaration is made for target_c_var_name itself.
+            target_c_var_name = strdup(((IRExprVariable*)obj_expr)->name);
+            generated_var_name_to_free = (char*)target_c_var_name; // So it gets freed
+            ir_free((IRNode*)obj_expr); // obj_expr itself is no longer needed as its name is copied
+        } else {
+            // For func calls, address_of, literals when no explicit target:
+            // A new temporary variable is created.
+            generated_var_name_to_free = generate_unique_var_name(ctx, obj_type_for_props);
+            target_c_var_name = generated_var_name_to_free;
+            IRStmt* var_decl_stmt = ir_new_var_decl(temp_var_c_type, target_c_var_name, obj_expr);
+            ir_block_add_stmt(parent_ir_block, var_decl_stmt);
+            // obj_expr is now owned by var_decl_stmt.
+        }
+    }
+
+    if (!target_c_var_name) {
+         fprintf(stderr, "Error: target_c_var_name could not be determined in 'with' block (explicit: %s).\n", explicit_target_var_name ? explicit_target_var_name : "NULL");
+         if (obj_expr && !(explicit_target_var_name && obj_expr->type != IR_EXPR_VARIABLE) && !(generated_var_name_to_free && obj_expr->type != IR_EXPR_VARIABLE) ) {
+             // If obj_expr was not consumed by ir_new_var_decl or strdup logic
+             // This condition is trying to avoid double free if obj_expr was passed to ir_new_var_decl
+             // However, the logic above should ensure obj_expr is either consumed or freed.
+             // This is a fallback, if target_c_var_name is NULL, something went wrong before consuming obj_expr.
+             // ir_free((IRNode*)obj_expr); // Potentially risky if already consumed. Better to ensure it's always handled.
+         }
+         return;
     }
 
     process_properties(ctx, do_json, target_c_var_name, parent_ir_block, obj_type_for_props, ui_context);
 
-    if (generated_var_name_to_free && obj_expr->type != IR_EXPR_VARIABLE) { // obj_expr was consumed by ir_new_var_decl if not IR_EXPR_VARIABLE
-        // If obj_expr was IR_EXPR_VARIABLE, it was freed earlier.
-        // If it was used in ir_new_var_decl, it's owned by that statement and shouldn't be freed here.
-        // This logic feels a bit complex; ir_free should handle NULL. Let's simplify.
-        // The original obj_expr is passed to ir_new_var_decl, which should take ownership.
-        // So, we only need to free generated_var_name_to_free.
-    } else if (obj_expr->type != IR_EXPR_VARIABLE && obj_expr->type != IR_EXPR_FUNC_CALL && obj_expr->type != IR_EXPR_ADDRESS_OF && obj_expr->type != IR_EXPR_LITERAL) {
-        // This case implies obj_expr was not used by var_decl and not IR_EXPR_VARIABLE, so it needs freeing.
-        // However, the error path above should catch this.
-        // For safety, if it wasn't passed to var_decl and wasn't a variable whose name was copied:
-        ir_free((IRNode*)obj_expr);
-    }
-
-
     if (generated_var_name_to_free) {
+        // This was allocated only if explicit_target_var_name was NULL,
+        // and for IR_EXPR_VARIABLE, it was a strdup, for others, it was a generated unique name.
         free(generated_var_name_to_free);
     }
+    // Note: obj_expr is managed by ir_new_var_decl if passed to it, or freed if IR_EXPR_VARIABLE and explicit_target_var_name is NULL.
 }
 
 static void process_styles(GenContext* ctx, cJSON* styles_json, IRStmtBlock* global_block) {
