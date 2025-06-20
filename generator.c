@@ -144,10 +144,19 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
         if (constants && cJSON_GetObjectItem(constants, s_orig)) {
             return ir_new_literal(s_orig);
         }
-        const cJSON* enums = api_spec_get_enums(ctx->api_spec);
-        if (enums && cJSON_GetObjectItem(enums, s_orig)) {
-            return ir_new_literal(s_orig);
+
+        const cJSON* all_enum_types_json = api_spec_get_enums(ctx->api_spec);
+        if (all_enum_types_json && cJSON_IsObject(all_enum_types_json)) {
+            cJSON* enum_type_definition_json = NULL;
+            for (enum_type_definition_json = all_enum_types_json->child; enum_type_definition_json != NULL; enum_type_definition_json = enum_type_definition_json->next) {
+                if (cJSON_IsObject(enum_type_definition_json)) {
+                    if (cJSON_GetObjectItem(enum_type_definition_json, s_orig)) {
+                        return ir_new_literal(s_orig); // Found s_orig as a key in this enum type definition
+                    }
+                }
+            }
         }
+        // If not found in constants or any enum definitions, then treat as a string.
         return ir_new_literal_string(s_orig);
 
     } else if (cJSON_IsNumber(value)) {

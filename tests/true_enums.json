@@ -1,0 +1,17 @@
+[
+  {
+    "type": "obj",
+    "id": "@test_obj_for_enum",
+    "named": "test_obj",
+    "align": "LV_ALIGN_DEFAULT",
+    "children": [
+      {
+        "type": "label",
+        "id": "@label_for_enum_test",
+        "named": "test_label",
+        "text": "Enum Test",
+        "align": "LV_ALIGN_OUT_TOP_LEFT"
+      }
+    ]
+  }
+]
