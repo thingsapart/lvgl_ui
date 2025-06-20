@@ -2,6 +2,7 @@
   {
     "type": "label",
     "id": "@my_label",
+    "//comment_before_first_with": "This should appear before the first 'with' block's generated code.",
     "with": {
       "obj": {
         "call": "lv_label_create",
@@ -13,6 +14,8 @@
         "text": "First With"
       }
     },
+    "text": "Main Label Text After First With",
+    "//comment_between_withs": "This should appear between the first and second 'with' block's code.",
     "with": {
       "obj": {
         "call": "lv_obj_get_child",
@@ -25,14 +28,13 @@
         "align": "LV_ALIGN_CENTER"
       }
     },
+    "user_data": "Test User Data",
     "with": {
       "obj": "@another_label",
       "do": {
         "text": "Third With"
       }
     },
-    "properties": {
-      "text": "Main Label Text"
-    }
+    "//comment_after_all_withs": "This should appear after all 'with' blocks and properties."
   }
 ]

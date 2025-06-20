@@ -341,9 +341,17 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             strcmp(prop_name, "context") == 0 || strcmp(prop_name, "children") == 0 ||
             strcmp(prop_name, "view_id") == 0 || strcmp(prop_name, "inherits") == 0 ||
             strcmp(prop_name, "use-view") == 0 ||
-            strcmp(prop_name, "style") == 0 ||
+            // "style" is handled before this block if it's an @-reference, otherwise it might be a style object definition (not typical here)
+            // strcmp(prop_name, "style") == 0 || // Keep style here to prevent it from being treated as a generic property
             strcmp(prop_name, "create") == 0 || strcmp(prop_name, "c_type") == 0 || strcmp(prop_name, "init_func") == 0 ||
-            strcmp(prop_name, "with") == 0 || strcmp(prop_name, "properties") == 0) {
+            /* strcmp(prop_name, "with") == 0 || */ // Removed: "with" will be handled below
+            strcmp(prop_name, "properties") == 0) {
+            continue;
+        }
+
+        // Handle "with" blocks interleaved with properties
+        if (strcmp(prop_name, "with") == 0) {
+            process_single_with_block(ctx, prop, current_block, ui_context, NULL);
             continue;
         }
 
@@ -680,10 +688,14 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
         // For a 'with-assignment' node, c_var_name_for_node is expected to be assigned
         // directly from the result of the 'with.obj' expression.
         // No separate lv_obj_create or similar is done for c_var_name_for_node itself.
-        // The actual assignment logic will be handled when processing the 'with' block.
-        ir_block_add_stmt(current_node_ir_block, ir_new_comment( "// Node is a 'with' assignment target. Allocation skipped for now."));
-        // Ensure properties from the main node (if any, though disallowed by current check) aren't processed here.
-        // Children processing also needs careful consideration for this type of node.
+        ir_block_add_stmt(current_node_ir_block, ir_new_comment( "// Node is a 'with' assignment target. Processing 'with' blocks for assignment."));
+        cJSON* item = NULL;
+        for (item = node_json->child; item != NULL; item = item->next) {
+            if (item->string && strcmp(item->string, "with") == 0) {
+                process_single_with_block(ctx, item, current_node_ir_block, effective_context, c_var_name_for_node);
+            }
+        }
+        // Other properties or children are typically not processed for assignment nodes.
     } else {
         cJSON* type_item_local = cJSON_GetObjectItem(node_json, "type"); // Use local var to avoid confusion with earlier type_str
         type_str = type_item_local ? cJSON_GetStringValue(type_item_local) : default_obj_type;
@@ -887,31 +899,9 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
     }
     // MODIFICATION END
 
-    // The 'with' block processing happens regardless of whether it was a with-assignment node or a regular node.
-    // If it was a with-assignment node, c_var_name_for_node was not allocated above,
-    // and process_single_with_block will need to be adapted or this call made conditional.
-    // For now, the logic proceeds. Step 2 will refine this.
-    // TODO: Re-evaluate this 'with' processing for 'is_with_assignment_node == true' in the next step.
-    // The current process_single_with_block creates a *new* temp variable for with.obj.
-    // For with-assignment, c_var_name_for_node should *become* that variable.
-    bool node_type_can_have_with = (widget_def && (widget_def->create || widget_def->init_func)) || // widget_def could be NULL if is_with_assignment_node
-                                 (type_str && strcmp(type_str, "style") == 0) ||
-                                 (type_str && strcmp(type_str, "obj") == 0) ||
-                                 forced_c_var_name || is_with_assignment_node; // Allow 'with' for assignment nodes
-
-    if (c_var_name_for_node && node_type_can_have_with) {
-        cJSON* item = NULL;
-        for (item = node_json->child; item != NULL; item = item->next) {
-            if (item->string && strcmp(item->string, "with") == 0) {
-                if (is_with_assignment_node) {
-                    // If it's an assignment node, process_single_with_block needs to know it's assigning to c_var_name_for_node
-                    process_single_with_block(ctx, item, current_node_ir_block, effective_context, c_var_name_for_node);
-                } else { // Original path for 'with' blocks not part of an assignment node
-                    process_single_with_block(ctx, item, current_node_ir_block, effective_context, NULL);
-                }
-            }
-        }
-    }
+    // Old 'with' block processing is removed from here.
+    // 'with' blocks for non-assignment nodes are handled in process_properties.
+    // 'with' blocks for assignment nodes are handled above in the 'if (is_with_assignment_node)' block.
 
     if (allocated_c_var_name) {
         free(allocated_c_var_name);
