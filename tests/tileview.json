@@ -1,5 +1,9 @@
 [
   {
+    "type": "style",
+    "id": "@container"
+  },
+  {
     "type": "component",
     "id": "@jog_view",
     "root": {
@@ -84,6 +88,10 @@
           0
         ],
         "children": [
+          {
+            "type": "label",
+            "text": "TEST"
+          },
           {
             "type": "use-view",
             "id": "@jog_view"

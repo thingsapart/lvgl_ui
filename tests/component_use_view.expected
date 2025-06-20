@@ -13,7 +13,6 @@ void create_ui(lv_obj_t* parent) {
         }
         {
             {
-                lv_obj_t* uv_instance_1 = lv_obj_create(v_main_view);
                 {
                     lv_obj_t* label_1 = lv_label_create(uv_instance_1);
                     lv_label_set_text(label_1, "Hello from component");

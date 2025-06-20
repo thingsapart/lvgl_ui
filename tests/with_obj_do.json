@@ -1,1 +1,109 @@
-Error parsing UI SPEC JSON: 
+[
+  {
+    "type": "style",
+    "id": "@style_for_with_test",
+    "named": "s_style_with",
+    "bg_color": "#ff0000",
+    "text_color": "#00ff00"
+  },
+  {
+    "type": "label",
+    "id": "@label_for_with_test",
+    "named": "l_label_with",
+    "text": "Initial Text for With",
+    "x": 10,
+    "y": 10
+  },
+  {
+    "type": "obj",
+    "id": "@container_for_with",
+    "named": "obj_container_with",
+    "children": [
+      {
+        "type": "label",
+        "id": "@target_label_1",
+        "named": "l_target_1",
+        "text": "Target 1"
+      },
+      {
+        "type": "button",
+        "id": "@target_button_1",
+        "named": "b_target_1"
+      }
+    ]
+  },
+  {
+    "//": "Test case 1: Apply style properties using 'with'",
+    "type": "obj",
+    "named": "with_style_applier",
+    "with": {
+      "obj": "@style_for_with_test",
+      "do": {
+        "bg_opa": 255,
+        "radius": 5,
+        "border_width": null
+      }
+    }
+  },
+  {
+    "//": "Test case 2: Modify properties of a label using 'with'",
+    "type": "obj",
+    "named": "with_label_modifier",
+    "with": {
+      "obj": "@label_for_with_test",
+      "do": {
+        "text": "Updated Text via With",
+        "long_mode": "SCROLL_CIRCULAR",
+        "align": "CENTER",
+        "x": null
+      }
+    }
+  },
+  {
+    "//": "Test case 3: Apply properties to a different object type (button) within container",
+    "type": "obj",
+    "named": "with_button_in_container_modifier",
+    "with": {
+      "obj": "@target_button_1",
+      "do": {
+        "width": 100,
+        "height": 50,
+        "align": "TOP_LEFT"
+      }
+    }
+  },
+  {
+    "//": "Test case 4: 'do' is entirely null (should do nothing gracefully)",
+    "type": "obj",
+    "named": "with_null_do",
+    "with": {
+      "obj": "@label_for_with_test",
+      "do": null
+    }
+  },
+  {
+    "//": "Test case 5: 'obj' is specified but 'do' is empty (should do nothing gracefully)",
+    "type": "obj",
+    "named": "with_empty_do",
+    "with": {
+      "obj": "@label_for_with_test",
+      "do": {}
+    }
+  },
+  {
+    "//": "Test case 6: 'obj' as a function call (lv_obj_get_child to get the first child label of obj_container_with)",
+    "type": "obj",
+    "named": "with_func_call_obj_modifier",
+    "with": {
+      "obj": {
+        "call": "lv_obj_get_child",
+        "args": ["@obj_container_with", 0]
+      },
+      "do": {
+        "text": "Text Set via Func Call With",
+        "align": "BOTTOM_MID",
+        "width": 150
+      }
+    }
+  }
+]

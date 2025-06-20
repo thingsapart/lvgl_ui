@@ -12,11 +12,18 @@ void create_ui(lv_obj_t* parent) {
     }
     {
         lv_obj_t* my_label = lv_label_create(parent);
+        // This should appear before the first 'with' block's generated code.
         lv_label_set_text(my_label, "Main Label Text");
         registry_add_pointer(ui_registry, my_label, "my_label", "label");
         lv_obj_t* obj_0 = lv_label_create("parent_obj");
+        {
+        }
         lv_obj_t* obj_1 = lv_obj_get_child("parent_obj", 0);
-        lv_obj_set_style_align(obj_1, LV_ALIGN_CENTER);
-        lv_label_set_text(another_label, "Third With");
+        {
+            lv_obj_set_style_align(obj_1, LV_ALIGN_CENTER);
+        }
+        {
+            lv_label_set_text(another_label, "Third With");
+        }
     }
 }

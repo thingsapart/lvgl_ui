@@ -6,6 +6,7 @@
   {
     "type": "label",
     "id": "@my_label",
+    "//comment_before_first_with": "This should appear before the first 'with' block's generated code.",
     "text": "Main Label Text",
     "with": {
       "obj": {
