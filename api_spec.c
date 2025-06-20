@@ -480,3 +480,51 @@ const cJSON* api_spec_get_enums(const ApiSpec* spec) {
 const char* widget_get_create_func(const WidgetDefinition* widget) {
     return widget ? widget->create : NULL;
 }
+
+// Basic implementation of api_spec_get_function_return_type
+// For now, it returns "lv_obj_t*" for all function names.
+// A more robust version would look up the function in spec->functions.
+const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* func_name) {
+    if (!spec || !func_name) {
+        return "lv_obj_t*"; // Default or error
+    }
+
+    // Iterate through the global functions first
+    FunctionMapNode* current_func_node = spec->functions;
+    while (current_func_node) {
+        if (current_func_node->name && strcmp(current_func_node->name, func_name) == 0) {
+            if (current_func_node->func_def && current_func_node->func_def->return_type) {
+                return current_func_node->func_def->return_type;
+            }
+            break; // Found the function, but no return type info
+        }
+        current_func_node = current_func_node->next;
+    }
+
+    // If not found in global functions, iterate through widget methods (if applicable, though less common for this specific use case)
+    // This part might be an over-optimization for now, as 'with obj = func()' usually implies global factory/constructor functions.
+    // However, for completeness:
+    WidgetMapNode* current_widget_node = spec->widgets_list_head;
+    while (current_widget_node) {
+        if (current_widget_node->widget && current_widget_node->widget->methods) {
+            FunctionMapNode* current_method_node = current_widget_node->widget->methods;
+            while (current_method_node) {
+                if (current_method_node->name && strcmp(current_method_node->name, func_name) == 0) {
+                     if (current_method_node->func_def && current_method_node->func_def->return_type) {
+                        return current_method_node->func_def->return_type;
+                    }
+                    // Found the method, but no return type.
+                    // Depending on policy, could return default or break.
+                    return "lv_obj_t*"; // Default if found but no specific type
+                }
+                current_method_node = current_method_node->next;
+            }
+        }
+        current_widget_node = current_widget_node->next;
+    }
+
+
+    // Default if not found or no return type specified
+    //fprintf(stderr, "Warning: Function '%s' not found in API spec or has no return type, defaulting to lv_obj_t*.\n", func_name);
+    return "lv_obj_t*";
+}

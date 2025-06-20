@@ -104,4 +104,8 @@ const cJSON* api_spec_get_enums(const ApiSpec* spec);
 // Retrieves the create function name for a given widget definition.
 const char* widget_get_create_func(const WidgetDefinition* widget);
 
+// Retrieves the C return type string of a function.
+// Returns a default type (e.g., "lv_obj_t*") if the function is not found or has no return type.
+const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* func_name);
+
 #endif // API_SPEC_H
