@@ -1,108 +1,109 @@
 #include "lvgl.h"
 #include <stdio.h>
-#include <stdlib.h> // For malloc/free if not implicitly included by other headers
-#include <string.h> // For memset if not implicitly included
+#include <stdlib.h>
+#include <string.h>
 
 // Global variable for the style defined in JSON
 lv_style_t* style_0; // For @container
 
-// Global variable for the main tileview (if it had an id, e.g. @my_tileview)
-// lv_obj_t* tileview_0; // Not strictly needed as global if not ID'd, but helps trace
+// Global variable for the tileview from "id": "@main_tileview"
+lv_obj_t* main_tileview;
 
 // Assuming ui_registry is a global or accessible variable
 // extern Registry* ui_registry;
 
 void setup_ui(lv_obj_t* parent) {
     // Style creation for "@container"
-    // Note: In the actual generator, this might be a global static or part of a style manager.
-    // For this test, we'll represent its creation as if it's done before use.
-    // The generator might also put this in a separate function or at the top of setup_ui.
-    // Let's assume it's created and registered.
     style_0 = (lv_style_t*)malloc(sizeof(lv_style_t));
     if (style_0 != NULL) {
-        memset(style_0, 0, sizeof(lv_style_t)); // Zero initialize memory for safety
+        memset(style_0, 0, sizeof(lv_style_t));
         lv_style_init(style_0);
     } else {
-        // Handle malloc failure, e.g., by logging an error
         fprintf(stderr, "Error: Failed to allocate memory for style_0 (lv_style_t)\n");
     }
-    // Assuming registry_add_generated_var was called for "@container" -> "style_0"
-    // And registry_add_pointer would be for object instances, not typically styles unless they are global objects.
-    // For styles, usually the variable name itself (style_0) is used.
-    // Let's assume 'style_0' is now the C variable for '@container'.
-    // If the generator registers style variables:
-    // registry_add_generated_var(ui_registry, "container", "style_0"); // Example registration
+    // Assuming the generator registers the style variable if needed, e.g.:
+    // registry_add_generated_var(ui_registry, "container", "style_0"); // if @ means use this C var
+    // Or, if @ means lookup from registry which was populated by a style definition elsewhere:
+    // style_0 = (lv_style_t*)registry_get_pointer(ui_registry, "container"); // More likely for an @id reference
 
+    // For this test, we assume style_0 is the C variable for @container after its definition.
+    // The generator should make style_0 point to the style if it's defined in the same file.
+    // If "@container" was an external style, style_0 would need to be assigned appropriately.
+    // Given the JSON, @container is defined here, so style_0 is its C variable.
+    registry_add_generated_var(ui_registry, "container", "style_0"); // If id maps to C var name directly for styles.
+                                                                // Or registry_add_pointer if styles are treated as pointers.
+                                                                // For this test, style_0 is the direct C var.
 
     // Component @jog_view is defined, code generation is deferred until 'use-view'.
 
     // Tileview creation and property processing
-    lv_obj_t* tileview_0 = lv_tileview_create(parent);
+    // "id": "@main_tileview" should lead to C variable main_tileview
+    main_tileview = lv_tileview_create(parent);
+    registry_add_generated_var(ui_registry, "main_tileview", "main_tileview"); // Register C var for ID
+    // registry_add_pointer(ui_registry, main_tileview, "main_tileview", "tileview"); // Also register the instance pointer
+
     // "add_style": [ "@container", 0 ]
-    lv_obj_add_style(tileview_0, style_0, 0); // Uses the C var for @container
+    lv_obj_add_style(main_tileview, style_0, 0);
     // "size": [ "100%", "100%" ]
-    lv_obj_set_size(tileview_0, lv_pct(100), lv_pct(100));
+    lv_obj_set_size(main_tileview, lv_pct(100), lv_pct(100));
     // "pad_row": 0
-    lv_obj_set_style_pad_row(tileview_0, 0, 0);
+    lv_obj_set_style_pad_row(main_tileview, 0, 0);
     // "pad_column": 0
-    lv_obj_set_style_pad_column(tileview_0, 0, 0);
+    lv_obj_set_style_pad_column(main_tileview, 0, 0);
 
-    // "//": "First WITH"
-    /* First WITH */
-    lv_obj_t* obj_0 = lv_tileview_add_tile(tileview_0, 0, 0, LV_DIR_RIGHT);
-    // "do": null for first "with" - no operations on obj_0
+    // "//": "First WITH (tile1)"
+    /* First WITH (tile1) */
+    // 'with.obj' is a call: lv_tileview_add_tile(main_tileview, 0, 0, LV_DIR_RIGHT)
+    // process_single_with_block creates obj_0 for the result of the call.
+    // The actual C function lv_tileview_add_tile needs main_tileview as its first arg.
+    lv_obj_t* tile_obj_0 = lv_tileview_add_tile(main_tileview, 0, 0, LV_DIR_RIGHT);
+    // 'do' is null, no properties or children for tile_obj_0 here.
 
-    // "//": "Second WITH"
-    /* Second WITH */
-    lv_obj_t* obj_1 = lv_tileview_add_tile(tileview_0, 0, 0, LV_DIR_RIGHT);
-    // "do" for second "with":
-    // "//": "Second DO"
-    /* Second DO */
-    lv_obj_add_style(obj_1, style_0, 0); // Use C var for @container
-    lv_obj_set_style_bg_color(obj_1, lv_color_hex(0xff0000), 0);
-    lv_obj_set_style_bg_opa(obj_1, LV_OPA_COVER, 0);
-    // Children of second "with" do:
+    // "//": "Second WITH (tile2)"
+    /* Second WITH (tile2) */
+    // 'with.obj' is a call: lv_tileview_add_tile(main_tileview, 0, 0, LV_DIR_RIGHT)
+    lv_obj_t* tile_obj_1 = lv_tileview_add_tile(main_tileview, 0, 0, LV_DIR_RIGHT);
+    // "do" for second "with" (on tile_obj_1):
+    // "//": "Second DO on tile2"
+    /* Second DO on tile2 */
+    lv_obj_add_style(tile_obj_1, style_0, 0);
+    lv_obj_set_style_bg_color(tile_obj_1, lv_color_hex(0xff0000), 0);
+    lv_obj_set_style_bg_opa(tile_obj_1, LV_OPA_COVER, 0);
+    // Children of second "with.do", parented to tile_obj_1:
     {
-        lv_obj_t* label_0 = lv_label_create(obj_1);
-        lv_obj_center(label_0);
-        lv_label_set_text(label_0, "Scroll right");
+        lv_obj_t* label_on_tile2 = lv_label_create(tile_obj_1);
+        registry_add_generated_var(ui_registry, "label_on_tile2", "label_on_tile2");
+        // registry_add_pointer(ui_registry, label_on_tile2, "label_on_tile2", "label");
+        lv_obj_center(label_on_tile2);
+        lv_label_set_text(label_on_tile2, "Scroll right");
     }
 
-    // "//": "Third WITH"
-    /* Third WITH */
-    lv_obj_t* obj_2 = lv_tileview_add_tile(tileview_0, 1, 0, LV_DIR_LEFT);
-    // "do" for third "with":
-    // "//": "Third DO"
-    /* Third DO */
-    lv_obj_add_style(obj_2, style_0, 0); // Use C var for @container
-    // Children of third "with" do:
+    // "//": "Third WITH (tile3)"
+    /* Third WITH (tile3) */
+    // 'with.obj' is a call: lv_tileview_add_tile(main_tileview, 1, 0, LV_DIR_LEFT)
+    lv_obj_t* tile_obj_2 = lv_tileview_add_tile(main_tileview, 1, 0, LV_DIR_LEFT);
+    // "do" for third "with" (on tile_obj_2):
+    // "//": "Third DO on tile3"
+    /* Third DO on tile3 */
+    lv_obj_add_style(tile_obj_2, style_0, 0);
+    // Children of third "with.do", parented to tile_obj_2:
     {
-        // Processing "use-view", "id": "@jog_view"
-        // A new object (e.g., obj_3 or jog_view_0) is created as child of obj_2.
-        // This object becomes the root of the @jog_view component instance.
-        lv_obj_t* obj_3 = lv_obj_create(obj_2); // Default base for a component root if not specified by component's type
-        // Apply properties from @jog_view to obj_3
-        lv_obj_set_style_bg_color(obj_3, lv_color_hex(0x00ff00), 0);
-        lv_obj_set_size(obj_3, lv_pct(100), lv_pct(100));
-        // Children of @jog_view, parented to obj_3
+        // Processing "use-view", "id": "@jog_view", "named": "jog_view_on_tile3"
+        // process_node_internal for "use-view" with forced_c_var_name = "jog_view_on_tile3"
+        // The component @jog_view has a root that is a basic object.
+        lv_obj_t* jog_view_on_tile3 = lv_obj_create(tile_obj_2);
+        registry_add_generated_var(ui_registry, "jog_view_on_tile3", "jog_view_on_tile3");
+        // registry_add_pointer(ui_registry, jog_view_on_tile3, "jog_view_on_tile3", "obj"); // Assuming base type "obj" for component root
+
+        // Applying properties from @jog_view's root to jog_view_on_tile3
+        lv_obj_set_style_bg_color(jog_view_on_tile3, lv_color_hex(0x00ff00), 0);
+        lv_obj_set_size(jog_view_on_tile3, lv_pct(100), lv_pct(100));
+        // Children of @jog_view's root, parented to jog_view_on_tile3
         {
-            lv_obj_t* label_1 = lv_label_create(obj_3);
+            // This label does not have an id or name, so it gets a generated one like label_0 or label_1
+            // (depending on var_counter state)
+            lv_obj_t* label_1 = lv_label_create(jog_view_on_tile3);
             lv_label_set_text(label_1, "TEST");
         }
     }
 }
-
-// Note: A real main function would initialize LVGL, display, drivers,
-// call setup_ui, and have an event loop.
-// For testing, this setup_ui function is the core part to verify.
-// Also, ui_registry would need to be initialized.
-// Registry* ui_registry; // Example
-// int main() {
-//    lv_init();
-//    // ... display setup ...
-//    ui_registry = registry_create();
-//    setup_ui(lv_scr_act());
-//    while(1) lv_timer_handler();
-//    registry_free(ui_registry);
-//    return 0;
-// }
