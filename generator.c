@@ -301,11 +301,10 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
 #endif
 
     for (prop = source_of_props->child; prop != NULL; prop = prop->next) {
-    //for (prop = props_json_to_iterate->child; prop != NULL; prop = prop->next) {
-
         const char* prop_name = prop->string;
         if (!prop_name) continue;
 
+        // 1. Handle comments
         if (strncmp(prop_name, "//", 2) == 0) {
             if (cJSON_IsString(prop)) {
                 IRStmt* comment_stmt = ir_new_comment(prop->valuestring);
@@ -316,46 +315,52 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             }
             continue;
         }
-
-        if (strcmp(prop_name, "style") == 0) {
+        // 2. Handle "with" blocks
+        else if (strcmp(prop_name, "with") == 0) {
+            // 'prop' is the cJSON item (key-value pair). process_single_with_block expects the value object.
+            // However, cJSON iteration for objects (prop = source_of_props->child) makes 'prop' point to the value item directly.
+            // So, 'prop' itself is the "with" block's content.
+            process_single_with_block(ctx, prop, current_block, ui_context, NULL);
+            continue;
+        }
+        // 3. Skip other structural/reserved keys
+        else if (strcmp(prop_name, "type") == 0 ||
+                 strcmp(prop_name, "id") == 0 ||
+                 strcmp(prop_name, "named") == 0 ||
+                 strcmp(prop_name, "context") == 0 ||
+                 strcmp(prop_name, "children") == 0 ||
+                 strcmp(prop_name, "view_id") == 0 ||
+                 strcmp(prop_name, "inherits") == 0 ||
+                 strcmp(prop_name, "use-view") == 0 ||
+                 strcmp(prop_name, "create") == 0 ||
+                 strcmp(prop_name, "c_type") == 0 ||
+                 strcmp(prop_name, "init_func") == 0 ||
+                 strcmp(prop_name, "properties") == 0) {
+            continue;
+        }
+        // 4. Handle the specific "style" property (for @-references)
+        else if (strcmp(prop_name, "style") == 0) {
             if (cJSON_IsString(prop) && prop->valuestring != NULL && prop->valuestring[0] == '@') {
                 IRExpr* style_expr = unmarshal_value(ctx, prop, ui_context);
                 if (style_expr) {
                     IRExprNode* args_list = ir_new_expr_node(ir_new_variable(target_c_var_name));
                     ir_expr_list_add(&args_list, style_expr);
-                    ir_expr_list_add(&args_list, ir_new_literal("0"));
+                    ir_expr_list_add(&args_list, ir_new_literal("0")); // Default selector
 
                     IRStmt* call_stmt = ir_new_func_call_stmt("lv_obj_add_style", args_list);
                     ir_block_add_stmt(current_block, call_stmt);
                     _dprintf(stderr, "INFO: Added lv_obj_add_style for @style property '%s' on var '%s'\n", prop->valuestring, target_c_var_name);
-                    continue;
                 } else {
                     _dprintf(stderr, "Warning: Failed to unmarshal style reference '%s' for var '%s'.\n", prop->valuestring, target_c_var_name);
                 }
             } else {
-                 _dprintf(stderr, "Warning: 'style' property for var '%s' is not a valid @-prefixed string reference. Value: %s\n", target_c_var_name, prop ? cJSON_PrintUnformatted(prop): "NULL");
+                 _dprintf(stderr, "Warning: 'style' property for var '%s' is not a valid @-prefixed string reference or is not a string. Value: %s\n", target_c_var_name, prop ? cJSON_PrintUnformatted(prop): "NULL");
             }
+            continue; // Ensure we don't try to process "style" as a generic property
         }
-
-        if (strcmp(prop_name, "type") == 0 || strcmp(prop_name, "id") == 0 || strcmp(prop_name, "named") == 0 ||
-            strcmp(prop_name, "context") == 0 || strcmp(prop_name, "children") == 0 ||
-            strcmp(prop_name, "view_id") == 0 || strcmp(prop_name, "inherits") == 0 ||
-            strcmp(prop_name, "use-view") == 0 ||
-            // "style" is handled before this block if it's an @-reference, otherwise it might be a style object definition (not typical here)
-            // strcmp(prop_name, "style") == 0 || // Keep style here to prevent it from being treated as a generic property
-            strcmp(prop_name, "create") == 0 || strcmp(prop_name, "c_type") == 0 || strcmp(prop_name, "init_func") == 0 ||
-            /* strcmp(prop_name, "with") == 0 || */ // Removed: "with" will be handled below
-            strcmp(prop_name, "properties") == 0) {
-            continue;
-        }
-
-        // Handle "with" blocks interleaved with properties
-        if (strcmp(prop_name, "with") == 0) {
-            process_single_with_block(ctx, prop, current_block, ui_context, NULL);
-            continue;
-        }
-
-        const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, obj_type_for_api_lookup, prop_name);
+        // 5. Process regular properties (default case)
+        else {
+            const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, obj_type_for_api_lookup, prop_name);
 
         if (!prop_def) {
             if (strcmp(obj_type_for_api_lookup, "obj") != 0 && strcmp(obj_type_for_api_lookup, "style") != 0) {
@@ -688,14 +693,10 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
         // For a 'with-assignment' node, c_var_name_for_node is expected to be assigned
         // directly from the result of the 'with.obj' expression.
         // No separate lv_obj_create or similar is done for c_var_name_for_node itself.
-        ir_block_add_stmt(current_node_ir_block, ir_new_comment( "// Node is a 'with' assignment target. Processing 'with' blocks for assignment."));
-        cJSON* item = NULL;
-        for (item = node_json->child; item != NULL; item = item->next) {
-            if (item->string && strcmp(item->string, "with") == 0) {
-                process_single_with_block(ctx, item, current_node_ir_block, effective_context, c_var_name_for_node);
-            }
-        }
-        // Other properties or children are typically not processed for assignment nodes.
+        // The actual assignment logic will be handled when processing the 'with' block.
+        ir_block_add_stmt(current_node_ir_block, ir_new_comment( "// Node is a 'with' assignment target. Allocation skipped for now."));
+        // Ensure properties from the main node (if any, though disallowed by current check) aren't processed here.
+        // Children processing also needs careful consideration for this type of node.
     } else {
         cJSON* type_item_local = cJSON_GetObjectItem(node_json, "type"); // Use local var to avoid confusion with earlier type_str
         type_str = type_item_local ? cJSON_GetStringValue(type_item_local) : default_obj_type;
@@ -899,9 +900,9 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
     }
     // MODIFICATION END
 
-    // Old 'with' block processing is removed from here.
-    // 'with' blocks for non-assignment nodes are handled in process_properties.
-    // 'with' blocks for assignment nodes are handled above in the 'if (is_with_assignment_node)' block.
+    // The old 'with' block processing (using cJSON_GetObjectItem) is removed.
+    // For regular nodes, 'with' blocks are now handled by process_properties in order.
+    // For 'is_with_assignment_node' true, 'with' blocks are handled by iterating through node_json->child items earlier in this function.
 
     if (allocated_c_var_name) {
         free(allocated_c_var_name);

@@ -1,0 +1,99 @@
+[
+  {
+    "type": "style",
+    "id": "@container"
+  },
+  {
+    "type": "component",
+    "id": "@jog_view",
+    "root": {
+      "bg_color": "#00ff00",
+      "size": [
+        "100%",
+        "100%"
+      ],
+      "children": [
+        {
+          "type": "label",
+          "text": "TEST"
+        }
+      ]
+    }
+  },
+  {
+    "type": "tileview",
+    "add_style": [
+      "@container",
+      0
+    ],
+    "size": [
+      "100%",
+      "100%"
+    ],
+    "pad_row": 0,
+    "pad_column": 0,
+    "//": "First WITH",
+    "with": {
+      "obj": {
+        "call": "lv_tileview_add_tile",
+        "args": [
+          0,
+          0,
+          "LV_DIR_RIGHT"
+        ]
+      },
+      "do": null
+    },
+    "//": "Second WITH",
+    "with": {
+      "obj": {
+        "call": "lv_tileview_add_tile",
+        "args": [
+          0,
+          0,
+          "LV_DIR_RIGHT"
+        ]
+      },
+      "do": {
+        "//": "Second DO",
+        "add_style": [
+          "@container",
+          0
+        ],
+        "bg_color": "#ff0000",
+        "bg_opa": "LV_OPA_COVER",
+        "children": [
+          {
+            "type": "label",
+            "center": [],
+            "text": "Scroll right"
+          }
+        ]
+      }
+    },
+    "//": "Third WITH",
+    "with": {
+      "obj": {
+        "call": "lv_tileview_add_tile",
+        "args": [
+          1,
+          0,
+          "LV_DIR_LEFT"
+        ]
+      },
+      "do": {
+        "//": "Third DO",
+        "add_style": [
+          "@container",
+          0
+        ],
+        "children": [
+          {
+            "type": "use-view",
+            "id": "@jog_view"
+          }
+        ]
+      }
+    }
+  }
+]
