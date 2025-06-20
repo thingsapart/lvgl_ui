@@ -1,4 +1,5 @@
 lvgl_ui_generator
+.*.swp
 
 # Prerequisites
 *.d

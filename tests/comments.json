@@ -1,0 +1,13 @@
+[
+  {
+    "//": "Comment within object properties",
+    "type": "obj",
+    "children": [
+      {
+        "//": "Comment within children",
+        "type": "label",
+        "text": "TEST"
+      }
+    ]
+  }
+]
