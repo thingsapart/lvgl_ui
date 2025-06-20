@@ -567,7 +567,6 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
         }
     }
 
-    // --- MODIFICATION START: Check for 'with-only' assignment node ---
     bool is_with_assignment_node = false;
     cJSON* named_attr_for_check = cJSON_GetObjectItem(node_json, "named");
     cJSON* with_attr_for_check = cJSON_GetObjectItem(node_json, "with");
@@ -588,11 +587,6 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
             }
         }
     }
-    // --- MODIFICATION END ---
-
-    // MODIFIED: type_str and widget_def are now declared above.
-    // Their assignment will happen inside the 'else' of the 'is_with_assignment_node' block
-    // or if type is an allowed key for with_assignment_node.
 
     cJSON* use_view_item = cJSON_GetObjectItemCaseSensitive(node_json, "use-view");
     if (use_view_item && cJSON_IsString(use_view_item)) {
@@ -622,7 +616,6 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
     }
 
 
-    // --- MODIFICATION START: Conditional object allocation ---
     if (is_with_assignment_node) {
         // For a 'with-assignment' node, c_var_name_for_node is expected to be assigned
         // directly from the result of the 'with.obj' expression.
@@ -632,8 +625,6 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
         // Ensure properties from the main node (if any, though disallowed by current check) aren't processed here.
         // Children processing also needs careful consideration for this type of node.
     } else {
-    // --- MODIFICATION END ---
-        // MODIFIED: type_str and widget_def are assigned here for the non-assignment path
         cJSON* type_item_local = cJSON_GetObjectItem(node_json, "type"); // Use local var to avoid confusion with earlier type_str
         type_str = type_item_local ? cJSON_GetStringValue(type_item_local) : default_obj_type;
 
@@ -644,7 +635,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
          return;
     }
 
-    const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, type_str);
+    widget_def = api_spec_find_widget(ctx->api_spec, type_str);
 
     if (strcmp(type_str, "use-view") == 0) {
         cJSON* component_ref_item = cJSON_GetObjectItem(node_json, "view_id");
@@ -849,11 +840,6 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
         fprintf(stderr, "Error: 'with' block missing 'obj' key (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
         return;
     }
-    // The problematic check for do_json was here, it's now correctly moved and modified later in the function.
-    // if (!cJSON_IsObject(do_json)) {
-    //     fprintf(stderr, "Error: 'with' block missing 'do' object or 'do' is not an object (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
-    //     return;
-    // }
 
     IRExpr* obj_expr = unmarshal_value(ctx, obj_json, ui_context);
     if (obj_expr) {
