@@ -1,26 +1,11 @@
 #include "registry.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h> // For NULL if not in stdlib
+#include <stdlib.h> // For malloc, calloc, free, NULL
+#include <string.h> // For strdup, strcmp
+#include <stdio.h> // For perror, fprintf, stderr
 
 // --- Internal Data Structures ---
-
-typedef struct ComponentRegistryNode {
-    char* name;                 // Key (e.g., "comp_name" from "@comp_name")
-    const cJSON* component_root; // Value (pointer to the cJSON object)
-    struct ComponentRegistryNode* next;
-} ComponentRegistryNode;
-
-typedef struct VarRegistryNode {
-    char* name;        // Key (e.g., "style_id" from "@style_id")
-    char* c_var_name;  // Value (e.g., "style_0" or "button_1")
-    struct VarRegistryNode* next;
-} VarRegistryNode;
-
-struct Registry {
-    ComponentRegistryNode* components;
-    VarRegistryNode* generated_vars;
-};
+// The definitions for ComponentRegistryNode, VarRegistryNode, and Registry struct
+// are now in registry.h. This file (registry.c) will use those definitions.
 
 // --- Implementation ---
 
@@ -32,6 +17,8 @@ Registry* registry_create() {
     }
     reg->components = NULL;
     reg->generated_vars = NULL;
+    reg->pointers = NULL; // Initialize new member
+    reg->strings = NULL;  // Initialize new member
     return reg;
 }
 
@@ -60,8 +47,120 @@ void registry_free(Registry* reg) {
         current_var = next_var;
     }
 
+    // Free registered pointers
+    PointerRegistryNode* current_ptr_node = reg->pointers;
+    while (current_ptr_node) {
+        PointerRegistryNode* next_ptr_node = current_ptr_node->next;
+        free(current_ptr_node->id);
+        if (current_ptr_node->type) {
+            free(current_ptr_node->type);
+        }
+        // DO NOT free current_ptr_node->ptr - registry does not own it
+        free(current_ptr_node);
+        current_ptr_node = next_ptr_node;
+    }
+
+    // Free registered strings
+    StringRegistryNode* current_str_node = reg->strings;
+    while (current_str_node) {
+        StringRegistryNode* next_str_node = current_str_node->next;
+        free(current_str_node->value); // Strings were strdup'd
+        free(current_str_node);
+        current_str_node = next_str_node;
+    }
+
     free(reg);
 }
+
+// --- Pointer Registration ---
+
+void registry_add_pointer(Registry* reg, void* ptr, const char* id, const char* type) {
+    if (!reg || !id || !ptr) {
+        fprintf(stderr, "Error: registry_add_pointer: reg, id, and ptr must not be NULL\n");
+        return;
+    }
+
+    PointerRegistryNode* new_node = (PointerRegistryNode*)malloc(sizeof(PointerRegistryNode));
+    if (!new_node) {
+        perror("Failed to allocate pointer registry node");
+        return;
+    }
+
+    new_node->id = strdup(id);
+    if (!new_node->id) {
+        perror("Failed to duplicate id string for pointer registry");
+        free(new_node);
+        return;
+    }
+
+    if (type) {
+        new_node->type = strdup(type);
+        if (!new_node->type) {
+            perror("Failed to duplicate type string for pointer registry");
+            free(new_node->id);
+            free(new_node);
+            return;
+        }
+    } else {
+        new_node->type = NULL;
+    }
+
+    new_node->ptr = ptr;
+    new_node->next = reg->pointers;
+    reg->pointers = new_node;
+}
+
+void* registry_get_pointer(const Registry* reg, const char* id, const char* type) {
+    if (!reg || !id) return NULL;
+
+    for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
+        if (strcmp(node->id, id) == 0) {
+            if (type) { // Type is specified, so it must match
+                if (node->type && strcmp(node->type, type) == 0) {
+                    return node->ptr;
+                }
+            } else { // Type is not specified, first ID match is sufficient
+                return node->ptr;
+            }
+        }
+    }
+    return NULL; // Not found
+}
+
+// --- String Registration ---
+
+const char* registry_add_str(Registry* reg, const char* value) {
+    if (!reg || !value) {
+         fprintf(stderr, "Error: registry_add_str: reg and value must not be NULL\n");
+        return NULL; // Or consider returning a static error string
+    }
+
+    // Check if string already exists
+    for (StringRegistryNode* node = reg->strings; node; node = node->next) {
+        if (strcmp(node->value, value) == 0) {
+            return node->value; // Return existing string
+        }
+    }
+
+    // String not found, create and add new node
+    StringRegistryNode* new_node = (StringRegistryNode*)malloc(sizeof(StringRegistryNode));
+    if (!new_node) {
+        perror("Failed to allocate string registry node");
+        return NULL; // Or consider returning a static error string
+    }
+
+    new_node->value = strdup(value);
+    if (!new_node->value) {
+        perror("Failed to duplicate string for string registry");
+        free(new_node);
+        return NULL; // Or consider returning a static error string
+    }
+
+    new_node->next = reg->strings;
+    reg->strings = new_node;
+    return new_node->value; // Return newly duplicated string
+}
+
 
 void registry_add_component(Registry* reg, const char* name, const cJSON* component_root) {
     if (!reg || !name || !component_root) return;
