@@ -19,7 +19,8 @@ typedef struct {
 } GenContext;
 
 // Forward declarations
-static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context);
+static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context, const char* forced_c_var_name);
+static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context); // Wrapper
 static void process_properties(GenContext* ctx, cJSON* props_json, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context);
 static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context);
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context);
@@ -83,14 +84,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
     if (cJSON_IsString(value)) {
         const char* s_orig = value->valuestring;
 
-        if (s_orig == NULL) return ir_new_literal("NULL"); // Should not happen if cJSON_IsString
+        if (s_orig == NULL) return ir_new_literal("NULL");
 
-        // Handle prefixes first
-        if (s_orig[0] == '$' && s_orig[1] != '\0') { // e.g. $var
+        if (s_orig[0] == '$' && s_orig[1] != '\0') {
             if (ui_context) {
                 cJSON* ctx_val = cJSON_GetObjectItem(ui_context, s_orig + 1);
                 if (ctx_val) {
-                    return unmarshal_value(ctx, ctx_val, ui_context); // Recursive call
+                    return unmarshal_value(ctx, ctx_val, ui_context);
                 } else {
                     fprintf(stderr, "Warning: Context variable '%s' not found.\n", s_orig + 1);
                     return ir_new_literal("NULL");
@@ -100,48 +100,46 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                  return ir_new_literal("NULL");
             }
         }
-        if (s_orig[0] == '@' && s_orig[1] != '\0') { // e.g. @id
+        if (s_orig[0] == '@' && s_orig[1] != '\0') {
             const char* registered_c_var = registry_get_generated_var(ctx->registry, s_orig + 1);
             if (registered_c_var) {
-                // TODO: Make this check more robust (e.g. based on actual type from registry or a naming convention for style C vars)
-                if (strstr(s_orig + 1, "style") != NULL || strstr(registered_c_var, "style") != NULL ) { // Basic check
+                 // Check if the ID or C variable name suggests it's a style object.
+                 // Style objects (lv_style_t) are typically passed by address (&style_var).
+                 // Other registered objects (like lv_obj_t*) are passed by value (the pointer itself).
+                if (strstr(s_orig + 1, "style") != NULL || strstr(registered_c_var, "style") != NULL || strncmp(registered_c_var, "s_", 2) == 0 ) {
                     return ir_new_address_of(ir_new_variable(registered_c_var));
                 }
                 return ir_new_variable(registered_c_var);
             }
-            // Fallback: if ID not in registry, treat as variable name (original behavior, might need review)
-            // This means @"undefined_id" becomes a C variable undefined_id
             fprintf(stderr, "Info: ID '%s' not found in registry, treating as direct variable name.\n", s_orig + 1);
             return ir_new_variable(s_orig + 1);
         }
-        if (s_orig[0] == '#' && s_orig[1] != '\0') { // e.g. #RRGGBB
+        if (s_orig[0] == '#' && s_orig[1] != '\0') {
             long hex_val = strtol(s_orig + 1, NULL, 16);
             char hex_str_arg[32];
             snprintf(hex_str_arg, sizeof(hex_str_arg), "0x%06lX", hex_val);
             return ir_new_func_call_expr("lv_color_hex", ir_new_expr_node(ir_new_literal(hex_str_arg)));
         }
-        if (s_orig[0] == '!' && s_orig[1] != '\0') { // e.g. !raw_string
+        if (s_orig[0] == '!' && s_orig[1] != '\0') {
             return ir_new_literal_string(s_orig + 1);
         }
 
         size_t len = strlen(s_orig);
         if (len > 0 && s_orig[len - 1] == '%') {
-            char* temp_s = strdup(s_orig); // strdup for modification
+            char* temp_s = strdup(s_orig);
             if (!temp_s) { perror("Failed to strdup for percentage processing"); return ir_new_literal_string(s_orig); }
             temp_s[len - 1] = '\0';
             char* endptr;
             long num_val = strtol(temp_s, &endptr, 10);
-            if (*endptr == '\0' && endptr != temp_s) { // Ensure something was parsed and it was the whole string
+            if (*endptr == '\0' && endptr != temp_s) {
                 char num_str_arg[32];
                 snprintf(num_str_arg, sizeof(num_str_arg), "%ld", num_val);
                 free(temp_s);
                 return ir_new_func_call_expr("lv_pct", ir_new_expr_node(ir_new_literal(num_str_arg)));
             }
             free(temp_s);
-            // If not a valid percentage like "N%", it falls through to default string literal
         }
 
-        // Default: Check if it's a known constant/enum, otherwise treat as a literal string
         const cJSON* constants = api_spec_get_constants(ctx->api_spec);
         if (constants && cJSON_GetObjectItem(constants, s_orig)) {
             return ir_new_literal(s_orig);
@@ -150,7 +148,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
         if (enums && cJSON_GetObjectItem(enums, s_orig)) {
             return ir_new_literal(s_orig);
         }
-        return ir_new_literal_string(s_orig); // Default to literal string
+        return ir_new_literal_string(s_orig);
 
     } else if (cJSON_IsNumber(value)) {
         char buf[32];
@@ -176,14 +174,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                  cJSON_ArrayForEach(arg_json, args_item) {
                     ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context));
                 }
-            } else if (args_item != NULL) { // Allow single arg not in array
+            } else if (args_item != NULL) {
                  ir_expr_list_add(&args_list, unmarshal_value(ctx, args_item, ui_context));
             }
             return ir_new_func_call_expr(call_name, args_list);
         }
-        // Potentially other object structures to unmarshal, returning NULL if not a 'call' object.
         fprintf(stderr, "Warning: Unhandled JSON object structure in unmarshal_value. Object was: %s\n", cJSON_PrintUnformatted(value));
-        return ir_new_literal("NULL"); // Or handle as error
+        return ir_new_literal("NULL");
     } else if (cJSON_IsNull(value)) {
         return ir_new_literal("NULL");
     }
@@ -194,9 +191,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
 
 
 static void process_properties(GenContext* ctx, cJSON* node_json_containing_properties, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context) {
-    _dprintf(stderr, "DEBUG: process_properties: START. Target C var: %s, Obj type: %s\n", target_c_var_name, obj_type_for_api_lookup); // DEBUG
+    _dprintf(stderr, "DEBUG: process_properties: START. Target C var: %s, Obj type: %s\n", target_c_var_name, obj_type_for_api_lookup);
     if (!node_json_containing_properties) {
-        _dprintf(stderr, "DEBUG: process_properties: node_json_containing_properties is NULL. Returning.\n"); // DEBUG
+        _dprintf(stderr, "DEBUG: process_properties: node_json_containing_properties is NULL. Returning.\n");
         return;
     }
 
@@ -214,25 +211,42 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
         const char* prop_name = prop->string;
         if (!prop_name) continue;
 
-        // Handle comment keys first
         if (strncmp(prop_name, "//", 2) == 0) {
             if (cJSON_IsString(prop)) {
                 IRStmt* comment_stmt = ir_new_comment(prop->valuestring);
-                if (comment_stmt) {
-                    ir_block_add_stmt(current_block, comment_stmt);
-                } else {
-                    fprintf(stderr, "Warning: Failed to create IR comment for: %s\n", prop->valuestring);
-                }
+                if (comment_stmt) ir_block_add_stmt(current_block, comment_stmt);
+                else fprintf(stderr, "Warning: Failed to create IR comment for: %s\n", prop->valuestring);
             } else {
                 fprintf(stderr, "Warning: Value of comment key '%s' is not a string. Skipping comment.\n", prop_name);
             }
-            continue; // Move to the next property
+            continue;
         }
 
-        // Existing skip list for structural JSON keys
+        if (strcmp(prop_name, "style") == 0) {
+            if (cJSON_IsString(prop) && prop->valuestring != NULL && prop->valuestring[0] == '@') {
+                IRExpr* style_expr = unmarshal_value(ctx, prop, ui_context);
+                if (style_expr) {
+                    IRExprNode* args_list = ir_new_expr_node(ir_new_variable(target_c_var_name));
+                    ir_expr_list_add(&args_list, style_expr);
+                    ir_expr_list_add(&args_list, ir_new_literal("0"));
+
+                    IRStmt* call_stmt = ir_new_func_call_stmt("lv_obj_add_style", args_list);
+                    ir_block_add_stmt(current_block, call_stmt);
+                    _dprintf(stderr, "INFO: Added lv_obj_add_style for @style property '%s' on var '%s'\n", prop->valuestring, target_c_var_name);
+                    continue;
+                } else {
+                    _dprintf(stderr, "Warning: Failed to unmarshal style reference '%s' for var '%s'.\n", prop->valuestring, target_c_var_name);
+                }
+            } else {
+                 _dprintf(stderr, "Warning: 'style' property for var '%s' is not a valid @-prefixed string reference. Value: %s\n", target_c_var_name, prop ? cJSON_PrintUnformatted(prop): "NULL");
+            }
+        }
+
         if (strcmp(prop_name, "type") == 0 || strcmp(prop_name, "id") == 0 || strcmp(prop_name, "named") == 0 ||
             strcmp(prop_name, "context") == 0 || strcmp(prop_name, "children") == 0 ||
             strcmp(prop_name, "view_id") == 0 || strcmp(prop_name, "inherits") == 0 ||
+            strcmp(prop_name, "use-view") == 0 ||
+            strcmp(prop_name, "style") == 0 ||
             strcmp(prop_name, "create") == 0 || strcmp(prop_name, "c_type") == 0 || strcmp(prop_name, "init_func") == 0 ||
             strcmp(prop_name, "with") == 0 || strcmp(prop_name, "properties") == 0) {
             continue;
@@ -258,7 +272,9 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
         char* actual_setter_name_allocated = NULL;
         if (!actual_setter_name_const) {
             char constructed_setter[128];
-            if (strcmp(obj_type_for_api_lookup, "style") == 0) {
+            if (prop_def->obj_setter_prefix && prop_def->obj_setter_prefix[0] != '\0') {
+                snprintf(constructed_setter, sizeof(constructed_setter), "%s_%s", prop_def->obj_setter_prefix, prop_name);
+            } else if (strcmp(obj_type_for_api_lookup, "style") == 0) {
                  snprintf(constructed_setter, sizeof(constructed_setter), "lv_style_set_%s", prop_name);
             } else {
                  snprintf(constructed_setter, sizeof(constructed_setter), "lv_%s_set_%s",
@@ -267,11 +283,10 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             }
             actual_setter_name_allocated = strdup(constructed_setter);
             actual_setter_name_const = actual_setter_name_allocated;
-            fprintf(stderr, "Info: Setter for '%s' on type '%s' constructed as '%s'. API spec should provide this.\n", prop_name, obj_type_for_api_lookup, actual_setter_name_const);
+            _dprintf(stderr, "Info: Setter for '%s' on type '%s' constructed as '%s'. API spec should provide this.\n", prop_name, obj_type_for_api_lookup, actual_setter_name_const);
         }
 
         IRExprNode* args_list = ir_new_expr_node(ir_new_variable(target_c_var_name));
-        // bool is_complex_style_prop = (prop_def->num_style_args > 0); // Removed as it's now handled by the new logic directly
 
         cJSON* value_to_unmarshal = prop;
         const char* part_str = prop_def->style_part_default ? prop_def->style_part_default : "LV_PART_MAIN";
@@ -315,39 +330,24 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context);
         }
 
-        _dprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s\n",
-                prop_name, prop_def->name, prop_def->num_style_args, obj_type_for_api_lookup);
+        _dprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s, setter: %s, obj_setter_prefix: %s\n",
+                prop_name, prop_def->name, prop_def->num_style_args, obj_type_for_api_lookup, prop_def->setter ? prop_def->setter : "NULL", prop_def->obj_setter_prefix ? prop_def->obj_setter_prefix : "NULL");
 
-        // New argument assembly logic:
         if (prop_def->num_style_args == -1 && strcmp(obj_type_for_api_lookup, "style") != 0) {
-            // Case: Object local style property expecting a combined selector (e.g., lv_obj_set_style_radius(obj, value, selector))
-            ir_expr_list_add(&args_list, val_expr); // Add value first: obj, value
-
+            ir_expr_list_add(&args_list, val_expr);
             char selector_str[128];
             snprintf(selector_str, sizeof(selector_str), "%s | %s", part_str, state_str);
-            ir_expr_list_add(&args_list, ir_new_literal(selector_str)); // Then add combined selector: obj, value, part|state
-
+            ir_expr_list_add(&args_list, ir_new_literal(selector_str));
         } else if (prop_def->num_style_args == 1 && strcmp(obj_type_for_api_lookup, "style") == 0) {
-            // Case: Style object property with one selector arg (typically state) (e.g., lv_style_set_radius(style, state, value))
-            // Note: Based on previous subtask, lv_style_set_radius is (style, value), so num_style_args should be 0 for it.
-            // This branch would be for actual (style, state, value) setters if they exist for a style property.
-            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str)); // Add state: style, state
-            ir_expr_list_add(&args_list, val_expr);                        // Add value: style, state, value
-
+            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str));
+            ir_expr_list_add(&args_list, val_expr);
         } else if (prop_def->num_style_args == 2 && strcmp(obj_type_for_api_lookup, "style") != 0) {
-            // Case: Object local style property with separate part and state (e.g., lv_obj_set_style_local_bg_color(obj, part, state, value))
-            ir_expr_list_add(&args_list, ir_new_literal((char*)part_str)); // Add part: obj, part
-            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str)); // Add state: obj, part, state
-            ir_expr_list_add(&args_list, val_expr);                        // Add value: obj, part, state, value
-
+            ir_expr_list_add(&args_list, ir_new_literal((char*)part_str));
+            ir_expr_list_add(&args_list, ir_new_literal((char*)state_str));
+            ir_expr_list_add(&args_list, val_expr);
         } else if (prop_def->num_style_args == 0) {
-            // Case: Simple property with no extra selector/part/state args (e.g., lv_obj_set_width(obj, value) or lv_style_set_transition(style, value))
-            ir_expr_list_add(&args_list, val_expr); // Add value: obj_or_style, value
-
+            ir_expr_list_add(&args_list, val_expr);
         } else {
-            // Fallback or unhandled num_style_args combination.
-            // This might be an error, or could default to just value, or the old logic if it was more general.
-            // For now, treat as simple value addition, but print a warning.
             fprintf(stderr, "Warning: Unhandled num_style_args (%d) for property '%s' on type '%s'. Adding value only.\n",
                     prop_def->num_style_args, prop_name, obj_type_for_api_lookup);
             ir_expr_list_add(&args_list, val_expr);
@@ -360,19 +360,16 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             free(actual_setter_name_allocated);
         }
     }
-    _dprintf(stderr, "DEBUG: process_properties: END. Target C var: %s, Obj type: %s\n", target_c_var_name, obj_type_for_api_lookup); // DEBUG
+    _dprintf(stderr, "DEBUG: process_properties: END. Target C var: %s, Obj type: %s\n", target_c_var_name, obj_type_for_api_lookup);
 }
 
+// Wrapper function
 static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context) {
+    process_node_internal(ctx, node_json, parent_block, parent_c_var, default_obj_type, ui_context, NULL);
+}
+
+static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context, const char* forced_c_var_name) {
     if (!cJSON_IsObject(node_json)) return;
-
-    cJSON* type_item = cJSON_GetObjectItem(node_json, "type");
-    const char* type_str = type_item ? cJSON_GetStringValue(type_item) : default_obj_type;
-
-    if (!type_str || type_str[0] == '\0') {
-         fprintf(stderr, "Error: Node missing valid 'type'. Skipping node processing.\n");
-         return;
-    }
 
     IRStmtBlock* current_node_ir_block = ir_new_block();
     if (!current_node_ir_block) {
@@ -402,56 +399,120 @@ static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_
         effective_context = ui_context;
     }
 
-    const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, type_str);
-
     char* c_var_name_for_node = NULL;
-    cJSON* named_item = cJSON_GetObjectItem(node_json, "named");
-    cJSON* id_item = cJSON_GetObjectItem(node_json, "id");
-    const char* json_name_ref = NULL;
+    char* allocated_c_var_name = NULL;
 
-    if (named_item && cJSON_IsString(named_item) && named_item->valuestring[0] != '\0') {
-        json_name_ref = named_item->valuestring;
-    } else if (id_item && cJSON_IsString(id_item) && id_item->valuestring[0] != '\0') {
-        json_name_ref = id_item->valuestring;
-    }
-
-    if (json_name_ref) {
-        c_var_name_for_node = sanitize_c_identifier(json_name_ref);
-        const char* registry_key = (json_name_ref[0] == '@') ? json_name_ref + 1 : json_name_ref;
-        registry_add_generated_var(ctx->registry, registry_key, c_var_name_for_node);
+    if (forced_c_var_name) {
+        c_var_name_for_node = (char*)forced_c_var_name;
     } else {
-        c_var_name_for_node = generate_unique_var_name(ctx, type_str && type_str[0] != '@' ? type_str : "obj");
+        cJSON* named_item = cJSON_GetObjectItem(node_json, "named");
+        cJSON* id_item = cJSON_GetObjectItem(node_json, "id");
+        const char* c_name_source = NULL;
+        const char* id_key_for_registry = NULL;
+
+        if (id_item && cJSON_IsString(id_item) && id_item->valuestring[0] == '@') {
+            id_key_for_registry = id_item->valuestring + 1;
+        }
+
+        if (named_item && cJSON_IsString(named_item) && named_item->valuestring[0] != '\0') {
+            c_name_source = named_item->valuestring;
+            if (!id_key_for_registry) {
+                 if (named_item->valuestring[0] != '@') {
+                    id_key_for_registry = c_name_source;
+                 }
+            }
+        } else if (id_key_for_registry) {
+            c_name_source = id_key_for_registry;
+        }
+
+        if (c_name_source) {
+            allocated_c_var_name = sanitize_c_identifier(c_name_source);
+            c_var_name_for_node = allocated_c_var_name;
+            if (id_key_for_registry) {
+                registry_add_generated_var(ctx->registry, id_key_for_registry, c_var_name_for_node);
+                _dprintf(stderr, "DEBUG: Registered ID '%s' to C-var '%s'\n", id_key_for_registry, c_var_name_for_node);
+            } else if (c_name_source[0] != '@') {
+                registry_add_generated_var(ctx->registry, c_name_source, c_var_name_for_node);
+                 _dprintf(stderr, "DEBUG: Registered Name '%s' to C-var '%s'\n", c_name_source, c_var_name_for_node);
+            }
+        } else {
+            const char* temp_type_str_for_name = default_obj_type;
+            cJSON* type_item_for_name = cJSON_GetObjectItem(node_json, "type");
+            if (type_item_for_name && cJSON_IsString(type_item_for_name)) {
+                 temp_type_str_for_name = type_item_for_name->valuestring;
+            }
+            allocated_c_var_name = generate_unique_var_name(ctx, temp_type_str_for_name && temp_type_str_for_name[0] != '@' ? temp_type_str_for_name : "obj");
+            c_var_name_for_node = allocated_c_var_name;
+        }
     }
+
+    cJSON* use_view_item = cJSON_GetObjectItemCaseSensitive(node_json, "use-view");
+    if (use_view_item && cJSON_IsString(use_view_item)) {
+        const char* component_id_to_use = use_view_item->valuestring;
+        if (!component_id_to_use || component_id_to_use[0] != '@') {
+            char err_buf[256];
+            snprintf(err_buf, sizeof(err_buf), "Error: 'use-view' value '%s' must be a component ID starting with '@'.", component_id_to_use ? component_id_to_use : "NULL");
+            ir_block_add_stmt(current_node_ir_block, ir_new_comment(err_buf));
+            fprintf(stderr, "%s Node: %s\n", err_buf, cJSON_PrintUnformatted(node_json));
+        } else {
+            const cJSON* component_root_json = registry_get_component(ctx->registry, component_id_to_use + 1);
+            if (!component_root_json) {
+                char err_buf[256];
+                snprintf(err_buf, sizeof(err_buf), "Error: Component definition '%s' not found in registry for 'use-view'.", component_id_to_use);
+                ir_block_add_stmt(current_node_ir_block, ir_new_comment(err_buf));
+                fprintf(stderr, "%s Node: %s\n", err_buf, cJSON_PrintUnformatted(node_json));
+            } else {
+                cJSON* comp_root_type_item = cJSON_GetObjectItem(component_root_json, "type");
+                const char* comp_root_type_str = comp_root_type_item ? cJSON_GetStringValue(comp_root_type_item) : "obj";
+                process_node_internal(ctx, (cJSON*)component_root_json, current_node_ir_block, parent_c_var, comp_root_type_str, effective_context, c_var_name_for_node);
+                process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, comp_root_type_str, effective_context);
+            }
+        }
+        if (allocated_c_var_name) free(allocated_c_var_name);
+        if (own_effective_context) cJSON_Delete(effective_context);
+        return;
+    }
+
+    cJSON* type_item = cJSON_GetObjectItem(node_json, "type");
+    const char* type_str = type_item ? cJSON_GetStringValue(type_item) : default_obj_type;
+
+    if (!type_str || type_str[0] == '\0') {
+         fprintf(stderr, "Error: Node missing valid 'type' (or default_obj_type for component root). C var: %s. Skipping node processing.\n", c_var_name_for_node);
+         if (allocated_c_var_name) free(allocated_c_var_name);
+         if (own_effective_context) cJSON_Delete(effective_context);
+         return;
+    }
+
+    const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, type_str);
 
     if (strcmp(type_str, "use-view") == 0) {
         cJSON* component_ref_item = cJSON_GetObjectItem(node_json, "view_id");
         if (!cJSON_IsString(component_ref_item)) {
             component_ref_item = cJSON_GetObjectItem(node_json, "id");
-            if (cJSON_IsString(component_ref_item)) {
-                fprintf(stderr, "Warning: 'use-view' node is using 'id' ('%s') to specify component. Consider using 'view_id' for clarity.\n", component_ref_item->valuestring);
-            }
         }
         if (!cJSON_IsString(component_ref_item) || !component_ref_item->valuestring || component_ref_item->valuestring[0] == '\0') {
             char err_buf[256];
-            snprintf(err_buf, sizeof(err_buf), "Error: 'use-view' node missing 'view_id' (or valid 'id') attribute.");
+            snprintf(err_buf, sizeof(err_buf), "Error: Node with type 'use-view' missing 'view_id' or valid 'id' attribute.");
             fprintf(stderr, "%s Node: %s\n", err_buf, cJSON_PrintUnformatted(node_json));
             ir_block_add_stmt(current_node_ir_block, ir_new_comment(err_buf));
         } else {
             const char* component_def_id_from_json = component_ref_item->valuestring;
             if (component_def_id_from_json[0] != '@') {
                 char err_buf[256];
-                snprintf(err_buf, sizeof(err_buf), "Error: 'use-view' component reference '%s' must start with '@'.", component_def_id_from_json);
+                snprintf(err_buf, sizeof(err_buf), "Error: 'use-view' type node's component reference '%s' must start with '@'.", component_def_id_from_json);
                 ir_block_add_stmt(current_node_ir_block, ir_new_comment(err_buf));
                 fprintf(stderr, "%s\n", err_buf);
             } else {
                 const cJSON* component_root_json = registry_get_component(ctx->registry, component_def_id_from_json + 1);
                 if (!component_root_json) {
                     char err_buf[256];
-                    snprintf(err_buf, sizeof(err_buf), "Error: Component definition '%s' not found in registry for 'use-view'.", component_def_id_from_json);
+                    snprintf(err_buf, sizeof(err_buf), "Error: Component definition '%s' not found for 'use-view' type node.", component_def_id_from_json);
                     ir_block_add_stmt(current_node_ir_block, ir_new_comment(err_buf));
                     fprintf(stderr, "%s\n", err_buf);
                 } else {
-                    process_node(ctx, (cJSON*)component_root_json, current_node_ir_block, parent_c_var, NULL, effective_context);
+                    cJSON* comp_root_type_item = cJSON_GetObjectItem(component_root_json, "type");
+                    const char* comp_root_type_str = comp_root_type_item ? cJSON_GetStringValue(comp_root_type_item) : "obj";
+                    process_node_internal(ctx, (cJSON*)component_root_json, current_node_ir_block, parent_c_var, comp_root_type_str, effective_context, c_var_name_for_node);
                 }
             }
         }
@@ -470,7 +531,7 @@ static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_
         if (cJSON_IsArray(children_json)) {
             cJSON* child_node_json;
             cJSON_ArrayForEach(child_node_json, children_json) {
-                process_node(ctx, child_node_json, current_node_ir_block, c_var_name_for_node, "obj", effective_context);
+                process_node_internal(ctx, child_node_json, current_node_ir_block, c_var_name_for_node, "obj", effective_context, NULL);
             }
         }
     } else if (widget_def && widget_def->init_func && widget_def->init_func[0] != '\0') {
@@ -487,61 +548,78 @@ static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_
                                                           widget_def->init_func));
             process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, type_str, effective_context);
         }
-    } else if (type_str[0] == '@') {
+    } else if (type_str[0] == '@' && !forced_c_var_name) {
         const cJSON* component_root_json = registry_get_component(ctx->registry, type_str + 1);
         if (!component_root_json) {
-            fprintf(stderr, "Error: Component definition '%s' not found in registry. Skipping node.\n", type_str);
+            fprintf(stderr, "Error: Component definition '%s' (used as type) not found. Skipping node.\n", type_str);
         } else {
-            process_node(ctx, (cJSON*)component_root_json, current_node_ir_block, parent_c_var, NULL, effective_context);
+            cJSON* comp_root_type_item = cJSON_GetObjectItem(component_root_json, "type");
+            const char* comp_root_type_str = comp_root_type_item ? cJSON_GetStringValue(comp_root_type_item) : "obj";
+            process_node_internal(ctx, (cJSON*)component_root_json, current_node_ir_block, parent_c_var, comp_root_type_str, effective_context, c_var_name_for_node);
         }
     } else {
-        if (strcmp(type_str, "obj") == 0) {
-            _dprintf(stderr, "DEBUG: process_node: Processing generic 'obj' type. C_VAR_NAME: %s\n", c_var_name_for_node); // DEBUG
+        if (strcmp(type_str, "obj") == 0 || forced_c_var_name) {
+            _dprintf(stderr, "DEBUG: process_node_internal: Processing generic 'obj' or component root. C_VAR_NAME: %s, Type: %s\n", c_var_name_for_node, type_str);
             IRExpr* parent_var_expr = NULL;
             if (parent_c_var && parent_c_var[0] != '\0') {
                 parent_var_expr = ir_new_variable(parent_c_var);
             }
-            ir_block_add_stmt(current_node_ir_block,
-                              ir_new_widget_allocate_stmt(c_var_name_for_node,
-                                                          "lv_obj_t",
-                                                          "lv_obj_create",
-                                                          parent_var_expr));
-            process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, "obj", effective_context);
-            _dprintf(stderr, "DEBUG: process_node: Finished processing properties for 'obj' type. C_VAR_NAME: %s\n", c_var_name_for_node); // DEBUG
+            const char* actual_create_type = (forced_c_var_name && widget_def && widget_def->create) ? type_str : "obj";
+            const char* actual_create_func = (forced_c_var_name && widget_def && widget_def->create) ? widget_def->create : "lv_obj_create";
+            const char* c_type_for_alloc = (forced_c_var_name && widget_def && widget_def->c_type) ? widget_def->c_type : "lv_obj_t";
+
+            if (strcmp(actual_create_type, "style")==0) {
+                 ir_block_add_stmt(current_node_ir_block,
+                              ir_new_object_allocate_stmt(c_var_name_for_node,
+                                                          c_type_for_alloc,
+                                                          actual_create_func));
+            } else {
+                 ir_block_add_stmt(current_node_ir_block,
+                                  ir_new_widget_allocate_stmt(c_var_name_for_node,
+                                                              c_type_for_alloc,
+                                                              actual_create_func,
+                                                              parent_var_expr));
+            }
+            process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, actual_create_type, effective_context);
+            _dprintf(stderr, "DEBUG: process_node_internal: Finished properties for 'obj'/component root. C_VAR_NAME: %s\n", c_var_name_for_node);
+
             cJSON* children_json = cJSON_GetObjectItem(node_json, "children");
             if (cJSON_IsArray(children_json)) {
                 cJSON* child_node_json;
                 cJSON_ArrayForEach(child_node_json, children_json) {
-                    process_node(ctx, child_node_json, current_node_ir_block, c_var_name_for_node, "obj", effective_context);
+                    process_node_internal(ctx, child_node_json, current_node_ir_block, c_var_name_for_node, "obj", effective_context, NULL);
                 }
             }
         } else {
             char warning_comment[256];
-            snprintf(warning_comment, sizeof(warning_comment), "Warning: Type '%s' (var %s) not directly instantiable (no create/init_func/component def). Children (if any) will attempt to attach to '%s'.",
+            snprintf(warning_comment, sizeof(warning_comment), "Warning: Type '%s' (var %s) not directly instantiable. Children attach to '%s'.",
                      type_str, c_var_name_for_node, parent_c_var ? parent_c_var : "default_parent");
             ir_block_add_stmt(current_node_ir_block, ir_new_comment(warning_comment));
             cJSON* children_json = cJSON_GetObjectItem(node_json, "children");
             if (cJSON_IsArray(children_json)) {
                 cJSON* child_node_json;
                 cJSON_ArrayForEach(child_node_json, children_json) {
-                    process_node(ctx, child_node_json, current_node_ir_block, parent_c_var, "obj", effective_context);
+                    process_node_internal(ctx, child_node_json, current_node_ir_block, parent_c_var, "obj", effective_context, NULL);
                 }
             }
         }
     }
 
-    bool node_was_created_or_is_style = (widget_def && (widget_def->create || widget_def->init_func)) ||
-                                     (strcmp(type_str, "style") == 0) ||
-                                     (strcmp(type_str, "obj") == 0);
+    bool node_type_can_have_with = (widget_def && (widget_def->create || widget_def->init_func)) ||
+                                 (strcmp(type_str, "style") == 0) ||
+                                 (strcmp(type_str, "obj") == 0) ||
+                                 forced_c_var_name;
 
-    if (c_var_name_for_node && node_was_created_or_is_style) {
+    if (c_var_name_for_node && node_type_can_have_with) {
         cJSON* with_prop = cJSON_GetObjectItem(node_json, "with");
         if (with_prop) {
             process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context);
         }
     }
 
-    free(c_var_name_for_node);
+    if (allocated_c_var_name) {
+        free(allocated_c_var_name);
+    }
 
     if (own_effective_context) {
         cJSON_Delete(effective_context);
@@ -576,19 +654,21 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
     if (obj_expr->type == IR_EXPR_VARIABLE) {
         target_c_var_name = strdup(((IRExprVariable*)obj_expr)->name);
         generated_var_name_to_free = (char*)target_c_var_name;
-        if (strstr(target_c_var_name, "style") != NULL || strstr(target_c_var_name, "s_") == target_c_var_name) {
+
+        if (strstr(target_c_var_name, "style") != NULL || strncmp(target_c_var_name, "s_", 2) == 0) {
             obj_type_for_props = "style";
-        } else if (strstr(target_c_var_name, "label") != NULL || strstr(target_c_var_name, "l_") == target_c_var_name) {
+        } else if (strstr(target_c_var_name, "label") != NULL || strncmp(target_c_var_name, "l_", 2) == 0) {
             obj_type_for_props = "label";
         }
         ir_free((IRNode*)obj_expr);
     } else if (obj_expr->type == IR_EXPR_FUNC_CALL || obj_expr->type == IR_EXPR_ADDRESS_OF || obj_expr->type == IR_EXPR_LITERAL) {
         generated_var_name_to_free = generate_unique_var_name(ctx, "with_target");
         target_c_var_name = generated_var_name_to_free;
+
         if (obj_expr->type == IR_EXPR_ADDRESS_OF) {
             IRExprAddressOf* addr_of = (IRExprAddressOf*)obj_expr;
             if (addr_of->expr && addr_of->expr->type == IR_EXPR_VARIABLE) {
-                if (strstr(((IRExprVariable*)addr_of->expr)->name, "style") != NULL) {
+                if (strstr(((IRExprVariable*)addr_of->expr)->name, "style") != NULL || strncmp(((IRExprVariable*)addr_of->expr)->name, "s_", 2) == 0) {
                     temp_var_c_type = "lv_style_t*";
                     obj_type_for_props = "style";
                 }
@@ -601,7 +681,9 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
         ir_free((IRNode*)obj_expr);
         return;
     }
+
     process_properties(ctx, do_json, target_c_var_name, parent_ir_block, obj_type_for_props, ui_context);
+
     if (generated_var_name_to_free) {
         free(generated_var_name_to_free);
     }
@@ -659,37 +741,46 @@ IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* 
 
     cJSON* item_json = NULL;
     cJSON_ArrayForEach(item_json, ui_spec_root) {
-        cJSON* type_node = cJSON_GetObjectItem(item_json, "type");
-        if (cJSON_IsString(type_node) && strcmp(type_node->valuestring, "component") == 0) {
+        cJSON* type_node = cJSON_GetObjectItemCaseSensitive(item_json, "type");
+        if (type_node && cJSON_IsString(type_node) && strcmp(type_node->valuestring, "component") == 0) {
             const char* id_str = NULL;
-            cJSON* id_json = cJSON_GetObjectItem(item_json, "id");
+            cJSON* id_json = cJSON_GetObjectItemCaseSensitive(item_json, "id");
             if (cJSON_IsString(id_json) && id_json->valuestring != NULL) {
                 id_str = id_json->valuestring;
             } else {
-                fprintf(stderr, "Warning: Component missing string 'id'. Skipping component registration.\n");
+                fprintf(stderr, "Warning: Component definition missing string 'id'. Skipping component registration. Node: %s\n", cJSON_PrintUnformatted(item_json));
                 continue;
             }
-            cJSON* root_node_json = cJSON_GetObjectItem(item_json, "root");
-            if (!root_node_json) {
-                fprintf(stderr, "Warning: Component '%s' missing 'root' definition. Skipping component registration.\n", id_str);
+
+            if (id_str[0] != '@') {
+                fprintf(stderr, "Warning: Component definition id '%s' must start with '@'. Skipping. Node: %s\n", id_str, cJSON_PrintUnformatted(item_json));
                 continue;
             }
-            if (id_str[0] == '@') {
-                registry_add_component(ctx.registry, id_str + 1, root_node_json);
-            } else {
-                fprintf(stderr, "Warning: Component id '%s' does not start with '@'. Skipping component registration.\n", id_str);
+
+            cJSON* component_body_json = cJSON_GetObjectItemCaseSensitive(item_json, "root");
+            if (!component_body_json) {
+                component_body_json = cJSON_GetObjectItemCaseSensitive(item_json, "content");
             }
+
+            if (!component_body_json) {
+                fprintf(stderr, "Warning: Component definition '%s' missing 'root' or 'content' definition. Skipping. Node: %s\n", id_str, cJSON_PrintUnformatted(item_json));
+                continue;
+            }
+            registry_add_component(ctx.registry, id_str + 1, component_body_json);
         }
     }
 
     cJSON_ArrayForEach(item_json, ui_spec_root) {
         cJSON* type_node = cJSON_GetObjectItem(item_json, "type");
         const char* type_str = type_node ? cJSON_GetStringValue(type_node) : NULL;
+
         if (type_str && strcmp(type_str, "component") == 0) {
             continue;
         }
+
         process_node(&ctx, item_json, root_ir_block, "parent", type_str ? type_str : "obj", NULL);
     }
+
     registry_free(ctx.registry);
     return root_ir_block;
 }
