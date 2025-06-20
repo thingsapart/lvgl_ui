@@ -677,15 +677,40 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
 
 
     if (is_with_assignment_node) {
-        // For a 'with-assignment' node, c_var_name_for_node is expected to be assigned
-        // directly from the result of the 'with.obj' expression.
-        // No separate lv_obj_create or similar is done for c_var_name_for_node itself.
-        // The actual assignment logic will be handled when processing the 'with' block.
-        ir_block_add_stmt(current_node_ir_block, ir_new_comment( "// Node is a 'with' assignment target. Allocation skipped for now."));
-        // Ensure properties from the main node (if any, though disallowed by current check) aren't processed here.
-        // Children processing also needs careful consideration for this type of node.
+        ir_block_add_stmt(current_node_ir_block, ir_new_comment( "// Node is a 'with' assignment target. Processing 'with' blocks for assignment."));
+        cJSON* item_w_assign = NULL;
+        for (item_w_assign = node_json->child; item_w_assign != NULL; item_w_assign = item_w_assign->next) {
+            if (item_w_assign->string && strcmp(item_w_assign->string, "with") == 0) {
+                process_single_with_block(ctx, item_w_assign, current_node_ir_block, effective_context, c_var_name_for_node);
+            }
+        }
+        // Other properties or children are typically not processed for assignment nodes.
+    } else if (forced_c_var_name) {
+        // This path is for when process_node_internal is called to operate on an existing object
+        // (e.g., from process_single_with_block for a "do" block).
+        // c_var_name_for_node is already set (it's forced_c_var_name).
+
+        type_str = default_obj_type; // Use the type context passed in (e.g., from with.obj)
+        widget_def = api_spec_find_widget(ctx->api_spec, type_str);
+
+        _dprintf(stderr, "DEBUG: process_node_internal (forced_c_var_name path for DO block): C_VAR_NAME: %s, Type for props: %s\n", c_var_name_for_node, type_str ? type_str : "NULL");
+
+        // Process properties and children directly on c_var_name_for_node.
+        // No new widget allocation. node_json here is the "do" block content.
+        process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, type_str, effective_context);
+
+        cJSON* children_json_in_do = cJSON_GetObjectItem(node_json, "children");
+        if (cJSON_IsArray(children_json_in_do)) {
+            cJSON* child_node_json_in_do;
+            cJSON_ArrayForEach(child_node_json_in_do, children_json_in_do) {
+                process_node_internal(ctx, child_node_json_in_do, current_node_ir_block, c_var_name_for_node, "obj", effective_context, NULL);
+            }
+        }
+        // object_successfully_created is false, so no duplicate registry_add_pointer.
+        // "id" on a "do" block is non-sensical, process_properties already skips "id".
     } else {
-        cJSON* type_item_local = cJSON_GetObjectItem(node_json, "type"); // Use local var to avoid confusion with earlier type_str
+        // Original logic for creating a new widget/object
+        cJSON* type_item_local = cJSON_GetObjectItem(node_json, "type");
         type_str = type_item_local ? cJSON_GetStringValue(type_item_local) : default_obj_type;
 
     if (!type_str || type_str[0] == '\0') {
@@ -887,38 +912,22 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
     }
     // MODIFICATION END
 
-    // The 'with' block processing happens regardless of whether it was a with-assignment node or a regular node.
-    // If it was a with-assignment node, c_var_name_for_node was not allocated above,
-    // and process_single_with_block will need to be adapted or this call made conditional.
-    // For now, the logic proceeds. Step 2 will refine this.
-    // TODO: Re-evaluate this 'with' processing for 'is_with_assignment_node == true' in the next step.
-    // The current process_single_with_block creates a *new* temp variable for with.obj.
-    // For with-assignment, c_var_name_for_node should *become* that variable.
-    bool node_type_can_have_with = (widget_def && (widget_def->create || widget_def->init_func)) || // widget_def could be NULL if is_with_assignment_node
-                                 (type_str && strcmp(type_str, "style") == 0) ||
-                                 (type_str && strcmp(type_str, "obj") == 0) ||
-                                 forced_c_var_name || is_with_assignment_node; // Allow 'with' for assignment nodes
-
-    if (c_var_name_for_node && node_type_can_have_with) {
-        cJSON* with_prop = cJSON_GetObjectItem(node_json, "with"); // Already fetched by is_with_assignment_node logic if it was true
-        if (with_prop) {
-            if (is_with_assignment_node) {
-                 // If it's an assignment node, process_single_with_block needs to know it's assigning to c_var_name_for_node
-                 char comment_buf[256];
-                 // snprintf(comment_buf, sizeof(comment_buf), "// TODO: process_single_with_block for assignment to %s", c_var_name_for_node);
-                 // ir_block_add_stmt(current_node_ir_block, ir_new_comment(comment_buf));
-                 // Temporarily, we might call the original one, though it will create a temp var we don't want.
-                 // Or, we skip it if the next step will replace it. For safety, let's call it but acknowledge its current behavior.
-                 // process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context, c_var_name_for_node);
-                 // For this step, the key is skipping the *initial* allocation.
-                 // The existing process_single_with_block will still run and create its own temp var.
-                 // This is not ideal but will be fixed in the next step.
-                 // The task stated: "The existing process_single_with_block call might proceed... The immediate goal is to skip the initial incorrect allocation."
-                 // "For now, let's ensure the lv_obj_create(parent) for c_var_name_for_node is skipped. The later call to process_single_with_block will be the focus of the next plan step."
-                process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context, c_var_name_for_node);
-
-            } else { // Original path for 'with' blocks not part of an assignment node
-                process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context, NULL);
+    // For regular nodes (not 'is_with_assignment_node' and not 'forced_c_var_name'),
+    // "with" blocks are processed here, after the main object and its properties/children.
+    // This should iterate if multiple "with" keys are present at the top level of a regular node.
+    // Note: This assumes "with" is not handled by process_properties for the main node object itself.
+    // If process_properties were to handle "with" for the main node, this block would be redundant.
+    // Given the history of reverts, this explicit loop ensures "with" keys on regular nodes are processed.
+    if (!is_with_assignment_node && !forced_c_var_name) {
+        bool regular_node_can_have_with = (widget_def && (widget_def->create || widget_def->init_func)) ||
+                                     (type_str && strcmp(type_str, "style") == 0) ||
+                                     (type_str && strcmp(type_str, "obj") == 0);
+        if (c_var_name_for_node && regular_node_can_have_with) {
+            cJSON* item_w_regular = NULL;
+            for (item_w_regular = node_json->child; item_w_regular != NULL; item_w_regular = item_w_regular->next) {
+                if (item_w_regular->string && strcmp(item_w_regular->string, "with") == 0) {
+                    process_single_with_block(ctx, item_w_regular, current_node_ir_block, effective_context, NULL);
+                }
             }
         }
     }
@@ -1059,24 +1068,18 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
     }
 
     // --- Process "do" block ---
-    cJSON* do_json = cJSON_GetObjectItem(with_node, "do"); // Declaration moved here in subtask 11
-    if (do_json && !cJSON_IsObject(do_json)) {
-        if (!cJSON_IsNull(do_json)) {
-            fprintf(stderr, "Error: 'with' block 'do' key exists but is not an object or null (type: %d) for target C var '%s'. Skipping 'do' processing.\n", do_json->type, target_c_var_name);
-        }
-    } else if (cJSON_IsObject(do_json)) {
-        process_properties(ctx, do_json, target_c_var_name, parent_ir_block, obj_type_for_props, ui_context);
-
-        // Process "children" within the "do" block
-        cJSON* children_json = cJSON_GetObjectItem(do_json, "children");
-        if (children_json && cJSON_IsArray(children_json)) {
-            cJSON* child_node_json;
-            cJSON_ArrayForEach(child_node_json, children_json) {
-                process_node_internal(ctx, child_node_json, parent_ir_block, target_c_var_name, "obj", ui_context, NULL);
-            }
-        }
+    cJSON* do_json = cJSON_GetObjectItem(with_node, "do");
+    if (cJSON_IsObject(do_json)) {
+        // Call process_node_internal to handle the "do" block's contents (properties, children, comments).
+        // parent_ir_block is where IR statements for the "do" block's operations will be added.
+        // Pass NULL for parent_c_var as target_c_var_name is the established parent/target.
+        // obj_type_for_props provides the type context for properties within do_json.
+        // target_c_var_name is the existing C variable that do_json operates on (passed as forced_c_var_name).
+        process_node_internal(ctx, do_json, parent_ir_block, NULL, obj_type_for_props, ui_context, target_c_var_name);
+    } else if (do_json && !cJSON_IsNull(do_json)) {
+        fprintf(stderr, "Error: 'with' block 'do' key exists but is not an object or null (type: %d) for target C var '%s'. Skipping 'do' processing.\n", do_json->type, target_c_var_name);
     }
-    // If do_json was NULL (key not found or "do":null), process_properties and children processing are correctly skipped.
+    // If do_json is NULL or not present, nothing is done.
 
     if (generated_var_name_to_free) {
         // This was allocated only if explicit_target_var_name was NULL,

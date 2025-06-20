@@ -37,11 +37,7 @@
     "with": {
       "obj": {
         "call": "lv_tileview_add_tile",
-        "args": [
-          0,
-          0,
-          "LV_DIR_RIGHT"
-        ]
+        "args": [ 0, 0, "LV_DIR_RIGHT" ]
       },
       "do": null
     },
@@ -49,11 +45,7 @@
     "with": {
       "obj": {
         "call": "lv_tileview_add_tile",
-        "args": [
-          0,
-          0,
-          "LV_DIR_RIGHT"
-        ]
+        "args": [ 0, 0, "LV_DIR_RIGHT" ]
       },
       "do": {
         "//": "Second DO on tile2",
@@ -77,11 +69,7 @@
     "with": {
       "obj": {
         "call": "lv_tileview_add_tile",
-        "args": [
-          1,
-          0,
-          "LV_DIR_LEFT"
-        ]
+        "args": [ 1, 0, "LV_DIR_LEFT" ]
       },
       "do": {
         "//": "Third DO on tile3",
