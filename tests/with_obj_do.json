@@ -91,5 +91,21 @@
       "obj": "@label_for_with_test",
       "do": {}
     }
+  },
+  {
+    "//": "Test case 6: 'obj' as a function call (lv_obj_get_child to get the first child label of obj_container_with)",
+    "type": "obj",
+    "named": "with_func_call_obj_modifier",
+    "with": {
+      "obj": {
+        "call": "lv_obj_get_child",
+        "args": ["@obj_container_with", 0]
+      },
+      "do": {
+        "text": "Text Set via Func Call With",
+        "align": "BOTTOM_MID",
+        "width": 150
+      }
+    }
   }
 ]

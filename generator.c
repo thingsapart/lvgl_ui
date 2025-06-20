@@ -749,8 +749,8 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
     }
     const char* target_c_var_name = NULL;
     char* generated_var_name_to_free = NULL;
-    const char* obj_type_for_props = "obj";
-    char* temp_var_c_type = "lv_obj_t*";
+    const char* obj_type_for_props = "obj"; // Default
+    const char* temp_var_c_type = "lv_obj_t*"; // Default C type for temp var
 
     if (obj_expr->type == IR_EXPR_VARIABLE) {
         target_c_var_name = strdup(((IRExprVariable*)obj_expr)->name);
@@ -758,32 +758,87 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
 
         if (strstr(target_c_var_name, "style") != NULL || strncmp(target_c_var_name, "s_", 2) == 0) {
             obj_type_for_props = "style";
-        } else if (strstr(target_c_var_name, "label") != NULL || strncmp(target_c_var_name, "l_", 2) == 0) {
-            obj_type_for_props = "label";
-        }
-        ir_free((IRNode*)obj_expr);
-    } else if (obj_expr->type == IR_EXPR_FUNC_CALL || obj_expr->type == IR_EXPR_ADDRESS_OF || obj_expr->type == IR_EXPR_LITERAL) {
-        generated_var_name_to_free = generate_unique_var_name(ctx, "with_target");
-        target_c_var_name = generated_var_name_to_free;
-
-        if (obj_expr->type == IR_EXPR_ADDRESS_OF) {
-            IRExprAddressOf* addr_of = (IRExprAddressOf*)obj_expr;
-            if (addr_of->expr && addr_of->expr->type == IR_EXPR_VARIABLE) {
-                if (strstr(((IRExprVariable*)addr_of->expr)->name, "style") != NULL || strncmp(((IRExprVariable*)addr_of->expr)->name, "s_", 2) == 0) {
-                    temp_var_c_type = "lv_style_t*";
-                    obj_type_for_props = "style";
-                }
+            // temp_var_c_type remains lv_obj_t* because we are not creating a new var, just using existing one.
+        } else {
+            // For other known variable types, we might try to infer, but it's less critical as properties are looked up by this obj_type_for_props
+            // For now, default to "obj" if not obviously a style. A more robust type inference for variables could be added.
+            // Example: if we had a way to know `my_label` is `lv_label_t*`, we could set `obj_type_for_props = "label";`
+            // For now, the existing heuristic is kept.
+             if (strstr(target_c_var_name, "label") != NULL || strncmp(target_c_var_name, "l_", 2) == 0) {
+                obj_type_for_props = "label";
             }
+            // else it remains "obj"
         }
+        ir_free((IRNode*)obj_expr); // Free the unmarshalled expression as we only need its name
+    } else if (obj_expr->type == IR_EXPR_FUNC_CALL) {
+        IRExprFuncCall* func_call_expr = (IRExprFuncCall*)obj_expr;
+        const char* func_name = func_call_expr->func_name;
+
+        const char* c_return_type_str = api_spec_get_function_return_type(ctx->api_spec, func_name);
+        if (c_return_type_str && c_return_type_str[0] != '\0') {
+            temp_var_c_type = (char*)c_return_type_str; // Use the dynamically fetched type
+        } else {
+            // Default to "lv_obj_t*" if function not found or no return type.
+            // A warning could be logged here.
+            fprintf(stderr, "Warning: Could not determine return type for function '%s'. Defaulting to '%s'.\n", func_name, temp_var_c_type);
+        }
+        obj_type_for_props = get_obj_type_from_c_type(temp_var_c_type);
+
+        generated_var_name_to_free = generate_unique_var_name(ctx, obj_type_for_props);
+        target_c_var_name = generated_var_name_to_free;
+        IRStmt* var_decl_stmt = ir_new_var_decl(temp_var_c_type, target_c_var_name, obj_expr); // obj_expr is the func call itself
+        ir_block_add_stmt(parent_ir_block, var_decl_stmt);
+
+    } else if (obj_expr->type == IR_EXPR_ADDRESS_OF) { // Typically for &style_var
+        IRExprAddressOf* addr_of_expr = (IRExprAddressOf*)obj_expr;
+        // Try to infer type from the variable being addressed if it's a simple variable.
+        if (addr_of_expr->expr && addr_of_expr->expr->type == IR_EXPR_VARIABLE) {
+            const char* addressed_var_name = ((IRExprVariable*)addr_of_expr->expr)->name;
+            if (strstr(addressed_var_name, "style") != NULL || strncmp(addressed_var_name, "s_", 2) == 0) {
+                temp_var_c_type = "lv_style_t*"; // The temp variable will hold a pointer to lv_style_t
+                obj_type_for_props = "style";
+            }
+            // Add more heuristics if needed e.g. for lv_font_t* etc.
+        }
+        // If it's not a known pattern, defaults (lv_obj_t*, obj) will be used.
+        // This is okay because process_properties for &style_x will use "style" type for lookup.
+
+        generated_var_name_to_free = generate_unique_var_name(ctx, obj_type_for_props);
+        target_c_var_name = generated_var_name_to_free;
         IRStmt* var_decl_stmt = ir_new_var_decl(temp_var_c_type, target_c_var_name, obj_expr);
         ir_block_add_stmt(parent_ir_block, var_decl_stmt);
-    } else {
+
+    } else if (obj_expr->type == IR_EXPR_LITERAL) { // e.g. with: obj: NULL
+        // This is a bit of an edge case. What properties can be set on NULL?
+        // For now, treat as generic lv_obj_t* and "obj" type.
+        obj_type_for_props = "obj";
+        temp_var_c_type = "lv_obj_t*"; // Or void*? lv_obj_t* seems safer for LVGL operations.
+        generated_var_name_to_free = generate_unique_var_name(ctx, "null_target");
+        target_c_var_name = generated_var_name_to_free;
+        IRStmt* var_decl_stmt = ir_new_var_decl(temp_var_c_type, target_c_var_name, obj_expr);
+        ir_block_add_stmt(parent_ir_block, var_decl_stmt);
+    }
+    else {
         fprintf(stderr, "Error: 'obj' expression in 'with' block yielded an unexpected IR type: %d.\n", obj_expr->type);
         ir_free((IRNode*)obj_expr);
         return;
     }
 
     process_properties(ctx, do_json, target_c_var_name, parent_ir_block, obj_type_for_props, ui_context);
+
+    if (generated_var_name_to_free && obj_expr->type != IR_EXPR_VARIABLE) { // obj_expr was consumed by ir_new_var_decl if not IR_EXPR_VARIABLE
+        // If obj_expr was IR_EXPR_VARIABLE, it was freed earlier.
+        // If it was used in ir_new_var_decl, it's owned by that statement and shouldn't be freed here.
+        // This logic feels a bit complex; ir_free should handle NULL. Let's simplify.
+        // The original obj_expr is passed to ir_new_var_decl, which should take ownership.
+        // So, we only need to free generated_var_name_to_free.
+    } else if (obj_expr->type != IR_EXPR_VARIABLE && obj_expr->type != IR_EXPR_FUNC_CALL && obj_expr->type != IR_EXPR_ADDRESS_OF && obj_expr->type != IR_EXPR_LITERAL) {
+        // This case implies obj_expr was not used by var_decl and not IR_EXPR_VARIABLE, so it needs freeing.
+        // However, the error path above should catch this.
+        // For safety, if it wasn't passed to var_decl and wasn't a variable whose name was copied:
+        ir_free((IRNode*)obj_expr);
+    }
+
 
     if (generated_var_name_to_free) {
         free(generated_var_name_to_free);
