@@ -19,6 +19,7 @@ typedef struct {
     char* style_part_default;     // Default part for style properties (e.g. "LV_PART_MAIN", "LV_PART_SCROLLBAR")
     char* style_state_default;    // Default state for style properties (e.g. "LV_STATE_DEFAULT", "LV_STATE_PRESSED")
     bool is_style_prop;           // True if this property is generally set on style objects or via local style setters
+    char* obj_setter_prefix;      // For global properties, e.g. "lv_obj_set_style" for "text_color" -> "lv_obj_set_style_text_color"
 } PropertyDefinition; // Renamed from PropertyInfo
 
 typedef struct PropertyDefinitionNode {
@@ -70,6 +71,7 @@ typedef struct ApiSpec {
     FunctionMapNode* functions;                  // Head of linked list for functions
     const cJSON* constants;                             // Reference to parsed constants from JSON (owned by main cJSON doc)
     const cJSON* enums;                                 // Reference to parsed enums from JSON (owned by main cJSON doc)
+    const cJSON* global_properties_json_node;           // Reference to global #/properties from JSON (owned by main cJSON doc)
 } ApiSpec;
 
 

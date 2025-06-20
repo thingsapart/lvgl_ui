@@ -1,7 +1,10 @@
 #include "codegen.h"
-#include "ir.h" // Needs full IR structure definitions
+
 #include <stdio.h> // For printf
 #include <string.h> // For strcmp, strstr
+
+#include "ir.h"
+#include "utils.h"
 
 // --- Forward declarations for recursive codegen functions ---
 static void codegen_stmt_internal(IRStmt* stmt, int indent_level);
@@ -43,6 +46,7 @@ void codegen_expr_func_call(IRNode* node, int indent_level) {
     (void)indent_level;
     IRExprFuncCall* call = (IRExprFuncCall*)node;
     if (call->func_name) {
+        _dprintf(stderr, "CODEGEN_EXPR_FUNC_CALL: Processing func_name '%s'\n", call->func_name); fflush(stderr);
         printf("%s(", call->func_name);
         IRExprNode* current_arg = call->args;
         int arg_count = 0;
@@ -109,13 +113,14 @@ void codegen_expr_address_of(IRNode* node, int indent_level) {
 
 void codegen_stmt_block(IRNode* node, int indent_level) {
     IRStmtBlock* block = (IRStmtBlock*)node;
-    // Empty block might not need braces, but for consistency:
+    _dprintf(stderr, "CODEGEN_BLOCK: Entering block %p, indent: %d\n", (void*)block, indent_level); fflush(stderr);
     print_indent(indent_level);
     printf("{\n");
 
     IRStmtNode* current_stmt_node = block->stmts;
     while (current_stmt_node) {
         if (current_stmt_node->stmt) {
+            _dprintf(stderr, "CODEGEN_BLOCK: Processing IRStmt type: %d in block %p\n", current_stmt_node->stmt->type, (void*)block); fflush(stderr);
             codegen_stmt_internal(current_stmt_node->stmt, indent_level + 1);
         }
         current_stmt_node = current_stmt_node->next;
@@ -123,6 +128,7 @@ void codegen_stmt_block(IRNode* node, int indent_level) {
 
     print_indent(indent_level);
     printf("}\n");
+    _dprintf(stderr, "CODEGEN_BLOCK: Exiting block %p\n", (void*)block); fflush(stderr);
 }
 
 void codegen_stmt_var_decl(IRNode* node, int indent_level) {
@@ -148,6 +154,11 @@ void codegen_stmt_var_decl(IRNode* node, int indent_level) {
 // Name changed from ir.c's dummy to avoid potential conflict if they were in same file
 void codegen_stmt_func_call_stmt(IRNode* node, int indent_level) {
     IRStmtFuncCall* stmt_call = (IRStmtFuncCall*)node;
+    if (stmt_call->call && stmt_call->call->func_name) {
+        _dprintf(stderr, "CODEGEN_FUNC_CALL_STMT: Generating call for function '%s'\n", stmt_call->call->func_name); fflush(stderr);
+    } else {
+        _dprintf(stderr, "CODEGEN_FUNC_CALL_STMT: Generating call for UNKNOWN function\n"); fflush(stderr);
+    }
     print_indent(indent_level);
     if (stmt_call->call) {
         IRNode* call_as_node = (IRNode*)stmt_call->call; // Cast IRExprFuncCall* to IRNode*

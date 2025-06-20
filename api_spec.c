@@ -8,38 +8,39 @@ static char* safe_strdup(const char* s) {
     return s ? strdup(s) : NULL;
 }
 
-// Static global for temporary PropertyDefinition from function lookup
-// Note: This is not thread-safe and its content will be overwritten on subsequent calls.
-// A more robust solution might involve the caller managing memory or a context-based allocation.
 static PropertyDefinition global_func_prop_def;
-static char global_func_setter_name[128]; // Buffer for the setter name
-static char global_func_arg_type[64];    // Buffer for inferred C type of property
+static char global_func_setter_name[128];
+static char global_func_arg_type[64];
 
-// Forward declarations for helpers
+static PropertyDefinition global_prop_def_from_root;
+static char global_prop_name_buf[128];
+static char global_prop_c_type_buf[64];
+static char global_prop_setter_buf[128];
+static char global_prop_obj_setter_prefix_buf[128];
+static char global_prop_widget_type_hint_buf[64];
+static char global_prop_part_default_buf[64];
+static char global_prop_state_default_buf[64];
+
 static void free_property_definition_list(PropertyDefinitionNode* head);
-static void free_function_arg_list(FunctionArg* head); // Added
-static void free_function_definition_list(FunctionMapNode* head); // Added
+static void free_function_arg_list(FunctionArg* head);
+static void free_function_definition_list(FunctionMapNode* head);
 static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node);
 
-
-// Helper function to free a linked list of FunctionArg
 static void free_function_arg_list(FunctionArg* head) {
     FunctionArg* current = head;
     while (current) {
         FunctionArg* next = current->next;
         free(current->type);
-        // if (current->name) free(current->name); // Name is not currently parsed/stored
         free(current);
         current = next;
     }
 }
 
-// Helper function to free the linked list of FunctionMapNode
 static void free_function_definition_list(FunctionMapNode* head) {
     FunctionMapNode* current = head;
     while (current) {
         FunctionMapNode* next = current->next;
-        free(current->name); // Free the key name
+        free(current->name);
         if (current->func_def) {
             free(current->func_def->name);
             free(current->func_def->return_type);
@@ -51,7 +52,6 @@ static void free_function_definition_list(FunctionMapNode* head) {
     }
 }
 
-// Helper function to parse a widget/object definition from its cJSON node
 static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node) {
     if (!def_json_node || !cJSON_IsObject(def_json_node)) {
         fprintf(stderr, "Error: Invalid JSON node for definition '%s'.\n", def_name);
@@ -66,23 +66,20 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
     def->name = safe_strdup(def_name);
     def->inherits = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(def_json_node, "inherits")));
     def->create = NULL;
-    def->c_type = NULL;    // Initialize new field
-    def->init_func = NULL; // Initialize new field
+    def->c_type = NULL;
+    def->init_func = NULL;
     def->properties = NULL;
 
-    // Parse "create" field
     cJSON* create_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "create");
     if (create_item && cJSON_IsString(create_item) && create_item->valuestring != NULL && create_item->valuestring[0] != '\0') {
         def->create = safe_strdup(create_item->valuestring);
     }
 
-    // Parse "c_type" field
     cJSON* c_type_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "c_type");
     if (c_type_item && cJSON_IsString(c_type_item) && c_type_item->valuestring != NULL && c_type_item->valuestring[0] != '\0') {
         def->c_type = safe_strdup(c_type_item->valuestring);
     }
 
-    // Parse "init_func" field
     cJSON* init_func_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "init");
     if (init_func_item && cJSON_IsString(init_func_item) && init_func_item->valuestring != NULL && init_func_item->valuestring[0] != '\0') {
         def->init_func = safe_strdup(init_func_item->valuestring);
@@ -95,42 +92,30 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
 
         cJSON_ArrayForEach(prop_detail_json, properties_obj) {
             const char* prop_name_str = prop_detail_json->string;
-
             PropertyDefinition* pd = (PropertyDefinition*)calloc(1, sizeof(PropertyDefinition));
-            if (!pd) {
-                perror("Failed to allocate PropertyDefinition in parse_widget_def");
-                continue;
-            }
+            if (!pd) continue;
+
             pd->name = safe_strdup(prop_name_str);
-
-            cJSON* setter_item = cJSON_GetObjectItem(prop_detail_json, "setter");
-            if (cJSON_IsString(setter_item)) pd->setter = safe_strdup(setter_item->valuestring);
-
-            cJSON* type_item = cJSON_GetObjectItem(prop_detail_json, "type");
-            if (cJSON_IsString(type_item)) pd->c_type = safe_strdup(type_item->valuestring);
-
+            pd->setter = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "setter")));
+            pd->c_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "type"))); // Use "type" from JSON
             pd->widget_type_hint = safe_strdup(def_name);
+            pd->obj_setter_prefix = NULL;
 
             cJSON* style_args_item = cJSON_GetObjectItem(prop_detail_json, "style_args");
+            if (!style_args_item) style_args_item = cJSON_GetObjectItem(prop_detail_json, "num_style_args");
             if (cJSON_IsNumber(style_args_item)) pd->num_style_args = style_args_item->valueint;
+            else pd->num_style_args = 0;
 
-            cJSON* part_default_item = cJSON_GetObjectItem(prop_detail_json, "style_part_default");
-            if (cJSON_IsString(part_default_item)) pd->style_part_default = safe_strdup(part_default_item->valuestring);
-
-            cJSON* state_default_item = cJSON_GetObjectItem(prop_detail_json, "style_state_default");
-            if (cJSON_IsString(state_default_item)) pd->style_state_default = safe_strdup(state_default_item->valuestring);
-
-            cJSON* is_style_item = cJSON_GetObjectItem(prop_detail_json, "is_style_prop");
-            pd->is_style_prop = cJSON_IsTrue(is_style_item);
+            pd->style_part_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_part_default")));
+            pd->style_state_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_state_default")));
+            pd->is_style_prop = cJSON_IsTrue(cJSON_GetObjectItem(prop_detail_json, "is_style_prop"));
 
             *current_prop_list_node = (struct PropertyDefinitionNode*)calloc(1, sizeof(struct PropertyDefinitionNode));
             if (!*current_prop_list_node) {
-                perror("Failed to allocate PropertyDefinitionNode in parse_widget_def");
                 free(pd->name); free(pd->setter); free(pd->c_type); free(pd->widget_type_hint);
                 free(pd->style_part_default); free(pd->style_state_default); free(pd);
                 continue;
             }
-
             (*current_prop_list_node)->prop = pd;
             (*current_prop_list_node)->next = NULL;
             current_prop_list_node = &(*current_prop_list_node)->next;
@@ -139,112 +124,71 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
     return def;
 }
 
-
 ApiSpec* api_spec_parse(const cJSON* root_json) {
     if (!root_json) return NULL;
-
     ApiSpec* spec = (ApiSpec*)calloc(1, sizeof(ApiSpec));
-    if (!spec) {
-        perror("Failed to allocate ApiSpec");
-        return NULL;
-    }
+    if (!spec) return NULL;
+
     spec->widgets_list_head = NULL;
     spec->functions = NULL;
 
-    // --- Parse Widgets ---
     cJSON* widgets_json_obj = cJSON_GetObjectItemCaseSensitive(root_json, "widgets");
-    if (widgets_json_obj) {
-        if (cJSON_IsObject(widgets_json_obj)) {
-            cJSON* widget_json_item = NULL;
-            cJSON_ArrayForEach(widget_json_item, widgets_json_obj) {
-                const char* widget_type_name = widget_json_item->string;
-                WidgetDefinition* wd = parse_widget_def(widget_type_name, widget_json_item); // Uses the helper
-                if (wd) {
-                    WidgetMapNode* new_wnode = (WidgetMapNode*)calloc(1, sizeof(WidgetMapNode));
-                    if (new_wnode) {
-                        new_wnode->name = safe_strdup(widget_type_name);
-                        new_wnode->widget = wd;
-                        new_wnode->next = spec->widgets_list_head;
-                        spec->widgets_list_head = new_wnode;
-                    } else {
-                        fprintf(stderr, "Error: Failed to allocate WidgetMapNode for widget '%s'.\n", widget_type_name);
-                        if (wd->name) free(wd->name);
-                        if (wd->inherits) free(wd->inherits);
-                        if (wd->create) free(wd->create);
-                        free_property_definition_list(wd->properties);
-                        free(wd);
-                    }
+    if (widgets_json_obj && cJSON_IsObject(widgets_json_obj)) {
+        cJSON* widget_json_item = NULL;
+        cJSON_ArrayForEach(widget_json_item, widgets_json_obj) {
+            const char* widget_type_name = widget_json_item->string;
+            WidgetDefinition* wd = parse_widget_def(widget_type_name, widget_json_item);
+            if (wd) {
+                WidgetMapNode* new_wnode = (WidgetMapNode*)calloc(1, sizeof(WidgetMapNode));
+                if (new_wnode) {
+                    new_wnode->name = safe_strdup(widget_type_name);
+                    new_wnode->widget = wd;
+                    new_wnode->next = spec->widgets_list_head;
+                    spec->widgets_list_head = new_wnode;
+                } else {
+                    if (wd->name) free(wd->name); if (wd->inherits) free(wd->inherits); if (wd->create) free(wd->create);
+                    free_property_definition_list(wd->properties); free(wd);
                 }
             }
-        } else {
-            fprintf(stderr, "Warning: 'widgets' section is not an object in API spec. Widget definitions not parsed.\n");
         }
-    } else {
-        fprintf(stderr, "Warning: 'widgets' section is missing in API spec. Widget definitions not parsed.\n");
     }
 
-    // --- Parse Objects ---
     cJSON* objects_json_obj = cJSON_GetObjectItemCaseSensitive(root_json, "objects");
-    if (objects_json_obj) {
-        if (cJSON_IsObject(objects_json_obj)) {
-            cJSON* object_json_item = NULL;
-            cJSON_ArrayForEach(object_json_item, objects_json_obj) {
-                const char* object_type_name = object_json_item->string;
-                WidgetDefinition* od = parse_widget_def(object_type_name, object_json_item); // Uses the helper
-                if (od) {
-                    WidgetMapNode* new_onode = (WidgetMapNode*)calloc(1, sizeof(WidgetMapNode));
-                    if (new_onode) {
-                        new_onode->name = safe_strdup(object_type_name);
-                        new_onode->widget = od;
-                        new_onode->next = spec->widgets_list_head;
-                        spec->widgets_list_head = new_onode;
-                    } else {
-                        fprintf(stderr, "Error: Failed to allocate WidgetMapNode for object '%s'.\n", object_type_name);
-                        if (od->name) free(od->name);
-                        if (od->inherits) free(od->inherits);
-                        if (od->create) free(od->create);
-                        free_property_definition_list(od->properties);
-                        free(od);
-                    }
+    if (objects_json_obj && cJSON_IsObject(objects_json_obj)) {
+        cJSON* object_json_item = NULL;
+        cJSON_ArrayForEach(object_json_item, objects_json_obj) {
+            const char* object_type_name = object_json_item->string;
+            WidgetDefinition* od = parse_widget_def(object_type_name, object_json_item);
+            if (od) {
+                WidgetMapNode* new_onode = (WidgetMapNode*)calloc(1, sizeof(WidgetMapNode));
+                if (new_onode) {
+                    new_onode->name = safe_strdup(object_type_name);
+                    new_onode->widget = od;
+                    new_onode->next = spec->widgets_list_head;
+                    spec->widgets_list_head = new_onode;
+                } else {
+                     if (od->name) free(od->name); if (od->inherits) free(od->inherits); if (od->create) free(od->create);
+                    free_property_definition_list(od->properties); free(od);
                 }
             }
-        } else {
-            fprintf(stderr, "Warning: 'objects' section is not an object in API spec. Object definitions not parsed.\n");
         }
-    } else {
-        fprintf(stderr, "Warning: 'objects' section is missing in API spec. Object definitions not parsed.\n");
     }
-
     spec->constants = cJSON_GetObjectItemCaseSensitive(root_json, "constants");
     spec->enums = cJSON_GetObjectItemCaseSensitive(root_json, "enums");
-    // spec->functions = NULL; // Initialized by calloc already
+    spec->global_properties_json_node = cJSON_GetObjectItemCaseSensitive(root_json, "properties");
 
-    // --- Parse Functions ---
     cJSON* functions_json_obj = cJSON_GetObjectItemCaseSensitive(root_json, "functions");
     if (functions_json_obj && cJSON_IsObject(functions_json_obj)) {
         cJSON* func_json_item = NULL;
-        FunctionMapNode** current_func_node_ptr = &spec->functions; // Pointer to the current 'next' pointer
-
+        FunctionMapNode** current_func_node_ptr = &spec->functions;
         cJSON_ArrayForEach(func_json_item, functions_json_obj) {
             const char* func_name_str = func_json_item->string;
-            if (!cJSON_IsObject(func_json_item)) {
-                fprintf(stderr, "Warning: Function '%s' is not a JSON object. Skipping.\n", func_name_str);
-                continue;
-            }
-
+            if (!cJSON_IsObject(func_json_item)) continue;
             FunctionDefinition* fd = (FunctionDefinition*)calloc(1, sizeof(FunctionDefinition));
-            if (!fd) {
-                perror("Failed to allocate FunctionDefinition");
-                continue;
-            }
+            if (!fd) continue;
             fd->name = safe_strdup(func_name_str);
-
-            cJSON* ret_type_item = cJSON_GetObjectItemCaseSensitive(func_json_item, "return_type");
-            if (cJSON_IsString(ret_type_item)) {
-                fd->return_type = safe_strdup(ret_type_item->valuestring);
-            } else {
-                fd->return_type = safe_strdup("void"); // Default or error
-            }
+            fd->return_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(func_json_item, "return_type")));
+            if(!fd->return_type) fd->return_type = safe_strdup("void");
 
             cJSON* args_array_json = cJSON_GetObjectItemCaseSensitive(func_json_item, "args");
             FunctionArg** current_arg_ptr = &fd->args_head;
@@ -253,37 +197,25 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
                 cJSON_ArrayForEach(arg_type_json_item, args_array_json) {
                     if (cJSON_IsString(arg_type_json_item)) {
                         FunctionArg* fa = (FunctionArg*)calloc(1, sizeof(FunctionArg));
-                        if (!fa) {
-                            perror("Failed to allocate FunctionArg");
-                            break; /* Stop processing args for this function */
-                        }
+                        if (!fa) break;
                         fa->type = safe_strdup(arg_type_json_item->valuestring);
                         *current_arg_ptr = fa;
                         current_arg_ptr = &fa->next;
                     }
                 }
             }
-
             FunctionMapNode* new_fnode = (FunctionMapNode*)calloc(1, sizeof(FunctionMapNode));
             if (!new_fnode) {
-                perror("Failed to allocate FunctionMapNode");
-                free(fd->name);
-                free(fd->return_type);
-                free_function_arg_list(fd->args_head);
-                free(fd);
+                free(fd->name); free(fd->return_type); free_function_arg_list(fd->args_head); free(fd);
                 continue;
             }
             new_fnode->name = safe_strdup(func_name_str);
             new_fnode->func_def = fd;
             new_fnode->next = NULL;
-
             *current_func_node_ptr = new_fnode;
             current_func_node_ptr = &(*current_func_node_ptr)->next;
         }
-    } else {
-        fprintf(stderr, "Warning: 'functions' section missing or not an object in API spec.\n");
     }
-
     return spec;
 }
 
@@ -296,6 +228,7 @@ static void free_property_definition_list(PropertyDefinitionNode* head) {
             free(current->prop->c_type);
             free(current->prop->setter);
             free(current->prop->widget_type_hint);
+            free(current->prop->obj_setter_prefix);
             free(current->prop->style_part_default);
             free(current->prop->style_state_default);
             free(current->prop);
@@ -307,22 +240,15 @@ static void free_property_definition_list(PropertyDefinitionNode* head) {
 
 void api_spec_free(ApiSpec* spec) {
     if (!spec) return;
-
     WidgetMapNode* current_widget_node = spec->widgets_list_head;
     while (current_widget_node) {
         WidgetMapNode* next_widget_node = current_widget_node->next;
         free(current_widget_node->name);
         if (current_widget_node->widget) {
             WidgetDefinition* wd = current_widget_node->widget;
-            free(wd->name);
-            free(wd->inherits);
-            free(wd->create);
-            if (wd->c_type) {
-                free(wd->c_type);
-            }
-            if (wd->init_func) {
-                free(wd->init_func);
-            }
+            free(wd->name); free(wd->inherits); free(wd->create);
+            if (wd->c_type) free(wd->c_type);
+            if (wd->init_func) free(wd->init_func);
             free_property_definition_list(wd->properties);
             free(wd);
         }
@@ -330,11 +256,8 @@ void api_spec_free(ApiSpec* spec) {
         current_widget_node = next_widget_node;
     }
     spec->widgets_list_head = NULL;
-
-    // Free functions list
     free_function_definition_list(spec->functions);
     spec->functions = NULL;
-
     free(spec);
 }
 
@@ -354,12 +277,14 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
     if (!spec || !type_name || !prop_name) return NULL;
 
     const char* current_type_to_check = type_name;
-    char style_prop_name[128]; // Buffer for "style_<prop_name>"
+    char style_prop_name[128];
+    char potential_setter_name[128];
+    FunctionMapNode* func_node = NULL;
 
+    // 1. Search for prop_name directly on the widget and its ancestors.
     while (current_type_to_check != NULL && current_type_to_check[0] != '\0') {
         const WidgetDefinition* widget_def = api_spec_find_widget(spec, current_type_to_check);
         if (widget_def) {
-            // 1. Search for prop_name directly
             PropertyDefinitionNode* p_node = widget_def->properties;
             while(p_node) {
                 if (p_node->prop && p_node->prop->name && strcmp(p_node->prop->name, prop_name) == 0) {
@@ -367,38 +292,117 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                 }
                 p_node = p_node->next;
             }
-
-            // 2. If not found, search for "style_<prop_name>"
-            snprintf(style_prop_name, sizeof(style_prop_name), "style_%s", prop_name);
-            p_node = widget_def->properties; // Reset p_node to search again
-            while(p_node) {
-                if (p_node->prop && p_node->prop->name && strcmp(p_node->prop->name, style_prop_name) == 0) {
-                    // Found "style_<prop_name>"
-                    // This PropertyDefinition should already have its 'setter' correctly defined
-                    // (e.g., "lv_obj_set_style_radius") and 'is_style_prop' potentially true.
-                    return p_node->prop;
-                }
-                p_node = p_node->next;
-            }
-
-            current_type_to_check = widget_def->inherits; // Move to parent
+            current_type_to_check = widget_def->inherits;
         } else {
-            // If current_type_to_check was, e.g., "obj" and not found by api_spec_find_widget, stop.
-            // Or if type_name itself wasn't found.
             break;
         }
     }
 
-    // 3. If not found after inheritance chain (neither direct nor style-prefixed),
-    //    then try to find a matching global function.
+    // 2. If not found by direct match, check global #/properties.
+    if (spec->global_properties_json_node && cJSON_IsObject(spec->global_properties_json_node)) {
+        cJSON* prop_detail_json = cJSON_GetObjectItemCaseSensitive(spec->global_properties_json_node, prop_name);
+        if (prop_detail_json && cJSON_IsObject(prop_detail_json)) {
+            memset(&global_prop_def_from_root, 0, sizeof(PropertyDefinition));
+            global_prop_name_buf[0] = '\0'; global_prop_c_type_buf[0] = '\0'; global_prop_setter_buf[0] = '\0';
+            global_prop_obj_setter_prefix_buf[0] = '\0'; global_prop_widget_type_hint_buf[0] = '\0';
+            global_prop_part_default_buf[0] = '\0'; global_prop_state_default_buf[0] = '\0';
+
+            strncpy(global_prop_name_buf, prop_name, sizeof(global_prop_name_buf) - 1);
+            global_prop_name_buf[sizeof(global_prop_name_buf)-1] = '\0';
+            global_prop_def_from_root.name = global_prop_name_buf;
+
+            cJSON* type_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "type");
+            if (!type_item_json) type_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "c_type");
+            if (cJSON_IsString(type_item_json)) {
+                strncpy(global_prop_c_type_buf, type_item_json->valuestring, sizeof(global_prop_c_type_buf) - 1);
+                global_prop_c_type_buf[sizeof(global_prop_c_type_buf)-1] = '\0';
+                global_prop_def_from_root.c_type = global_prop_c_type_buf;
+            } else { global_prop_def_from_root.c_type = NULL; }
+
+            cJSON* setter_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "setter");
+            if (cJSON_IsString(setter_item_json)) {
+                strncpy(global_prop_setter_buf, setter_item_json->valuestring, sizeof(global_prop_setter_buf) - 1);
+                global_prop_setter_buf[sizeof(global_prop_setter_buf)-1] = '\0';
+                global_prop_def_from_root.setter = global_prop_setter_buf;
+            } else { global_prop_def_from_root.setter = NULL; }
+
+            cJSON* prefix_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "obj_setter_prefix");
+            if (cJSON_IsString(prefix_item_json)) {
+                strncpy(global_prop_obj_setter_prefix_buf, prefix_item_json->valuestring, sizeof(global_prop_obj_setter_prefix_buf) - 1);
+                global_prop_obj_setter_prefix_buf[sizeof(global_prop_obj_setter_prefix_buf)-1] = '\0';
+                global_prop_def_from_root.obj_setter_prefix = global_prop_obj_setter_prefix_buf;
+            } else { global_prop_def_from_root.obj_setter_prefix = NULL; }
+
+            cJSON* style_args_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "style_args");
+             if (!style_args_item_json) style_args_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "num_style_args");
+            if (cJSON_IsNumber(style_args_item_json)) {
+                global_prop_def_from_root.num_style_args = style_args_item_json->valueint;
+            } else { global_prop_def_from_root.num_style_args = 0; }
+
+            cJSON* part_default_item = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "style_part_default");
+            if (cJSON_IsString(part_default_item)) {
+                strncpy(global_prop_part_default_buf, part_default_item->valuestring, sizeof(global_prop_part_default_buf) - 1);
+                global_prop_part_default_buf[sizeof(global_prop_part_default_buf)-1] = '\0';
+                global_prop_def_from_root.style_part_default = global_prop_part_default_buf;
+            } else {
+                 if (global_prop_def_from_root.num_style_args == -1 || global_prop_def_from_root.num_style_args == 2) {
+                    strncpy(global_prop_part_default_buf, "LV_PART_MAIN", sizeof(global_prop_part_default_buf) -1);
+                    global_prop_part_default_buf[sizeof(global_prop_part_default_buf)-1] = '\0';
+                    global_prop_def_from_root.style_part_default = global_prop_part_default_buf;
+                 } else { global_prop_def_from_root.style_part_default = NULL; }
+            }
+
+            cJSON* state_default_item = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "style_state_default");
+            if (cJSON_IsString(state_default_item)) {
+                strncpy(global_prop_state_default_buf, state_default_item->valuestring, sizeof(global_prop_state_default_buf) - 1);
+                global_prop_state_default_buf[sizeof(global_prop_state_default_buf)-1] = '\0';
+                global_prop_def_from_root.style_state_default = global_prop_state_default_buf;
+            } else {
+                if (global_prop_def_from_root.num_style_args != 0) {
+                    strncpy(global_prop_state_default_buf, "LV_STATE_DEFAULT", sizeof(global_prop_state_default_buf) -1);
+                    global_prop_state_default_buf[sizeof(global_prop_state_default_buf)-1] = '\0';
+                    global_prop_def_from_root.style_state_default = global_prop_state_default_buf;
+                } else { global_prop_def_from_root.style_state_default = NULL; }
+            }
+
+            if (global_prop_def_from_root.obj_setter_prefix) {
+                 strncpy(global_prop_widget_type_hint_buf, "obj", sizeof(global_prop_widget_type_hint_buf) -1);
+                 global_prop_widget_type_hint_buf[sizeof(global_prop_widget_type_hint_buf)-1] = '\0';
+                 global_prop_def_from_root.widget_type_hint = global_prop_widget_type_hint_buf;
+            } else { global_prop_def_from_root.widget_type_hint = NULL; }
+
+            cJSON* is_style_item_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "is_style_prop");
+            global_prop_def_from_root.is_style_prop = cJSON_IsTrue(is_style_item_json);
+
+            if(global_prop_def_from_root.obj_setter_prefix != NULL) {
+                 return &global_prop_def_from_root;
+            }
+        }
+    }
+
+    // 3. If not found by direct name or suitable global property, THEN try style_ prefix on widget/ancestors.
+    current_type_to_check = type_name;
+    while (current_type_to_check != NULL && current_type_to_check[0] != '\0') {
+        const WidgetDefinition* widget_def = api_spec_find_widget(spec, current_type_to_check);
+        if (widget_def) {
+            snprintf(style_prop_name, sizeof(style_prop_name), "style_%s", prop_name);
+            PropertyDefinitionNode* p_node = widget_def->properties;
+            while(p_node) {
+                if (p_node->prop && p_node->prop->name && strcmp(p_node->prop->name, style_prop_name) == 0) {
+                    return p_node->prop;
+                }
+                p_node = p_node->next;
+            }
+            current_type_to_check = widget_def->inherits;
+        } else {
+            break;
+        }
+    }
+
+    // 4. Finally, if not found anywhere else, try to find a matching global function.
     if (spec->functions) {
-       FunctionMapNode* func_node = spec->functions;
-       char potential_setter_name[128];
-
+       func_node = spec->functions;
        snprintf(potential_setter_name, sizeof(potential_setter_name), "lv_obj_set_%s", prop_name);
-       // A more sophisticated approach might also try lv_<type_name>_set_<prop_name>
-       // or even lv_style_set_<prop_name> if contextually appropriate (though less likely here)
-
        while (func_node) {
            if (func_node->name && strcmp(func_node->name, potential_setter_name) == 0) {
                if (func_node->func_def && func_node->func_def->args_head &&
@@ -407,9 +411,9 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
 
                    FunctionArg* value_arg = func_node->func_def->args_head->next;
                    if (value_arg && value_arg->type) {
+                       memset(&global_func_prop_def, 0, sizeof(PropertyDefinition));
                        strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name) - 1);
                        global_func_setter_name[sizeof(global_func_setter_name) - 1] = '\0';
-
                        strncpy(global_func_arg_type, value_arg->type, sizeof(global_func_arg_type) - 1);
                        global_func_arg_type[sizeof(global_func_arg_type) - 1] = '\0';
 
@@ -418,13 +422,10 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                        global_func_prop_def.c_type = global_func_arg_type;
                        global_func_prop_def.widget_type_hint = (char*)type_name;
                        global_func_prop_def.num_style_args = 0;
+                       global_func_prop_def.obj_setter_prefix = NULL;
                        global_func_prop_def.style_part_default = NULL;
                        global_func_prop_def.style_state_default = NULL;
                        global_func_prop_def.is_style_prop = false;
-                       // If the global function is a local style setter like lv_obj_set_style_radius,
-                       // this 'is_style_prop' and 'num_style_args' would need to be set correctly.
-                       // This might require more info in the 'functions' part of api_spec.json
-                       // or more intelligent deduction here. For now, assume global funcs are not local style setters.
 
                        return &global_func_prop_def;
                    }
@@ -433,9 +434,8 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
            func_node = func_node->next;
        }
     }
-    return NULL; // Not found
+    return NULL;
 }
-
 
 const cJSON* api_spec_get_constants(const ApiSpec* spec) {
     return spec ? spec->constants : NULL;
