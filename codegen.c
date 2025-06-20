@@ -27,8 +27,7 @@ void codegen_expr_literal(IRNode* node, int indent_level) {
     IRExprLiteral* lit = (IRExprLiteral*)node;
     if (lit->value) {
         size_t len = strlen(lit->value);
-        // String literals from ir_new_literal_string are already quoted (e.g., ""foo
-bar"").
+        // String literals from ir_new_literal_string are already quoted (e.g., ""foo \n bar"").
         // Non-string literals (numbers, enums like LV_ALIGN_CENTER, true, false) are not quoted by ir_new_literal.
         if (len >= 2 && lit->value[0] == '"' && lit->value[len - 1] == '"') {
             printf("\""); // Print opening quote
