@@ -770,8 +770,8 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
             if (is_with_assignment_node) {
                  // If it's an assignment node, process_single_with_block needs to know it's assigning to c_var_name_for_node
                  char comment_buf[256];
-                 snprintf(comment_buf, sizeof(comment_buf), "// TODO: process_single_with_block for assignment to %s", c_var_name_for_node);
-                 ir_block_add_stmt(current_node_ir_block, ir_new_comment(comment_buf));
+                 // snprintf(comment_buf, sizeof(comment_buf), "// TODO: process_single_with_block for assignment to %s", c_var_name_for_node);
+                 // ir_block_add_stmt(current_node_ir_block, ir_new_comment(comment_buf));
                  // Temporarily, we might call the original one, though it will create a temp var we don't want.
                  // Or, we skip it if the next step will replace it. For safety, let's call it but acknowledge its current behavior.
                  // process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context, c_var_name_for_node);

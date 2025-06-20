@@ -10,11 +10,9 @@
     "type": "label",
     "id": "@label_for_with_test",
     "named": "l_label_with",
-    "properties": {
-      "text": "Initial Text for With",
-      "x": 10,
-      "y": 10
-    }
+    "text": "Initial Text for With",
+    "x": 10,
+    "y": 10
   },
   {
     "type": "obj",
@@ -25,7 +23,7 @@
         "type": "label",
         "id": "@target_label_1",
         "named": "l_target_1",
-        "properties": { "text": "Target 1" }
+        "text": "Target 1"
       },
       {
         "type": "button",
