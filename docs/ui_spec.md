@@ -45,8 +45,8 @@ Widget {
   type: string                 // Optional. The LVGL widget type (e.g., "label", "button", "bar").
   named: string                // Optional. Registers this widget instance with the given name.
   children: List<Widget>       // Optional. A list of child widgets.
-  with: List<WithBlock>        // Optional. Apply properties to a sub-object or expression result.
-  ...properties: PropertyMap   // Any number of widget-specific properties.
+  with: List<WithBlock>        // Optional. Apply properties to a sub-object or expression result, with is a properyy like and can bre repeated.
+  ...properties: PropertyMap   // Any number of widget-specific properties, properties can be repeated.
 }
 ```
 *   A special widget type `use-view` is used to instantiate a component (see below).
