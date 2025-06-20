@@ -900,25 +900,15 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
                                  forced_c_var_name || is_with_assignment_node; // Allow 'with' for assignment nodes
 
     if (c_var_name_for_node && node_type_can_have_with) {
-        cJSON* with_prop = cJSON_GetObjectItem(node_json, "with"); // Already fetched by is_with_assignment_node logic if it was true
-        if (with_prop) {
-            if (is_with_assignment_node) {
-                 // If it's an assignment node, process_single_with_block needs to know it's assigning to c_var_name_for_node
-                 char comment_buf[256];
-                 // snprintf(comment_buf, sizeof(comment_buf), "// TODO: process_single_with_block for assignment to %s", c_var_name_for_node);
-                 // ir_block_add_stmt(current_node_ir_block, ir_new_comment(comment_buf));
-                 // Temporarily, we might call the original one, though it will create a temp var we don't want.
-                 // Or, we skip it if the next step will replace it. For safety, let's call it but acknowledge its current behavior.
-                 // process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context, c_var_name_for_node);
-                 // For this step, the key is skipping the *initial* allocation.
-                 // The existing process_single_with_block will still run and create its own temp var.
-                 // This is not ideal but will be fixed in the next step.
-                 // The task stated: "The existing process_single_with_block call might proceed... The immediate goal is to skip the initial incorrect allocation."
-                 // "For now, let's ensure the lv_obj_create(parent) for c_var_name_for_node is skipped. The later call to process_single_with_block will be the focus of the next plan step."
-                process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context, c_var_name_for_node);
-
-            } else { // Original path for 'with' blocks not part of an assignment node
-                process_single_with_block(ctx, with_prop, current_node_ir_block, effective_context, NULL);
+        cJSON* item = NULL;
+        for (item = node_json->child; item != NULL; item = item->next) {
+            if (item->string && strcmp(item->string, "with") == 0) {
+                if (is_with_assignment_node) {
+                    // If it's an assignment node, process_single_with_block needs to know it's assigning to c_var_name_for_node
+                    process_single_with_block(ctx, item, current_node_ir_block, effective_context, c_var_name_for_node);
+                } else { // Original path for 'with' blocks not part of an assignment node
+                    process_single_with_block(ctx, item, current_node_ir_block, effective_context, NULL);
+                }
             }
         }
     }

@@ -1,0 +1,38 @@
+[
+  {
+    "type": "label",
+    "id": "@my_label",
+    "with": {
+      "obj": {
+        "call": "lv_label_create",
+        "args": [
+          "parent_obj"
+        ]
+      },
+      "do": {
+        "text": "First With"
+      }
+    },
+    "with": {
+      "obj": {
+        "call": "lv_obj_get_child",
+        "args": [
+          "parent_obj",
+          0
+        ]
+      },
+      "do": {
+        "align": "LV_ALIGN_CENTER"
+      }
+    },
+    "with": {
+      "obj": "@another_label",
+      "do": {
+        "text": "Third With"
+      }
+    },
+    "properties": {
+      "text": "Main Label Text"
+    }
+  }
+]
