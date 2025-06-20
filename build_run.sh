@@ -7,4 +7,4 @@ PYTHON_PATH=${PYTHON_PATH:-python3.13}
 ${PYTHON_PATH} generate_api_spec.py lv_def.json > api_spec.json
 
 # Run a sample ui.json file.
-make && ./lvgl_ui_generator ./api_spec.json ./ui.json
+make clean && make && ./lvgl_ui_generator ./api_spec.json ./ui.json

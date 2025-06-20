@@ -1,86 +1,17 @@
 {
   "widgets": {
-    "obj": {
-      "properties": {
-        "width": { "type": "int16_t", "setter": "lv_obj_set_width" },
-        "height": { "type": "int16_t", "setter": "lv_obj_set_height" },
-        "image_opa": {
-          "type": "lv_opa_t",
-          "enum_type_name": "lv_opa_t",
-          "setter": "lv_obj_set_style_img_opa",
-          "num_style_args": 2
-        }
-      }
-    },
+    "obj": { "c_type": "lv_obj_t*", "create": "lv_obj_create" },
     "label": {
-      "inherits": "obj",
+      "c_type": "lv_obj_t*",
       "create": "lv_label_create",
-      "properties": {
-        "text": { "type": "const char*", "setter": "lv_label_set_text" }
-      }
-    },
-    "button": {
-        "inherits": "obj",
-        "create": "lv_btn_create",
-        "properties": {}
+      "properties": { "text": { "type": "const char*", "setter": "lv_label_set_text" } }
     }
   },
   "functions": {
-    "lv_obj_set_width": {
-        "return_type": "void",
-        "args": [
-            {"name": "obj", "type": "lv_obj_t*"},
-            {"name": "width", "type": "int16_t"}
-        ],
-        "min_args": 2
-    },
-    "lv_obj_set_style_img_opa": {
-        "return_type": "void",
-        "args": [
-            {"name": "obj", "type": "lv_obj_t*"},
-            {"name": "value", "type": "lv_opa_t", "enum_type_name": "lv_opa_t"},
-            {"name": "selector", "type": "uint32_t"}
-        ],
-        "min_args": 3
-    },
-    "my_custom_func_set_opa": {
-        "return_type": "void",
-        "args": [
-            {"name": "target", "type": "lv_obj_t*"},
-            {"name": "opa_val", "type": "lv_opa_t", "enum_type_name": "lv_opa_t"}
-        ],
-        "min_args": 2
-    },
-    "another_func": {
-        "return_type": "void",
-        "args": [
-            {"name": "obj", "type": "lv_obj_t*"},
-            {"name": "val", "type": "int"}
-        ],
-        "min_args": 2
-    }
+    "lv_obj_create": { "args": ["lv_obj_t*"], "return_type": "lv_obj_t*" },
+    "lv_label_create": { "args": ["lv_obj_t*"], "return_type": "lv_obj_t*" },
+    "lv_label_set_text": { "args": ["lv_obj_t*", "const char*"], "return_type": "void" }
   },
-  "enums": {
-    "lv_opa_t": {
-      "name": "lv_opa_t",
-      "members": [
-        "LV_OPA_TRANSP",
-        "LV_OPA_0",
-        "LV_OPA_10",
-        "LV_OPA_20",
-        "LV_OPA_30",
-        "LV_OPA_40",
-        "LV_OPA_50",
-        "LV_OPA_60",
-        "LV_OPA_70",
-        "LV_OPA_80",
-        "LV_OPA_90",
-        "LV_OPA_100",
-        "LV_OPA_COVER"
-      ]
-    }
-  },
-  "constants": {
-     "LV_ALIGN_CENTER": "LV_ALIGN_CENTER_ENUM_VALUE"
-  }
+  "enums": {},
+  "constants": {}
 }

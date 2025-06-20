@@ -9,6 +9,7 @@
 #include "api_spec.h" // For ApiSpec, FunctionDefinition, api_spec_get_function, api_spec_is_enum_value etc.
 #include "registry.h" // For Registry, registry_get_type_by_id, registry_get_id_by_gen_var
 #include "utils.h"    // For dprintf, if that's where it's defined
+#include "codegen.h"  // For codegen function declarations
 
 // Forward declaration
 void ir_free_expr_list(IRExprNode* head);
@@ -96,12 +97,10 @@ const char* ir_expr_get_type(IRExpr* expr, const struct ApiSpec* api_spec, struc
         case IR_EXPR_VARIABLE: {
             IRExprVariable* var = (IRExprVariable*)expr;
             if (registry && var->name) {
-                // Attempt 1: var->name is an ID directly registered with a type
                 const char* type_from_id = registry_get_type_by_id(registry, var->name);
                 if (type_from_id) {
                     return type_from_id;
                 }
-                // Attempt 2: var->name is a C variable, find its original ID, then get type by that ID
                 const char* original_id = registry_get_id_by_gen_var(registry, var->name);
                 if (original_id) {
                     const char* type_from_original_id = registry_get_type_by_id(registry, original_id);
@@ -148,7 +147,7 @@ IRExpr* ir_new_literal(const char* value) {
     if (!expr) { perror("malloc IRExprLiteral"); return NULL; }
     expr->base.type = IR_EXPR_LITERAL;
     expr->base.free = (IRFreeFunc)ir_free;
-    expr->base.codegen = NULL;
+    expr->base.codegen = (IRCodegenFunc)codegen_expr_literal; // Corrected
     expr->value = value ? strdup(value) : NULL;
     if (value && !expr->value) { perror("strdup literal value"); free(expr); return NULL; }
     return (IRExpr*)expr;
@@ -159,7 +158,7 @@ IRExpr* ir_new_literal_string(const char* raw_string_content) {
     if (!expr) { perror("malloc IRExprLiteral for string"); return NULL; }
     expr->base.type = IR_EXPR_LITERAL;
     expr->base.free = (IRFreeFunc)ir_free;
-    expr->base.codegen = NULL;
+    expr->base.codegen = (IRCodegenFunc)codegen_expr_literal; // Corrected (uses same as literal)
 
     if (raw_string_content) {
         size_t len = strlen(raw_string_content);
@@ -179,7 +178,7 @@ IRExpr* ir_new_variable(const char* name) {
     if (!expr) { perror("malloc IRExprVariable"); return NULL; }
     expr->base.type = IR_EXPR_VARIABLE;
     expr->base.free = (IRFreeFunc)ir_free;
-    expr->base.codegen = NULL;
+    expr->base.codegen = (IRCodegenFunc)codegen_expr_variable; // Corrected
     expr->name = name ? strdup(name) : NULL;
     if (name && !expr->name) { perror("strdup var name"); free(expr); return NULL; }
     return (IRExpr*)expr;
@@ -194,7 +193,7 @@ IRExpr* ir_new_func_call_expr(const char* func_name, IRExprNode* args) {
     }
     expr->base.type = IR_EXPR_FUNC_CALL;
     expr->base.free = (IRFreeFunc)ir_free;
-    expr->base.codegen = NULL;
+    expr->base.codegen = (IRCodegenFunc)codegen_expr_func_call; // Corrected
     expr->args = NULL;
 
     expr->func_name = func_name ? strdup(func_name) : NULL;
@@ -213,7 +212,7 @@ IRExpr* ir_new_array(IRExprNode* elements) {
     if (!expr) { perror("malloc IRExprArray"); ir_free_expr_list(elements); return NULL; }
     expr->base.type = IR_EXPR_ARRAY;
     expr->base.free = (IRFreeFunc)ir_free;
-    expr->base.codegen = NULL;
+    expr->base.codegen = (IRCodegenFunc)codegen_expr_array; // Corrected
     expr->elements = elements;
     return (IRExpr*)expr;
 }
@@ -224,7 +223,7 @@ IRExpr* ir_new_address_of(IRExpr* target_expr) {
     if (!expr) { perror("malloc IRExprAddressOf"); ir_free(target_expr); return NULL; }
     expr->base.type = IR_EXPR_ADDRESS_OF;
     expr->base.free = (IRFreeFunc)ir_free;
-    expr->base.codegen = NULL;
+    expr->base.codegen = (IRCodegenFunc)codegen_expr_address_of; // Corrected
     expr->expr = target_expr;
     return (IRExpr*)expr;
 }
@@ -236,7 +235,7 @@ IRStmtBlock* ir_new_block() {
     if (!block) { perror("calloc IRStmtBlock"); return NULL; }
     block->base.type = IR_STMT_BLOCK;
     block->base.free = (IRFreeFunc)ir_free;
-    block->base.codegen = NULL;
+    block->base.codegen = (IRCodegenFunc)codegen_stmt_block;
     block->stmts = NULL;
     return block;
 }
@@ -264,7 +263,7 @@ IRStmt* ir_new_var_decl(const char* type_name, const char* var_name, IRExpr* ini
     if (!stmt) { perror("malloc IRStmtVarDecl"); ir_free(initializer); return NULL; }
     stmt->base.type = IR_STMT_VAR_DECL;
     stmt->base.free = (IRFreeFunc)ir_free;
-    stmt->base.codegen = NULL;
+    stmt->base.codegen = (IRCodegenFunc)codegen_stmt_var_decl;
     stmt->type_name = type_name ? strdup(type_name) : NULL;
     stmt->var_name = var_name ? strdup(var_name) : NULL;
     stmt->initializer = initializer;
@@ -285,7 +284,7 @@ IRStmt* ir_new_func_call_stmt(const char* func_name, IRExprNode* args) {
     if (!stmt) { perror("malloc IRStmtFuncCall"); ir_free_expr_list(args); return NULL; }
     stmt->base.type = IR_STMT_FUNC_CALL;
     stmt->base.free = (IRFreeFunc)ir_free;
-    stmt->base.codegen = NULL;
+    stmt->base.codegen = (IRCodegenFunc)codegen_stmt_func_call_stmt;
     stmt->call = (IRExprFuncCall*)ir_new_func_call_expr(func_name, args);
     if (!stmt->call) {
         free(stmt);
@@ -299,7 +298,7 @@ IRStmt* ir_new_comment(const char* text) {
     if (!stmt) { perror("malloc IRStmtComment"); return NULL; }
     stmt->base.type = IR_STMT_COMMENT;
     stmt->base.free = (IRFreeFunc)ir_free;
-    stmt->base.codegen = NULL;
+    stmt->base.codegen = (IRCodegenFunc)codegen_stmt_comment;
     stmt->text = text ? strdup(text) : NULL;
     if (text && !stmt->text) { perror("strdup comment text"); free(stmt); return NULL; }
     return (IRStmt*)stmt;
@@ -310,7 +309,7 @@ IRStmt* ir_new_widget_allocate_stmt(const char* c_var_name, const char* widget_c
     if (!stmt) { perror("malloc IRStmtWidgetAllocate"); ir_free(parent_expr); return NULL; }
     stmt->base.type = IR_STMT_WIDGET_ALLOCATE;
     stmt->base.free = (IRFreeFunc)ir_free;
-    stmt->base.codegen = NULL;
+    stmt->base.codegen = (IRCodegenFunc)codegen_stmt_widget_allocate;
     stmt->c_var_name = c_var_name ? strdup(c_var_name) : NULL;
     stmt->widget_c_type_name = widget_c_type_name ? strdup(widget_c_type_name) : NULL;
     stmt->create_func_name = create_func_name ? strdup(create_func_name) : NULL;
@@ -333,7 +332,7 @@ IRStmt* ir_new_object_allocate_stmt(const char* c_var_name, const char* object_c
     if (!stmt) { perror("malloc IRStmtObjectAllocate"); return NULL; }
     stmt->base.type = IR_STMT_OBJECT_ALLOCATE;
     stmt->base.free = (IRFreeFunc)ir_free;
-    stmt->base.codegen = NULL;
+    stmt->base.codegen = (IRCodegenFunc)codegen_stmt_object_allocate;
     stmt->c_var_name = c_var_name ? strdup(c_var_name) : NULL;
     stmt->object_c_type_name = object_c_type_name ? strdup(object_c_type_name) : NULL;
     stmt->init_func_name = init_func_name ? strdup(init_func_name) : NULL;

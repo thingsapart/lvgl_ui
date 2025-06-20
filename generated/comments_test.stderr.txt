@@ -1,0 +1,18 @@
+DEBUG main: api_spec.json content loaded. First 80 chars: [
+  {
+    "//": "Comment within object properties",
+    "type": "obj",
+    "chil
+DEBUG main: api_spec.json content loaded, length: 206
+DEBUG main: cJSON_Parse for api_spec.json returned: 0x56035bb2f480
+DEBUG main: Calling api_spec_parse with api_spec_json_root: 0x56035bb2f480
+DEBUG api_spec_parse: Entered function. root_json pointer: 0x56035bb2f480
+DEBUG api_spec.c: Warning - 'widgets' section not found in api_spec.json.
+DEBUG api_spec.c: Warning - 'constants' section not found.
+DEBUG api_spec.c: Warning - 'enums' section not found.
+DEBUG api_spec.c: Warning - global 'properties' section not found.
+DEBUG api_spec.c: Warning - 'functions' section not found in api_spec.json.
+DEBUG api_spec_parse: Finished function. Returning ApiSpec pointer: 0x56035bb30940
+DEBUG main: api_spec_parse returned ApiSpec pointer: 0x56035bb30940
+Error: Invalid arguments to generate_ir_from_ui_spec_with_registry.
+Error: Failed to generate IR from UI spec.
