@@ -1,0 +1,30 @@
+[
+  {
+    "type": "obj",
+    "id": "@enum_test_obj",
+    "properties": {
+      "align": "LV_ALIGN_CENTER"
+    }
+  },
+  {
+    "type": "obj",
+    "id": "@enum_test_obj_invalid_member",
+    "properties": {
+      "align": "INVALID_ALIGN_VALUE"
+    }
+  },
+  {
+    "type": "obj",
+    "id": "@enum_test_obj_wrong_enum",
+    "properties": {
+      "align": "LV_STATE_DEFAULT"
+    }
+  },
+  {
+    "type": "obj",
+    "id": "@enum_test_obj_unknown_prop",
+    "properties": {
+      "unknown_enum_prop": "LV_ALIGN_CENTER"
+    }
+  }
+]

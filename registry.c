@@ -75,8 +75,8 @@ void registry_free(Registry* reg) {
 // --- Pointer Registration ---
 
 void registry_add_pointer(Registry* reg, void* ptr, const char* id, const char* type) {
-    if (!reg || !id || !ptr) {
-        fprintf(stderr, "Error: registry_add_pointer: reg, id, and ptr must not be NULL\n");
+    if (!reg || !id ) { // ptr can be NULL (used by generator for type registration)
+        fprintf(stderr, "Error: registry_add_pointer: reg and id must not be NULL\n");
         return;
     }
 
@@ -108,7 +108,6 @@ void registry_add_pointer(Registry* reg, void* ptr, const char* id, const char* 
     new_node->ptr = ptr;
     new_node->next = reg->pointers;
     reg->pointers = new_node;
-    // fprintf(stderr, "DEBUG_REGISTRY_ADD: ID='%s', Type='%s', RegInstance=%p\n", new_node->id, new_node->type ? new_node->type : "NULL", (void*)reg); // DEBUG REMOVED
 }
 
 void* registry_get_pointer(const Registry* reg, const char* id, const char* expected_type) {
@@ -116,67 +115,46 @@ void* registry_get_pointer(const Registry* reg, const char* id, const char* expe
 
     for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
         if (strcmp(node->id, id) == 0) {
-            if (expected_type) { // expected_type is specified, so it must match
-                if (node->type && strcmp(node->type, expected_type) == 0) {
-                    return node->ptr; // ID and type match
-                } else if (node->type) {
-                    fprintf(stderr, "Warning: Pointer ID '%s' found, but type mismatch. Expected '%s', got '%s'.\n", id, expected_type, node->type);
-                    return NULL; // ID found, but type mismatch
-                } else {
-                    fprintf(stderr, "Warning: Pointer ID '%s' found, but it has no registered type. Expected '%s'.\n", id, expected_type);
-                    return NULL; // ID found, but no registered type to compare against
-                }
-            } else { // expected_type is not specified, first ID match is sufficient
-                return node->ptr;
-            }
-        }
-    }
-    return NULL; // Not found
-}
-
-void* registry_get_pointer_by_id(const Registry* reg, const char* id, const char** type_out) {
-    if (!reg || !id || !type_out) {
-        if (type_out) *type_out = NULL;
-        return NULL;
-    }
-
-    *type_out = NULL; // Initialize to NULL
-
-    for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
-        if (strcmp(node->id, id) == 0) {
-            // Found the pointer by ID.
-            // The type string in PointerRegistryNode is already owned by the registry.
-            // Return a direct pointer to it. The caller should not free it.
-            if (node->type) {
-                *type_out = node->type;
-            } else {
-                *type_out = NULL; // No type associated
+            if (expected_type != NULL && node->type != NULL && strcmp(node->type, expected_type) != 0) {
+                fprintf(stderr, "Warning: Registry type mismatch for ID '%s'. Expected '%s', but found '%s'.\n", id, expected_type, node->type);
             }
             return node->ptr;
         }
     }
-    return NULL; // Not found
+    return NULL;
 }
 
-const char* registry_get_type_by_id(const Registry* reg, const char* id) {
-    if (!reg || !id) {
-        return NULL;
+void *registry_get_pointer_by_id(Registry *reg, const char *id, const char **type_out) {
+  if (!reg || !id) {
+    if (type_out) *type_out = NULL;
+    return NULL;
+  }
+  PointerRegistryNode *current = reg->pointers;
+  while (current != NULL) {
+    if (strcmp(current->id, id) == 0) {
+      if (type_out != NULL) {
+        *type_out = current->type;
+      }
+      return current->ptr;
     }
-    // fprintf(stderr, "DEBUG_REGISTRY_GET_TYPE: Querying ID='%s', RegInstance=%p\n", id, (void*)reg); // DEBUG REMOVED
-    // PointerRegistryNode* temp_node = reg->pointers; // DEBUG REMOVED
-    // while(temp_node) { // DEBUG REMOVED
-    //    fprintf(stderr, "DEBUG_REGISTRY_GET_TYPE: ... available ID='%s', Type='%s'\n", temp_node->id, temp_node->type ? temp_node->type : "NULL"); // DEBUG REMOVED
-    //    temp_node = temp_node->next; // DEBUG REMOVED
-    // } // DEBUG REMOVED
+    current = current->next;
+  }
+  if (type_out != NULL) {
+    *type_out = NULL;
+  }
+  return NULL;
+}
 
-    for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
-        if (strcmp(node->id, id) == 0) {
-            // fprintf(stderr, "DEBUG_REGISTRY_GET_TYPE: Found ID='%s', Type='%s'\n", id, node->type ? node->type : "NULL"); // DEBUG REMOVED
-            return node->type; // Return direct pointer to the type string (owned by registry)
-        }
+const char *registry_get_type_by_id(const Registry *reg, const char *id) {
+  if (!reg || !id) return NULL;
+  PointerRegistryNode *current = reg->pointers;
+  while (current != NULL) {
+    if (strcmp(current->id, id) == 0) {
+      return current->type;
     }
-    // fprintf(stderr, "DEBUG_REGISTRY_GET_TYPE: ID='%s' NOT FOUND\n", id); // DEBUG REMOVED
-    return NULL; // ID not found
+    current = current->next;
+  }
+  return NULL;
 }
 
 // --- String Registration ---
@@ -184,44 +162,41 @@ const char* registry_get_type_by_id(const Registry* reg, const char* id) {
 const char* registry_add_str(Registry* reg, const char* value) {
     if (!reg || !value) {
          fprintf(stderr, "Error: registry_add_str: reg and value must not be NULL\n");
-        return NULL; // Or consider returning a static error string
+        return NULL;
     }
 
-    // Check if string already exists
     for (StringRegistryNode* node = reg->strings; node; node = node->next) {
         if (strcmp(node->value, value) == 0) {
-            return node->value; // Return existing string
+            return node->value;
         }
     }
 
-    // String not found, create and add new node
     StringRegistryNode* new_node = (StringRegistryNode*)malloc(sizeof(StringRegistryNode));
     if (!new_node) {
         perror("Failed to allocate string registry node");
-        return NULL; // Or consider returning a static error string
+        return NULL;
     }
 
     new_node->value = strdup(value);
     if (!new_node->value) {
         perror("Failed to duplicate string for string registry");
         free(new_node);
-        return NULL; // Or consider returning a static error string
+        return NULL;
     }
 
     new_node->next = reg->strings;
     reg->strings = new_node;
-    return new_node->value; // Return newly duplicated string
+    return new_node->value;
 }
 
 
 void registry_add_component(Registry* reg, const char* name, const cJSON* component_root) {
     if (!reg || !name || !component_root) return;
 
-    // Check if component already exists (optional, could update or error)
     for (ComponentRegistryNode* node = reg->components; node; node = node->next) {
         if (strcmp(node->name, name) == 0) {
-            fprintf(stderr, "Warning: Component '%s' already registered. Overwriting.\n", name);
-            node->component_root = component_root; // Update existing
+            // fprintf(stderr, "Warning: Component '%s' already registered. Overwriting.\n", name);
+            node->component_root = component_root;
             return;
         }
     }
@@ -237,7 +212,7 @@ void registry_add_component(Registry* reg, const char* name, const cJSON* compon
         free(new_node);
         return;
     }
-    new_node->component_root = component_root; // Store direct pointer
+    new_node->component_root = component_root;
     new_node->next = reg->components;
     reg->components = new_node;
 }
@@ -249,21 +224,23 @@ const cJSON* registry_get_component(const Registry* reg, const char* name) {
             return node->component_root;
         }
     }
-    fprintf(stderr, "Warning: Component '%s' not found in registry.\n", name);
+    // fprintf(stderr, "Warning: Component '%s' not found in registry.\n", name); // Can be too noisy
     return NULL;
 }
 
 void registry_add_generated_var(Registry* reg, const char* name, const char* c_var_name) {
     if (!reg || !name || !c_var_name) return;
 
-    // Check if var already exists (optional)
     for (VarRegistryNode* node = reg->generated_vars; node; node = node->next) {
         if (strcmp(node->name, name) == 0) {
-            fprintf(stderr, "Warning: Generated variable '%s' already registered. Updating C name from '%s' to '%s'.\n", name, node->c_var_name, c_var_name);
-            free(node->c_var_name);
-            node->c_var_name = strdup(c_var_name);
-            if (!node->c_var_name) {
-                perror("Failed to duplicate C variable name string for update");
+            // If name (original ID) already exists, update its C variable name if different.
+            if (strcmp(node->c_var_name, c_var_name) != 0) {
+                // fprintf(stderr, "Warning: Generated variable for ID '%s' already registered. Updating C name from '%s' to '%s'.\n", name, node->c_var_name, c_var_name);
+                free(node->c_var_name);
+                node->c_var_name = strdup(c_var_name);
+                if (!node->c_var_name) {
+                    perror("Failed to duplicate C variable name string for update");
+                }
             }
             return;
         }
@@ -296,11 +273,16 @@ const char* registry_get_generated_var(const Registry* reg, const char* name) {
             return node->c_var_name;
         }
     }
-    // It's not an error if a @variable is not in this *generated* var registry,
-    // as it might be a C-registered pointer (e.g. @font_xyz).
-    // The generator will handle this by outputting the name directly.
-    // However, for styles or named widgets defined *within* the JSON, they *should* be found.
-    // Consider if a warning is appropriate here or if the caller should handle "not found".
-    // For now, no warning, consistent with current generator.c logic.
+    return NULL;
+}
+
+// Gets original UI name/ID by its generated C variable name
+const char* registry_get_id_by_gen_var(const Registry* reg, const char* c_var_name) {
+    if (!reg || !c_var_name) return NULL;
+    for (VarRegistryNode* node = reg->generated_vars; node; node = node->next) {
+        if (strcmp(node->c_var_name, c_var_name) == 0) {
+            return node->name; // This 'name' is the original ID.
+        }
+    }
     return NULL;
 }

@@ -5,22 +5,24 @@
 #include <cJSON/cJSON.h>
 
 // --- Function Definition Structures ---
-// (Moved before PropertyDefinition and WidgetDefinition)
 typedef struct FunctionArg {
-    char* type; // Argument type as string (e.g., "lv_obj_t*", "int32_t")
-    // char* name; // Optional: if argument names are available in JSON in the future
+    const char* name;             // Argument name (e.g., "val", "obj", "p")
+    const char* type;             // Argument C type (e.g., "lv_obj_t*", "int32_t", "lv_opa_t")
+    const char* enum_type_name;   // If type is an enum, its name (e.g., "lv_opa_t")
     struct FunctionArg* next;
 } FunctionArg;
 
-typedef struct {
-    char* name;         // Function name (e.g., "lv_obj_set_width")
-    char* return_type;
-    FunctionArg* args_head;  // Linked list of argument types
+typedef struct FunctionDefinition {
+    const char* name;        // Function name (e.g., "lv_obj_set_width")
+    const char* return_type; // Return C type (e.g., "void", "lv_obj_t*")
+    FunctionArg* args;       // Linked list of argument types/names
+    int num_args;            // Total number of arguments
+    int min_args;            // Minimum number of required arguments
 } FunctionDefinition;
 
 // Node for a linked list acting as a map/list of functions
 typedef struct FunctionMapNode {
-    char* name; // Key for the map (function name, e.g. "lv_obj_set_width")
+    const char* name; // Key for the map (function name, e.g. "lv_obj_set_width")
     FunctionDefinition* func_def; // Pointer to the actual function definition
     struct FunctionMapNode* next;
 } FunctionMapNode;
@@ -30,18 +32,17 @@ typedef struct FunctionMapNode {
 
 // Holds information about a single property (e.g., width, text, bg_color)
 typedef struct {
-    char* name;                   // Property name (e.g., "width")
-    char* c_type;                 // Corresponding C type (e.g., "int", "const char*", "lv_color_t")
-    char* setter;                 // Name of the LVGL setter function (e.g., "lv_obj_set_width")
-    char* widget_type_hint;       // For which widget type this setter is primarily for (e.g. "obj", "label", "style") helps construct setter if not explicit
-    int num_style_args;           // For style properties, indicates number of leading lv_style_selector_t/lv_part_t args (0, 1, or 2 typically)
-                                  // e.g. lv_style_set_radius(style, state, value) -> 1 (state)
-                                  // e.g. lv_obj_set_style_local_radius(obj, part, state, value) -> 2 (part, state)
-    char* style_part_default;     // Default part for style properties (e.g. "LV_PART_MAIN", "LV_PART_SCROLLBAR")
-    char* style_state_default;    // Default state for style properties (e.g. "LV_STATE_DEFAULT", "LV_STATE_PRESSED")
-    bool is_style_prop;           // True if this property is generally set on style objects or via local style setters
-    char* obj_setter_prefix;      // For global properties, e.g. "lv_obj_set_style" for "text_color" -> "lv_obj_set_style_text_color"
-    FunctionArg* func_args;       // NEW FIELD: Linked list of arguments if this property resolves to a function/method with a known signature.
+    const char* name;                   // Property name (e.g., "width")
+    const char* c_type;                 // Corresponding C type (e.g., "int", "const char*", "lv_color_t")
+    const char* enum_type_name;         // If c_type is an enum, its name (e.g., "lv_opa_t")
+    const char* setter;                 // Name of the LVGL setter function (e.g., "lv_obj_set_width")
+    const char* widget_type_hint;       // For which widget type this setter is primarily for (e.g. "obj", "label", "style")
+    int num_style_args;                 // For style properties, indicates number of leading lv_style_selector_t/lv_part_t args
+    const char* style_part_default;     // Default part for style properties
+    const char* style_state_default;    // Default state for style properties
+    bool is_style_prop;                 // True if this property is generally set on style objects
+    const char* obj_setter_prefix;      // For global properties, e.g. "lv_obj_set_style" for "text_color"
+    FunctionArg* func_args;             // Arguments if this property is a function with a known signature.
 } PropertyDefinition;
 
 typedef struct PropertyDefinitionNode {
@@ -50,71 +51,55 @@ typedef struct PropertyDefinitionNode {
 } PropertyDefinitionNode;
 
 typedef struct WidgetDefinition {
-    char* name;         // Type name from JSON key (e.g., "button", "style")
-    char* inherits;     // Optional parent type name
-    char* create;       // Optional LVGL creation function name (e.g., "lv_btn_create")
-    char* c_type;       // ADDED: C type for objects (e.g., "lv_style_t", "lv_anim_t")
-    char* init_func;    // ADDED: Initialization function for objects (e.g., "lv_style_init")
+    const char* name;                   // Type name from JSON key (e.g., "button", "style")
+    const char* inherits;               // Optional parent type name
+    const char* create;                 // Optional LVGL creation function name (e.g., "lv_btn_create")
+    const char* c_type;                 // C type for objects (e.g., "lv_style_t", "lv_anim_t")
+    const char* init_func;              // Initialization function for objects (e.g., "lv_style_init")
+    const char* json_type_override;     // If the type for runtime registry differs from 'name' (e.g. components)
     PropertyDefinitionNode* properties; // Linked list of applicable properties
-    FunctionMapNode* methods; // Linked list of methods specific to this widget
-    // char* parent_type; // Optional: expected parent type
+    FunctionMapNode* methods;           // Linked list of methods specific to this widget
 } WidgetDefinition;
 
-// Node for the linked list of widget definitions (maps widget type name to its definition)
+// Node for the linked list of widget definitions
 typedef struct WidgetMapNode {
-    char* name;                             // Name of the widget type (key, e.g., "button")
-    WidgetDefinition* widget;               // Pointer to the actual widget definition
+    const char* name;                   // Name of the widget type (key, e.g., "button")
+    WidgetDefinition* widget;           // Pointer to the actual widget definition
     struct WidgetMapNode* next;
 } WidgetMapNode;
 
 
-// Represents the parsed API specification (e.g., from api_spec.json)
+// Represents the parsed API specification
 typedef struct ApiSpec {
-    WidgetMapNode* widgets_list_head;                   // Head of the linked list for widget definitions
-    FunctionMapNode* functions;                  // Head of linked list for functions
-    const cJSON* constants;                             // Reference to parsed constants from JSON (owned by main cJSON doc)
-    const cJSON* enums;                                 // Reference to parsed enums from JSON (owned by main cJSON doc)
-    const cJSON* global_properties_json_node;           // Reference to global #/properties from JSON (owned by main cJSON doc)
+    WidgetMapNode* widgets_list_head;           // Head of the linked list for widget definitions
+    FunctionMapNode* functions_list_head;       // Head of linked list for global functions
+    const cJSON* constants_json_node;           // Reference to parsed constants from JSON
+    const cJSON* enums_json_node;               // Reference to parsed enums from JSON
+    const cJSON* global_properties_json_node;   // Reference to global #/properties from JSON
 } ApiSpec;
 
 
 // --- Function Declarations ---
 
-// Parses the API specification from a cJSON object.
-// Returns a pointer to an ApiSpec structure, or NULL on error.
 ApiSpec* api_spec_parse(const cJSON* root_json);
-
-// Frees the ApiSpec structure and all its contents.
 void api_spec_free(ApiSpec* spec);
 
 const WidgetDefinition* api_spec_find_widget(const ApiSpec* spec, const char* widget_name);
-
-// Retrieves property definition for a specific widget type or API object type.
-// type_name: e.g., "button", "label", "obj" (for common ones), "style"
-// prop_name: the name of the property.
-// Returns NULL if the property is not found for that type.
 const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char* type_name, const char* prop_name);
 
-// Retrieves the raw cJSON object for constants.
 const cJSON* api_spec_get_constants(const ApiSpec* spec);
-
-// Retrieves the raw cJSON object for enums.
 const cJSON* api_spec_get_enums(const ApiSpec* spec);
+const cJSON* api_spec_get_enum(const ApiSpec* spec, const char* enum_name); // Get specific enum definition
 
-// Retrieves the create function name for a given widget definition.
 const char* widget_get_create_func(const WidgetDefinition* widget);
 
-// Retrieves the C return type string of a function.
-// Returns a default type (e.g., "lv_obj_t*") if the function is not found or has no return type.
-const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* func_name);
+// Function lookups
+const FunctionDefinition* api_spec_get_function(const ApiSpec* spec, const char* func_name);
+const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* func_name); // Can be derived from api_spec_get_function
 
-// Finds the enum type name for a given enum member literal (e.g., "LV_ALIGN_CENTER" -> "lv_align_t")
-const char* api_spec_find_enum_type_for_member(const ApiSpec* spec, const char* enum_member_literal);
-
-// Finds a function definition in the API spec's global functions or widget methods.
-const FunctionDefinition* api_spec_find_function(const ApiSpec* spec, const char* func_name);
-
-// Retrieves a function argument definition by index from a function definition.
-const FunctionArg* api_spec_get_function_arg_by_index(const FunctionDefinition* fd, int arg_idx);
+// Type checking helpers
+bool api_spec_is_enum_value(const ApiSpec* spec, const char* value_str);
+bool api_spec_is_enum_type(const ApiSpec* spec, const char* type_name);
+bool api_spec_is_constant(const ApiSpec* spec, const char* key);
 
 #endif // API_SPEC_H

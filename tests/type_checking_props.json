@@ -1,0 +1,17 @@
+[
+  {
+    "type": "obj",
+    "id": "@prop_test_obj",
+    "properties": {
+      "width": 100,
+      "x": "not_an_int"
+    }
+  },
+  {
+    "type": "label",
+    "id": "@prop_test_label",
+    "properties": {
+      "text": 12345
+    }
+  }
+]

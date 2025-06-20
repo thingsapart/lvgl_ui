@@ -1,0 +1,29 @@
+[
+  {
+    "type": "style",
+    "id": "@tc_style1"
+  },
+  {
+    "type": "obj",
+    "id": "@tc_obj_for_with",
+    "with": {
+      "obj": "@tc_style1",
+      "do": {
+        "radius": "not_a_number"
+      }
+    }
+  },
+  {
+    "type": "obj",
+    "id": "@tc_obj_for_with_func",
+    "// Assume lv_obj_get_style_radius is in api_spec returning int for simplicity of test setup": "comment",
+    "// For a real test, we'd need a function returning a style object here.",
+    "// This part of the test might be hard to make meaningful without such a func in api_spec.",
+    "with": {
+      "obj": {"call": "lv_obj_get_child", "args": [null, 0]},
+      "do": {
+        "text": 123
+      }
+    }
+  }
+]

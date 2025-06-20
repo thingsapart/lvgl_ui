@@ -8,34 +8,41 @@ static char* safe_strdup(const char* s) {
     return s ? strdup(s) : NULL;
 }
 
+// Static buffers for property definitions returned by api_spec_find_property
+// This is not thread-safe and assumes properties are not kept long-term by the caller.
+// Consider a more robust memory management strategy for a real application.
 static PropertyDefinition global_func_prop_def;
 static char global_func_setter_name[128];
 static char global_func_arg_type[64];
 
-static PropertyDefinition global_prop_def_from_root;
-static char global_prop_name_buf[128];
-static char global_prop_c_type_buf[64];
-static char global_prop_setter_buf[128];
-static char global_prop_obj_setter_prefix_buf[128];
-static char global_prop_widget_type_hint_buf[64];
-static char global_prop_part_default_buf[64];
-static char global_prop_state_default_buf[64];
+// These seem unused based on current api_spec_find_property, but kept for now if they were intended for something.
+// static PropertyDefinition global_prop_def_from_root;
+// static char global_prop_name_buf[128];
+// static char global_prop_c_type_buf[64];
+// static char global_prop_setter_buf[128];
+// static char global_prop_obj_setter_prefix_buf[128];
+// static char global_prop_widget_type_hint_buf[64];
+// static char global_prop_part_default_buf[64];
+// static char global_prop_state_default_buf[64];
 
-// New static variables for method-derived properties
 static PropertyDefinition method_prop_def;
 static char method_setter_name[128];
 static char method_arg_type[64];
 
+
 static void free_property_definition_list(PropertyDefinitionNode* head);
 static void free_function_arg_list(FunctionArg* head);
 static void free_function_definition_list(FunctionMapNode* head);
-static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node);
+static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node, const ApiSpec* spec_for_context); // Added spec_for_context
 
 static void free_function_arg_list(FunctionArg* head) {
     FunctionArg* current = head;
     while (current) {
         FunctionArg* next = current->next;
-        free(current->type);
+        // Assuming name, type, and enum_type_name are strdup'd const char* effectively
+        free((void*)current->name);
+        free((void*)current->type);
+        free((void*)current->enum_type_name);
         free(current);
         current = next;
     }
@@ -45,19 +52,60 @@ static void free_function_definition_list(FunctionMapNode* head) {
     FunctionMapNode* current = head;
     while (current) {
         FunctionMapNode* next = current->next;
-        free(current->name);
+        free((void*)current->name); // Name of the node (key)
         if (current->func_def) {
-            free(current->func_def->name);
-            free(current->func_def->return_type);
-            free_function_arg_list(current->func_def->args_head);
+            free((void*)current->func_def->name);
+            free((void*)current->func_def->return_type);
+            free_function_arg_list(current->func_def->args);
             free(current->func_def);
         }
         free(current);
         current = next;
     }
 }
+static PropertyDefinition* parse_property_def_from_json(const char* prop_name_str, const cJSON* prop_detail_json, const char* widget_def_name, const ApiSpec* spec_for_context) {
+    PropertyDefinition* pd = (PropertyDefinition*)calloc(1, sizeof(PropertyDefinition));
+    if (!pd) return NULL;
 
-static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node) {
+    pd->name = safe_strdup(prop_name_str);
+    pd->setter = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "setter")));
+    pd->c_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "type")));
+    pd->enum_type_name = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "enum_type_name")));
+    pd->widget_type_hint = safe_strdup(widget_def_name); // Widget this prop is directly defined under
+    pd->obj_setter_prefix = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "obj_setter_prefix")));
+
+
+    cJSON* style_args_item = cJSON_GetObjectItem(prop_detail_json, "style_args");
+    if (!style_args_item) style_args_item = cJSON_GetObjectItem(prop_detail_json, "num_style_args"); // backward compat
+    if (cJSON_IsNumber(style_args_item)) pd->num_style_args = style_args_item->valueint;
+    else pd->num_style_args = 0;
+
+    pd->style_part_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_part_default")));
+    pd->style_state_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_state_default")));
+    pd->is_style_prop = cJSON_IsTrue(cJSON_GetObjectItem(prop_detail_json, "is_style_prop"));
+
+    // Parse func_args if present
+    cJSON* func_args_json = cJSON_GetObjectItemCaseSensitive(prop_detail_json, "func_args");
+    if (cJSON_IsArray(func_args_json)) {
+        FunctionArg** current_arg_ptr = &pd->func_args;
+        cJSON* arg_json = NULL;
+        cJSON_ArrayForEach(arg_json, func_args_json) {
+            if (cJSON_IsObject(arg_json)) {
+                FunctionArg* fa = (FunctionArg*)calloc(1, sizeof(FunctionArg));
+                if (!fa) break;
+                fa->name = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json, "name")));
+                fa->type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json, "type")));
+                fa->enum_type_name = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json, "enum_type_name")));
+                *current_arg_ptr = fa;
+                current_arg_ptr = &fa->next;
+            }
+        }
+    }
+    return pd;
+}
+
+
+static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node, const ApiSpec* spec_for_context) {
     if (!def_json_node || !cJSON_IsObject(def_json_node)) {
         fprintf(stderr, "Error: Invalid JSON node for definition '%s'.\n", def_name);
         return NULL;
@@ -70,66 +118,29 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
     }
     def->name = safe_strdup(def_name);
     def->inherits = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(def_json_node, "inherits")));
-    def->create = NULL;
-    def->c_type = NULL;
-    def->init_func = NULL;
-    def->properties = NULL;
-    def->methods = NULL;    // ADDED: initialize methods list
+    def->create = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(def_json_node, "create")));
+    def->c_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(def_json_node, "c_type")));
+    def->init_func = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(def_json_node, "init")));
+    def->json_type_override = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(def_json_node, "json_type_override")));
 
-    cJSON* create_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "create");
-    if (create_item && cJSON_IsString(create_item) && create_item->valuestring != NULL && create_item->valuestring[0] != '\0') {
-        def->create = safe_strdup(create_item->valuestring);
-    }
-
-    cJSON* c_type_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "c_type");
-    if (c_type_item && cJSON_IsString(c_type_item) && c_type_item->valuestring != NULL && c_type_item->valuestring[0] != '\0') {
-        def->c_type = safe_strdup(c_type_item->valuestring);
-    }
-
-    cJSON* init_func_item = cJSON_GetObjectItemCaseSensitive(def_json_node, "init");
-    if (init_func_item && cJSON_IsString(init_func_item) && init_func_item->valuestring != NULL && init_func_item->valuestring[0] != '\0') {
-        def->init_func = safe_strdup(init_func_item->valuestring);
-    }
 
     cJSON* properties_obj = cJSON_GetObjectItemCaseSensitive(def_json_node, "properties");
     if (cJSON_IsObject(properties_obj)) {
         cJSON* prop_detail_json;
-        struct PropertyDefinitionNode** current_prop_list_node = &def->properties;
-
+        PropertyDefinitionNode** current_prop_list_node = &def->properties;
         cJSON_ArrayForEach(prop_detail_json, properties_obj) {
             const char* prop_name_str = prop_detail_json->string;
-            PropertyDefinition* pd = (PropertyDefinition*)calloc(1, sizeof(PropertyDefinition));
-            if (!pd) continue;
-
-            pd->name = safe_strdup(prop_name_str);
-            pd->setter = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "setter")));
-            pd->c_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "type"))); // Use "type" from JSON
-            pd->widget_type_hint = safe_strdup(def_name);
-            pd->obj_setter_prefix = NULL;
-
-            cJSON* style_args_item = cJSON_GetObjectItem(prop_detail_json, "style_args");
-            if (!style_args_item) style_args_item = cJSON_GetObjectItem(prop_detail_json, "num_style_args");
-            if (cJSON_IsNumber(style_args_item)) pd->num_style_args = style_args_item->valueint;
-            else pd->num_style_args = 0;
-
-            pd->style_part_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_part_default")));
-            pd->style_state_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_state_default")));
-            pd->is_style_prop = cJSON_IsTrue(cJSON_GetObjectItem(prop_detail_json, "is_style_prop"));
-            pd->func_args = NULL; // Initialize new field
-
-            *current_prop_list_node = (struct PropertyDefinitionNode*)calloc(1, sizeof(struct PropertyDefinitionNode));
-            if (!*current_prop_list_node) {
-                free(pd->name); free(pd->setter); free(pd->c_type); free(pd->widget_type_hint);
-                free(pd->style_part_default); free(pd->style_state_default); free(pd);
-                continue;
+            PropertyDefinition* pd = parse_property_def_from_json(prop_name_str, prop_detail_json, def_name, spec_for_context);
+            if (pd) {
+                *current_prop_list_node = (PropertyDefinitionNode*)calloc(1, sizeof(PropertyDefinitionNode));
+                 if (!*current_prop_list_node) { free_property_definition_list(def->properties); def->properties = NULL; /* free pd too */ free((void*)pd->name); free((void*)pd->c_type); free((void*)pd->enum_type_name); free((void*)pd->setter); free((void*)pd->widget_type_hint); free((void*)pd->obj_setter_prefix); free((void*)pd->style_part_default); free((void*)pd->style_state_default); free_function_arg_list(pd->func_args); free(pd); break; } // out of mem
+                (*current_prop_list_node)->prop = pd;
+                (*current_prop_list_node)->next = NULL;
+                current_prop_list_node = &(*current_prop_list_node)->next;
             }
-            (*current_prop_list_node)->prop = pd;
-            (*current_prop_list_node)->next = NULL;
-            current_prop_list_node = &(*current_prop_list_node)->next;
         }
     }
 
-    // Parse "methods"
     cJSON* methods_obj = cJSON_GetObjectItemCaseSensitive(def_json_node, "methods");
     if (cJSON_IsObject(methods_obj)) {
         cJSON* method_json_item;
@@ -142,25 +153,31 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             if (!fd) continue;
             fd->name = safe_strdup(method_name_str);
             fd->return_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(method_json_item, "return_type")));
-            if(!fd->return_type) fd->return_type = safe_strdup("void");
+            if(!fd->return_type) fd->return_type = safe_strdup("void"); // Default return type
+            fd->num_args = 0;
+            fd->min_args = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(method_json_item, "min_args"));
+
 
             cJSON* args_array_json = cJSON_GetObjectItemCaseSensitive(method_json_item, "args");
-            FunctionArg** current_arg_ptr = &fd->args_head;
+            FunctionArg** current_arg_ptr = &fd->args;
             if (cJSON_IsArray(args_array_json)) {
-                cJSON* arg_type_json_item = NULL;
-                cJSON_ArrayForEach(arg_type_json_item, args_array_json) {
-                    if (cJSON_IsString(arg_type_json_item)) {
+                cJSON* arg_json_item = NULL;
+                cJSON_ArrayForEach(arg_json_item, args_array_json) {
+                    if (cJSON_IsObject(arg_json_item)) { // Args are objects with name, type, enum_type_name
                         FunctionArg* fa = (FunctionArg*)calloc(1, sizeof(FunctionArg));
                         if (!fa) break;
-                        fa->type = safe_strdup(arg_type_json_item->valuestring);
+                        fa->name = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "name")));
+                        fa->type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "type")));
+                        fa->enum_type_name = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "enum_type_name")));
                         *current_arg_ptr = fa;
                         current_arg_ptr = &fa->next;
+                        fd->num_args++;
                     }
                 }
             }
             FunctionMapNode* new_mnode = (FunctionMapNode*)calloc(1, sizeof(FunctionMapNode));
             if (!new_mnode) {
-                free(fd->name); free(fd->return_type); free_function_arg_list(fd->args_head); free(fd);
+                free((void*)fd->name); free((void*)fd->return_type); free_function_arg_list(fd->args); free(fd);
                 continue;
             }
             new_mnode->name = safe_strdup(method_name_str);
@@ -179,14 +196,14 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
     if (!spec) return NULL;
 
     spec->widgets_list_head = NULL;
-    spec->functions = NULL;
+    spec->functions_list_head = NULL;
 
     cJSON* widgets_json_obj = cJSON_GetObjectItemCaseSensitive(root_json, "widgets");
     if (widgets_json_obj && cJSON_IsObject(widgets_json_obj)) {
         cJSON* widget_json_item = NULL;
         cJSON_ArrayForEach(widget_json_item, widgets_json_obj) {
             const char* widget_type_name = widget_json_item->string;
-            WidgetDefinition* wd = parse_widget_def(widget_type_name, widget_json_item);
+            WidgetDefinition* wd = parse_widget_def(widget_type_name, widget_json_item, spec);
             if (wd) {
                 WidgetMapNode* new_wnode = (WidgetMapNode*)calloc(1, sizeof(WidgetMapNode));
                 if (new_wnode) {
@@ -194,42 +211,42 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
                     new_wnode->widget = wd;
                     new_wnode->next = spec->widgets_list_head;
                     spec->widgets_list_head = new_wnode;
-                } else {
-                    if (wd->name) free(wd->name); if (wd->inherits) free(wd->inherits); if (wd->create) free(wd->create);
-                    free_property_definition_list(wd->properties); free(wd);
+                } else { // Failed to alloc node for list
+                    free((void*)wd->name); free((void*)wd->inherits); free((void*)wd->create); free((void*)wd->c_type); free((void*)wd->init_func); free((void*)wd->json_type_override);
+                    free_property_definition_list(wd->properties); free_function_definition_list(wd->methods); free(wd);
                 }
             }
         }
     }
 
     cJSON* objects_json_obj = cJSON_GetObjectItemCaseSensitive(root_json, "objects");
-    if (objects_json_obj && cJSON_IsObject(objects_json_obj)) {
+     if (objects_json_obj && cJSON_IsObject(objects_json_obj)) {
         cJSON* object_json_item = NULL;
         cJSON_ArrayForEach(object_json_item, objects_json_obj) {
             const char* object_type_name = object_json_item->string;
-            WidgetDefinition* od = parse_widget_def(object_type_name, object_json_item);
+            WidgetDefinition* od = parse_widget_def(object_type_name, object_json_item, spec); // Use same parser
             if (od) {
                 WidgetMapNode* new_onode = (WidgetMapNode*)calloc(1, sizeof(WidgetMapNode));
                 if (new_onode) {
                     new_onode->name = safe_strdup(object_type_name);
-                    new_onode->widget = od;
+                    new_onode->widget = od; // Store in same list as widgets
                     new_onode->next = spec->widgets_list_head;
                     spec->widgets_list_head = new_onode;
                 } else {
-                     if (od->name) free(od->name); if (od->inherits) free(od->inherits); if (od->create) free(od->create);
-                    free_property_definition_list(od->properties); free(od);
+                    free((void*)od->name); free((void*)od->inherits); free((void*)od->create); free((void*)od->c_type); free((void*)od->init_func); free((void*)od->json_type_override);
+                    free_property_definition_list(od->properties); free_function_definition_list(od->methods); free(od);
                 }
             }
         }
     }
-    spec->constants = cJSON_GetObjectItemCaseSensitive(root_json, "constants");
-    spec->enums = cJSON_GetObjectItemCaseSensitive(root_json, "enums");
-    spec->global_properties_json_node = cJSON_GetObjectItemCaseSensitive(root_json, "properties");
+    spec->constants_json_node = cJSON_GetObjectItemCaseSensitive(root_json, "constants");
+    spec->enums_json_node = cJSON_GetObjectItemCaseSensitive(root_json, "enums");
+    spec->global_properties_json_node = cJSON_GetObjectItemCaseSensitive(root_json, "properties"); // For global properties if any
 
     cJSON* functions_json_obj = cJSON_GetObjectItemCaseSensitive(root_json, "functions");
     if (functions_json_obj && cJSON_IsObject(functions_json_obj)) {
         cJSON* func_json_item = NULL;
-        FunctionMapNode** current_func_node_ptr = &spec->functions;
+        FunctionMapNode** current_func_node_ptr = &spec->functions_list_head;
         cJSON_ArrayForEach(func_json_item, functions_json_obj) {
             const char* func_name_str = func_json_item->string;
             if (!cJSON_IsObject(func_json_item)) continue;
@@ -238,24 +255,30 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
             fd->name = safe_strdup(func_name_str);
             fd->return_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(func_json_item, "return_type")));
             if(!fd->return_type) fd->return_type = safe_strdup("void");
+            fd->num_args = 0;
+            fd->min_args = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(func_json_item, "min_args"));
+
 
             cJSON* args_array_json = cJSON_GetObjectItemCaseSensitive(func_json_item, "args");
-            FunctionArg** current_arg_ptr = &fd->args_head;
+            FunctionArg** current_arg_ptr = &fd->args;
             if (cJSON_IsArray(args_array_json)) {
-                cJSON* arg_type_json_item = NULL;
-                cJSON_ArrayForEach(arg_type_json_item, args_array_json) {
-                    if (cJSON_IsString(arg_type_json_item)) {
+                cJSON* arg_json_item = NULL;
+                cJSON_ArrayForEach(arg_json_item, args_array_json) {
+                     if (cJSON_IsObject(arg_json_item)) { // Args are objects
                         FunctionArg* fa = (FunctionArg*)calloc(1, sizeof(FunctionArg));
                         if (!fa) break;
-                        fa->type = safe_strdup(arg_type_json_item->valuestring);
+                        fa->name = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "name")));
+                        fa->type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "type")));
+                        fa->enum_type_name = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "enum_type_name")));
                         *current_arg_ptr = fa;
                         current_arg_ptr = &fa->next;
+                        fd->num_args++;
                     }
                 }
             }
             FunctionMapNode* new_fnode = (FunctionMapNode*)calloc(1, sizeof(FunctionMapNode));
             if (!new_fnode) {
-                free(fd->name); free(fd->return_type); free_function_arg_list(fd->args_head); free(fd);
+                free((void*)fd->name); free((void*)fd->return_type); free_function_arg_list(fd->args); free(fd);
                 continue;
             }
             new_fnode->name = safe_strdup(func_name_str);
@@ -273,14 +296,17 @@ static void free_property_definition_list(PropertyDefinitionNode* head) {
     while (current) {
         PropertyDefinitionNode* next = current->next;
         if (current->prop) {
-            free(current->prop->name);
-            free(current->prop->c_type);
-            free(current->prop->setter);
-            free(current->prop->widget_type_hint);
-            free(current->prop->obj_setter_prefix);
-            free(current->prop->style_part_default);
-            free(current->prop->style_state_default);
-            free(current->prop);
+            PropertyDefinition* p = current->prop;
+            free((void*)p->name);
+            free((void*)p->c_type);
+            free((void*)p->enum_type_name);
+            free((void*)p->setter);
+            free((void*)p->widget_type_hint);
+            free((void*)p->obj_setter_prefix);
+            free((void*)p->style_part_default);
+            free((void*)p->style_state_default);
+            free_function_arg_list(p->func_args);
+            free(p);
         }
         free(current);
         current = next;
@@ -292,22 +318,23 @@ void api_spec_free(ApiSpec* spec) {
     WidgetMapNode* current_widget_node = spec->widgets_list_head;
     while (current_widget_node) {
         WidgetMapNode* next_widget_node = current_widget_node->next;
-        free(current_widget_node->name);
+        free((void*)current_widget_node->name);
         if (current_widget_node->widget) {
             WidgetDefinition* wd = current_widget_node->widget;
-            free(wd->name); free(wd->inherits); free(wd->create);
-            if (wd->c_type) free(wd->c_type);
-            if (wd->init_func) free(wd->init_func);
+            free((void*)wd->name); free((void*)wd->inherits); free((void*)wd->create);
+            free((void*)wd->c_type); free((void*)wd->init_func); free((void*)wd->json_type_override);
             free_property_definition_list(wd->properties);
-            free_function_definition_list(wd->methods); // ADDED: free methods list
+            free_function_definition_list(wd->methods);
             free(wd);
         }
         free(current_widget_node);
         current_widget_node = next_widget_node;
     }
-    spec->widgets_list_head = NULL;
-    free_function_definition_list(spec->functions);
-    spec->functions = NULL;
+    spec->widgets_list_head = NULL; // Not strictly necessary as spec is freed next
+    free_function_definition_list(spec->functions_list_head);
+    spec->functions_list_head = NULL;
+    // Note: spec->constants, spec->enums, spec->global_properties_json_node are NOT freed here
+    // as they are owned by the cJSON object that was passed to api_spec_parse.
     free(spec);
 }
 
@@ -325,277 +352,171 @@ const WidgetDefinition* api_spec_find_widget(const ApiSpec* spec, const char* wi
 
 const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char* type_name, const char* prop_name) {
     if (!spec || !type_name || !prop_name) return NULL;
-
     const char* current_type_to_check = type_name;
-    char constructed_name[128]; // For lv_obj_<prop_name>
 
-    // --- STEP 1: Iterate through widget type and its parents ---
     while (current_type_to_check != NULL && current_type_to_check[0] != '\0') {
         const WidgetDefinition* widget_def = api_spec_find_widget(spec, current_type_to_check);
         if (widget_def) {
-            // 1.1 Check declared "properties"
             PropertyDefinitionNode* p_node = widget_def->properties;
             while(p_node) {
                 if (p_node->prop && p_node->prop->name && strcmp(p_node->prop->name, prop_name) == 0) {
-                    return p_node->prop; // Found in properties
+                    return p_node->prop;
                 }
                 p_node = p_node->next;
             }
-
-            // 1.2 Check "methods" for prop_name
+            // Check methods if not in direct properties (using static buffers for return)
             FunctionMapNode* m_node = widget_def->methods;
             while(m_node) {
                 if (m_node->name && strcmp(m_node->name, prop_name) == 0) {
-                    // Found as a direct method. Construct PropertyDefinition.
                     memset(&method_prop_def, 0, sizeof(PropertyDefinition));
                     strncpy(method_setter_name, m_node->name, sizeof(method_setter_name) - 1);
                     method_setter_name[sizeof(method_setter_name) - 1] = '\0';
-
-                    method_prop_def.name = (char*)prop_name;
+                    method_prop_def.name = (char*)prop_name; // This is safe as prop_name is input arg
                     method_prop_def.setter = method_setter_name;
-                    if (m_node->func_def && m_node->func_def->args_head && m_node->func_def->args_head->next) { // Assuming first arg is obj instance
-                        strncpy(method_arg_type, m_node->func_def->args_head->next->type, sizeof(method_arg_type) - 1);
-                         method_arg_type[sizeof(method_arg_type) -1] = '\0';
-                    } else {
-                        strcpy(method_arg_type, "unknown"); // Placeholder
-                    }
-                    method_prop_def.c_type = method_arg_type;
-                    method_prop_def.widget_type_hint = (char*)current_type_to_check;
-                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL; // Set func_args
-                    return &method_prop_def;
-                }
-                m_node = m_node->next;
-            }
-
-            // 1.3 Check "methods" for "lv_obj_" + prop_name
-            snprintf(constructed_name, sizeof(constructed_name), "lv_obj_%s", prop_name);
-            m_node = widget_def->methods;
-            while(m_node) {
-                if (m_node->name && strcmp(m_node->name, constructed_name) == 0) {
-                    // Found as lv_obj_method. Construct PropertyDefinition.
-                    memset(&method_prop_def, 0, sizeof(PropertyDefinition));
-                    strncpy(method_setter_name, m_node->name, sizeof(method_setter_name) - 1);
-                    method_setter_name[sizeof(method_setter_name) -1] = '\0';
-
-                    method_prop_def.name = (char*)prop_name;
-                    method_prop_def.setter = method_setter_name;
-                    if (m_node->func_def && m_node->func_def->args_head && m_node->func_def->args_head->next) { // Assuming first arg is obj instance
-                         strncpy(method_arg_type, m_node->func_def->args_head->next->type, sizeof(method_arg_type) - 1);
-                         method_arg_type[sizeof(method_arg_type) -1] = '\0';
+                    if (m_node->func_def && m_node->func_def->args && m_node->func_def->args->next) { // 1st arg is obj, 2nd is value
+                        strncpy(method_arg_type, m_node->func_def->args->next->type, sizeof(method_arg_type) - 1);
+                        method_arg_type[sizeof(method_arg_type) -1] = '\0';
+                        method_prop_def.enum_type_name = m_node->func_def->args->next->enum_type_name;
                     } else {
                         strcpy(method_arg_type, "unknown");
                     }
                     method_prop_def.c_type = method_arg_type;
                     method_prop_def.widget_type_hint = (char*)current_type_to_check;
-                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL; // Set func_args
+                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args : NULL;
                     return &method_prop_def;
                 }
                 m_node = m_node->next;
             }
-            current_type_to_check = widget_def->inherits; // Move to parent
+            current_type_to_check = widget_def->inherits;
         } else {
             break;
         }
     }
 
-    // --- STEP 2: Search global functions ---
-    FunctionMapNode* func_node = NULL;
+    // Fallback to global functions for properties not found in widget/object defs
+    // This uses a static buffer for the PropertyDefinition, not thread-safe.
+    const FunctionDefinition* global_func_def = api_spec_get_function(spec, prop_name);
+    if (global_func_def) {
+        memset(&global_func_prop_def, 0, sizeof(PropertyDefinition));
+        strncpy(global_func_setter_name, global_func_def->name, sizeof(global_func_setter_name) - 1);
+        global_func_setter_name[sizeof(global_func_setter_name)-1] = '\0';
+        global_func_prop_def.name = (char*)prop_name; // Safe, input arg
+        global_func_prop_def.setter = global_func_setter_name;
 
-    // 2.1 Check global functions for prop_name verbatim
-    if (spec->functions) {
-       func_node = spec->functions;
-       while (func_node) {
-           if (func_node->name && strcmp(func_node->name, prop_name) == 0) {
-               memset(&global_func_prop_def, 0, sizeof(PropertyDefinition));
-               strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name) - 1);
-               global_func_setter_name[sizeof(global_func_setter_name) -1] = '\0';
-
-               global_func_prop_def.name = (char*)prop_name;
-               global_func_prop_def.setter = global_func_setter_name;
-               if (func_node->func_def && func_node->func_def->args_head) {
-                   bool first_arg_is_obj = (func_node->func_def->args_head->type && (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0));
-                   FunctionArg* relevant_arg = first_arg_is_obj ? func_node->func_def->args_head->next : func_node->func_def->args_head;
-                   if (relevant_arg && relevant_arg->type) {
-                       strncpy(global_func_arg_type, relevant_arg->type, sizeof(global_func_arg_type) - 1);
-                       global_func_arg_type[sizeof(global_func_arg_type)-1] = '\0';
-                   } else {
-                       strcpy(global_func_arg_type, "unknown");
-                   }
-               } else {
-                   strcpy(global_func_arg_type, "unknown");
-               }
-               global_func_prop_def.c_type = global_func_arg_type;
-               global_func_prop_def.widget_type_hint = (char*)type_name;
-               global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL; // Set func_args
-               return &global_func_prop_def;
-           }
-           func_node = func_node->next;
-       }
+        if (global_func_def->args) { // Assuming first arg is target, second is value if applicable
+            FunctionArg* val_arg = global_func_def->args->next ? global_func_def->args->next : global_func_def->args;
+             if (val_arg && strcmp(val_arg->type, "lv_obj_t*") != 0) { // If it's not the object itself
+                global_func_prop_def.c_type = val_arg->type;
+                global_func_prop_def.enum_type_name = val_arg->enum_type_name;
+             } else if (global_func_def->args->type && strcmp(global_func_def->args->type, "lv_obj_t*") != 0) {
+                global_func_prop_def.c_type = global_func_def->args->type;
+                global_func_prop_def.enum_type_name = global_func_def->args->enum_type_name;
+             } else {
+                global_func_prop_def.c_type = "unknown";
+             }
+        } else {
+            global_func_prop_def.c_type = "unknown";
+        }
+        global_func_prop_def.widget_type_hint = (char*)type_name;
+        global_func_prop_def.func_args = global_func_def->args;
+        return &global_func_prop_def;
     }
-
-    // 2.2 Check global functions for "lv_obj_" + prop_name
-    snprintf(constructed_name, sizeof(constructed_name), "lv_obj_%s", prop_name);
-    if (spec->functions) {
-       func_node = spec->functions;
-       while (func_node) {
-           if (func_node->name && strcmp(func_node->name, constructed_name) == 0) {
-               memset(&global_func_prop_def, 0, sizeof(PropertyDefinition));
-               strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name) - 1);
-               global_func_setter_name[sizeof(global_func_setter_name)-1] = '\0';
-
-               global_func_prop_def.name = (char*)prop_name;
-               global_func_prop_def.setter = global_func_setter_name;
-                if (func_node->func_def && func_node->func_def->args_head) {
-                   bool first_arg_is_obj = (func_node->func_def->args_head->type && (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0));
-                   FunctionArg* relevant_arg = first_arg_is_obj ? func_node->func_def->args_head->next : func_node->func_def->args_head;
-                   if (relevant_arg && relevant_arg->type) {
-                       strncpy(global_func_arg_type, relevant_arg->type, sizeof(global_func_arg_type) - 1);
-                       global_func_arg_type[sizeof(global_func_arg_type)-1] = '\0';
-                   } else {
-                       strcpy(global_func_arg_type, "unknown");
-                   }
-               } else {
-                   strcpy(global_func_arg_type, "unknown");
-               }
-               global_func_prop_def.c_type = global_func_arg_type;
-               global_func_prop_def.widget_type_hint = (char*)type_name;
-               global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL; // Set func_args
-               return &global_func_prop_def;
-           }
-           func_node = func_node->next;
-       }
-    }
-
-    return NULL; // Not found
+    return NULL;
 }
 
 const cJSON* api_spec_get_constants(const ApiSpec* spec) {
-    return spec ? spec->constants : NULL;
+    return spec ? spec->constants_json_node : NULL;
 }
 
 const cJSON* api_spec_get_enums(const ApiSpec* spec) {
-    return spec ? spec->enums : NULL;
+    return spec ? spec->enums_json_node : NULL;
 }
 
 const char* widget_get_create_func(const WidgetDefinition* widget) {
     return widget ? widget->create : NULL;
 }
 
-// Basic implementation of api_spec_get_function_return_type
-// For now, it returns "lv_obj_t*" for all function names.
-// A more robust version would look up the function in spec->functions.
 const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* func_name) {
-    if (!spec || !func_name) {
-        return "lv_obj_t*"; // Default or error
+    const FunctionDefinition* func_def = api_spec_get_function(spec, func_name);
+    if (func_def && func_def->return_type) {
+        return func_def->return_type;
     }
+    // Default or error if not found, or if found but no return type specified
+    //fprintf(stderr, "Warning: Function '%s' not found or no return type in API spec, defaulting.\n", func_name);
+    return "lv_obj_t*"; // A common default, but might not be accurate.
+}
 
-    // Iterate through the global functions first
-    FunctionMapNode* current_func_node = spec->functions;
-    while (current_func_node) {
-        if (current_func_node->name && strcmp(current_func_node->name, func_name) == 0) {
-            if (current_func_node->func_def && current_func_node->func_def->return_type) {
-                return current_func_node->func_def->return_type;
-            }
-            break; // Found the function, but no return type info
+// --- New function implementations ---
+
+const FunctionDefinition* api_spec_get_function(const ApiSpec* spec, const char* func_name) {
+    if (!spec || !func_name) return NULL;
+    FunctionMapNode* current_fnode = spec->functions_list_head;
+    while (current_fnode) {
+        if (current_fnode->name && strcmp(current_fnode->name, func_name) == 0) {
+            return current_fnode->func_def;
         }
-        current_func_node = current_func_node->next;
+        current_fnode = current_fnode->next;
     }
+    // If not in global functions, check widget methods (though less common for direct lookup like this)
+    // This part might be overly broad if func_name isn't widget-qualified.
+    // For simplicity, this example only checks global functions.
+    // A more complex system might check methods of a 'current_widget_context'.
+    return NULL;
+}
 
-    // If not found in global functions, iterate through widget methods (if applicable, though less common for this specific use case)
-    // This part might be an over-optimization for now, as 'with obj = func()' usually implies global factory/constructor functions.
-    // However, for completeness:
-    WidgetMapNode* current_widget_node = spec->widgets_list_head;
-    while (current_widget_node) {
-        if (current_widget_node->widget && current_widget_node->widget->methods) {
-            FunctionMapNode* current_method_node = current_widget_node->widget->methods;
-            while (current_method_node) {
-                if (current_method_node->name && strcmp(current_method_node->name, func_name) == 0) {
-                     if (current_method_node->func_def && current_method_node->func_def->return_type) {
-                        return current_method_node->func_def->return_type;
-                    }
-                    // Found the method, but no return type.
-                    // Depending on policy, could return default or break.
-                    return "lv_obj_t*"; // Default if found but no specific type
+bool api_spec_is_enum_value(const ApiSpec* spec, const char* value_str) {
+    if (!spec || !value_str || !spec->enums_json_node) return false;
+    const cJSON* enum_type_json = NULL;
+    cJSON_ArrayForEach(enum_type_json, spec->enums_json_node) { // Iterate over each enum type object
+        // const char* enum_name = cJSON_GetObjectItem(enum_type_json, "name")->valuestring; // Not needed for this check
+        const cJSON* members = cJSON_GetObjectItem(enum_type_json, "members");
+        if (cJSON_IsArray(members)) {
+            const cJSON* member_json = NULL;
+            cJSON_ArrayForEach(member_json, members) {
+                if (cJSON_IsString(member_json) && strcmp(value_str, member_json->valuestring) == 0) {
+                    return true;
                 }
-                current_method_node = current_method_node->next;
             }
+        } else if (cJSON_IsObject(members)) { // Handle enums where members are key-value (name:value)
+             cJSON* member_item = NULL;
+             cJSON_ArrayForEach(member_item, members) { // members is an object here
+                 if (strcmp(value_str, member_item->string) == 0) { // value_str matches member name
+                     return true;
+                 }
+             }
         }
-        current_widget_node = current_widget_node->next;
     }
-
-
-    // Default if not found or no return type specified
-    //fprintf(stderr, "Warning: Function '%s' not found in API spec or has no return type, defaulting to lv_obj_t*.\n", func_name);
-    return "lv_obj_t*";
+    return false;
 }
 
-const char* api_spec_find_enum_type_for_member(const ApiSpec* spec, const char* enum_member_literal) {
-    if (!spec || !spec->enums || !enum_member_literal) {
-        return NULL;
-    }
-
-    if (!cJSON_IsObject(spec->enums)) { // Should be an object containing enum types
-        return NULL;
-    }
-
-    cJSON* enum_type_json = NULL;
-    for (enum_type_json = spec->enums->child; enum_type_json != NULL; enum_type_json = enum_type_json->next) {
-        if (cJSON_IsObject(enum_type_json)) {
-            // enum_type_json->string is the enum type name (e.g., "lv_align_t")
-            // enum_type_json is the object containing its members
-            if (cJSON_HasObjectItem(enum_type_json, enum_member_literal)) { // Use cJSON_HasObjectItem for robust check
-                return enum_type_json->string; // Return the name of the enum type
-            }
+const cJSON* api_spec_get_enum(const ApiSpec* spec, const char* enum_name) {
+    if (!spec || !enum_name || !spec->enums_json_node) return NULL;
+    const cJSON* enum_type_json = NULL;
+    cJSON_ArrayForEach(enum_type_json, spec->enums_json_node) {
+        const cJSON* name_item = cJSON_GetObjectItem(enum_type_json, "name");
+        if (name_item && cJSON_IsString(name_item) && strcmp(enum_name, name_item->valuestring) == 0) {
+            return cJSON_GetObjectItem(enum_type_json, "members"); // Return the members array/object
         }
     }
-    return NULL; // Not found in any enum type
+    return NULL;
 }
 
-// Finds a function definition in the API spec's global functions or widget methods.
-const FunctionDefinition* api_spec_find_function(const ApiSpec* spec, const char* func_name) {
-    if (!spec || !func_name) {
-        return NULL;
+bool api_spec_is_constant(const ApiSpec* spec, const char* key) {
+    if (!spec || !key || !spec->constants_json_node) return false;
+    if (cJSON_GetObjectItem(spec->constants_json_node, key)) {
+        return true;
     }
-
-    // Search global functions
-    FunctionMapNode* current_func_node = spec->functions;
-    while (current_func_node) {
-        if (current_func_node->name && strcmp(current_func_node->name, func_name) == 0) {
-            return current_func_node->func_def;
-        }
-        current_func_node = current_func_node->next;
-    }
-
-    // Search widget methods (iterate through all widgets and their methods)
-    WidgetMapNode* current_widget_node = spec->widgets_list_head;
-    while (current_widget_node) {
-        if (current_widget_node->widget && current_widget_node->widget->methods) {
-            FunctionMapNode* current_method_node = current_widget_node->widget->methods;
-            while (current_method_node) {
-                if (current_method_node->name && strcmp(current_method_node->name, func_name) == 0) {
-                    return current_method_node->func_def;
-                }
-                current_method_node = current_method_node->next;
-            }
-        }
-        current_widget_node = current_widget_node->next;
-    }
-    return NULL; // Not found
+    return false;
 }
 
-// Retrieves a function argument definition by index from a function definition.
-const FunctionArg* api_spec_get_function_arg_by_index(const FunctionDefinition* fd, int arg_idx) {
-    if (!fd || arg_idx < 0) {
-        return NULL;
-    }
-    FunctionArg* current_arg = fd->args_head;
-    int current_idx = 0;
-    while (current_arg) {
-        if (current_idx == arg_idx) {
-            return current_arg;
+bool api_spec_is_enum_type(const ApiSpec* spec, const char* type_name) {
+    if (!spec || !type_name || !spec->enums_json_node) return false;
+    const cJSON* enum_type_json = NULL;
+    cJSON_ArrayForEach(enum_type_json, spec->enums_json_node) {
+        const cJSON* name_item = cJSON_GetObjectItem(enum_type_json, "name");
+        if (name_item && cJSON_IsString(name_item) && strcmp(type_name, name_item->valuestring) == 0) {
+            return true;
         }
-        current_arg = current_arg->next;
-        current_idx++;
     }
-    return NULL; // Index out of bounds or no arguments
+    return false;
 }

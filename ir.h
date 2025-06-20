@@ -4,7 +4,7 @@
 // Forward declaration for IRNode to resolve circular dependency for function pointers
 struct IRNode;
 
-// Forward declarations for types used in ir_expr_get_type
+// Forward declarations for structs from other modules
 struct ApiSpec;
 struct Registry;
 
@@ -164,10 +164,7 @@ void ir_expr_list_add(IRExprNode** head, IRExpr* expr); // Helper to add to an e
 // --- Memory Management ---
 void ir_free(IRNode* node); // Master free function, dispatches based on type
 
-// --- Type Inference ---
-// Attempts to determine the C type of an IR expression.
-// Requires ApiSpec for function return types, enum lookups, etc.
-// Requires Registry for some variable type inferences (currently simplified).
-const char* ir_expr_get_type(IRExpr* expr, const struct ApiSpec* api_spec, const struct Registry* registry);
+// --- Type Analysis ---
+const char* ir_expr_get_type(IRExpr* expr, const struct ApiSpec* api_spec, struct Registry* registry);
 
 #endif // IR_H

@@ -1,0 +1,28 @@
+[
+  {
+    "type": "obj",
+    "id": "@func_arg_obj",
+    "properties": {
+      "comment_valid": {
+        "call": "lv_obj_set_width",
+        "args": ["@func_arg_obj", 100]
+      },
+      "comment_invalid_type": {
+        "call": "lv_obj_set_width",
+        "args": ["@func_arg_obj", "not_an_int"]
+      },
+      "comment_wrong_arg_count_less": {
+        "call": "lv_obj_set_x",
+        "args": ["@func_arg_obj"]
+      },
+      "comment_wrong_arg_count_more": {
+        "call": "lv_obj_set_y",
+        "args": ["@func_arg_obj", 50, 20]
+      },
+      "comment_enum_arg_mismatch": {
+         "call": "lv_obj_align",
+         "args": ["@func_arg_obj", null, "LV_STATE_FOCUSED", 0, 0]
+      }
+    }
+  }
+]
