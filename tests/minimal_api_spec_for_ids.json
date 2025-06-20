@@ -1,0 +1,21 @@
+{
+  "widgets": {
+    "obj": {
+      "c_type": "lv_obj_t*",
+      "create": "lv_obj_create"
+    },
+    "label": {
+      "c_type": "lv_obj_t*",
+      "create": "lv_label_create"
+    },
+    "button": {
+      "c_type": "lv_obj_t*",
+      "create": "lv_btn_create"
+    }
+  },
+  "objects": {},
+  "functions": {},
+  "constants": {},
+  "enums": {},
+  "properties": {}
+}
