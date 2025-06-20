@@ -36,7 +36,6 @@ void create_ui(lv_obj_t* parent) {
     }
     {
         {
-            lv_obj_t* uv_instance_reg_comp = lv_obj_create(parent);
             {
                 lv_obj_t* label_0 = lv_label_create(uv_instance_reg_comp);
                 lv_label_set_text(label_0, "Inside registered component");

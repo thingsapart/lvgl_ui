@@ -14,9 +14,11 @@ void create_ui(lv_obj_t* parent) {
         registry_add_pointer(ui_registry, l_actual_label, "actual_label", "label");
     }
     {
-        // // Node is a 'with' assignment target. Allocation skipped for now.
+        // // Node is a 'with' assignment target. Processing 'with' blocks for assignment.
         lv_obj_t* obj_referencing_non_existent = non_existent_id;
-        lv_obj_set_style_width(obj_referencing_non_existent, 100);
+        {
+            lv_obj_set_style_width(obj_referencing_non_existent, 100);
+        }
     }
     {
         // Error: Component definition '@another_missing_component' not found in registry for 'use-view'.

@@ -1,0 +1,41 @@
+[
+  {
+    "type": "label",
+    "id": "@another_label"
+  },
+  {
+    "type": "label",
+    "id": "@my_label",
+    "//comment_before_first_with": "This should appear before the first 'with' block's generated code.",
+    "text": "Main Label Text",
+    "with": {
+      "obj": {
+        "call": "lv_label_create",
+        "args": [
+          "parent_obj"
+        ]
+      },
+      "do": {
+        "text": "First With"
+      }
+    },
+    "with": {
+      "obj": {
+        "call": "lv_obj_get_child",
+        "args": [
+          "parent_obj",
+          0
+        ]
+      },
+      "do": {
+        "align": "LV_ALIGN_CENTER"
+      }
+    },
+    "with": {
+      "obj": "@another_label",
+      "do": {
+        "text": "Third With"
+      }
+    }
+}
+]

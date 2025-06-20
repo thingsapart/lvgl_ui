@@ -22,6 +22,7 @@
   },
   {
     "type": "tileview",
+    "id": "@main_tileview",
     "add_style": [
       "@container",
       0
@@ -32,30 +33,22 @@
     ],
     "pad_row": 0,
     "pad_column": 0,
-    "//": "First WITH",
+    "//": "First WITH (tile1)",
     "with": {
       "obj": {
         "call": "lv_tileview_add_tile",
-        "args": [
-          0,
-          0,
-          "LV_DIR_RIGHT"
-        ]
+        "args": [ 0, 0, "LV_DIR_RIGHT" ]
       },
       "do": null
     },
-    "//": "Second WITH",
+    "//": "Second WITH (tile2)",
     "with": {
       "obj": {
         "call": "lv_tileview_add_tile",
-        "args": [
-          0,
-          0,
-          "LV_DIR_RIGHT"
-        ]
+        "args": [ 0, 0, "LV_DIR_RIGHT" ]
       },
       "do": {
-        "//": "Second DO",
+        "//": "Second DO on tile2",
         "add_style": [
           "@container",
           0
@@ -65,36 +58,30 @@
         "children": [
           {
             "type": "label",
+            "id": "@label_on_tile2",
             "center": [],
             "text": "Scroll right"
           }
         ]
       }
     },
-    "//": "Third WITH",
+    "//": "Third WITH (tile3)",
     "with": {
       "obj": {
         "call": "lv_tileview_add_tile",
-        "args": [
-          1,
-          0,
-          "LV_DIR_LEFT"
-        ]
+        "args": [ 1, 0, "LV_DIR_LEFT" ]
       },
       "do": {
-        "//": "Third DO",
+        "//": "Third DO on tile3",
         "add_style": [
           "@container",
           0
         ],
         "children": [
           {
-            "type": "label",
-            "text": "TEST"
-          },
-          {
             "type": "use-view",
-            "id": "@jog_view"
+            "id": "@jog_view",
+            "named": "jog_view_on_tile3"
           }
         ]
       }
