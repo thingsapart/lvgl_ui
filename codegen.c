@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h> // For printf
 #include <string.h> // For strcmp, strstr
+#include <ctype.h> // For isprint
 
 #include "ir.h"
 #include "utils.h"
@@ -22,14 +23,41 @@ static void print_indent(int level) {
 
 // These are the functions assigned to IRNode->codegen
 void codegen_expr_literal(IRNode* node, int indent_level) {
-    (void)indent_level; // Not used for expressions directly
+    (void)indent_level;
     IRExprLiteral* lit = (IRExprLiteral*)node;
     if (lit->value) {
-        // ir_new_literal_string already adds quotes for strings.
-        // Other literals (numbers, constants like LV_ALIGN_CENTER) are printed as is.
-        printf("%s", lit->value);
+        size_t len = strlen(lit->value);
+        // String literals from ir_new_literal_string are already quoted (e.g., ""foo
+bar"").
+        // Non-string literals (numbers, enums like LV_ALIGN_CENTER, true, false) are not quoted by ir_new_literal.
+        if (len >= 2 && lit->value[0] == '"' && lit->value[len - 1] == '"') {
+            printf("\""); // Print opening quote
+            for (size_t i = 1; i < len - 1; ++i) { // Iterate content inside the existing quotes
+                char ch = lit->value[i];
+                switch (ch) {
+                    case '\n': printf("\\n"); break;
+                    case '\r': printf("\\r"); break;
+                    case '\t': printf("\\t"); break;
+                    case '\\': printf("\\\\"); break; // Escape the backslash itself
+                    case '"': printf("\\\""); break; // Escape the double quote
+                    default:
+                        // Print printable characters directly.
+                        // For non-printable, use hex escape.
+                        if (isprint((unsigned char)ch)) {
+                            printf("%c", ch);
+                        } else {
+                            printf("\\x%02x", (unsigned char)ch);
+                        }
+                        break;
+                }
+            }
+            printf("\""); // Print closing quote
+        } else {
+            // Not a string literal (e.g. number, enum symbol, true, false)
+            printf("%s", lit->value);
+        }
     } else {
-        printf("NULL");
+        printf("NULL"); // This case is for when the pointer lit->value itself is NULL
     }
 }
 

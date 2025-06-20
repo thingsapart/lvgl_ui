@@ -1,0 +1,15 @@
+[
+  {
+    "type": "label",
+    "id": "@label_escapes",
+    "named": "l_escapes",
+    "text": "Line1\nLine2",
+    "tooltip_text": "This is a \"quoted\" tooltip with a backslash: \\."
+  },
+  {
+    "type": "textarea",
+    "id": "@ta_escapes",
+    "named": "ta_escapes",
+    "placeholder_text": "Enter text here:\nE.g., C:\\Program Files"
+  }
+]
