@@ -108,4 +108,13 @@ const char* widget_get_create_func(const WidgetDefinition* widget);
 // Returns a default type (e.g., "lv_obj_t*") if the function is not found or has no return type.
 const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* func_name);
 
+// Finds the enum type name for a given enum member literal (e.g., "LV_ALIGN_CENTER" -> "lv_align_t")
+const char* api_spec_find_enum_type_for_member(const ApiSpec* spec, const char* enum_member_literal);
+
+// Finds a function definition in the API spec's global functions or widget methods.
+const FunctionDefinition* api_spec_find_function(const ApiSpec* spec, const char* func_name);
+
+// Retrieves a function argument definition by index from a function definition.
+const FunctionArg* api_spec_get_function_arg_by_index(const FunctionDefinition* fd, int arg_idx);
+
 #endif // API_SPEC_H

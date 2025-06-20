@@ -108,23 +108,75 @@ void registry_add_pointer(Registry* reg, void* ptr, const char* id, const char* 
     new_node->ptr = ptr;
     new_node->next = reg->pointers;
     reg->pointers = new_node;
+    // fprintf(stderr, "DEBUG_REGISTRY_ADD: ID='%s', Type='%s', RegInstance=%p\n", new_node->id, new_node->type ? new_node->type : "NULL", (void*)reg); // DEBUG REMOVED
 }
 
-void* registry_get_pointer(const Registry* reg, const char* id, const char* type) {
+void* registry_get_pointer(const Registry* reg, const char* id, const char* expected_type) {
     if (!reg || !id) return NULL;
 
     for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
         if (strcmp(node->id, id) == 0) {
-            if (type) { // Type is specified, so it must match
-                if (node->type && strcmp(node->type, type) == 0) {
-                    return node->ptr;
+            if (expected_type) { // expected_type is specified, so it must match
+                if (node->type && strcmp(node->type, expected_type) == 0) {
+                    return node->ptr; // ID and type match
+                } else if (node->type) {
+                    fprintf(stderr, "Warning: Pointer ID '%s' found, but type mismatch. Expected '%s', got '%s'.\n", id, expected_type, node->type);
+                    return NULL; // ID found, but type mismatch
+                } else {
+                    fprintf(stderr, "Warning: Pointer ID '%s' found, but it has no registered type. Expected '%s'.\n", id, expected_type);
+                    return NULL; // ID found, but no registered type to compare against
                 }
-            } else { // Type is not specified, first ID match is sufficient
+            } else { // expected_type is not specified, first ID match is sufficient
                 return node->ptr;
             }
         }
     }
     return NULL; // Not found
+}
+
+void* registry_get_pointer_by_id(const Registry* reg, const char* id, const char** type_out) {
+    if (!reg || !id || !type_out) {
+        if (type_out) *type_out = NULL;
+        return NULL;
+    }
+
+    *type_out = NULL; // Initialize to NULL
+
+    for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
+        if (strcmp(node->id, id) == 0) {
+            // Found the pointer by ID.
+            // The type string in PointerRegistryNode is already owned by the registry.
+            // Return a direct pointer to it. The caller should not free it.
+            if (node->type) {
+                *type_out = node->type;
+            } else {
+                *type_out = NULL; // No type associated
+            }
+            return node->ptr;
+        }
+    }
+    return NULL; // Not found
+}
+
+const char* registry_get_type_by_id(const Registry* reg, const char* id) {
+    if (!reg || !id) {
+        return NULL;
+    }
+    // fprintf(stderr, "DEBUG_REGISTRY_GET_TYPE: Querying ID='%s', RegInstance=%p\n", id, (void*)reg); // DEBUG REMOVED
+    // PointerRegistryNode* temp_node = reg->pointers; // DEBUG REMOVED
+    // while(temp_node) { // DEBUG REMOVED
+    //    fprintf(stderr, "DEBUG_REGISTRY_GET_TYPE: ... available ID='%s', Type='%s'\n", temp_node->id, temp_node->type ? temp_node->type : "NULL"); // DEBUG REMOVED
+    //    temp_node = temp_node->next; // DEBUG REMOVED
+    // } // DEBUG REMOVED
+
+    for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
+        if (strcmp(node->id, id) == 0) {
+            // fprintf(stderr, "DEBUG_REGISTRY_GET_TYPE: Found ID='%s', Type='%s'\n", id, node->type ? node->type : "NULL"); // DEBUG REMOVED
+            return node->type; // Return direct pointer to the type string (owned by registry)
+        }
+    }
+    // fprintf(stderr, "DEBUG_REGISTRY_GET_TYPE: ID='%s' NOT FOUND\n", id); // DEBUG REMOVED
+    return NULL; // ID not found
 }
 
 // --- String Registration ---

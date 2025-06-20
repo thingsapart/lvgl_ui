@@ -1,0 +1,157 @@
+Warning: Type mismatch for property 'text' on object type 'label' (C var: 'label_enum_correct'). Expected C type 'char*', got value type 'const char*'.
+DEBUG_REGISTRY_ADD: ID='label_enum_correct', Type='lv_obj_t*', RegInstance=0x55f083107690
+Warning: Type mismatch for property 'text' on object type 'label' (C var: 'label_enum_invalid_value'). Expected C type 'char*', got value type 'const char*'.
+Warning: Enum value 'LV_ALIGN_BOGUS' is not a valid member of enum type 'lv_align_t' for property 'align'.
+Warning: Type mismatch for property 'align' on object type 'label' (C var: 'label_enum_invalid_value'). Expected C type 'lv_align_t', got value type 'const char*'.
+DEBUG_REGISTRY_ADD: ID='label_enum_invalid_value', Type='lv_obj_t*', RegInstance=0x55f083107690
+DEBUG_REGISTRY_ADD: ID='style_for_get_pointer', Type='lv_style_t', RegInstance=0x55f083107690
+DEBUG_REGISTRY_GET_TYPE: Querying ID='style_for_get_pointer', RegInstance=0x55f083107690
+DEBUG_REGISTRY_GET_TYPE: ... available ID='style_for_get_pointer', Type='lv_style_t'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='label_enum_invalid_value', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='label_enum_correct', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: Found ID='style_for_get_pointer', Type='lv_style_t'
+Warning: Type mismatch for property 'radius' on object type 'style' (C var: 'retrieved_style_correct_type'). Expected C type 'int32_t', got value type 'int'.
+DEBUG_REGISTRY_GET_TYPE: Querying ID='style_for_get_pointer', RegInstance=0x55f083107690
+DEBUG_REGISTRY_GET_TYPE: ... available ID='style_for_get_pointer', Type='lv_style_t'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='label_enum_invalid_value', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='label_enum_correct', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: Found ID='style_for_get_pointer', Type='lv_style_t'
+Warning: Type mismatch for property 'width' on object type 'obj' (C var: 'obj_for_inference'). Expected C type 'int32_t', got value type 'int'.
+DEBUG_REGISTRY_ADD: ID='obj_for_inference', Type='lv_obj_t*', RegInstance=0x55f083107690
+DEBUG_REGISTRY_GET_TYPE: Querying ID='obj_for_inference', RegInstance=0x55f083107690
+DEBUG_REGISTRY_GET_TYPE: ... available ID='obj_for_inference', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='style_for_get_pointer', Type='lv_style_t'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='label_enum_invalid_value', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='label_enum_correct', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: Found ID='obj_for_inference', Type='lv_obj_t*'
+Warning: Type mismatch for property 'height' on object type 'obj' (C var: 'inferred_obj_var'). Expected C type 'int32_t', got value type 'int'.
+Warning: Type mismatch for property 'text' on object type 'label' (C var: 'label_for_inference_props'). Expected C type 'char*', got value type 'const char*'.
+DEBUG_REGISTRY_ADD: ID='label_for_inference_props', Type='lv_obj_t*', RegInstance=0x55f083107690
+DEBUG_REGISTRY_GET_TYPE: Querying ID='label_for_inference_props', RegInstance=0x55f083107690
+DEBUG_REGISTRY_GET_TYPE: ... available ID='label_for_inference_props', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='obj_for_inference', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='style_for_get_pointer', Type='lv_style_t'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='label_enum_invalid_value', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: ... available ID='label_enum_correct', Type='lv_obj_t*'
+DEBUG_REGISTRY_GET_TYPE: Found ID='label_for_inference_props', Type='lv_obj_t*'
+Warning: Property 'text' for object type 'obj' (C var 'inferred_label_var') not found in API spec. Skipping.
+Warning: Property 'long_mode' for object type 'obj' (C var 'inferred_label_var') not found in API spec. Skipping.
+Warning: Property 'custom_call_correct' for object type 'obj' (C var 'obj_func_call_correct') not found in API spec. Skipping.
+DEBUG_REGISTRY_ADD: ID='obj_func_call_correct', Type='lv_obj_t*', RegInstance=0x55f083107690
+Warning: Property 'custom_call_incorrect' for object type 'obj' (C var 'obj_func_call_incorrect_arg_type') not found in API spec. Skipping.
+DEBUG_REGISTRY_ADD: ID='obj_func_call_incorrect_arg_type', Type='lv_obj_t*', RegInstance=0x55f083107690
+Warning: Property 'custom_call_bad_enum' for object type 'obj' (C var 'obj_func_call_incorrect_enum_arg') not found in API spec. Skipping.
+DEBUG_REGISTRY_ADD: ID='obj_func_call_incorrect_enum_arg', Type='lv_obj_t*', RegInstance=0x55f083107690
+Warning: Type mismatch for property 'width' on object type 'obj' (C var: 'obj_prop_type_mismatch'). Expected C type 'int32_t', got value type 'const char*'.
+DEBUG_REGISTRY_ADD: ID='obj_prop_type_mismatch', Type='lv_obj_t*', RegInstance=0x55f083107690
+Warning: Type mismatch for property 'radius' on object type 'obj' (C var: 'obj_with_style_prop'). Expected C type 'int32_t', got value type 'int'.
+DEBUG_REGISTRY_ADD: ID='obj_with_style_prop', Type='lv_obj_t*', RegInstance=0x55f083107690
+Warning: Type mismatch for argument 0 of function 'lv_color_hex'. Expected 'uint32_t', got 'const char*'.
+Warning: Type mismatch for property 'x' on object type 'style' (C var: 'style_with_obj_prop'). Expected C type 'int32_t', got value type 'int'.
+DEBUG_REGISTRY_ADD: ID='style_with_obj_prop', Type='lv_style_t', RegInstance=0x55f083107690
+DEBUG_REGISTRY_ADD: ID='screen_type_check', Type='lv_obj_t*', RegInstance=0x55f083107690
+// Code generated by LVGL UI Generator
+
+#include "lvgl.h"
+
+// Forward declaration for any registered C pointers you might have from your application.
+// Example: extern const lv_font_t my_custom_font;
+void create_ui(lv_obj_t* parent) {
+    {
+        lv_obj_t* screen_type_check = lv_obj_create(parent);
+        {
+            lv_obj_t* label_enum_correct = lv_label_create(screen_type_check);
+            lv_label_set_text(label_enum_correct, "Correct Enum");
+            lv_obj_set_style_align(label_enum_correct, LV_ALIGN_CENTER);
+            registry_add_pointer(ui_registry, label_enum_correct, "label_enum_correct", "lv_obj_t*");
+        }
+        {
+            lv_obj_t* label_enum_invalid_value = lv_label_create(screen_type_check);
+            lv_label_set_text(label_enum_invalid_value, "Invalid Enum Value");
+            lv_obj_set_style_align(label_enum_invalid_value, "LV_ALIGN_BOGUS");
+            registry_add_pointer(ui_registry, label_enum_invalid_value, "label_enum_invalid_value", "lv_obj_t*");
+        }
+        {
+            lv_style_t* style_for_get_pointer = (lv_style_t*)malloc(sizeof(lv_style_t));
+            if (style_for_get_pointer != NULL) {
+                memset(style_for_get_pointer, 0, sizeof(lv_style_t));
+                lv_style_init(style_for_get_pointer);
+            } else {
+                fprintf(stderr, "Error: Failed to malloc for object %s of type %s\n", "style_for_get_pointer", "lv_style_t");
+            }
+            lv_style_set_bg_color(style_for_get_pointer, lv_color_hex(0xFF0000));
+            registry_add_pointer(ui_registry, style_for_get_pointer, "style_for_get_pointer", "lv_style_t");
+        }
+        {
+            // // Node is a 'with' assignment target. Processing 'with' blocks for assignment.
+            void* retrieved_style_correct_type = registry_get_pointer("style_for_get_pointer", "lv_style_t*");
+            {
+                lv_style_set_radius(retrieved_style_correct_type, 5);
+            }
+        }
+        {
+            // // Node is a 'with' assignment target. Processing 'with' blocks for assignment.
+            void* retrieved_style_incorrect_hint = registry_get_pointer("style_for_get_pointer", "lv_obj_t*");
+            {
+            }
+        }
+        {
+            lv_obj_t* obj_for_inference = lv_obj_create(screen_type_check);
+            lv_obj_set_style_width(obj_for_inference, 100);
+            registry_add_pointer(ui_registry, obj_for_inference, "obj_for_inference", "lv_obj_t*");
+        }
+        {
+            // // Node is a 'with' assignment target. Processing 'with' blocks for assignment.
+            void* inferred_obj_var = registry_get_pointer("obj_for_inference");
+            {
+                lv_obj_set_style_height(inferred_obj_var, 50);
+            }
+        }
+        {
+            lv_obj_t* label_for_inference_props = lv_label_create(screen_type_check);
+            lv_label_set_text(label_for_inference_props, "A");
+            registry_add_pointer(ui_registry, label_for_inference_props, "label_for_inference_props", "lv_obj_t*");
+        }
+        {
+            // // Node is a 'with' assignment target. Processing 'with' blocks for assignment.
+            void* inferred_label_var = registry_get_pointer("label_for_inference_props");
+            {
+            }
+        }
+        {
+            lv_obj_t* obj_func_call_correct = lv_obj_create(screen_type_check);
+            registry_add_pointer(ui_registry, obj_func_call_correct, "obj_func_call_correct", "lv_obj_t*");
+        }
+        {
+            lv_obj_t* obj_func_call_incorrect_arg_type = lv_obj_create(screen_type_check);
+            registry_add_pointer(ui_registry, obj_func_call_incorrect_arg_type, "obj_func_call_incorrect_arg_type", "lv_obj_t*");
+        }
+        {
+            lv_obj_t* obj_func_call_incorrect_enum_arg = lv_obj_create(screen_type_check);
+            registry_add_pointer(ui_registry, obj_func_call_incorrect_enum_arg, "obj_func_call_incorrect_enum_arg", "lv_obj_t*");
+        }
+        {
+            lv_obj_t* obj_prop_type_mismatch = lv_obj_create(screen_type_check);
+            lv_obj_set_style_width(obj_prop_type_mismatch, "SHOULD_BE_INT");
+            registry_add_pointer(ui_registry, obj_prop_type_mismatch, "obj_prop_type_mismatch", "lv_obj_t*");
+        }
+        {
+            lv_obj_t* obj_with_style_prop = lv_obj_create(screen_type_check);
+            lv_obj_set_style_radius(obj_with_style_prop, 5);
+            registry_add_pointer(ui_registry, obj_with_style_prop, "obj_with_style_prop", "lv_obj_t*");
+        }
+        {
+            lv_style_t* style_with_obj_prop = (lv_style_t*)malloc(sizeof(lv_style_t));
+            if (style_with_obj_prop != NULL) {
+                memset(style_with_obj_prop, 0, sizeof(lv_style_t));
+                lv_style_init(style_with_obj_prop);
+            } else {
+                fprintf(stderr, "Error: Failed to malloc for object %s of type %s\n", "style_with_obj_prop", "lv_style_t");
+            }
+            lv_style_set_text_color(style_with_obj_prop, lv_color_hex("0xFF0000"));
+            lv_style_set_x(style_with_obj_prop, 10);
+            registry_add_pointer(ui_registry, style_with_obj_prop, "style_with_obj_prop", "lv_style_t");
+        }
+        registry_add_pointer(ui_registry, screen_type_check, "screen_type_check", "lv_obj_t*");
+    }
+}

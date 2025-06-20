@@ -21,11 +21,118 @@ typedef struct {
 // Forward declarations
 static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context, const char* forced_c_var_name);
 static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context); // Wrapper
+
+// Helper to get C-type string from an object type string (e.g., "button" -> "lv_obj_t*")
+static const char* get_c_type_for_object_type_str(const ApiSpec* api_spec, const char* obj_type_str, const char* default_c_type) {
+    if (!obj_type_str || obj_type_str[0] == '\0') {
+        return default_c_type;
+    }
+
+    size_t len = strlen(obj_type_str);
+    if (len > 2) {
+        if (strcmp(obj_type_str + len - 3, "_t*") == 0) { // e.g. lv_obj_t*
+            return obj_type_str;
+        }
+        if (strcmp(obj_type_str + len - 2, "_t") == 0) { // e.g. lv_style_t
+            // This could also be part of a name like "my_custom_type_t" if not a pointer.
+            // For now, assume if it ends with _t, it's a C type name.
+            return obj_type_str;
+        }
+    }
+    if (strcmp(obj_type_str, "bool") == 0 || strcmp(obj_type_str, "int") == 0 || strcmp(obj_type_str, "const char*") == 0 || strcmp(obj_type_str, "char*") == 0 || strcmp(obj_type_str, "float") == 0 || strcmp(obj_type_str, "double") == 0) {
+        return obj_type_str;
+    }
+
+
+    if (api_spec) {
+        const WidgetDefinition* widget_def = api_spec_find_widget(api_spec, obj_type_str);
+        if (widget_def && widget_def->c_type && widget_def->c_type[0] != '\0') {
+            return widget_def->c_type;
+        }
+    }
+    // If obj_type_str is "style", map to "lv_style_t".
+    // api_spec_find_widget might not return "style" as a widget.
+    if (strcmp(obj_type_str, "style") == 0) {
+        return "lv_style_t"; // Typically lv_style_t variables are not pointers unless passed by address.
+                             // But for variable declarations, lv_style_t is the type.
+    }
+
+    // Fallback if no specific widget definition C-type is found
+    // For example, if obj_type_str is "obj" or an unknown type.
+    if (strcmp(obj_type_str, "obj") == 0) {
+        return "lv_obj_t*";
+    }
+
+    return default_c_type;
+}
+
+// Helper to get object type string (e.g. "button") from a C-type string (e.g. "lv_obj_t*")
+static const char* get_object_type_from_c_type(const ApiSpec* api_spec, const char* c_type_str, const char* default_obj_type) {
+    if (!c_type_str || c_type_str[0] == '\0') {
+        return default_obj_type;
+    }
+
+    if (strcmp(c_type_str, "lv_style_t") == 0 || strcmp(c_type_str, "lv_style_t*") == 0) {
+        return "style";
+    }
+
+    // Iterate through known widget definitions to find a match for the C type
+    if (api_spec && api_spec->widgets_list_head) {
+        WidgetMapNode* current_widget_node = api_spec->widgets_list_head;
+        while (current_widget_node) {
+            if (current_widget_node->widget && current_widget_node->widget->c_type &&
+                strcmp(current_widget_node->widget->c_type, c_type_str) == 0) {
+                if (current_widget_node->widget->name) { // Widget's JSON type name, e.g., "button"
+                    return current_widget_node->widget->name;
+                }
+            }
+            current_widget_node = current_widget_node->next;
+        }
+    }
+
+    // If no specific widget c_type matched, but it's lv_obj_t*, it's a generic "obj"
+    if (strcmp(c_type_str, "lv_obj_t*") == 0) {
+        return "obj";
+    }
+
+    if (strcmp(c_type_str, "void*") == 0) { // void* could be anything, use default
+        return default_obj_type;
+    }
+
+    // Fallback if no specific C type mapping is found
+    _dprintf(stderr, "DEBUG: get_object_type_from_c_type: No specific object type found for C type '%s', using default '%s'.\n", c_type_str, default_obj_type);
+    return default_obj_type;
+}
+
+
 static void process_properties(GenContext* ctx, cJSON* props_json, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context);
 static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context, const char* explicit_target_var_name);
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context);
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
+
+// --- Enum Validation Helper Functions ---
+static const cJSON* get_enum_definition_if_type_is_enum(const ApiSpec* api_spec, const char* c_type_name) {
+    if (!api_spec || !c_type_name) return NULL;
+    const cJSON* all_enums = api_spec_get_enums(api_spec);
+    if (!all_enums) return NULL;
+    const cJSON* enum_def = cJSON_GetObjectItem(all_enums, c_type_name);
+    if (enum_def && cJSON_IsObject(enum_def)) {
+        return enum_def;
+    }
+    return NULL;
+}
+
+// Returns true if enum_value_str is a valid member of the enum defined by specific_enum_def_json
+static bool is_enum_member_valid_for_definition(const cJSON* specific_enum_def_json, const char* enum_value_str) {
+    if (!specific_enum_def_json || !cJSON_IsObject(specific_enum_def_json) || !enum_value_str) {
+        return false; // Cannot validate
+    }
+    if (cJSON_GetObjectItem(specific_enum_def_json, enum_value_str)) {
+        return true; // Member found
+    }
+    return false; // Member not found
+}
 
 
 // --- Utility Functions ---
@@ -191,10 +298,63 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
             if (cJSON_IsArray(args_item)) {
                  cJSON* arg_json;
                  int arg_idx = 0;
+                 const FunctionDefinition* fd = api_spec_find_function(ctx->api_spec, call_name);
+
                  cJSON_ArrayForEach(arg_json, args_item) {
                     char* arg_json_str = cJSON_PrintUnformatted(arg_json);
                     _dprintf(stderr, "DEBUG_PRINT: unmarshal_value: 'call' %s, arg[%d] JSON: %s\n", call_name, arg_idx, arg_json_str);
+
+                    // ENUM VALIDATION for function call arguments
+                    const FunctionArg* func_arg_def_for_enum = NULL; // For enum check
+                    if (fd && cJSON_IsString(arg_json)) {
+                        func_arg_def_for_enum = api_spec_get_function_arg_by_index(fd, arg_idx);
+                        if (func_arg_def_for_enum && func_arg_def_for_enum->type) {
+                            const cJSON* specific_enum_def_json = get_enum_definition_if_type_is_enum(ctx->api_spec, func_arg_def_for_enum->type);
+                            if (specific_enum_def_json) { // Expected type is an enum
+                                const char* original_string_value = arg_json->valuestring;
+                                if (!is_enum_member_valid_for_definition(specific_enum_def_json, original_string_value)) {
+                                    fprintf(stderr, "Warning: Enum value '%s' is not a valid member of expected enum type '%s' for argument %d of function '%s'.\n",
+                                            original_string_value, func_arg_def_for_enum->type, arg_idx, call_name);
+                                }
+                            }
+                        }
+                    }
+
                     IRExpr* arg_expr = unmarshal_value(ctx, arg_json, ui_context);
+
+                    // TYPE MISMATCH CHECK for function call arguments
+                    if (fd && arg_expr) {
+                        const FunctionArg* func_arg_def_for_type = api_spec_get_function_arg_by_index(fd, arg_idx);
+                        if (func_arg_def_for_type && func_arg_def_for_type->type) {
+                            const char* expected_type = func_arg_def_for_type->type;
+                            const char* actual_type = ir_expr_get_type(arg_expr, ctx->api_spec, ctx->registry);
+
+                            if (actual_type && strncmp(actual_type, "unknown", 7) != 0 && strcmp(actual_type, "void*") != 0 && strcmp(expected_type, "void*") != 0) {
+                                // Basic pointer compatibility: if expected is T* and actual is U* (and T != U), it's a mismatch unless one is void* (handled)
+                                // More sophisticated checks (e.g. int vs float, or specific pointer compat) can be added.
+                                bool is_expected_ptr = strchr(expected_type, '*') != NULL;
+                                bool is_actual_ptr = strchr(actual_type, '*') != NULL;
+
+                                if (is_expected_ptr && actual_type && strcmp(actual_type, "int") == 0 && arg_expr->type == IR_EXPR_LITERAL && strcmp(((IRExprLiteral*)arg_expr)->value, "0") == 0) {
+                                    // Allow literal 0 for NULL pointer assignment, effectively "void*" for this case.
+                                } else if (strcmp(expected_type, actual_type) != 0) {
+                                    // Allow lv_obj_t* where lv_xxx_t* (widget type) is actual, or vice versa (common base type)
+                                    bool allow_widget_base_mismatch = false;
+                                    if (is_expected_ptr && is_actual_ptr) {
+                                        if ((strstr(expected_type, "lv_obj_t") && strstr(actual_type, "_t*")) ||
+                                            (strstr(actual_type, "lv_obj_t") && strstr(expected_type, "_t*"))) {
+                                            allow_widget_base_mismatch = true;
+                                        }
+                                    }
+                                    if (!allow_widget_base_mismatch) {
+                                         fprintf(stderr, "Warning: Type mismatch for argument %d of function '%s'. Expected '%s', got '%s'.\n",
+                                            arg_idx, call_name, expected_type, actual_type);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     if(arg_expr) {
                         const char* arg_expr_type_str = "UNKNOWN_EXPR_TYPE";
                         if(arg_expr->type == IR_EXPR_LITERAL) arg_expr_type_str = "IR_EXPR_LITERAL";
@@ -210,10 +370,59 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                     ir_expr_list_add(&args_list, arg_expr);
                     arg_idx++;
                 }
-            } else if (args_item != NULL) {
+            } else if (args_item != NULL) { // Single argument case (arg_idx = 0)
                  char* arg_json_str = cJSON_PrintUnformatted(args_item);
                  _dprintf(stderr, "DEBUG_PRINT: unmarshal_value: 'call' %s, single arg JSON: %s\n", call_name, arg_json_str);
+                 const FunctionDefinition* fd_single_arg = api_spec_find_function(ctx->api_spec, call_name); // fd might be NULL if not found
+
+                // ENUM VALIDATION for single function call argument
+                const FunctionArg* func_arg_def_for_enum_single = NULL;
+                if (fd_single_arg && cJSON_IsString(args_item)) {
+                    func_arg_def_for_enum_single = api_spec_get_function_arg_by_index(fd_single_arg, 0); // arg_idx is 0
+                    if (func_arg_def_for_enum_single && func_arg_def_for_enum_single->type) {
+                        const cJSON* specific_enum_def_json = get_enum_definition_if_type_is_enum(ctx->api_spec, func_arg_def_for_enum_single->type);
+                        if (specific_enum_def_json) { // Expected type is an enum
+                            const char* original_string_value = args_item->valuestring;
+                            if (!is_enum_member_valid_for_definition(specific_enum_def_json, original_string_value)) {
+                                fprintf(stderr, "Warning: Enum value '%s' is not a valid member of expected enum type '%s' for argument 0 of function '%s'.\n",
+                                        original_string_value, func_arg_def_for_enum_single->type, call_name);
+                            }
+                        }
+                    }
+                }
+
                  IRExpr* arg_expr = unmarshal_value(ctx, args_item, ui_context);
+
+                // TYPE MISMATCH CHECK for single function call argument
+                if (fd_single_arg && arg_expr) {
+                    const FunctionArg* func_arg_def_for_type = api_spec_get_function_arg_by_index(fd_single_arg, 0);
+                    if (func_arg_def_for_type && func_arg_def_for_type->type) {
+                        const char* expected_type = func_arg_def_for_type->type;
+                        const char* actual_type = ir_expr_get_type(arg_expr, ctx->api_spec, ctx->registry);
+
+                        if (actual_type && strncmp(actual_type, "unknown", 7) != 0 && strcmp(actual_type, "void*") != 0 && strcmp(expected_type, "void*") != 0) {
+                            bool is_expected_ptr = strchr(expected_type, '*') != NULL;
+                            // bool is_actual_ptr = strchr(actual_type, '*') != NULL; // Not used in current logic block
+
+                            if (is_expected_ptr && actual_type && strcmp(actual_type, "int") == 0 && arg_expr->type == IR_EXPR_LITERAL && strcmp(((IRExprLiteral*)arg_expr)->value, "0") == 0) {
+                                // Allow literal 0 for NULL pointer.
+                            } else if (strcmp(expected_type, actual_type) != 0) {
+                                bool allow_widget_base_mismatch_single = false;
+                                if (is_expected_ptr && strchr(actual_type, '*') != NULL) { // Both pointers
+                                     if ((strstr(expected_type, "lv_obj_t") && strstr(actual_type, "_t*")) ||
+                                         (strstr(actual_type, "lv_obj_t") && strstr(expected_type, "_t*"))) {
+                                        allow_widget_base_mismatch_single = true;
+                                    }
+                                }
+                                if (!allow_widget_base_mismatch_single) {
+                                    fprintf(stderr, "Warning: Type mismatch for argument 0 of function '%s'. Expected '%s', got '%s'.\n",
+                                        call_name, expected_type, actual_type);
+                                }
+                            }
+                        }
+                    }
+                }
+
                  if(arg_expr) {
                      const char* arg_expr_type_str = "UNKNOWN_EXPR_TYPE";
                      if(arg_expr->type == IR_EXPR_LITERAL) arg_expr_type_str = "IR_EXPR_LITERAL";
@@ -412,6 +621,17 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                         fprintf(stderr, "Warning: Too many values in JSON array for function %s, property %s. Ignoring extra.\n", actual_setter_name_const, prop_name);
                         break;
                     }
+                    // ENUM VALIDATION for func_args array item
+                    if (current_func_arg && current_func_arg->type && cJSON_IsString(val_item_json)) {
+                        const cJSON* specific_enum_def_json = get_enum_definition_if_type_is_enum(ctx->api_spec, current_func_arg->type);
+                        if (specific_enum_def_json) {
+                            const char* original_string_value = val_item_json->valuestring;
+                            if (!is_enum_member_valid_for_definition(specific_enum_def_json, original_string_value)) {
+                                fprintf(stderr, "Warning: Enum value '%s' is not a valid member of expected enum type '%s' for property '%s' (array argument).\n",
+                                        original_string_value, current_func_arg->type, prop_name);
+                            }
+                        }
+                    }
                     ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context));
                     current_func_arg = current_func_arg->next;
                 }
@@ -421,10 +641,32 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 cJSON* state_json = cJSON_GetObjectItem(prop, "state");
 
                 if (value_json && current_func_arg) {
+                    // ENUM VALIDATION for func_args object value field
+                    if (current_func_arg->type && cJSON_IsString(value_json)) {
+                        const cJSON* specific_enum_def_json = get_enum_definition_if_type_is_enum(ctx->api_spec, current_func_arg->type);
+                        if (specific_enum_def_json) {
+                            const char* original_string_value = value_json->valuestring;
+                            if (!is_enum_member_valid_for_definition(specific_enum_def_json, original_string_value)) {
+                                fprintf(stderr, "Warning: Enum value '%s' is not a valid member of expected enum type '%s' for property '%s' (object value field).\n",
+                                        original_string_value, current_func_arg->type, prop_name);
+                            }
+                        }
+                    }
                     ir_expr_list_add(&args_list, unmarshal_value(ctx, value_json, ui_context));
                     current_func_arg = current_func_arg->next;
                 }
                 if (part_json && current_func_arg) {
+                    // ENUM VALIDATION for func_args object part field
+                    if (current_func_arg->type && cJSON_IsString(part_json)) {
+                        const cJSON* specific_enum_def_json = get_enum_definition_if_type_is_enum(ctx->api_spec, current_func_arg->type);
+                        if (specific_enum_def_json) {
+                            const char* original_string_value = part_json->valuestring;
+                            if (!is_enum_member_valid_for_definition(specific_enum_def_json, original_string_value)) {
+                                fprintf(stderr, "Warning: Enum value '%s' is not a valid member of expected enum type '%s' for property '%s' (object part field).\n",
+                                        original_string_value, current_func_arg->type, prop_name);
+                            }
+                        }
+                    }
                     ir_expr_list_add(&args_list, unmarshal_value(ctx, part_json, ui_context));
                     current_func_arg = current_func_arg->next;
                 } else if (!part_json && current_func_arg && prop_def->style_part_default &&
@@ -433,6 +675,17 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 }
 
                 if (state_json && current_func_arg) {
+                    // ENUM VALIDATION for func_args object state field
+                    if (current_func_arg->type && cJSON_IsString(state_json)) {
+                        const cJSON* specific_enum_def_json = get_enum_definition_if_type_is_enum(ctx->api_spec, current_func_arg->type);
+                        if (specific_enum_def_json) {
+                            const char* original_string_value = state_json->valuestring;
+                            if (!is_enum_member_valid_for_definition(specific_enum_def_json, original_string_value)) {
+                                fprintf(stderr, "Warning: Enum value '%s' is not a valid member of expected enum type '%s' for property '%s' (object state field).\n",
+                                        original_string_value, current_func_arg->type, prop_name);
+                            }
+                        }
+                    }
                     ir_expr_list_add(&args_list, unmarshal_value(ctx, state_json, ui_context));
                     current_func_arg = current_func_arg->next;
                 } else if (!state_json && current_func_arg && prop_def->style_state_default &&
@@ -441,6 +694,17 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 }
             } else { // Case: "prop_name": "simple_value" or other direct value
                 if (current_func_arg) { // If there's an expected argument slot
+                    // ENUM VALIDATION for func_args direct value
+                    if (current_func_arg->type && cJSON_IsString(prop)) {
+                        const cJSON* specific_enum_def_json = get_enum_definition_if_type_is_enum(ctx->api_spec, current_func_arg->type);
+                        if (specific_enum_def_json) {
+                            const char* original_string_value = prop->valuestring;
+                            if (!is_enum_member_valid_for_definition(specific_enum_def_json, original_string_value)) {
+                                fprintf(stderr, "Warning: Enum value '%s' is not a valid member of expected enum type '%s' for property '%s' (direct value).\n",
+                                        original_string_value, current_func_arg->type, prop_name);
+                            }
+                        }
+                    }
                     IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context);
                     ir_expr_list_add(&args_list, val_expr_func_arg);
                     current_func_arg = current_func_arg->next;
@@ -498,6 +762,58 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 }
             } else {
                 val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context);
+
+                // ENUM VALIDATION for properties without func_args (simple setters)
+                if (prop_def && prop_def->c_type && cJSON_IsString(value_to_unmarshal)) { // Enum validation only if original JSON was a string
+                    const cJSON* specific_enum_def_json = get_enum_definition_if_type_is_enum(ctx->api_spec, prop_def->c_type);
+                    if (specific_enum_def_json) { // It is an expected enum type
+                        const char* original_string_value = value_to_unmarshal->valuestring;
+                        if (!is_enum_member_valid_for_definition(specific_enum_def_json, original_string_value)) {
+                            fprintf(stderr, "Warning: Enum value '%s' is not a valid member of enum type '%s' for property '%s'.\n",
+                                    original_string_value, prop_def->c_type, prop_name);
+                        }
+                    }
+                }
+                // GENERAL TYPE MISMATCH CHECK for properties without func_args
+                if (prop_def && prop_def->c_type && val_expr) {
+                    const char* expected_prop_c_type = prop_def->c_type;
+                    const char* actual_value_type = ir_expr_get_type(val_expr, ctx->api_spec, ctx->registry);
+
+                    if (actual_value_type && strncmp(actual_value_type, "unknown", 7) != 0 &&
+                        strcmp(actual_value_type, "void*") != 0 && strcmp(expected_prop_c_type, "void*") != 0 &&
+                        strcmp(actual_value_type, "NULL_TYPE") != 0 /* NULL_TYPE from ir_expr_get_type can be compatible with pointers */ ) {
+
+                        bool is_expected_ptr = strchr(expected_prop_c_type, '*') != NULL;
+                        bool is_actual_ptr = strchr(actual_value_type, '*') != NULL;
+                        bool types_compatible = false;
+
+                        if (strcmp(expected_prop_c_type, actual_value_type) == 0) {
+                            types_compatible = true;
+                        } else if (is_expected_ptr && strcmp(actual_value_type, "int") == 0 && val_expr->type == IR_EXPR_LITERAL && strcmp(((IRExprLiteral*)val_expr)->value, "0") == 0) {
+                            types_compatible = true; // Allow literal 0 for NULL pointer
+                        } else if (is_expected_ptr && strcmp(actual_value_type, "void*") == 0) { // Actual is NULL literal effectively
+                            types_compatible = true;
+                        }
+                        // Basic type compatibility (e.g. int vs lv_coord_t which is int32_t)
+                        // This can be expanded. For example, if expected is lv_coord_t and actual is int.
+                        else if ((strcmp(expected_prop_c_type, "lv_coord_t") == 0 && strcmp(actual_value_type, "int") == 0) ||
+                                 (strcmp(expected_prop_c_type, "int") == 0 && strcmp(actual_value_type, "lv_coord_t") == 0) ) { // lv_coord_t is typedef int16_t
+                            types_compatible = true;
+                        }
+                        // Allow lv_obj_t* where lv_xxx_t* (widget type) is actual, or vice versa (common base type)
+                        else if (is_expected_ptr && is_actual_ptr) {
+                            if ((strstr(expected_prop_c_type, "lv_obj_t") && strstr(actual_value_type, "_t*")) ||
+                                (strstr(actual_value_type, "lv_obj_t") && strstr(expected_prop_c_type, "_t*"))) {
+                                types_compatible = true;
+                            }
+                        }
+
+                        if (!types_compatible) {
+                            fprintf(stderr, "Warning: Type mismatch for property '%s' on object type '%s' (C var: '%s'). Expected C type '%s', got value type '%s'.\n",
+                                    prop_name, obj_type_for_api_lookup, target_c_var_name, expected_prop_c_type, actual_value_type);
+                        }
+                    }
+                }
             }
 
             _dprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s, setter: %s, obj_setter_prefix: %s\n",
@@ -876,38 +1192,59 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
             // If widget_def and widget_def->c_type (like "lv_obj_t*") is available, it could also be used,
             // but for now, type_str is simpler as per plan.
             // Ensure type_str is valid (not NULL, not an @component reference itself for this purpose)
-            const char* type_for_registry = type_str;
-            if (type_str && type_str[0] == '@') { // If type_str is like "@comp_button"
-                // Attempt to resolve the component's base type
-                const WidgetDefinition* comp_widget_def = api_spec_find_widget(ctx->api_spec, type_str); // Check if it's a known widget type in api_spec
-                if (comp_widget_def) {
-                    type_for_registry = comp_widget_def->c_type; // e.g. "lv_obj_t*"
-                } else {
-                    // If not in api_spec directly (e.g. a user component), try to get root type from component registry
-                    const cJSON* component_root_json = registry_get_component(ctx->registry, type_str + 1);
-                    if (component_root_json) {
-                        cJSON* comp_type_item = cJSON_GetObjectItem(component_root_json, "type");
-                        if (comp_type_item && cJSON_IsString(comp_type_item)) {
-                            type_for_registry = comp_type_item->valuestring; // e.g. "button"
-                        } else {
-                            type_for_registry = "obj"; // Default if component root has no type
-                        }
+            // const char* type_for_registry = type_str; // OLD logic: used JSON type
+            // NEW LOGIC: Determine C-type for the registry
+            const char* c_type_for_registry_add = NULL;
+            const char* effective_type_str_for_c_type_lookup = type_str; // type_str is JSON type e.g. "button"
+
+            if (type_str && type_str[0] == '@') { // If type_str is like "@comp_button" (a component reference)
+                // We need the base type of the component for C-type lookup.
+                const cJSON* component_root_json = registry_get_component(ctx->registry, type_str + 1);
+                if (component_root_json) {
+                    cJSON* comp_type_item = cJSON_GetObjectItem(component_root_json, "type");
+                    if (comp_type_item && cJSON_IsString(comp_type_item)) {
+                        effective_type_str_for_c_type_lookup = comp_type_item->valuestring; // e.g. "button"
                     } else {
-                         type_for_registry = "unknown_component_type"; // Fallback
+                        effective_type_str_for_c_type_lookup = "obj"; // Default if component root has no type
                     }
+                } else {
+                    effective_type_str_for_c_type_lookup = "obj"; // Fallback if component not found
                 }
+            }
+            // Now effective_type_str_for_c_type_lookup is a non-component type string (e.g. "button", "label", "style", "obj")
+
+            if (widget_def && widget_def->c_type && widget_def->c_type[0] != '\0') {
+                // If we have a specific widget_def from parsing this node (not a component ref), its c_type is best.
+                // This handles cases where type_str might be "obj" but widget_def is more specific due to context.
+                // However, widget_def might be for the component itself if type_str was "@...",
+                // so ensure widget_def corresponds to effective_type_str_for_c_type_lookup if different.
+                if (strcmp(widget_def->name, effective_type_str_for_c_type_lookup) == 0) {
+                    c_type_for_registry_add = widget_def->c_type;
+                }
+            }
+
+            if (!c_type_for_registry_add) { // Fallback if not directly found from widget_def of current node
+                 c_type_for_registry_add = get_c_type_for_object_type_str(ctx->api_spec, effective_type_str_for_c_type_lookup, "lv_obj_t*");
             }
 
 
             IRExprNode* args = NULL;
-            ir_expr_list_add(&args, ir_new_variable("ui_registry")); // Global registry instance
-            ir_expr_list_add(&args, ir_new_variable(c_var_name_for_node)); // The C variable for the widget/object
-            ir_expr_list_add(&args, ir_new_literal_string(json_id_val)); // The ID string (without '@')
-            ir_expr_list_add(&args, type_for_registry ? ir_new_literal_string(type_for_registry) : ir_new_literal("NULL"));
+            // Populate the generator's internal registry for type lookups during generation
+            // The pointer itself is not important here, just the id-type mapping.
+            // Using c_var_name_for_node as a dummy non-NULL pointer.
+            registry_add_pointer(ctx->registry, (void*)c_var_name_for_node, json_id_val, c_type_for_registry_add);
+            _dprintf(stderr, "DEBUG: [Generator Registry] Added ID '%s' (C-var: %s) with C-Type '%s'\n", json_id_val, c_var_name_for_node, c_type_for_registry_add ? c_type_for_registry_add : "NULL");
 
-            IRStmt* add_ptr_stmt = ir_new_func_call_stmt("registry_add_pointer", args);
+            // Generate the IR statement for the C runtime registry_add_pointer call
+            IRExprNode* args_runtime = NULL;
+            ir_expr_list_add(&args_runtime, ir_new_variable("ui_registry"));
+            ir_expr_list_add(&args_runtime, ir_new_variable(c_var_name_for_node));
+            ir_expr_list_add(&args_runtime, ir_new_literal_string(json_id_val));
+            ir_expr_list_add(&args_runtime, c_type_for_registry_add ? ir_new_literal_string(c_type_for_registry_add) : ir_new_literal("NULL"));
+
+            IRStmt* add_ptr_stmt = ir_new_func_call_stmt("registry_add_pointer", args_runtime);
             ir_block_add_stmt(current_node_ir_block, add_ptr_stmt);
-            _dprintf(stderr, "DEBUG: Added registry_add_pointer for ID '%s' (C-var: %s, Type: %s)\n", json_id_val, c_var_name_for_node, type_for_registry ? type_for_registry: "NULL");
+            _dprintf(stderr, "DEBUG: [IR Generation] Queued C runtime registry_add_pointer for ID '%s' (C-var: %s, C-Type for Reg: %s)\n", json_id_val, c_var_name_for_node, c_type_for_registry_add ? c_type_for_registry_add : "NULL");
         }
     }
     // MODIFICATION END
@@ -990,35 +1327,98 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
         const char* var_name = ((IRExprVariable*)obj_expr)->name;
         if (strstr(var_name, "style") != NULL || strncmp(var_name, "s_", 2) == 0) {
             obj_type_for_props = "style";
-            temp_var_c_type = "lv_style_t*"; // Type of the variable we are aliasing
-        } else if (strstr(var_name, "label") != NULL || strncmp(var_name, "l_", 2) == 0) {
-            obj_type_for_props = "label";
-            temp_var_c_type = "lv_obj_t*"; // Assuming labels are lv_obj_t*
+            // temp_var_c_type should be the type of the variable itself.
+            // If it's a style object (not pointer), it's lv_style_t. If pointer, lv_style_t*.
+            // Assuming variables holding styles are often direct objects or need to be if used with & later.
+            // For simplicity, if we are assigning this var to another, its type should match.
+            // The ir_expr_get_type would return lv_style_t for s_1.
+            // If obj_expr is s_1, then temp_var_c_type = "lv_style_t".
+            temp_var_c_type = get_c_type_for_object_type_str(ctx->api_spec, "style", "lv_style_t");
         } else {
-            obj_type_for_props = "obj";
-            temp_var_c_type = "lv_obj_t*";
+            obj_type_for_props = "obj"; // Default for other vars
+            temp_var_c_type = "lv_obj_t*"; // Assume other vars are object pointers
         }
+         _dprintf(stderr, "DEBUG_PRINT: process_single_with_block: Variable '%s' -> obj_type_for_props '%s', temp_var_c_type '%s'.\n", var_name, obj_type_for_props, temp_var_c_type);
+
     } else if (obj_expr->type == IR_EXPR_FUNC_CALL) {
         IRExprFuncCall* func_call_expr = (IRExprFuncCall*)obj_expr;
         const char* func_name = func_call_expr->func_name;
-        const char* c_return_type_str = api_spec_get_function_return_type(ctx->api_spec, func_name);
-        if (c_return_type_str && c_return_type_str[0] != '\0') {
-            temp_var_c_type = c_return_type_str;
-        } else {
-            fprintf(stderr, "Warning: Could not determine return type for function '%s'. Defaulting to '%s'.\n", func_name, temp_var_c_type);
+
+        if (strcmp(func_name, "registry_get_pointer") == 0) {
+            temp_var_c_type = "void*"; // registry_get_pointer returns void*
+            obj_type_for_props = "obj"; // Default if ID not found or no type in registry
+
+            if (func_call_expr->args && func_call_expr->args->expr) { // Check ->args instead of ->args_head
+                IRExpr* first_arg_expr = func_call_expr->args->expr;
+                // The ID for registry_get_pointer is passed as a literal string (e.g. "my_id", not "@my_id" from JSON source)
+                // ir_new_literal_string ensures it's quoted.
+                if (first_arg_expr->type == IR_EXPR_LITERAL && ((IRExprLiteral*)first_arg_expr)->value && ((IRExprLiteral*)first_arg_expr)->value[0] == '"') {
+                    const char* quoted_id_val = ((IRExprLiteral*)first_arg_expr)->value;
+                    char* id_for_registry = NULL;
+                    if (quoted_id_val) {
+                        size_t len = strlen(quoted_id_val);
+                        if (len >= 2) { // Remove quotes
+                            id_for_registry = strndup(quoted_id_val + 1, len - 2);
+                        }
+                    }
+
+                    if (id_for_registry && id_for_registry[0] != '\0') {
+                        const char* c_type_from_registry = registry_get_type_by_id(ctx->registry, id_for_registry);
+                        if (c_type_from_registry) {
+                            obj_type_for_props = get_object_type_from_c_type(ctx->api_spec, c_type_from_registry, "obj");
+                            _dprintf(stderr, "DEBUG_PRINT: process_single_with_block: registry_get_pointer ID '%s' -> C-Type from Reg '%s', Inferred obj_type_for_props '%s'\n", id_for_registry, c_type_from_registry, obj_type_for_props);
+                        } else {
+                            fprintf(stderr, "Warning: Could not determine C type from registry for ID '%s' used in registry_get_pointer. Defaulting obj_type_for_props to 'obj'.\n", id_for_registry);
+                        }
+                    } else {
+                         fprintf(stderr, "Warning: ID argument for registry_get_pointer is NULL or empty after unquoting. Defaulting obj_type_for_props.\n");
+                    }
+                    if (id_for_registry) free(id_for_registry);
+                } else {
+                     fprintf(stderr, "Warning: First argument to registry_get_pointer is not a string literal. Cannot determine ID for type lookup.\n");
+                }
+            } else {
+                 fprintf(stderr, "Warning: registry_get_pointer called with no arguments. Cannot determine ID for type lookup.\n");
+            }
+        } else { // Other function calls
+            const char* c_return_type_str = api_spec_get_function_return_type(ctx->api_spec, func_name);
+            if (c_return_type_str && c_return_type_str[0] != '\0') {
+                temp_var_c_type = c_return_type_str;
+            } else {
+                // temp_var_c_type keeps its default "lv_obj_t*" or "void*" if changed by prior logic
+                fprintf(stderr, "Warning: Could not determine return type for function '%s'. Defaulting to '%s'.\n", func_name, temp_var_c_type);
+            }
+            obj_type_for_props = get_object_type_from_c_type(ctx->api_spec, temp_var_c_type, "obj");
+             _dprintf(stderr, "DEBUG_PRINT: process_single_with_block: Func call '%s' -> C-type '%s', obj_type_for_props '%s'\n", func_name, temp_var_c_type, obj_type_for_props);
         }
-        obj_type_for_props = get_obj_type_from_c_type(temp_var_c_type);
     } else if (obj_expr->type == IR_EXPR_ADDRESS_OF) {
         IRExprAddressOf* addr_of_expr = (IRExprAddressOf*)obj_expr;
         if (addr_of_expr->expr && addr_of_expr->expr->type == IR_EXPR_VARIABLE) {
             const char* addressed_var_name = ((IRExprVariable*)addr_of_expr->expr)->name;
+            // Heuristic: if variable name contains "style" or starts with "s_"
             if (strstr(addressed_var_name, "style") != NULL || strncmp(addressed_var_name, "s_", 2) == 0) {
-                temp_var_c_type = "lv_style_t*";
-                obj_type_for_props = "style";
-            } // Else defaults are lv_obj_t* and obj
+                obj_type_for_props = "style"; // Properties will be style properties
+                temp_var_c_type = "lv_style_t*"; // The expression &style_var is of type lv_style_t*
+            } else {
+                // For &other_var, assume it's &lv_obj_t*, so type is lv_obj_t**
+                // This is less common for LVGL setters.
+                // obj_type_for_props might still be "obj" if we expect to operate on it as an object.
+                obj_type_for_props = "obj";
+                temp_var_c_type = "lv_obj_t**"; // Defaulting to this, but might need refinement
+                _dprintf(stderr, "Warning: Taking address of non-style variable '%s', resulting C type '%s'. Property application might be unexpected.\n", addressed_var_name, temp_var_c_type);
+            }
+        } else {
+            // Address of non-variable expression
+            const char* inner_actual_type = ir_expr_get_type(addr_of_expr->expr, ctx->api_spec, ctx->registry);
+            char pointer_type_buffer[128];
+            snprintf(pointer_type_buffer, sizeof(pointer_type_buffer), "%s*", inner_actual_type);
+            temp_var_c_type = strdup(pointer_type_buffer); // Leaks, for now. TODO: manage buffer.
+            obj_type_for_props = get_object_type_from_c_type(ctx->api_spec, temp_var_c_type, "obj");
+             _dprintf(stderr, "DEBUG_PRINT: process_single_with_block: AddressOf non-variable, inner type '%s' -> C-type '%s', obj_type_for_props '%s'\n", inner_actual_type, temp_var_c_type, obj_type_for_props);
         }
     } else if (obj_expr->type == IR_EXPR_LITERAL) {
-        // obj_type_for_props remains "obj", temp_var_c_type remains "lv_obj_t*" (e.g. for NULL)
+        // obj_type_for_props remains "obj" (default), temp_var_c_type remains "lv_obj_t*" (default) or "void*" (e.g. for NULL)
+        // No change needed here as defaults are already set.
     }
 
 

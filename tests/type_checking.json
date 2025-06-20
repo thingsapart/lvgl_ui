@@ -1,0 +1,119 @@
+[
+  {
+    "id": "@screen_type_check",
+    "type": "obj",
+    "children": [
+      {
+        "id": "@label_enum_correct",
+        "type": "label",
+        "properties": {
+          "text": "Correct Enum",
+          "align": "LV_ALIGN_CENTER"
+        }
+      },
+      {
+        "id": "@label_enum_invalid_value",
+        "type": "label",
+        "properties": {
+          "text": "Invalid Enum Value",
+          "align": "LV_ALIGN_BOGUS"
+        }
+      },
+      {
+        "id": "@style_for_get_pointer",
+        "type": "style",
+        "properties": {
+          "bg_color": "#FF0000"
+        }
+      },
+      {
+        "named": "retrieved_style_correct_type",
+        "with": {
+          "obj": {"call": "registry_get_pointer", "args": ["style_for_get_pointer", "lv_style_t*"]},
+          "do": {
+            "radius": 5
+          }
+        }
+      },
+      {
+        "named": "retrieved_style_incorrect_hint",
+        "with": {
+          "obj": {"call": "registry_get_pointer", "args": ["style_for_get_pointer", "lv_obj_t*"]},
+          "do": {}
+        }
+      },
+      {
+        "id": "@obj_for_inference",
+        "type": "obj",
+        "properties": {"width": 100}
+      },
+      {
+        "named": "inferred_obj_var",
+        "with": {
+          "obj": {"call": "registry_get_pointer", "args": ["obj_for_inference"]},
+          "do": {
+            "height": 50
+          }
+        }
+      },
+      {
+        "id": "@label_for_inference_props",
+        "type": "label",
+        "properties": {"text": "A"}
+      },
+      {
+        "named": "inferred_label_var",
+        "with": {
+          "obj": {"call": "registry_get_pointer", "args": ["label_for_inference_props"]},
+          "do": {
+            "text": "New Text",
+            "long_mode": "LV_LABEL_LONG_SCROLL"
+          }
+        }
+      },
+      {
+        "id": "@obj_func_call_correct",
+        "type": "obj",
+        "properties": {
+          "custom_call_correct": {"call": "lv_obj_set_parent", "args": ["@obj_for_inference", "@screen_type_check"]}
+        }
+      },
+      {
+        "id": "@obj_func_call_incorrect_arg_type",
+        "type": "obj",
+        "properties": {
+          "custom_call_incorrect": {"call": "lv_obj_set_width", "args": ["@obj_for_inference", "NOT_AN_INT"]}
+        }
+      },
+      {
+        "id": "@obj_func_call_incorrect_enum_arg",
+        "type": "obj",
+        "properties": {
+          "custom_call_bad_enum": {"call": "lv_obj_set_align", "args": ["@obj_for_inference", "LV_STATE_DEFAULT"]}
+        }
+      },
+      {
+        "id": "@obj_prop_type_mismatch",
+        "type": "obj",
+        "properties": {
+          "width": "SHOULD_BE_INT"
+        }
+      },
+      {
+        "id": "@obj_with_style_prop",
+        "type": "obj",
+        "properties": {
+          "radius": 5
+        }
+      },
+      {
+        "id": "@style_with_obj_prop",
+        "type": "style",
+        "properties": {
+          "text_color": {"call": "lv_color_hex", "args": ["0xFF0000"]},
+          "x": 10
+        }
+      }
+    ]
+  }
+]

@@ -1,7 +1,12 @@
 #include "ir.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h> // For NULL, perror
+#include <stdio.h> // For NULL, perror, snprintf
+#include <ctype.h> // For isdigit
+
+#include "api_spec.h" // For ApiSpec, api_spec_get_function_return_type, api_spec_find_enum_type_for_member
+#include "registry.h" // For Registry (currently not used in ir_expr_get_type's simplified var handling)
+
 
 // Forward declarations for actual codegen functions from codegen.c
 void codegen_expr_literal(IRNode* node, int indent);
@@ -321,4 +326,111 @@ static void free_stmt(IRStmt* stmt) {
 void ir_free(IRNode* node) {
     if (!node || !node->free) return;
     node->free(node);
+}
+
+// --- Type Inference ---
+
+// Helper to check if a string is purely numeric (integer)
+static bool is_integer_str(const char* s) {
+    if (!s || *s == '\0') return false;
+    char* endptr;
+    strtol(s, &endptr, 10);
+    return *endptr == '\0'; // All characters were part of the number
+}
+
+// Helper to check if a string represents a float/double
+static bool is_float_str(const char* s) {
+    if (!s || *s == '\0') return false;
+    char* endptr;
+    strtod(s, &endptr);
+    if (*endptr == '\0') return true; // Consumed whole string
+    // Allow 'f' suffix for float literals, e.g. "1.0f"
+    if (*endptr == 'f' && *(endptr + 1) == '\0') return true;
+    return false;
+}
+
+// Max length for type strings constructed with pointers (e.g., "lv_style_t*")
+#define MAX_POINTER_TYPE_LEN 128
+static char type_buffer[MAX_POINTER_TYPE_LEN]; // Reusable buffer for constructed types
+
+const char* ir_expr_get_type(IRExpr* expr, const struct ApiSpec* api_spec, const struct Registry* registry) {
+    if (!expr) return "unknown_expr_type";
+
+    switch (expr->type) {
+        case IR_EXPR_LITERAL: {
+            IRExprLiteral* lit = (IRExprLiteral*)expr;
+            if (!lit->value) return "NULL_TYPE"; // Or "void*"
+            if (strcmp(lit->value, "true") == 0 || strcmp(lit->value, "false") == 0) {
+                return "bool";
+            }
+            if (strcmp(lit->value, "NULL") == 0) {
+                return "void*"; // Representing a NULL pointer
+            }
+            // Check if it's a string literal (starts and ends with quote)
+            size_t len = strlen(lit->value);
+            if (len >= 2 && lit->value[0] == '"' && lit->value[len - 1] == '"') {
+                return "const char*";
+            }
+            if (is_integer_str(lit->value)) {
+                return "int";
+            }
+            if (is_float_str(lit->value)) {
+                return "double";
+            }
+            // Check if it's an enum member
+            if (api_spec) {
+                const char* enum_type = api_spec_find_enum_type_for_member(api_spec, lit->value);
+                if (enum_type) {
+                    return enum_type; // e.g., "lv_align_t"
+                }
+            }
+            return "unknown_literal_type"; // Could be a named constant not yet resolved, or unhandled literal
+        }
+        case IR_EXPR_VARIABLE: {
+            IRExprVariable* var = (IRExprVariable*)expr;
+            if (!var->name) return "unknown_variable_type";
+            // Heuristic based variable type inference
+            if (strstr(var->name, "style") != NULL || strncmp(var->name, "s_", 2) == 0) {
+                return "lv_style_t"; // The variable itself is of type lv_style_t
+            }
+            // Add more heuristics if needed, e.g. for screen, parent objects
+            // Default heuristic for other variables (often widget pointers)
+            return "lv_obj_t*";
+        }
+        case IR_EXPR_FUNC_CALL: {
+            IRExprFuncCall* func_call = (IRExprFuncCall*)expr;
+            if (api_spec && func_call->func_name) {
+                const char* return_type = api_spec_get_function_return_type(api_spec, func_call->func_name);
+                return return_type ? return_type : "void"; // Default to void if not found or NULL
+            }
+            return "unknown_func_ret_type";
+        }
+        case IR_EXPR_ARRAY:
+            return "void*"; // Generic pointer type for arrays, or a specific "array_type"
+        case IR_EXPR_ADDRESS_OF: {
+            IRExprAddressOf* addr_of_expr = (IRExprAddressOf*)expr;
+            const char* inner_type = ir_expr_get_type(addr_of_expr->expr, api_spec, registry);
+            if (strcmp(inner_type, "lv_style_t") == 0) {
+                return "lv_style_t*";
+            } else if (strcmp(inner_type, "lv_obj_t*") == 0) {
+                // &obj_ptr (lv_obj_t**) is not usually what's intended for LVGL setters.
+                // More likely, if someone takes address of an object variable, it's for other purposes.
+                // For LVGL, obj_ptr itself is used.
+                // However, if the inner expression IS an lv_obj_t, then & makes it lv_obj_t*.
+                // The current IR_EXPR_VARIABLE heuristic returns lv_obj_t* for non-style vars.
+                // This part needs careful thought based on how variables are declared and used.
+                // For now, if inner_type is already a pointer, taking address of it is less common for direct LVGL use.
+                // Let's assume if inner_type is lv_obj_t*, &expr means we are passing a pointer to that pointer.
+                 snprintf(type_buffer, MAX_POINTER_TYPE_LEN, "%s*", inner_type); // e.g. lv_obj_t**
+                 return type_buffer;
+            } else if (strcmp(inner_type, "unknown_variable_type") != 0 && strcmp(inner_type, "unknown_expr_type") != 0) {
+                 // Generic case: if inner_type is "T", result is "T*"
+                 snprintf(type_buffer, MAX_POINTER_TYPE_LEN, "%s*", inner_type);
+                 return type_buffer;
+            }
+            return "void*"; // Default for address_of if inner type is complex or unknown
+        }
+        default:
+            return "unknown_expr_type";
+    }
 }

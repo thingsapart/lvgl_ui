@@ -62,7 +62,9 @@ const char* registry_get_generated_var(const Registry* reg, const char* name);
 // Note: The registry does NOT take ownership of the 'ptr' itself.
 // The 'id' and 'type' strings are duplicated by the registry.
 void registry_add_pointer(Registry* reg, void *ptr, const char *id, const char *type);
-void *registry_get_pointer(const Registry* reg, const char *id, const char *type);
+void *registry_get_pointer(const Registry* reg, const char *id, const char *expected_type);
+void *registry_get_pointer_by_id(const Registry* reg, const char *id, const char **type_out);
+const char* registry_get_type_by_id(const Registry* reg, const char* id); // New function
 
 // --- String Registry ---
 // Adds a string to an internal registry. If the string already exists,

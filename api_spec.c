@@ -528,3 +528,74 @@ const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* f
     //fprintf(stderr, "Warning: Function '%s' not found in API spec or has no return type, defaulting to lv_obj_t*.\n", func_name);
     return "lv_obj_t*";
 }
+
+const char* api_spec_find_enum_type_for_member(const ApiSpec* spec, const char* enum_member_literal) {
+    if (!spec || !spec->enums || !enum_member_literal) {
+        return NULL;
+    }
+
+    if (!cJSON_IsObject(spec->enums)) { // Should be an object containing enum types
+        return NULL;
+    }
+
+    cJSON* enum_type_json = NULL;
+    for (enum_type_json = spec->enums->child; enum_type_json != NULL; enum_type_json = enum_type_json->next) {
+        if (cJSON_IsObject(enum_type_json)) {
+            // enum_type_json->string is the enum type name (e.g., "lv_align_t")
+            // enum_type_json is the object containing its members
+            if (cJSON_HasObjectItem(enum_type_json, enum_member_literal)) { // Use cJSON_HasObjectItem for robust check
+                return enum_type_json->string; // Return the name of the enum type
+            }
+        }
+    }
+    return NULL; // Not found in any enum type
+}
+
+// Finds a function definition in the API spec's global functions or widget methods.
+const FunctionDefinition* api_spec_find_function(const ApiSpec* spec, const char* func_name) {
+    if (!spec || !func_name) {
+        return NULL;
+    }
+
+    // Search global functions
+    FunctionMapNode* current_func_node = spec->functions;
+    while (current_func_node) {
+        if (current_func_node->name && strcmp(current_func_node->name, func_name) == 0) {
+            return current_func_node->func_def;
+        }
+        current_func_node = current_func_node->next;
+    }
+
+    // Search widget methods (iterate through all widgets and their methods)
+    WidgetMapNode* current_widget_node = spec->widgets_list_head;
+    while (current_widget_node) {
+        if (current_widget_node->widget && current_widget_node->widget->methods) {
+            FunctionMapNode* current_method_node = current_widget_node->widget->methods;
+            while (current_method_node) {
+                if (current_method_node->name && strcmp(current_method_node->name, func_name) == 0) {
+                    return current_method_node->func_def;
+                }
+                current_method_node = current_method_node->next;
+            }
+        }
+        current_widget_node = current_widget_node->next;
+    }
+    return NULL; // Not found
+}
+
+// Retrieves a function argument definition by index from a function definition.
+const FunctionArg* api_spec_get_function_arg_by_index(const FunctionDefinition* fd, int arg_idx) {
+    if (!fd || arg_idx < 0) {
+        return NULL;
+    }
+    FunctionArg* current_arg = fd->args_head;
+    int current_idx = 0;
+    while (current_arg) {
+        if (current_idx == arg_idx) {
+            return current_arg;
+        }
+        current_arg = current_arg->next;
+        current_idx++;
+    }
+    return NULL; // Index out of bounds or no arguments
+}
