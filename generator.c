@@ -206,17 +206,24 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
         return;
     }
 
-    cJSON* props_json_to_iterate = node_json_containing_properties;
+    cJSON* source_of_props = node_json_containing_properties;
+    cJSON* properties_sub_object = cJSON_GetObjectItem(node_json_containing_properties, "properties");
 
-    if (strcmp(obj_type_for_api_lookup, "style") == 0) {
-        cJSON* style_props_sub_object = cJSON_GetObjectItem(node_json_containing_properties, "properties");
-        if (style_props_sub_object && cJSON_IsObject(style_props_sub_object)) {
-            props_json_to_iterate = style_props_sub_object;
-        }
+    if (properties_sub_object && cJSON_IsObject(properties_sub_object)) {
+        _dprintf(stderr, "DEBUG: process_properties: Found 'properties' sub-object. Iterating over that.\n");
+        source_of_props = properties_sub_object;
+    } else {
+        _dprintf(stderr, "DEBUG: process_properties: No 'properties' sub-object found, or it's not an object. Iterating over the main node.\n");
     }
 
+    // The specific check for "style" is removed as the general "properties" sub-object check should cover necessary cases.
+    // If style properties are directly under node_json_containing_properties (e.g. from issue_spec.json for a style object),
+    // source_of_props will remain node_json_containing_properties.
+    // If style properties are nested under a "properties" sub-object (e.g. in a hypothetical component's style definition),
+    // source_of_props will be updated to that sub-object.
+
     cJSON* prop = NULL;
-    for (prop = props_json_to_iterate->child; prop != NULL; prop = prop->next) {
+    for (prop = source_of_props->child; prop != NULL; prop = prop->next) {
         const char* prop_name = prop->string;
         if (!prop_name) continue;
 
