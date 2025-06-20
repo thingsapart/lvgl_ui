@@ -1,0 +1,19 @@
+[
+  {
+    "type": "dropdown",
+    "options": "Home\nZero\nG54\nG55\nG56\nG57\nG58",
+    "add_style": [
+      "@action_button",
+      0
+    ],
+    "lv_obj_align": [
+      "LV_ALIGN_BOTTOM_LEFT",
+      90,
+      -10
+    ],
+    "add_flag": "LV_OBJ_FLAG_FLOATING",
+    "lv_dropdown_set_text": "test-text",
+    "symbol": null,
+    "move_foreground": []
+  }
+]

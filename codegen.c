@@ -1,5 +1,6 @@
 #include "codegen.h"
 
+#include <stdbool.h>
 #include <stdio.h> // For printf
 #include <string.h> // For strcmp, strstr
 

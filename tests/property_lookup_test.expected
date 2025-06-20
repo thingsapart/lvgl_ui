@@ -5,4 +5,10 @@
 // Forward declaration for any registered C pointers you might have from your application.
 // Example: extern const lv_font_t my_custom_font;
 void create_ui(lv_obj_t* parent) {
+    {
+        lv_obj_t* my_test_label = lv_label_create(parent);
+        lv_label_set_text(my_test_label, "Direct Prop Test");
+        lv_obj_set_width(my_test_label, 200);
+        lv_obj_set_align(my_test_label, "center");
+    }
 }

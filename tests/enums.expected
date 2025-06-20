@@ -6,6 +6,8 @@
 // Example: extern const lv_font_t my_custom_font;
 void create_ui(lv_obj_t* parent) {
     {
-        // Warning: Type 'non_existent_widget' (var inv_widget) not directly instantiable. Children attach to 'parent'.
+        lv_obj_t* label_0 = lv_label_create(parent);
+        lv_obj_add_flag(label_0, LV_OBJ_FLAG_FLOATING);
+        lv_obj_set_style_bg_opa(label_0, LV_OPA_COVER);
     }
 }
