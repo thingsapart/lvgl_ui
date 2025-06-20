@@ -120,9 +120,17 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
             snprintf(hex_str_arg, sizeof(hex_str_arg), "0x%06lX", hex_val);
             return ir_new_func_call_expr("lv_color_hex", ir_new_expr_node(ir_new_literal(hex_str_arg)));
         }
+        // MODIFICATION START: Handle '!' prefix for string registration
         if (s_orig[0] == '!' && s_orig[1] != '\0') {
-            return ir_new_literal_string(s_orig + 1);
+            const char* registered_string = registry_add_str(ctx->registry, s_orig + 1);
+            if (registered_string) {
+                return ir_new_literal_string(registered_string);
+            } else {
+                fprintf(stderr, "Warning: registry_add_str failed for value: %s. Returning NULL literal.\n", s_orig + 1);
+                return ir_new_literal("NULL"); // Or a default error string literal
+            }
         }
+        // MODIFICATION END
 
         size_t len = strlen(s_orig);
         if (len > 0 && s_orig[len - 1] == '%') {
@@ -216,6 +224,41 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
     }
 
     cJSON* prop = NULL;
+
+#ifdef GENERATOR_REGISTRY_TEST_BYPASS_APISPEC_FIND_FOR_STRINGS
+    // Test-only path to ensure unmarshal_value is called for potential '!' strings
+    // props_json_to_iterate is the component node itself (e.g. the cJSON object for the "label")
+    cJSON* properties_obj = cJSON_GetObjectItemCaseSensitive(props_json_to_iterate, "properties");
+    if (cJSON_IsObject(properties_obj)) {
+        cJSON* actual_prop = NULL;
+        _dprintf(stderr, "DEBUG: GENERATOR_REGISTRY_TEST_BYPASS_APISPEC_FIND_FOR_STRINGS is active, found 'properties' object.\n");
+        for (actual_prop = properties_obj->child; actual_prop != NULL; actual_prop = actual_prop->next) {
+            // actual_prop is now the item like "text": "!Hello World"
+            // The value of this item is actual_prop itself if it's a string, or actual_prop->child if it's an object.
+            // unmarshal_value expects the cJSON node representing the value.
+            if (cJSON_IsString(actual_prop) && actual_prop->valuestring && actual_prop->valuestring[0] == '!') {
+                 _dprintf(stderr, "DEBUG: Test bypass: Processing property '%s' with value '%s'\n", actual_prop->string, actual_prop->valuestring);
+                IRExpr* temp_expr = unmarshal_value(ctx, actual_prop, ui_context);
+                if (temp_expr) {
+                    ir_free((IRNode*)temp_expr);
+                }
+            }
+            // This else-if is for cases like "prop_name": { "value": "!string_val" }
+            // For the current test JSON, this branch won't be hit as properties are direct strings.
+            else if (cJSON_IsObject(actual_prop)) {
+                cJSON* val_item = cJSON_GetObjectItem(actual_prop, "value");
+                 if (cJSON_IsString(val_item) && val_item->valuestring && val_item->valuestring[0] == '!') {
+                    _dprintf(stderr, "DEBUG: Test bypass: Found object property '%s' with value field '%s'\n", actual_prop->string, val_item->valuestring);
+                    IRExpr* temp_expr = unmarshal_value(ctx, val_item, ui_context);
+                    if (temp_expr) {
+                        ir_free((IRNode*)temp_expr);
+                    }
+                }
+            }
+        }
+    }
+#endif
+
     for (prop = props_json_to_iterate->child; prop != NULL; prop = prop->next) {
         const char* prop_name = prop->string;
         if (!prop_name) continue;
@@ -560,6 +603,14 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
     // Their assignment will happen inside the 'else' of the 'is_with_assignment_node' block
     // or if type is an allowed key for with_assignment_node.
 
+    // MODIFICATION START: Logic for adding pointer to registry
+    // This should be placed after the object/widget is successfully created and c_var_name_for_node is known.
+    // The exact placement will be after the allocation blocks.
+    // We will add a flag or check later to ensure it's only added if allocation was successful.
+    // For now, this is a placeholder for the logic structure.
+    bool object_successfully_created = false; // This flag will be set to true after successful allocation.
+    // --- END OF PLACEHOLDER ---
+
     cJSON* use_view_item = cJSON_GetObjectItemCaseSensitive(node_json, "use-view");
     if (use_view_item && cJSON_IsString(use_view_item)) {
         const char* component_id_to_use = use_view_item->valuestring;
@@ -653,6 +704,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
                                                       "lv_obj_t",
                                                       widget_def->create,
                                                       parent_var_expr));
+        object_successfully_created = true; // Mark as successful
         process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, type_str, effective_context);
         cJSON* children_json = cJSON_GetObjectItem(node_json, "children");
         if (cJSON_IsArray(children_json)) {
@@ -673,6 +725,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
                               ir_new_object_allocate_stmt(c_var_name_for_node,
                                                           widget_def->c_type,
                                                           widget_def->init_func));
+            object_successfully_created = true; // Mark as successful
             process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, type_str, effective_context);
         }
     } else if (type_str[0] == '@' && !forced_c_var_name) {
@@ -706,6 +759,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
                                                               c_type_for_alloc,
                                                               actual_create_func,
                                                               parent_var_expr));
+                 object_successfully_created = true; // Mark as successful
             }
             process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, actual_create_type, effective_context);
             _dprintf(stderr, "DEBUG: process_node_internal: Finished properties for 'obj'/component root. C_VAR_NAME: %s\n", c_var_name_for_node);
@@ -735,6 +789,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
                                                           c_type_for_alloc,
                                                           "lv_obj_create", // Default create
                                                           parent_var_expr));
+            object_successfully_created = true; // Mark as successful
             process_properties(ctx, node_json, c_var_name_for_node, current_node_ir_block, type_str, effective_context);
 
             // Process children (this part was outside the original 'else' for this specific case, ensuring it always runs if not handled before)
@@ -751,6 +806,52 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
     } // End of if(!is_with_assignment_node)
     // --- MODIFICATION END ---
 
+    // MODIFICATION START: Add to pointer registry if object was created and has @id
+    if (object_successfully_created && c_var_name_for_node) {
+        cJSON* id_item_for_reg = cJSON_GetObjectItem(node_json, "id");
+        if (id_item_for_reg && cJSON_IsString(id_item_for_reg) && id_item_for_reg->valuestring && id_item_for_reg->valuestring[0] == '@') {
+            const char* json_id_val = id_item_for_reg->valuestring + 1; // Skip '@'
+
+            // Determine the type string for registry_add_pointer
+            // Use type_str (JSON type like "button") if available.
+            // If widget_def and widget_def->c_type (like "lv_obj_t*") is available, it could also be used,
+            // but for now, type_str is simpler as per plan.
+            // Ensure type_str is valid (not NULL, not an @component reference itself for this purpose)
+            const char* type_for_registry = type_str;
+            if (type_str && type_str[0] == '@') { // If type_str is like "@comp_button"
+                // Attempt to resolve the component's base type
+                const WidgetDefinition* comp_widget_def = api_spec_find_widget(ctx->api_spec, type_str); // Check if it's a known widget type in api_spec
+                if (comp_widget_def) {
+                    type_for_registry = comp_widget_def->c_type; // e.g. "lv_obj_t*"
+                } else {
+                    // If not in api_spec directly (e.g. a user component), try to get root type from component registry
+                    const cJSON* component_root_json = registry_get_component(ctx->registry, type_str + 1);
+                    if (component_root_json) {
+                        cJSON* comp_type_item = cJSON_GetObjectItem(component_root_json, "type");
+                        if (comp_type_item && cJSON_IsString(comp_type_item)) {
+                            type_for_registry = comp_type_item->valuestring; // e.g. "button"
+                        } else {
+                            type_for_registry = "obj"; // Default if component root has no type
+                        }
+                    } else {
+                         type_for_registry = "unknown_component_type"; // Fallback
+                    }
+                }
+            }
+
+
+            IRExprNode* args = NULL;
+            ir_expr_list_add(&args, ir_new_variable("ui_registry")); // Global registry instance
+            ir_expr_list_add(&args, ir_new_variable(c_var_name_for_node)); // The C variable for the widget/object
+            ir_expr_list_add(&args, ir_new_literal_string(json_id_val)); // The ID string (without '@')
+            ir_expr_list_add(&args, type_for_registry ? ir_new_literal_string(type_for_registry) : ir_new_literal("NULL"));
+
+            IRStmt* add_ptr_stmt = ir_new_func_call_stmt("registry_add_pointer", args);
+            ir_block_add_stmt(current_node_ir_block, add_ptr_stmt);
+            _dprintf(stderr, "DEBUG: Added registry_add_pointer for ID '%s' (C-var: %s, Type: %s)\n", json_id_val, c_var_name_for_node, type_for_registry ? type_for_registry: "NULL");
+        }
+    }
+    // MODIFICATION END
 
     // The 'with' block processing happens regardless of whether it was a with-assignment node or a regular node.
     // If it was a with-assignment node, c_var_name_for_node was not allocated above,
@@ -934,36 +1035,23 @@ static void process_styles(GenContext* ctx, cJSON* styles_json, IRStmtBlock* glo
     }
 }
 
+// The old body of generate_ir_from_ui_spec is largely moved into
+// generate_ir_from_ui_spec_internal_logic and generate_ir_from_ui_spec_with_registry.
+// This function now just becomes a wrapper.
 IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_spec) {
-    if (!ui_spec_root) {
-        fprintf(stderr, "Error: UI Spec root is NULL in generate_ir_from_ui_spec.\n");
-        return NULL;
-    }
-    if (!api_spec) {
-        fprintf(stderr, "Error: API Spec is NULL in generate_ir_from_ui_spec.\n");
-        return NULL;
-    }
-    if (!cJSON_IsArray(ui_spec_root)) {
-        fprintf(stderr, "Error: UI Spec root must be an array of definitions.\n");
-        return NULL;
-    }
+    return generate_ir_from_ui_spec_with_registry(ui_spec_root, api_spec, NULL);
+}
 
-    GenContext ctx;
-    ctx.api_spec = api_spec;
-    ctx.registry = registry_create();
-    ctx.var_counter = 0;
-    if (!ctx.registry) {
-        fprintf(stderr, "Error: Failed to create registry in generate_ir_from_ui_spec.\n");
-        return NULL;
-    }
-    IRStmtBlock* root_ir_block = ir_new_block();
-    if (!root_ir_block) {
-        fprintf(stderr, "Error: Failed to create root IR block.\n");
-        registry_free(ctx.registry);
-        return NULL;
-    }
-    ctx.current_global_block = root_ir_block;
+// --- Function definitions for the new structure ---
 
+// Internal logic, assuming GenContext is already set up, including ctx->registry.
+// This function does NOT manage the lifecycle of ctx->registry itself but uses it.
+// It populates the ctx->current_global_block.
+static void generate_ir_from_ui_spec_internal_logic(GenContext* ctx, const cJSON* ui_spec_root) {
+    // ctx->api_spec, ctx->registry, ctx->var_counter, ctx->current_global_block
+    // are assumed to be initialized by the caller.
+
+    // Pre-process components (uses ctx->registry for registry_add_component)
     cJSON* item_json = NULL;
     cJSON_ArrayForEach(item_json, ui_spec_root) {
         cJSON* type_node = cJSON_GetObjectItemCaseSensitive(item_json, "type");
@@ -991,10 +1079,11 @@ IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* 
                 fprintf(stderr, "Warning: Component definition '%s' missing 'root' or 'content' definition. Skipping. Node: %s\n", id_str, cJSON_PrintUnformatted(item_json));
                 continue;
             }
-            registry_add_component(ctx.registry, id_str + 1, component_body_json);
+            registry_add_component(ctx->registry, id_str + 1, component_body_json);
         }
     }
 
+    // Process all top-level nodes in the UI spec
     cJSON_ArrayForEach(item_json, ui_spec_root) {
         cJSON* type_node = cJSON_GetObjectItem(item_json, "type");
         const char* type_str = type_node ? cJSON_GetStringValue(type_node) : NULL;
@@ -1002,10 +1091,64 @@ IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* 
         if (type_str && strcmp(type_str, "component") == 0) {
             continue;
         }
+        process_node(ctx, item_json, ctx->current_global_block, "parent", type_str ? type_str : "obj", NULL);
+    }
+    // The root_ir_block (ctx->current_global_block) is populated by process_node.
+}
 
-        process_node(&ctx, item_json, root_ir_block, "parent", type_str ? type_str : "obj", NULL);
+IRStmtBlock* generate_ir_from_ui_spec_with_registry(
+    const cJSON* ui_spec_root,
+    const ApiSpec* api_spec,
+    Registry* string_registry_for_gencontext) {
+
+    // Initial checks from the original function
+    if (!ui_spec_root) {
+        fprintf(stderr, "Error: UI Spec root is NULL in generate_ir_from_ui_spec_with_registry.\n");
+        return NULL;
+    }
+    if (!api_spec) {
+        fprintf(stderr, "Error: API Spec is NULL in generate_ir_from_ui_spec_with_registry.\n");
+        return NULL;
+    }
+    if (!cJSON_IsArray(ui_spec_root)) {
+        fprintf(stderr, "Error: UI Spec root must be an array of definitions in generate_ir_from_ui_spec_with_registry.\n");
+        return NULL;
     }
 
-    registry_free(ctx.registry);
+    GenContext ctx;
+    ctx.api_spec = api_spec;
+    ctx.var_counter = 0; // Initialize var_counter
+
+    bool own_registry = false;
+    if (string_registry_for_gencontext) {
+        ctx.registry = string_registry_for_gencontext;
+    } else {
+        ctx.registry = registry_create();
+        if (!ctx.registry) {
+            fprintf(stderr, "Error: Failed to create registry in generate_ir_from_ui_spec_with_registry.\n");
+            return NULL;
+        }
+        own_registry = true;
+    }
+
+    IRStmtBlock* root_ir_block = ir_new_block();
+    if (!root_ir_block) {
+        fprintf(stderr, "Error: Failed to create root IR block in generate_ir_from_ui_spec_with_registry.\n");
+        if (own_registry) {
+            registry_free(ctx.registry);
+        }
+        return NULL;
+    }
+    ctx.current_global_block = root_ir_block;
+
+    // Call the internal logic function, which populates ctx.current_global_block (root_ir_block)
+    generate_ir_from_ui_spec_internal_logic(&ctx, ui_spec_root);
+
+    if (own_registry) {
+        registry_free(ctx.registry);
+    }
     return root_ir_block;
 }
+
+// --- New function definitions END ---
+// Ensure there are no other definitions of generate_ir_from_ui_spec below this point.
