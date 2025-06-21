@@ -71,6 +71,9 @@ void *registry_get_pointer(const Registry* reg, const char *id, const char *type
 // The registry owns the memory for these stored strings.
 const char *registry_add_str(Registry* reg, const char *value);
 
+// Function to retrieve a pointer and its type by its ID
+void *registry_get_pointer_by_id(const Registry* reg, const char *id, const char **type_out);
+
 // --- Registry struct ---
 // This is the full definition of the Registry.
 struct Registry {

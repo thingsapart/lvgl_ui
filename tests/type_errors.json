@@ -1,0 +1,71 @@
+[
+  {
+    "type": "obj",
+    "id": "@screen1",
+    "properties": {
+      "bg_color": "#202020"
+    },
+    "children": [
+      {
+        "type": "label",
+        "id": "@my_label",
+        "properties": {
+          "text": "Hello Correct",
+          "align": "LV_ALIGN_TOP_LEFT",
+          "width": "LV_SIZE_CONTENT"
+        }
+      },
+      {
+        "type": "label",
+        "id": "@error_label1",
+        "properties": {
+          "text": "Error Label Type Mismatches",
+          "align": "LV_EVENT_CLICKED",
+          "width": "not_a_number",
+          "long_mode": "#FF0000",
+          "x": "LV_ALIGN_CENTER"
+        }
+      },
+      {
+        "type": "style",
+        "id": "@my_style",
+        "properties": {
+            "text_color": "#FFFFFF"
+        }
+      },
+      {
+        "type": "obj",
+        "id": "@obj_for_id_prop_error",
+        "properties": {
+            "width": "@my_style"
+        }
+      }
+    ]
+  },
+  {
+    "type": "obj",
+    "named": "test_obj_for_with_error",
+    "children": [
+        {
+            "type": "label",
+            "id": "@label_in_with_parent"
+        }
+    ],
+    "with": {
+        "obj": "@label_in_with_parent",
+        "do": {
+            "height": "LV_ALIGN_CENTER"
+        }
+    }
+  },
+  {
+    "type": "obj",
+    "named": "test_obj_for_with_style_error",
+    "with": {
+        "obj": "@my_style",
+        "do": {
+            "bg_color": "@my_label"
+        }
+    }
+  }
+]

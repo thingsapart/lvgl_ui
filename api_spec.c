@@ -528,3 +528,10 @@ const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* f
     //fprintf(stderr, "Warning: Function '%s' not found in API spec or has no return type, defaulting to lv_obj_t*.\n", func_name);
     return "lv_obj_t*";
 }
+
+bool api_spec_is_enum_type(const ApiSpec* spec, const char* type_name) {
+    if (!spec || !spec->enums || !type_name) {
+        return false;
+    }
+    return cJSON_GetObjectItem(spec->enums, type_name) != NULL;
+}

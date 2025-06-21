@@ -127,6 +127,25 @@ void* registry_get_pointer(const Registry* reg, const char* id, const char* type
     return NULL; // Not found
 }
 
+void *registry_get_pointer_by_id(const Registry* reg, const char *id, const char **type_out) {
+    if (!reg || !id || !type_out) {
+        if (type_out) *type_out = NULL;
+        return NULL;
+    }
+
+    PointerRegistryNode* current = reg->pointers;
+    while (current) {
+        if (current->id && strcmp(current->id, id) == 0) {
+            *type_out = current->type; // Return the type string
+            return current->ptr;       // Return the pointer
+        }
+        current = current->next;
+    }
+
+    *type_out = NULL; // ID not found
+    return NULL;      // Pointer not found
+}
+
 // --- String Registration ---
 
 const char* registry_add_str(Registry* reg, const char* value) {

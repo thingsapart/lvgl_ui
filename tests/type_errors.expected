@@ -1,0 +1,60 @@
+#include "lvgl.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+// Forward declarations
+static lv_obj_t* screen1_0;
+static lv_obj_t* my_label_0;
+static lv_obj_t* error_label1_0;
+static lv_style_t my_style_0;
+static lv_obj_t* obj_for_id_prop_error_0;
+static lv_obj_t* test_obj_for_with_error_0;
+static lv_obj_t* label_in_with_parent_0;
+static lv_obj_t* test_obj_for_with_style_error_0;
+
+// Registry instance
+Registry* ui_registry;
+
+void ui_init(Registry* registry) {
+    ui_registry = registry;
+
+    screen1_0 = lv_obj_create(NULL);
+    lv_obj_set_style_bg_color(screen1_0, lv_color_hex(0x202020), LV_PART_MAIN | LV_STATE_DEFAULT);
+    registry_add_pointer(ui_registry, screen1_0, "screen1", "obj");
+
+    my_label_0 = lv_label_create(screen1_0);
+    lv_label_set_text(my_label_0, "Hello Correct");
+    lv_label_set_align(my_label_0, LV_ALIGN_TOP_LEFT);
+    lv_obj_set_width(my_label_0, LV_SIZE_CONTENT);
+    registry_add_pointer(ui_registry, my_label_0, "my_label", "label");
+
+    error_label1_0 = lv_label_create(screen1_0);
+    lv_label_set_text(error_label1_0, "Error Label Type Mismatches");
+    lv_label_set_align(error_label1_0, LV_EVENT_CLICKED);
+    lv_obj_set_width(error_label1_0, NULL);
+    lv_label_set_long_mode(error_label1_0, #FF0000);
+    lv_obj_set_x(error_label1_0, LV_ALIGN_CENTER);
+    registry_add_pointer(ui_registry, error_label1_0, "error_label1", "label");
+
+    lv_style_init(&my_style_0);
+    lv_style_set_text_color(&my_style_0, lv_color_hex(0xFFFFFF));
+    registry_add_pointer(ui_registry, &my_style_0, "my_style", "style");
+
+    obj_for_id_prop_error_0 = lv_obj_create(screen1_0);
+    lv_obj_set_width(obj_for_id_prop_error_0, &my_style_0);
+    registry_add_pointer(ui_registry, obj_for_id_prop_error_0, "obj_for_id_prop_error", "obj");
+
+    test_obj_for_with_error_0 = lv_obj_create(NULL);
+    label_in_with_parent_0 = lv_label_create(test_obj_for_with_error_0);
+    registry_add_pointer(ui_registry, label_in_with_parent_0, "label_in_with_parent", "label");
+
+    lv_obj_t* temp_obj_for_with_0 = label_in_with_parent_0;
+    lv_obj_set_height(temp_obj_for_with_0, LV_ALIGN_CENTER);
+    registry_add_generated_var(ui_registry, "test_obj_for_with_error", "test_obj_for_with_error_0");
+
+    test_obj_for_with_style_error_0 = lv_obj_create(NULL);
+
+    lv_style_t* temp_style_for_with_0 = &my_style_0;
+    lv_style_set_bg_color(temp_style_for_with_0, my_label_0);
+    registry_add_generated_var(ui_registry, "test_obj_for_with_style_error", "test_obj_for_with_style_error_0");
+}

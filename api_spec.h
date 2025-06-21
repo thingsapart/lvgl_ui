@@ -77,6 +77,8 @@ typedef struct ApiSpec {
     const cJSON* global_properties_json_node;           // Reference to global #/properties from JSON (owned by main cJSON doc)
 } ApiSpec;
 
+// Returns true if the given type_name corresponds to a defined enum type.
+bool api_spec_is_enum_type(const ApiSpec* spec, const char* type_name);
 
 // --- Function Declarations ---
 
