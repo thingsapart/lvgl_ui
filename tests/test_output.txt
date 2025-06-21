@@ -1,0 +1,24 @@
+[RUNNING] comments                                [  [0;32mOK   [0m] comments
+[RUNNING] component_use_view                      [  [0;32mOK   [0m] component_use_view
+[RUNNING] do_with_ref_id                          [ [0;31mFAIL  [0m] do_with_ref_id
+[RUNNING] empty_input                             [  [0;32mOK   [0m] empty_input
+[RUNNING] enums                                   [ [0;31mFAIL  [0m] enums
+[RUNNING] global_func_and_methods                 [ [0;31mFAIL  [0m] global_func_and_methods
+[RUNNING] id_registration                         [ [0;31mFAIL  [0m] id_registration
+[RUNNING] interleaved_with_comments               [ [0;31mFAIL  [0m] interleaved_with_comments
+[RUNNING] invalid_type                            [  [0;32mOK   [0m] invalid_type
+[RUNNING] issue_spec                              [ [0;31mFAIL  [0m] issue_spec
+[RUNNING] local_style_lookup_test                 [ [0;31mFAIL  [0m] local_style_lookup_test
+[RUNNING] missing_id_reference                    [ [0;31mFAIL  [0m] missing_id_reference
+[RUNNING] multiple_with                           [ [0;31mFAIL  [0m] multiple_with
+[RUNNING] property_lookup_test                    [  [0;32mOK   [0m] property_lookup_test
+[RUNNING] selector_generation_test                [ [0;31mFAIL  [0m] selector_generation_test
+[RUNNING] string_escapes                          [  [0;32mOK   [0m] string_escapes
+[RUNNING] tileview                                [ [0;31mFAIL  [0m] tileview
+[RUNNING] true_enums                              [  [0;32mOK   [0m] true_enums
+[RUNNING] type_errors                             [ [0;31mFAIL  [0m] type_errors
+[RUNNING] with_obj_do                             [ [0;31mFAIL  [0m] with_obj_do
+--------------------
+Test Summary:
+10/23 tests passed.
+[0;31m13 tests failed.[0m
