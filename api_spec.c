@@ -528,3 +528,29 @@ const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* f
     //fprintf(stderr, "Warning: Function '%s' not found in API spec or has no return type, defaulting to lv_obj_t*.\n", func_name);
     return "lv_obj_t*";
 }
+
+bool api_spec_is_enum_type(const ApiSpec* spec, const char* type_name) {
+    if (!spec || !type_name || !spec->enums) {
+        return false;
+    }
+    // spec->enums is a cJSON object where keys are enum type names (e.g., "lv_align_t")
+    // and values are objects containing the enum members.
+    if (cJSON_GetObjectItemCaseSensitive(spec->enums, type_name)) {
+        return true;
+    }
+    return false;
+}
+
+const FunctionDefinition* api_spec_find_function_def(const ApiSpec* spec, const char* func_name) {
+    if (!spec || !func_name || !spec->functions) {
+        return NULL;
+    }
+    FunctionMapNode* current_func_node = spec->functions;
+    while (current_func_node) {
+        if (current_func_node->name && strcmp(current_func_node->name, func_name) == 0) {
+            return current_func_node->func_def;
+        }
+        current_func_node = current_func_node->next;
+    }
+    return NULL; // Not found
+}

@@ -1,0 +1,31 @@
+[
+  {
+    "type": "obj",
+    "id": "@screen1",
+    "named": "screen1_obj",
+    "children": [
+      {
+        "type": "label",
+        "id": "@label1",
+        "named": "label1_obj",
+        "properties": {
+          "text": "Hello TypeCheck",
+          "//": "Property 'layout' (lv_obj_set_layout) expects lv_layout_t.",
+          "//": "LV_ALIGN_CENTER is lv_align_t.",
+          "layout": "LV_ALIGN_CENTER",
+          "//": "Property 'align' (lv_obj_set_align) expects lv_align_t.",
+          "//": "LV_DIR_BOTTOM is lv_dir_t.",
+          "align": "LV_DIR_BOTTOM"
+        }
+      },
+      {
+        "type": "obj",
+        "named": "obj_with_call",
+        "properties": {
+          "//": "Using lv_obj_add_flag which takes lv_obj_flag_t. LV_STATE_DEFAULT is lv_state_t",
+          "add_flag": "LV_STATE_DEFAULT"
+        }
+      }
+    ]
+  }
+]

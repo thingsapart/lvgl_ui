@@ -38,6 +38,7 @@ IRExpr* ir_new_literal(const char* value) {
     lit->base.type = IR_EXPR_LITERAL;
     lit->value = value ? strdup(value) : NULL;
     if (value && !lit->value) { perror("Failed to strdup literal value"); free(lit); return NULL; }
+    lit->type_hint = NULL; // Initialize new field
     return (IRExpr*)lit;
 }
 
@@ -46,6 +47,7 @@ IRExpr* ir_new_literal_string(const char* value) {
     if (!lit) { perror("Failed to allocate IRExprLiteral for string"); return NULL; }
     init_ir_node((IRNode*)lit, (void (*)(IRNode*))free_expr, codegen_expr_literal);
     lit->base.type = IR_EXPR_LITERAL;
+    lit->type_hint = NULL; // Initialize new field
     if (value) {
         char* quoted_value = (char*)malloc(strlen(value) + 3);
         if (!quoted_value) { perror("Failed to allocate for quoted string"); free(lit); return NULL; }
@@ -266,7 +268,11 @@ static void free_stmt_list(IRStmtNode* head) {
 static void free_expr(IRExpr* expr) {
     if (!expr) return;
     switch (expr->type) {
-        case IR_EXPR_LITERAL: free(((IRExprLiteral*)expr)->value); break;
+        case IR_EXPR_LITERAL: {
+            IRExprLiteral* lit = (IRExprLiteral*)expr;
+            free(lit->value);
+            free(lit->type_hint); // Free the new field
+        } break;
         case IR_EXPR_VARIABLE: free(((IRExprVariable*)expr)->name); break;
         case IR_EXPR_FUNC_CALL: {
             IRExprFuncCall* call = (IRExprFuncCall*)expr;

@@ -47,6 +47,7 @@ typedef struct {
     IRNode base;
     char* value; // Store all literals as strings for now, parse during codegen
                  // For strings, 'value' will include the quotes, e.g., ""actual_string_value""
+    char* type_hint; // Optional: Stores the type (e.g., enum type name) if known. Owned by this node.
 } IRExprLiteral;
 
 // Variable reference
