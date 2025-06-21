@@ -1,0 +1,10 @@
+[
+    {
+        "type": "base_widget",
+        "named": "widget1",
+        "properties": {
+            "align": "LV_ALIGN_CENTER",
+            "flex_flow": "LV_FLEX_FLOW_ROW"
+        }
+    }
+]

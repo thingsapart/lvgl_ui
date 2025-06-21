@@ -1,0 +1,9 @@
+[
+    {
+        "type": "base_widget",
+        "named": "widget5",
+        "properties": {
+            "align": {"call": "custom_global_no_obj", "args": ["LV_ALIGN_CENTER", "LV_STATE_DEFAULT"]}
+        }
+    }
+]

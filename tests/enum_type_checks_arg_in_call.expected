@@ -1,0 +1,4 @@
+{
+    lv_obj_t* widget5 = lv_obj_create(parent);
+    lv_obj_set_align(widget5, custom_global_no_obj(LV_ALIGN_CENTER, LV_STATE_DEFAULT));
+}
