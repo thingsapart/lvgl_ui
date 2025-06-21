@@ -14,6 +14,14 @@ Notes:
 
 If you need to add debug statements, always use `_dprintf(stderr, ...);` instead of `fprintf(stderr, ...)` and enable them by defining `#define __DEBUG=1`.
 
+# Tests
+
+## Test format
+
+Tests are a simple .json file that specifies the UI-SPEC, they are always run against "./api_spec.json", and a .expected file that captures the expected output of running "lvgl_ui_generator" against the UI-SPEC. The .json and .expected files both have the same filename "stem" (ie they're the same filename sans extension).
+
+So currently, the .expected file is C-Code that corresponds to what the codegen backend of "lvgl_ui_generator" outputs when running against a specific UI-SPEC file.
+
 # Tasks
 
 ## Building
