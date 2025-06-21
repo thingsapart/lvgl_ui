@@ -126,7 +126,6 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* expected_c_type);
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
-static const char* get_obj_type_from_c_type(const char* c_type);
 static const char* get_json_type_from_c_type(const char* c_type_str);
 
 
@@ -1424,19 +1423,6 @@ IRStmtBlock* generate_ir_from_ui_spec_with_registry(
     }
     free_id_type_map(&ctx); // Free map
     return root_ir_block;
-}
-
-static const char* get_obj_type_from_c_type(const char* c_type) {
-    if (!c_type) return "obj";
-    if (strcmp(c_type, "lv_style_t*") == 0 || strcmp(c_type, "lv_style_t") == 0) return "style";
-    if (strcmp(c_type, "lv_obj_t*") == 0) return "obj";
-    if (strcmp(c_type, "lv_anim_t*") == 0) return "anim";
-    if (strcmp(c_type, "lv_group_t*") == 0) return "group";
-    if (strcmp(c_type, "lv_font_t*") == 0) return "font";
-    // Add more specific mappings if a widget type like "button" should be inferred from "lv_btn_t*"
-    // For now, these are the main "object types" that properties might be looked up against.
-    // Fallback to "obj" is reasonable as most things are lv_obj_t derivatives or compatible.
-    return "obj";
 }
 
 static const char* get_json_type_from_c_type(const char* c_type_str) {
