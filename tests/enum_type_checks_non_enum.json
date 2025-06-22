@@ -1,9 +1,7 @@
 [
     {
-        "type": "base_widget",
+        "type": "obj",
         "named": "widget4",
-        "properties": {
-            "base_prop": 123
-        }
+        "width": 123
     }
 ]

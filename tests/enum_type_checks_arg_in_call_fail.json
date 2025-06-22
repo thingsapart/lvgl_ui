@@ -2,6 +2,6 @@
     {
         "type": "obj",
         "named": "widget5",
-        "align": "LV_ALIGN_CENTER"
+        "align": "LV_IMAGE_FLAGS_MODIFIABLE"
     }
 ]
