@@ -76,7 +76,22 @@
       "width_zero_args": [],
 
       "// Test Case 27: Function expecting >1 args, called with zero-args via []": "",
-      "flex_align_zero_args": []
+      "flex_align_zero_args": [],
+
+      "// Test Case 28: Integer value for enum property (obj.align)": "",
+      "align_int_val": 1,
+
+      "// Test Case 29: Integer value for enum in func_args (obj.flex_align)": "",
+      "flex_align_int_vals": [0, 1, 2],
+
+      "// Test Case 30: Integer value for enum (obj.align), potentially out of actual enum range but valid int": "",
+      "align_int_out_of_range": 99,
+
+      "// Test Case 31: JSON string for const char* (no prefix, obj.text)": "",
+      "text_const_char_ptr": "Hello Literal",
+
+      "// Test Case 32: JSON string with '!' for char* (or managed const char*, obj.text)": "",
+      "text_char_ptr": "!Hello Managed"
     }
   },
   {

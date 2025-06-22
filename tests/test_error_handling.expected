@@ -21,6 +21,7 @@ ERROR: Property 'flex_align_zero_args' on C var 'error_test_obj' (type 'obj', se
 #include "ui_registry.h"
 
 // --- Global string literals ---
+const char* str_error_test_obj_text_char_ptr = "Hello Managed";
 
 // --- UI Object Function Declarations ---
 void ui_error_test_obj_create(lv_obj_t* parent);
@@ -73,17 +74,25 @@ void ui_error_test_obj_create(lv_obj_t* parent) {
     // Test Case 20: Unhandled JSON type in unmarshal_value (obj.y)
     lv_obj_set_y(error_test_obj, NULL);
     // Test Case 23: Explicit JSON null as single argument (obj.text)
-    // Assuming 'text' for a base 'obj' maps to lv_obj_set_style_text, which takes (obj, value, selector)
-    // The 'value' (text string) will be NULL. Selector defaults.
     lv_obj_set_style_text(error_test_obj, NULL, LV_PART_MAIN | LV_STATE_DEFAULT);
     // Test Case 24: Explicit JSON null within a multi-arg array (obj.flex_align)
     lv_obj_set_flex_align(error_test_obj, LV_FLEX_ALIGN_START, NULL, NULL);
     // Test Case 25: Zero-argument function call (obj.clean - lv_obj_clean takes obj*)
     lv_obj_clean(error_test_obj);
     // Test Case 26: Function expecting one arg, called with zero-args via []
-    lv_obj_set_width(error_test_obj, NULL); // Arg count error occurs, then may pass NULL if processing continues
+    lv_obj_set_width(error_test_obj, NULL);
     // Test Case 27: Function expecting >1 args, called with zero-args via []
-    lv_obj_set_flex_align(error_test_obj, NULL, NULL, NULL); // Arg count error, then may pass NULLs
+    lv_obj_set_flex_align(error_test_obj, NULL, NULL, NULL);
+    // Test Case 28: Integer value for enum property (obj.align_int_val maps to align -> lv_obj_align)
+    lv_obj_align(error_test_obj, 1, 0, 0);
+    // Test Case 29: Integer value for enum in func_args (obj.flex_align_int_vals maps to flex_align -> lv_obj_set_flex_align)
+    lv_obj_set_flex_align(error_test_obj, 0, 1, 2);
+    // Test Case 30: Integer value for enum (obj.align_int_out_of_range maps to align -> lv_obj_align)
+    lv_obj_align(error_test_obj, 99, 0, 0);
+    // Test Case 31: JSON string for const char* (no prefix, obj.text_const_char_ptr maps to text -> lv_obj_set_style_text)
+    lv_obj_set_style_text(error_test_obj, "Hello Literal", LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 32: JSON string with '!' for char* (obj.text_char_ptr maps to text -> lv_obj_set_style_text)
+    lv_obj_set_style_text(error_test_obj, str_error_test_obj_text_char_ptr, LV_PART_MAIN | LV_STATE_DEFAULT);
     registry_add_pointer(&ui_registry_get_default()->registry, error_test_obj, "error_test_obj", "obj");
 }
 

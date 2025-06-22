@@ -184,23 +184,21 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
                         }
 
                         if (actual_enum_type_name) {
-                            // This is the new error message for mismatched enum types
                             fprintf(stderr, "ERROR: \"%s\" (enum %s) is not of expected enum type %s.\n", s_orig, actual_enum_type_name, expected_enum_type_for_arg);
                         }
-                        // Continue to global search as per requirement
+                        // Continue to global search
                     }
                 } else {
-                     fprintf(stderr, "Warning: Expected enum type '%s' not found in API spec. Falling back to global search for '%s'.\n", expected_enum_type_for_arg, s_orig);
+                     fprintf(stderr, "Warning: Expected enum type '%s' not found in API spec for string value '%s'. Falling back to global search.\n", expected_enum_type_for_arg, s_orig);
                 }
             }
         }
 
-        // Fallback: global constant and enum search
+        // Fallback for strings: global constant and enum search, then literal string
         const cJSON* constants = api_spec_get_constants(ctx->api_spec);
         if (constants && cJSON_GetObjectItem(constants, s_orig)) {
             return ir_new_literal(s_orig);
         }
-
         const cJSON* all_enum_types_json_fallback = api_spec_get_enums(ctx->api_spec);
         if (all_enum_types_json_fallback && cJSON_IsObject(all_enum_types_json_fallback)) {
             cJSON* enum_type_definition_json = NULL;
@@ -212,14 +210,18 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
                 }
             }
         }
-        // If s_orig wasn't an enum or constant, and not a special prefixed string,
-        // it's treated as a literal string to be passed to a C function directly,
-        // or used as a format string, etc.
-        return ir_new_literal_string(s_orig);
+        return ir_new_literal_string(s_orig); // Default for non-prefixed, non-enum/constant strings
 
     } else if (cJSON_IsNumber(value)) {
+        // If an enum type is expected, pass the number directly.
+        // C will handle if the int value is assignable to the enum type.
+        // Optional: Could add validation here to check if number is a valid value for the expected_enum_type.
+        if (expected_enum_type_for_arg && expected_enum_type_for_arg[0] != '\0') {
+            // Consider adding a warning:
+            // fprintf(stderr, "Warning: Integer value %d used for expected enum type '%s'. Prefer string names for clarity.\n", (int)value->valuedouble, expected_enum_type_for_arg);
+        }
         char buf[32];
-        snprintf(buf, sizeof(buf), "%d", (int)value->valuedouble);
+        snprintf(buf, sizeof(buf), "%d", (int)value->valuedouble); // LVGL enums are typically ints
         return ir_new_literal(buf);
     } else if (cJSON_IsBool(value)) {
         return ir_new_literal(cJSON_IsTrue(value) ? "true" : "false");
@@ -1116,3 +1118,4 @@ IRStmtBlock* generate_ir_from_ui_spec_with_registry(
     return root_ir_block;
 }
 
+[end of generator.c]
