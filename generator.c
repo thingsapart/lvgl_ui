@@ -23,7 +23,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
 static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context); // Wrapper
 static void process_properties(GenContext* ctx, cJSON* props_json, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context);
 static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context, const char* explicit_target_var_name);
-static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context);
+static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* expected_enum_type_for_arg);
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
 
@@ -78,7 +78,7 @@ static char* generate_unique_var_name(GenContext* ctx, const char* base_type) {
 
 // --- Core Processing Functions ---
 
-static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context) {
+static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* expected_enum_type_for_arg) {
     if (!value) return ir_new_literal("NULL");
 
     if (cJSON_IsString(value)) {
@@ -90,7 +90,8 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
             if (ui_context) {
                 cJSON* ctx_val = cJSON_GetObjectItem(ui_context, s_orig + 1);
                 if (ctx_val) {
-                    return unmarshal_value(ctx, ctx_val, ui_context);
+                    // Pass expected_enum_type_for_arg along in recursive call
+                    return unmarshal_value(ctx, ctx_val, ui_context, expected_enum_type_for_arg);
                 } else {
                     fprintf(stderr, "Warning: Context variable '%s' not found.\n", s_orig + 1);
                     return ir_new_literal("NULL");
@@ -101,6 +102,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
             }
         }
         if (s_orig[0] == '@' && s_orig[1] != '\0') {
+            // Enum check does not apply to registry references typically
             const char* registered_c_var = registry_get_generated_var(ctx->registry, s_orig + 1);
             if (registered_c_var) {
                  // Check if the ID or C variable name suggests it's a style object.
@@ -120,20 +122,21 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
             snprintf(hex_str_arg, sizeof(hex_str_arg), "0x%06lX", hex_val);
             return ir_new_func_call_expr("lv_color_hex", ir_new_expr_node(ir_new_literal(hex_str_arg)));
         }
-        // MODIFICATION START: Handle '!' prefix for string registration
+
         if (s_orig[0] == '!' && s_orig[1] != '\0') {
+            // Enum check does not apply to '!' prefixed strings
             const char* registered_string = registry_add_str(ctx->registry, s_orig + 1);
             if (registered_string) {
                 return ir_new_literal_string(registered_string);
             } else {
                 fprintf(stderr, "Warning: registry_add_str failed for value: %s. Returning NULL literal.\n", s_orig + 1);
-                return ir_new_literal("NULL"); // Or a default error string literal
+                return ir_new_literal("NULL");
             }
         }
-        // MODIFICATION END
 
         size_t len = strlen(s_orig);
         if (len > 0 && s_orig[len - 1] == '%') {
+            // Enum check does not apply to percentages
             char* temp_s = strdup(s_orig);
             if (!temp_s) { perror("Failed to strdup for percentage processing"); return ir_new_literal_string(s_orig); }
             temp_s[len - 1] = '\0';
@@ -148,6 +151,26 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
             free(temp_s);
         }
 
+        // This is a plain string, not prefixed. Apply enum logic.
+        if (expected_enum_type_for_arg && expected_enum_type_for_arg[0] != '\0') {
+            const cJSON* all_enums = api_spec_get_enums(ctx->api_spec);
+            if (all_enums) {
+                cJSON* specific_enum_type = cJSON_GetObjectItem(all_enums, expected_enum_type_for_arg);
+                if (specific_enum_type && cJSON_IsObject(specific_enum_type)) {
+                    if (cJSON_GetObjectItem(specific_enum_type, s_orig)) {
+                        return ir_new_literal(s_orig); // Found in specific enum
+                    } else {
+                        fprintf(stderr, "Error: Enum value '%s' not found in expected enum type '%s'.\n", s_orig, expected_enum_type_for_arg);
+                        return ir_new_literal("NULL"); // Or some error marker
+                    }
+                } else {
+                     fprintf(stderr, "Warning: Expected enum type '%s' not found in API spec. Falling back to global search for '%s'.\n", expected_enum_type_for_arg, s_orig);
+                     // Fall through to global search
+                }
+            }
+        }
+
+        // Fallback: global constant and enum search (original behavior if no specific enum type given or if specific search fails to find type)
         const cJSON* constants = api_spec_get_constants(ctx->api_spec);
         if (constants && cJSON_GetObjectItem(constants, s_orig)) {
             return ir_new_literal(s_orig);
@@ -159,13 +182,14 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
             for (enum_type_definition_json = all_enum_types_json->child; enum_type_definition_json != NULL; enum_type_definition_json = enum_type_definition_json->next) {
                 if (cJSON_IsObject(enum_type_definition_json)) {
                     if (cJSON_GetObjectItem(enum_type_definition_json, s_orig)) {
-                        return ir_new_literal(s_orig); // Found s_orig as a key in this enum type definition
+                        return ir_new_literal(s_orig);
                     }
                 }
             }
         }
-        // If not found in constants or any enum definitions, then treat as a string literal by default.
-        _dprintf(stderr, "DEBUG_PRINT: unmarshal_value: String '%s' falling back to IR_EXPR_LITERAL_STRING\n", s_orig);
+
+        // If not found in constants or any enum definitions, then treat as a string literal.
+        _dprintf(stderr, "DEBUG_PRINT: unmarshal_value: String '%s' (expected_enum_type: %s) falling back to IR_EXPR_LITERAL_STRING\n", s_orig, expected_enum_type_for_arg ? expected_enum_type_for_arg : "NULL");
         return ir_new_literal_string(s_orig);
 
     } else if (cJSON_IsNumber(value)) {
@@ -178,7 +202,8 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
         IRExprNode* elements = NULL;
         cJSON* elem_json;
         cJSON_ArrayForEach(elem_json, value) {
-            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context));
+            // For array elements, we don't have a specific expected enum type, so pass NULL.
+            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, NULL));
         }
         return ir_new_array(elements);
     } else if (cJSON_IsObject(value)) {
@@ -194,7 +219,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
                  cJSON_ArrayForEach(arg_json, args_item) {
                     char* arg_json_str = cJSON_PrintUnformatted(arg_json);
                     _dprintf(stderr, "DEBUG_PRINT: unmarshal_value: 'call' %s, arg[%d] JSON: %s\n", call_name, arg_idx, arg_json_str);
-                    IRExpr* arg_expr = unmarshal_value(ctx, arg_json, ui_context);
+                    // For function arguments in a "call" object, pass NULL for expected_enum_type_for_arg
+                    // unless we implement more detailed signature analysis later.
+                    IRExpr* arg_expr = unmarshal_value(ctx, arg_json, ui_context, NULL);
                     if(arg_expr) {
                         const char* arg_expr_type_str = "UNKNOWN_EXPR_TYPE";
                         if(arg_expr->type == IR_EXPR_LITERAL) arg_expr_type_str = "IR_EXPR_LITERAL";
@@ -213,7 +240,8 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context)
             } else if (args_item != NULL) {
                  char* arg_json_str = cJSON_PrintUnformatted(args_item);
                  _dprintf(stderr, "DEBUG_PRINT: unmarshal_value: 'call' %s, single arg JSON: %s\n", call_name, arg_json_str);
-                 IRExpr* arg_expr = unmarshal_value(ctx, args_item, ui_context);
+                 // For function arguments in a "call" object, pass NULL for expected_enum_type_for_arg
+                 IRExpr* arg_expr = unmarshal_value(ctx, args_item, ui_context, NULL);
                  if(arg_expr) {
                      const char* arg_expr_type_str = "UNKNOWN_EXPR_TYPE";
                      if(arg_expr->type == IR_EXPR_LITERAL) arg_expr_type_str = "IR_EXPR_LITERAL";
@@ -279,7 +307,8 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             // unmarshal_value expects the cJSON node representing the value.
             if (cJSON_IsString(actual_prop) && actual_prop->valuestring && actual_prop->valuestring[0] == '!') {
                  _dprintf(stderr, "DEBUG: Test bypass: Processing property '%s' with value '%s'\n", actual_prop->string, actual_prop->valuestring);
-                IRExpr* temp_expr = unmarshal_value(ctx, actual_prop, ui_context);
+                // Passing NULL for expected_enum_type_for_arg in this test bypass path
+                IRExpr* temp_expr = unmarshal_value(ctx, actual_prop, ui_context, NULL);
                 if (temp_expr) {
                     ir_free((IRNode*)temp_expr);
                 }
@@ -290,7 +319,8 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 cJSON* val_item = cJSON_GetObjectItem(actual_prop, "value");
                  if (cJSON_IsString(val_item) && val_item->valuestring && val_item->valuestring[0] == '!') {
                     _dprintf(stderr, "DEBUG: Test bypass: Found object property '%s' with value field '%s'\n", actual_prop->string, val_item->valuestring);
-                    IRExpr* temp_expr = unmarshal_value(ctx, val_item, ui_context);
+                    // Passing NULL for expected_enum_type_for_arg in this test bypass path
+                    IRExpr* temp_expr = unmarshal_value(ctx, val_item, ui_context, NULL);
                     if (temp_expr) {
                         ir_free((IRNode*)temp_expr);
                     }
@@ -319,7 +349,8 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
 
         if (strcmp(prop_name, "style") == 0) {
             if (cJSON_IsString(prop) && prop->valuestring != NULL && prop->valuestring[0] == '@') {
-                IRExpr* style_expr = unmarshal_value(ctx, prop, ui_context);
+                // The "style" property itself is a reference, not an enum value directly governed by this prop_def's expected_enum_type
+                IRExpr* style_expr = unmarshal_value(ctx, prop, ui_context, NULL);
                 if (style_expr) {
                     IRExprNode* args_list = ir_new_expr_node(ir_new_variable(target_c_var_name));
                     ir_expr_list_add(&args_list, style_expr);
@@ -412,7 +443,11 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                         fprintf(stderr, "Warning: Too many values in JSON array for function %s, property %s. Ignoring extra.\n", actual_setter_name_const, prop_name);
                         break;
                     }
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context));
+                    // For array values, assume the primary prop_def->expected_enum_type applies if it's the main value argument.
+                    // This is a simplification; a more robust system would need per-argument expected types.
+                    // If current_func_arg->name (if available) matches a main value, use prop_def->expected_enum_type. Otherwise NULL.
+                    // For now, if it's an array, we pass NULL, as we don't know which element is the "main" enum.
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context, NULL));
                     current_func_arg = current_func_arg->next;
                 }
             } else if (cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value")) { // Case: "prop_name": {"value": X, "part": Y, "state": Z}
@@ -421,11 +456,13 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 cJSON* state_json = cJSON_GetObjectItem(prop, "state");
 
                 if (value_json && current_func_arg) {
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, value_json, ui_context));
+                    // This is the primary value, so use prop_def->expected_enum_type
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, value_json, ui_context, prop_def->expected_enum_type));
                     current_func_arg = current_func_arg->next;
                 }
                 if (part_json && current_func_arg) {
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, part_json, ui_context));
+                    // Part is likely an enum, but not necessarily prop_def->expected_enum_type. Pass NULL for general lookup.
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, part_json, ui_context, NULL));
                     current_func_arg = current_func_arg->next;
                 } else if (!part_json && current_func_arg && prop_def->style_part_default &&
                            (prop_def->num_style_args == 2 || prop_def->num_style_args == -1)) {
@@ -433,7 +470,8 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 }
 
                 if (state_json && current_func_arg) {
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, state_json, ui_context));
+                    // State is likely an enum, but not necessarily prop_def->expected_enum_type. Pass NULL for general lookup.
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, state_json, ui_context, NULL));
                     current_func_arg = current_func_arg->next;
                 } else if (!state_json && current_func_arg && prop_def->style_state_default &&
                            prop_def->num_style_args > 0) {
@@ -441,11 +479,14 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 }
             } else { // Case: "prop_name": "simple_value" or other direct value
                 if (current_func_arg) { // If there's an expected argument slot
-                    IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context);
+                    // This is a direct value for an argument, use prop_def->expected_enum_type
+                    IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context, prop_def->expected_enum_type);
                     ir_expr_list_add(&args_list, val_expr_func_arg);
                     current_func_arg = current_func_arg->next;
                 } else if (!args_list && strcmp(obj_type_for_api_lookup, "style") != 0) {
-                     IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context);
+                     // This case seems less likely to be hit if func_args logic is correct.
+                     // If hit, it's a value not directly mapped to a func_arg, treat as main value.
+                     IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context, prop_def->expected_enum_type);
                      ir_expr_list_add(&args_list, val_expr_func_arg);
                 }
             }
@@ -497,13 +538,15 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                     }
                 }
             } else {
-                val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context);
+                // This is the main value for the property when not using func_args based resolution.
+                // So, prop_def->expected_enum_type is appropriate here.
+                val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context, prop_def->expected_enum_type);
             }
 
-            _dprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s, setter: %s, obj_setter_prefix: %s\n",
-                    prop_name, prop_def->name, prop_def->num_style_args, obj_type_for_api_lookup, prop_def->setter ? prop_def->setter : "NULL", prop_def->obj_setter_prefix ? prop_def->obj_setter_prefix : "NULL");
+            _dprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s, setter: %s, obj_setter_prefix: %s, expected_enum: %s\n",
+                    prop_name, prop_def->name, prop_def->num_style_args, obj_type_for_api_lookup, prop_def->setter ? prop_def->setter : "NULL", prop_def->obj_setter_prefix ? prop_def->obj_setter_prefix : "NULL", prop_def->expected_enum_type ? prop_def->expected_enum_type : "NULL");
 
-            if (prop_def->num_style_args == -1 && strcmp(obj_type_for_api_lookup, "style") != 0) {
+            if (prop_def->num_style_args == -1 && strcmp(obj_type_for_api_lookup, "style") != 0) { // e.g. lv_obj_set_style_local_text_color(obj, value, selector)
                 ir_expr_list_add(&args_list, val_expr);
                 char selector_str[128];
                 snprintf(selector_str, sizeof(selector_str), "%s | %s", part_str, state_str);
@@ -960,7 +1003,9 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
         return;
     }
 
-    IRExpr* obj_expr = unmarshal_value(ctx, obj_json, ui_context);
+    // The 'obj' field of a 'with' block is an expression yielding an object, not typically an enum property value itself.
+    // So, pass NULL for expected_enum_type_for_arg.
+    IRExpr* obj_expr = unmarshal_value(ctx, obj_json, ui_context, NULL);
     if (obj_expr) {
         const char* obj_expr_type_str = "UNKNOWN_EXPR_TYPE";
         if(obj_expr->type == IR_EXPR_LITERAL) obj_expr_type_str = "IR_EXPR_LITERAL";

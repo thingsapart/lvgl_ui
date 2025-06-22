@@ -1,0 +1,4 @@
+{
+    lv_obj_t* widget4 = lv_obj_create(parent);
+    lv_base_set_base_prop(widget4, 123);
+}

@@ -42,6 +42,7 @@ typedef struct {
     bool is_style_prop;           // True if this property is generally set on style objects or via local style setters
     char* obj_setter_prefix;      // For global properties, e.g. "lv_obj_set_style" for "text_color" -> "lv_obj_set_style_text_color"
     FunctionArg* func_args;       // NEW FIELD: Linked list of arguments if this property resolves to a function/method with a known signature.
+    const char* expected_enum_type; // ADDED: Name of the enum type expected by this property.
 } PropertyDefinition;
 
 typedef struct PropertyDefinitionNode {

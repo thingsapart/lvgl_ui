@@ -116,6 +116,12 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             pd->style_state_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_state_default")));
             pd->is_style_prop = cJSON_IsTrue(cJSON_GetObjectItem(prop_detail_json, "is_style_prop"));
             pd->func_args = NULL; // Initialize new field
+            pd->expected_enum_type = NULL; // Initialize new field
+
+            cJSON* expected_enum_type_json = cJSON_GetObjectItem(prop_detail_json, "expected_enum_type");
+            if (cJSON_IsString(expected_enum_type_json)) {
+                pd->expected_enum_type = expected_enum_type_json->valuestring; // Point to cJSON string
+            }
 
             *current_prop_list_node = (struct PropertyDefinitionNode*)calloc(1, sizeof(struct PropertyDefinitionNode));
             if (!*current_prop_list_node) {
@@ -362,6 +368,7 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                     method_prop_def.c_type = method_arg_type;
                     method_prop_def.widget_type_hint = (char*)current_type_to_check;
                     method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL; // Set func_args
+                    method_prop_def.expected_enum_type = NULL; // Initialize for static instance
                     return &method_prop_def;
                 }
                 m_node = m_node->next;
@@ -388,6 +395,7 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                     method_prop_def.c_type = method_arg_type;
                     method_prop_def.widget_type_hint = (char*)current_type_to_check;
                     method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL; // Set func_args
+                    method_prop_def.expected_enum_type = NULL; // Initialize for static instance
                     return &method_prop_def;
                 }
                 m_node = m_node->next;
@@ -427,6 +435,7 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                global_func_prop_def.c_type = global_func_arg_type;
                global_func_prop_def.widget_type_hint = (char*)type_name;
                global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL; // Set func_args
+                global_func_prop_def.expected_enum_type = NULL; // Initialize for static instance
                return &global_func_prop_def;
            }
            func_node = func_node->next;
@@ -460,6 +469,7 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                global_func_prop_def.c_type = global_func_arg_type;
                global_func_prop_def.widget_type_hint = (char*)type_name;
                global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL; // Set func_args
+                global_func_prop_def.expected_enum_type = NULL; // Initialize for static instance
                return &global_func_prop_def;
            }
            func_node = func_node->next;
