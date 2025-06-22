@@ -110,13 +110,17 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             pd->widget_type_hint = safe_strdup(def_name);
             pd->obj_setter_prefix = NULL;
 
-            cJSON* style_args_item = cJSON_GetObjectItem(prop_detail_json, "style_args");
-            if (!style_args_item) style_args_item = cJSON_GetObjectItem(prop_detail_json, "num_style_args");
-            if (cJSON_IsNumber(style_args_item)) pd->num_style_args = style_args_item->valueint;
-            else pd->num_style_args = 0;
+            // cJSON* style_args_item = cJSON_GetObjectItem(prop_detail_json, "style_args");
+            // if (!style_args_item) style_args_item = cJSON_GetObjectItem(prop_detail_json, "num_style_args");
+            // if (cJSON_IsNumber(style_args_item)) pd->num_style_args = style_args_item->valueint;
+            // else pd->num_style_args = 0;
+            pd->num_style_args = 0; // REMOVED - Field itself will be removed from struct
 
-            pd->style_part_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_part_default")));
-            pd->style_state_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_state_default")));
+            // pd->style_part_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_part_default")));
+            // pd->style_state_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_state_default")));
+            pd->style_part_default = NULL; // REMOVED - Field itself will be removed from struct
+            pd->style_state_default = NULL; // REMOVED - Field itself will be removed from struct
+
             pd->is_style_prop = cJSON_IsTrue(cJSON_GetObjectItem(prop_detail_json, "is_style_prop"));
             pd->func_args = NULL; // Initialize new field
             pd->expected_enum_type = NULL; // Initialize new field
@@ -319,9 +323,22 @@ static void free_property_definition_list(PropertyDefinitionNode* head) {
             free(current->prop->setter);
             free(current->prop->widget_type_hint);
             free(current->prop->obj_setter_prefix);
-            free(current->prop->style_part_default);
-            free(current->prop->style_state_default);
+            // free(current->prop->style_part_default); // REMOVED
+            // free(current->prop->style_state_default); // REMOVED
             free(current->prop->expected_enum_type); // Free the duplicated string
+            // Ensure func_args are freed if allocated for properties
+            if(current->prop->func_args) { // Check might be redundant if calloc initializes to NULL and it's not set
+                // For PropertyDefinition, func_args might not be deeply copied in all cases,
+                // or might point to a shared FunctionDefinition's args.
+                // If they are uniquely allocated for PropertyDefinition, they need freeing.
+                // Assuming they are NOT uniquely allocated for props for now to avoid double free.
+                // If they ARE, then free_function_arg_list(current->prop->func_args); would be needed.
+                // Based on current parsing, prop_def->func_args is only set if explicitly in JSON for the property.
+                // The global function lookup returns a pointer to existing FunctionArg list.
+                // So, only free if prop_def->func_args was parsed for *this specific property*.
+                // The current parser does not seem to create a *deep copy* of func_args for properties,
+                // so no separate free here. If it did, free_function_arg_list(current->prop->func_args) here.
+            }
             free(current->prop);
         }
         free(current);
@@ -573,4 +590,47 @@ const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* f
     // Default if not found or no return type specified
     //fprintf(stderr, "Warning: Function '%s' not found in API spec or has no return type, defaulting to lv_obj_t*.\n", func_name);
     return "lv_obj_t*";
+}
+
+// Retrieves the FunctionArg list for a given function name from the global functions or widget methods.
+// The caller should NOT free the returned list as it points to existing data within the ApiSpec structure.
+const FunctionArg* api_spec_get_function_args_by_name(const ApiSpec* spec, const char* func_name) {
+    if (!spec || !func_name) {
+        return NULL;
+    }
+
+    // 1. Search global functions
+    FunctionMapNode* current_fnode = spec->functions;
+    while (current_fnode) {
+        if (current_fnode->name && strcmp(current_fnode->name, func_name) == 0) {
+            if (current_fnode->func_def) {
+                return current_fnode->func_def->args_head;
+            }
+            return NULL; // Function found, but no definition (should not happen with valid spec)
+        }
+        current_fnode = current_fnode->next;
+    }
+
+    // 2. Search widget methods (less common for direct setters, but possible)
+    // This might need refinement if setters are strictly global or from a base "obj" type.
+    // For now, a comprehensive search.
+    WidgetMapNode* current_wnode = spec->widgets_list_head;
+    while (current_wnode) {
+        if (current_wnode->widget && current_wnode->widget->methods) {
+            FunctionMapNode* current_mnode = current_wnode->widget->methods;
+            while (current_mnode) {
+                if (current_mnode->name && strcmp(current_mnode->name, func_name) == 0) {
+                    if (current_mnode->func_def) {
+                        return current_mnode->func_def->args_head;
+                    }
+                    return NULL; // Method found, but no definition
+                }
+                current_mnode = current_mnode->next;
+            }
+        }
+        current_wnode = current_wnode->next;
+    }
+
+    // fprintf(stderr, "Debug: Function/method '%s' not found in api_spec_get_function_args_by_name.\n", func_name);
+    return NULL; // Not found
 }
