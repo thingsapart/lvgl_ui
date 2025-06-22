@@ -1116,4 +1116,3 @@ IRStmtBlock* generate_ir_from_ui_spec_with_registry(
     return root_ir_block;
 }
 
-[end of generator.c]
