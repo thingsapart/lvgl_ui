@@ -1,0 +1,97 @@
+[
+  {
+    "type": "obj",
+    "id": "@error_test_obj",
+    "named": "error_test_obj",
+    "properties": {
+      "// Test Case 1: Enum Type Mismatch - Simple Property": "",
+      "align": "LV_IMAGE_FLAGS_MODIFIABLE",
+
+      "// Test Case 2: Enum Type Mismatch - func_args (single enum arg implicit)": "",
+      "// Assuming a hypothetical property 'single_enum_prop' that takes one lv_align_t via func_args. Update api_spec.json if needed for this to be testable.",
+      "// For now, we'll use flex_align with one wrong and others right to test mismatch within func_args.
+      // single_enum_prop: "LV_IMAGE_FLAGS_MODIFIABLE",
+
+      "// Test Case 3: Enum Type Mismatch - func_args (multiple enum args)": "",
+      "flex_align": ["LV_FLEX_ALIGN_CENTER", "LV_IMAGE_FLAGS_MODIFIABLE", "LV_FLEX_ALIGN_END"],
+
+      "// Test Case 4: Enum Type Mismatch - Invalid string for enum": "",
+      "align_y": "NOT_AN_ENUM_VALUE",
+
+      "// Test Case 5: Argument Count Mismatch - func_args - Too Few": "",
+      "// flex_align already tested above for enum mismatch, will also serve for count if one is removed.
+      "// For a dedicated test:
+      "flex_flow": ["LV_FLEX_FLOW_ROW"], // Expects 1, gets 1 (this is actually LV_FLEX_FLOW_ROW only, setter lv_obj_set_flex_flow expects 1)
+                                       // Let's use a property that expects more, if available, or add one.
+                                       // For now, this will be a correct case.
+                                       // To make it fail, we'd need a property like set_something(obj, int, int)
+                                       // and provide only one int.
+                                       // Let's use text_decor which expects one lv_text_decor_t
+      "text_decor": ["LV_TEXT_DECOR_UNDERLINE", "LV_TEXT_DECOR_STRIKETHROUGH"], // This should be an error as text_decor takes only one.
+
+      "// Test Case 6: Argument Count Mismatch - func_args - Too Many": "",
+      // flex_align: ["LV_FLEX_ALIGN_START", "LV_FLEX_ALIGN_CENTER", "LV_FLEX_ALIGN_END", "LV_FLEX_ALIGN_START"], // Already covered if we modify api_spec.json for flex_align to take 3.
+
+      "// Test Case 7: Argument Count Mismatch - Simple Setter - Array given": "",
+      "width": [100, 50], // Expects single value, gets array.
+
+      "// Test Case 8: Default Selector Usage - Simple value": "",
+      "border_width": 5, // Expects selector, should use default.
+
+      "// Test Case 9: Default Selector Usage - Explicit part, default state": "",
+      "border_color": {"value": "#FF0000", "part": "LV_PART_SCROLLBAR"},
+
+      "// Test Case 10: Default Selector Usage - Explicit state, default part": "",
+      "outline_width": {"value": 2, "state": "LV_STATE_FOCUSED"},
+
+      "// Test Case 11: Correct enum for simple property": "",
+      "align_x_correct": "LV_ALIGN_CENTER",
+
+      "// Test Case 12: Correct enum for func_args": "",
+      "flex_align_correct": ["LV_FLEX_ALIGN_START", "LV_FLEX_ALIGN_CENTER", "LV_FLEX_ALIGN_END"],
+
+      "// Test Case 13: Correct arg count for func_args": "",
+      // flex_align_correct above serves this.
+
+      "// Test Case 14: Correct arg count for simple setter (single value)": "",
+      "height_correct": 150,
+
+      "// Test Case 15: Correct arg count for simple setter (value/part/state object)": "",
+      "border_opa_correct": {"value": "LV_OPA_50", "part": "LV_PART_INDICATOR", "state": "LV_STATE_CHECKED"},
+
+      "// Test Case 16: Property not found in API spec": "",
+      "non_existent_prop": 123,
+
+      "// Test Case 17: Style property on non-style object that looks like style prop": "",
+      "style_text_color_on_obj": "#00FF00",
+
+      "// Test Case 18: Expected enum type not found in API spec (for unmarshal_value warning)": "",
+      "// Requires a property in api_spec.json with an 'expected_enum_type' that doesn't exist in the 'enums' section.
+      // Add to api_spec.json: "some_prop_with_bad_enum_type": { "setter": "lv_obj_set_some_prop", "expected_enum_type": "lv_non_existent_enum_t" }
+      // then use: "some_prop_with_bad_enum_type": "SOME_VALUE"
+
+      "// Test Case 19: Unhandled JSON object structure in unmarshal_value": "",
+      "x": {"unhandled_call_key": "some_func"}, // 'call' is expected for function calls
+
+      "// Test Case 20: Unhandled JSON type in unmarshal_value (e.g. an embedded object where not expected, if that's possible to construct simply)": "",
+      // This is tricky to trigger directly as most values are specific types or strings.
+      // Perhaps providing an object to a simple numeric property if it bypasses other checks.
+      "y": {"nested_obj": 10} // This will likely be treated as an unhandled object by unmarshal_value
+    }
+  },
+  {
+    "type": "style",
+    "id": "@error_test_style",
+    "named": "error_test_style",
+    "properties": {
+        "// Test Case 21: Style property, default selector": "",
+        "bg_color": "#ABCDEF", // Expects selector, should use default (LV_PART_MAIN | LV_STATE_DEFAULT for style objects, usually 0 for direct style props)
+                               // For lv_style_set_bg_color(style, color), selector is not used.
+                               // Let's use a property that DOES take a selector for styles, e.g. text_opa (state)
+        "text_opa": "LV_OPA_70", // num_style_args = 1 for style, expects state + value. Here, state should default.
+
+        "// Test Case 22: Style property, explicit state": "",
+        "text_color": {"value": "#123456", "state": "LV_STATE_HOVERED"}
+    }
+  }
+]

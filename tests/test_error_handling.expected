@@ -1,0 +1,76 @@
+// --- Standard includes ---
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "lvgl.h"
+#include "ui_helpers.h"
+#include "ui_registry.h"
+
+// --- Global string literals ---
+
+// --- UI Object Function Declarations ---
+void ui_error_test_obj_create(lv_obj_t* parent);
+void ui_error_test_style_create(lv_style_t* style);
+
+// --- Custom LVGL object types ---
+
+// --- UI Object Function Definitions ---
+// ERROR: "LV_IMAGE_FLAGS_MODIFIABLE" (enum _lvimage_flags_t) is not of expected enum type lv_align_t.
+// ERROR: "LV_IMAGE_FLAGS_MODIFIABLE" (enum _lvimage_flags_t) is not of expected enum type lv_flex_align_t.
+// Warning: Property 'align_y' for object type 'obj' (C var 'error_test_obj') not found in API spec. Skipping.
+// Warning: Property 'text_decor' (simple setter) received an array value. This is typically for multi-arg setters. Argument count check might be unreliable.
+// ERROR: Property 'text_decor' on object type 'obj' (setter lv_obj_set_style_text_decor) expects a single value, but JSON provided 2 effective argument(s).
+// Warning: Property 'width' (simple setter) received an array value. This is typically for multi-arg setters. Argument count check might be unreliable.
+// ERROR: Property 'width' on object type 'obj' (setter lv_obj_set_width) expects a single value, but JSON provided 2 effective argument(s).
+// Warning: Property 'non_existent_prop' for object type 'obj' (C var 'error_test_obj') not found in API spec. Skipping.
+// Info: Property 'style_text_color_on_obj' on obj_type 'obj' looks like a style property. Ensure it's applied to a style object or handled by add_style.
+// Warning: Expected enum type 'lv_non_existent_enum_t' not found in API spec. Falling back to global search for 'SOME_VALUE'.
+// Warning: Unhandled JSON object structure in unmarshal_value. Object was: {"unhandled_call_key":"some_func"}
+// Warning: Unhandled JSON object structure in unmarshal_value. Object was: {"nested_obj":10}
+void ui_error_test_obj_create(lv_obj_t* parent) {
+    lv_obj_t* error_test_obj = lv_obj_create(parent);
+    lv_obj_set_size(error_test_obj, LV_PCT(100), LV_PCT(100));
+    // Test Case 1: Enum Type Mismatch - Simple Property
+    lv_obj_set_align(error_test_obj, LV_IMAGE_FLAGS_MODIFIABLE);
+    // Test Case 3: Enum Type Mismatch - func_args (multiple enum args)
+    lv_obj_set_flex_align(error_test_obj, LV_FLEX_ALIGN_CENTER, LV_IMAGE_FLAGS_MODIFIABLE, LV_FLEX_ALIGN_END);
+    // Test Case 4: Enum Type Mismatch - Invalid string for enum
+    // align_y would be skipped due to not found property warning.
+    // Test Case 5: Argument Count Mismatch - func_args - Too many for text_decor
+    // lv_obj_set_style_text_decor(error_test_obj, LV_TEXT_DECOR_UNDERLINE, LV_PART_MAIN | LV_STATE_DEFAULT); // First value from array
+    lv_obj_set_style_text_decor(error_test_obj, LV_TEXT_DECOR_UNDERLINE, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 7: Argument Count Mismatch - Simple Setter - Array given
+    lv_obj_set_width(error_test_obj, 100); // First value from array
+    // Test Case 8: Default Selector Usage - Simple value
+    lv_obj_set_style_border_width(error_test_obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 9: Default Selector Usage - Explicit part, default state
+    lv_obj_set_style_border_color(error_test_obj, lv_color_hex(0xFF0000), LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
+    // Test Case 10: Default Selector Usage - Explicit state, default part
+    lv_obj_set_style_outline_width(error_test_obj, 2, LV_PART_MAIN | LV_STATE_FOCUSED);
+    // Test Case 11: Correct enum for simple property
+    lv_obj_set_align(error_test_obj, LV_ALIGN_CENTER);
+    // Test Case 12: Correct enum for func_args
+    lv_obj_set_flex_align(error_test_obj, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_END);
+    // Test Case 14: Correct arg count for simple setter (single value)
+    lv_obj_set_height(error_test_obj, 150);
+    // Test Case 15: Correct arg count for simple setter (value/part/state object)
+    lv_obj_set_style_border_opa(error_test_obj, LV_OPA_50, LV_PART_INDICATOR | LV_STATE_CHECKED);
+    // Test Case 16: Property not found in API spec (skipped)
+    // Test Case 17: Style property on non-style object that looks like style prop (skipped)
+    // Test Case 18: Expected enum type not found in API spec
+    lv_obj_set_width(error_test_obj, "SOME_VALUE");
+    // Test Case 19: Unhandled JSON object structure in unmarshal_value
+    lv_obj_set_x(error_test_obj, NULL);
+    // Test Case 20: Unhandled JSON type in unmarshal_value
+    lv_obj_set_y(error_test_obj, NULL);
+    registry_add_pointer(&ui_registry_get_default()->registry, error_test_obj, "error_test_obj", "obj");
+}
+
+void ui_error_test_style_create(lv_style_t* style) {
+    lv_style_init(style);
+    // Test Case 21: Style property, default selector
+    lv_style_set_text_opa(style, LV_STATE_DEFAULT, LV_OPA_70);
+    // Test Case 22: Style property, explicit state
+    lv_style_set_text_color(style, LV_STATE_HOVERED, lv_color_hex(0x123456));
+    registry_add_generated_var(&ui_registry_get_default()->registry, "error_test_style", "error_test_style");
+}

@@ -27,6 +27,22 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
 
+// --- Helper to count expected arguments from FunctionArg list (excluding initial object pointer) ---
+static int count_expected_json_args(const FunctionArg* head) {
+    if (!head) return 0;
+    int count = 0;
+    const FunctionArg* current = head;
+    // Check if the first argument is the object pointer itself (common LVGL pattern)
+    if (current && current->type && (strstr(current->type, "lv_obj_t*") || strstr(current->type, "lv_style_t*"))) {
+        current = current->next; // Skip it for counting purposes if it's the object type
+    }
+    while (current) {
+        count++;
+        current = current->next;
+    }
+    return count;
+}
+
 
 // --- Utility Functions ---
 static char* sanitize_c_identifier(const char* input_name) {
@@ -339,29 +355,49 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
         IRExprNode* args_list = NULL;
 
         if (prop_def->func_args != NULL) {
+            int expected_json_arg_count = count_expected_json_args(prop_def->func_args);
+            int provided_json_args_count = 0;
+
+            if (cJSON_IsArray(prop)) {
+                provided_json_args_count = cJSON_GetArraySize(prop);
+            } else {
+                provided_json_args_count = 1; // A single value is considered 1 argument
+            }
+
+            if (expected_json_arg_count != provided_json_args_count) {
+                fprintf(stderr, "ERROR: Property '%s' on object type '%s' (setter %s) expects %d value argument(s), but %d provided in JSON.\n",
+                        prop_name, obj_type_for_api_lookup, actual_setter_name_const, expected_json_arg_count, provided_json_args_count);
+                // Note: Generation will still proceed and might lead to C compile errors or runtime issues.
+            }
+
             FunctionArg* current_func_arg = prop_def->func_args;
 
-            if (current_func_arg && strstr(current_func_arg->type, "_t*") != NULL) {
+            // Add the target object as the first argument to the C function call
+            if (current_func_arg && current_func_arg->type && (strstr(current_func_arg->type, "lv_obj_t*") || strstr(current_func_arg->type, "lv_style_t*"))) {
                 ir_expr_list_add(&args_list, ir_new_variable(target_c_var_name));
-                current_func_arg = current_func_arg->next;
-            } else {
-                if (strcmp(obj_type_for_api_lookup, "style") == 0 && current_func_arg && strstr(current_func_arg->type, "lv_style_t*") != NULL) {
-                    ir_expr_list_add(&args_list, ir_new_variable(target_c_var_name));
-                    current_func_arg = current_func_arg->next;
-                }
+                current_func_arg = current_func_arg->next; // Move to the first actual value argument
+            } else if (strcmp(obj_type_for_api_lookup, "style") != 0 && prop_def->obj_setter_prefix == NULL) {
+                // If not a style object and not a global style property, assume first arg is target
+                 ir_expr_list_add(&args_list, ir_new_variable(target_c_var_name));
+                 // No current_func_arg advancement here if func_args doesn't list the obj*
             }
+
 
             if (cJSON_IsArray(prop)) {
                 cJSON* val_item_json;
                 cJSON_ArrayForEach(val_item_json, prop) {
                     if (!current_func_arg) {
-                        fprintf(stderr, "Warning: Too many values in JSON array for function %s, property %s. Ignoring extra.\n", actual_setter_name_const, prop_name);
+                        // This case (too many provided args) is already covered by the check above,
+                        // but we break here to avoid crashing.
                         break;
                     }
                     ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context, current_func_arg->expected_enum_type));
                     current_func_arg = current_func_arg->next;
                 }
             } else if (cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value")) {
+                // This structure is typically for style properties with value/part/state.
+                // The func_args for such properties should ideally list these explicitly.
+                // The current count validation might be simplistic for this specific object structure if func_args map differently.
                 cJSON* value_json = cJSON_GetObjectItem(prop, "value");
                 cJSON* part_json = cJSON_GetObjectItem(prop, "part");
                 cJSON* state_json = cJSON_GetObjectItem(prop, "state");
@@ -394,13 +430,16 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                     ir_expr_list_add(&args_list, val_expr_func_arg);
                     current_func_arg = current_func_arg->next;
                 } else if (!args_list && strcmp(obj_type_for_api_lookup, "style") != 0) {
-                     IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context, prop_def->expected_enum_type);
+                     IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context, prop_def->expected_enum_type); // Fallback to prop_def's type if only one value expected by func_args
                      ir_expr_list_add(&args_list, val_expr_func_arg);
                 }
             }
 
             if (current_func_arg != NULL) {
-                fprintf(stderr, "Warning: Not all arguments for function %s (prop %s) were provided by the JSON value.\n", actual_setter_name_const, prop_name);
+                // This means not enough arguments were provided in the JSON for all func_args
+                // The earlier check (expected_json_arg_count != provided_json_args_count) should have caught this.
+                // This is more of a safeguard.
+                fprintf(stderr, "Warning: Not all arguments for C function %s (property '%s' on C var '%s') were provided by the JSON value (mismatch after processing).\n", actual_setter_name_const, prop_name, target_c_var_name);
             }
 
         } else {
@@ -448,6 +487,69 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 val_expr = unmarshal_value(ctx, value_to_unmarshal, ui_context, prop_def->expected_enum_type);
             }
 
+            _dprintf(stderr, "DEBUG prop: %s, resolved_prop_def_name: %s, num_style_args: %d, type: %s, setter: %s, obj_setter_prefix: %s, expected_enum: %s\n",
+                    prop_name, prop_def->name, prop_def->num_style_args, obj_type_for_api_lookup, prop_def->setter ? prop_def->setter : "NULL", prop_def->obj_setter_prefix ? prop_def->obj_setter_prefix : "NULL", prop_def->expected_enum_type ? prop_def->expected_enum_type : "NULL");
+
+            // Argument count validation for non-func_args cases
+            int expected_arg_count_for_setter = 1; // Always 1 for the value itself
+            if (prop_def->num_style_args == -1 && strcmp(obj_type_for_api_lookup, "style") != 0) { // value + selector
+                expected_arg_count_for_setter = 2;
+            } else if (prop_def->num_style_args == 1 && strcmp(obj_type_for_api_lookup, "style") == 0) { // state + value
+                expected_arg_count_for_setter = 2;
+            } else if (prop_def->num_style_args == 2 && strcmp(obj_type_for_api_lookup, "style") != 0) { // part + state + value
+                expected_arg_count_for_setter = 3;
+            } else if (prop_def->num_style_args == 0) { // just value
+                expected_arg_count_for_setter = 1;
+            }
+            // Note: The target_c_var_name is implicitly the first argument to the C function,
+            // so we compare the JSON-provided arguments against expected_arg_count_for_setter - 1 (value only)
+            // or against the specific logic for complex objects.
+
+            int provided_json_args_count_simple = 0;
+            if (cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value")) {
+                // For {value: ..., part: ..., state: ...} structure, we consider "value" as the primary argument.
+                // The part/state are handled by num_style_args logic.
+                // This means the JSON provides 1 "effective" argument (the value itself)
+                // that maps to one part of the C function's signature.
+                // The other parts (part, state) are derived or defaulted.
+                if (cJSON_GetObjectItem(prop, "value") != NULL) {
+                     provided_json_args_count_simple = 1;
+                }
+            } else if (!cJSON_IsArray(prop)) { // Simple value like "align": "LV_ALIGN_CENTER"
+                provided_json_args_count_simple = 1;
+            } else { // Array value like "align": ["LV_ALIGN_CENTER"] - this is unusual for simple setters
+                fprintf(stderr, "Warning: Property '%s' (simple setter) received an array value. This is typically for multi-arg setters. Argument count check might be unreliable.\n", prop_name);
+                provided_json_args_count_simple = cJSON_GetArraySize(prop); // Treat as multiple, though likely an error
+            }
+
+            // The expected_arg_count_for_setter counts the C arguments *after* the object pointer.
+            // For simple setters, the JSON usually provides one "value" which maps to one C argument.
+            // Style properties are special:
+            // - num_style_args = 0: expects 1 C arg (value)
+            // - num_style_args = -1 (obj): expects 2 C args (value, selector)
+            // - num_style_args = 1 (style): expects 2 C args (state, value)
+            // - num_style_args = 2 (obj): expects 3 C args (part, state, value)
+            // The `provided_json_args_count_simple` should be 1 if JSON gives a direct value or a {value: X} object.
+            // The C function will take 1 (for value) + extras (for part/state/selector).
+            // So, the check is if the single JSON value is appropriate for the setter's needs.
+            // This check is more about "is the JSON providing a single value when expected" rather than strict C arg count.
+            // The more detailed C arg count is implicitly handled by num_style_args logic.
+
+            if (prop_def->num_style_args == 0) { // Expects 1 value from JSON
+                if (provided_json_args_count_simple != 1 && !(cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value"))) {
+                     fprintf(stderr, "ERROR: Property '%s' on object type '%s' (setter %s) expects a single value, but JSON provided %d effective argument(s).\n",
+                             prop_name, obj_type_for_api_lookup, actual_setter_name_const, provided_json_args_count_simple);
+                }
+            } else if ( (prop_def->num_style_args == -1 || prop_def->num_style_args == 1 || prop_def->num_style_args == 2) ) {
+                 // These expect a single "value" from JSON, part/state are implicit or explicit in the object.
+                 if (cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value")) {
+                    // Correct structure {value: V, part: P, state: S} - this is fine.
+                 } else if (provided_json_args_count_simple != 1) {
+                     fprintf(stderr, "ERROR: Property '%s' on object type '%s' (setter %s) expects a single value (potentially within a value/part/state object), but JSON provided %d effective argument(s).\n",
+                             prop_name, obj_type_for_api_lookup, actual_setter_name_const, provided_json_args_count_simple);
+                 }
+            }
+
 
             if (prop_def->num_style_args == -1 && strcmp(obj_type_for_api_lookup, "style") != 0) {
                 ir_expr_list_add(&args_list, val_expr);
@@ -464,8 +566,8 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
             } else if (prop_def->num_style_args == 0) {
                 ir_expr_list_add(&args_list, val_expr);
             } else {
-                fprintf(stderr, "Warning: Unhandled num_style_args (%d) for property '%s' on type '%s' (no func_args). Adding value only after target.\n",
-                        prop_def->num_style_args, prop_name, obj_type_for_api_lookup);
+                fprintf(stderr, "Warning: Unhandled num_style_args (%d) for property '%s' on C var '%s' (type '%s', no func_args). Adding value only after target.\n",
+                        prop_def->num_style_args, prop_name, target_c_var_name, obj_type_for_api_lookup);
                 ir_expr_list_add(&args_list, val_expr);
             }
         }
@@ -1048,3 +1150,5 @@ IRStmtBlock* generate_ir_from_ui_spec_with_registry(
     }
     return root_ir_block;
 }
+
+[end of generator.c]
