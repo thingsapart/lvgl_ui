@@ -24939,8 +24939,7 @@
         },
         "align": {
           "setter": "lv_obj_set_style_align",
-          "type": "lv_align_t",
-          "expected_enum_type": "lv_align_t"
+          "type": "lv_align_t"
         },
         "anim": {
           "setter": "lv_obj_set_style_anim",
@@ -25088,12 +25087,7 @@
         },
         "flex_align": {
           "setter": "lv_obj_set_flex_align",
-          "func_args": [
-            {"type": "lv_obj_t*", "name": "obj"},
-            {"type": "lv_flex_align_t", "name": "main_place", "expected_enum_type": "lv_flex_align_t"},
-            {"type": "lv_flex_align_t", "name": "cross_place", "expected_enum_type": "lv_flex_align_t"},
-            {"type": "lv_flex_align_t", "name": "track_cross_place", "expected_enum_type": "lv_flex_align_t"}
-          ]
+          "type": "lv_flex_align_t"
         },
         "flex_cross_place": {
           "setter": "lv_obj_set_style_flex_cross_place",
@@ -25929,11 +25923,7 @@
         },
         "text_decor": {
           "setter": "lv_obj_set_style_text_decor",
-          "type": "lv_text_decor_t",
-          "num_style_args": 0,
-          "expected_enum_type": "lv_text_decor_t",
-          "style_part_default": "LV_PART_MAIN",
-          "style_state_default": "LV_STATE_DEFAULT"
+          "type": "lv_text_decor_t"
         },
         "text_font": {
           "setter": "lv_obj_set_style_text_font",
@@ -26038,37 +26028,6 @@
         "y": {
           "setter": "lv_obj_set_style_y",
           "type": "int32_t"
-        },
-        "align_x_correct": {
-          "setter": "lv_obj_set_align",
-          "type": "lv_align_t",
-          "expected_enum_type": "lv_align_t"
-        },
-        "height_correct": {
-          "setter": "lv_obj_set_height",
-          "type": "int32_t"
-        },
-        "border_opa_correct": {
-            "setter": "lv_obj_set_style_border_opa",
-            "type": "lv_opa_t",
-            "num_style_args": -1,
-            "expected_enum_type": "lv_opa_enum_t",
-            "style_part_default": "LV_PART_MAIN",
-            "style_state_default": "LV_STATE_DEFAULT"
-        },
-        "flex_align_correct": {
-            "setter": "lv_obj_set_flex_align",
-            "func_args": [
-                {"type": "lv_obj_t*", "name": "obj"},
-                {"type": "lv_flex_align_t", "name": "main_place", "expected_enum_type": "lv_flex_align_t"},
-                {"type": "lv_flex_align_t", "name": "cross_place", "expected_enum_type": "lv_flex_align_t"},
-                {"type": "lv_flex_align_t", "name": "track_cross_place", "expected_enum_type": "lv_flex_align_t"}
-            ]
-        },
-        "some_prop_with_bad_enum_type": {
-            "setter": "lv_obj_set_width",
-            "type": "string",
-            "expected_enum_type": "lv_non_existent_enum_t"
         }
       }
     },
