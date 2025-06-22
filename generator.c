@@ -358,7 +358,7 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                         fprintf(stderr, "Warning: Too many values in JSON array for function %s, property %s. Ignoring extra.\n", actual_setter_name_const, prop_name);
                         break;
                     }
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context, NULL));
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context, current_func_arg->expected_enum_type));
                     current_func_arg = current_func_arg->next;
                 }
             } else if (cJSON_IsObject(prop) && cJSON_HasObjectItem(prop, "value")) {
@@ -367,10 +367,12 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 cJSON* state_json = cJSON_GetObjectItem(prop, "state");
 
                 if (value_json && current_func_arg) {
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, value_json, ui_context, prop_def->expected_enum_type));
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, value_json, ui_context, current_func_arg->expected_enum_type));
                     current_func_arg = current_func_arg->next;
                 }
                 if (part_json && current_func_arg) {
+                    // Assuming part and state are not typically enums needing specific type check from FunctionArg,
+                    // but if they were, this would need current_func_arg->expected_enum_type too.
                     ir_expr_list_add(&args_list, unmarshal_value(ctx, part_json, ui_context, NULL));
                     current_func_arg = current_func_arg->next;
                 } else if (!part_json && current_func_arg && prop_def->style_part_default &&
@@ -379,6 +381,7 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 }
 
                 if (state_json && current_func_arg) {
+                    // Assuming part and state are not typically enums needing specific type check from FunctionArg
                     ir_expr_list_add(&args_list, unmarshal_value(ctx, state_json, ui_context, NULL));
                     current_func_arg = current_func_arg->next;
                 } else if (!state_json && current_func_arg && prop_def->style_state_default &&
@@ -387,7 +390,7 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 }
             } else {
                 if (current_func_arg) {
-                    IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context, prop_def->expected_enum_type);
+                    IRExpr* val_expr_func_arg = unmarshal_value(ctx, prop, ui_context, current_func_arg->expected_enum_type);
                     ir_expr_list_add(&args_list, val_expr_func_arg);
                     current_func_arg = current_func_arg->next;
                 } else if (!args_list && strcmp(obj_type_for_api_lookup, "style") != 0) {

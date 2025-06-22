@@ -25088,7 +25088,12 @@
         },
         "flex_align": {
           "setter": "lv_obj_set_flex_align",
-          "type": "lv_flex_align_t"
+          "func_args": [
+            {"type": "lv_obj_t*", "name": "obj"},
+            {"type": "lv_flex_align_t", "name": "main_place", "expected_enum_type": "lv_flex_align_t"},
+            {"type": "lv_flex_align_t", "name": "cross_place", "expected_enum_type": "lv_flex_align_t"},
+            {"type": "lv_flex_align_t", "name": "track_cross_place", "expected_enum_type": "lv_flex_align_t"}
+          ]
         },
         "flex_cross_place": {
           "setter": "lv_obj_set_style_flex_cross_place",

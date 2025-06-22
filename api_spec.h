@@ -8,7 +8,8 @@
 // (Moved before PropertyDefinition and WidgetDefinition)
 typedef struct FunctionArg {
     char* type; // Argument type as string (e.g., "lv_obj_t*", "int32_t")
-    // char* name; // Optional: if argument names are available in JSON in the future
+    char* name; // Optional: if argument names are available in JSON in the future
+    char* expected_enum_type; // Expected enum type for this argument, if applicable
     struct FunctionArg* next;
 } FunctionArg;
 

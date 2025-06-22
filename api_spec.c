@@ -29,13 +29,16 @@ static char method_arg_type[64];
 static void free_property_definition_list(PropertyDefinitionNode* head);
 static void free_function_arg_list(FunctionArg* head);
 static void free_function_definition_list(FunctionMapNode* head);
-static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node);
+// Pass ApiSpec to allow enum lookup for function arguments
+static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node, const ApiSpec* spec_for_enum_lookup);
 
 static void free_function_arg_list(FunctionArg* head) {
     FunctionArg* current = head;
     while (current) {
         FunctionArg* next = current->next;
         free(current->type);
+        free(current->name); // Free the name if allocated
+        free(current->expected_enum_type); // Free the expected_enum_type if allocated
         free(current);
         current = next;
     }
@@ -57,7 +60,7 @@ static void free_function_definition_list(FunctionMapNode* head) {
     }
 }
 
-static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node) {
+static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node, const ApiSpec* spec_for_enum_lookup) {
     if (!def_json_node || !cJSON_IsObject(def_json_node)) {
         fprintf(stderr, "Error: Invalid JSON node for definition '%s'.\n", def_name);
         return NULL;
@@ -155,15 +158,31 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             cJSON* args_array_json = cJSON_GetObjectItemCaseSensitive(method_json_item, "args");
             FunctionArg** current_arg_ptr = &fd->args_head;
             if (cJSON_IsArray(args_array_json)) {
-                cJSON* arg_type_json_item = NULL;
-                cJSON_ArrayForEach(arg_type_json_item, args_array_json) {
-                    if (cJSON_IsString(arg_type_json_item)) {
-                        FunctionArg* fa = (FunctionArg*)calloc(1, sizeof(FunctionArg));
-                        if (!fa) break;
-                        fa->type = safe_strdup(arg_type_json_item->valuestring);
-                        *current_arg_ptr = fa;
-                        current_arg_ptr = &fa->next;
+                cJSON* arg_json_item = NULL;
+                cJSON_ArrayForEach(arg_json_item, args_array_json) {
+                    FunctionArg* fa = (FunctionArg*)calloc(1, sizeof(FunctionArg));
+                    if (!fa) break;
+                    fa->name = NULL; // Initialize
+                    fa->expected_enum_type = NULL; // Initialize
+
+                    if (cJSON_IsString(arg_json_item)) {
+                        fa->type = safe_strdup(arg_json_item->valuestring);
+                    } else if (cJSON_IsObject(arg_json_item)) {
+                        // Assuming format like {"type": "lv_align_t", "name": "align_val", "expected_enum_type": "lv_align_t"}
+                        fa->type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "type")));
+                        fa->name = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "name")));
+                        fa->expected_enum_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "expected_enum_type")));
                     }
+
+                    // If expected_enum_type is still NULL, try to infer it from the type if it matches a known enum
+                    if (!fa->expected_enum_type && fa->type && spec_for_enum_lookup && spec_for_enum_lookup->enums) {
+                         if (cJSON_GetObjectItem(spec_for_enum_lookup->enums, fa->type)) {
+                            fa->expected_enum_type = safe_strdup(fa->type);
+                        }
+                    }
+
+                    *current_arg_ptr = fa;
+                    current_arg_ptr = &fa->next;
                 }
             }
             FunctionMapNode* new_mnode = (FunctionMapNode*)calloc(1, sizeof(FunctionMapNode));
@@ -194,7 +213,7 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
         cJSON* widget_json_item = NULL;
         cJSON_ArrayForEach(widget_json_item, widgets_json_obj) {
             const char* widget_type_name = widget_json_item->string;
-            WidgetDefinition* wd = parse_widget_def(widget_type_name, widget_json_item);
+            WidgetDefinition* wd = parse_widget_def(widget_type_name, widget_json_item, spec); // Pass spec here
             if (wd) {
                 WidgetMapNode* new_wnode = (WidgetMapNode*)calloc(1, sizeof(WidgetMapNode));
                 if (new_wnode) {
@@ -215,7 +234,7 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
         cJSON* object_json_item = NULL;
         cJSON_ArrayForEach(object_json_item, objects_json_obj) {
             const char* object_type_name = object_json_item->string;
-            WidgetDefinition* od = parse_widget_def(object_type_name, object_json_item);
+            WidgetDefinition* od = parse_widget_def(object_type_name, object_json_item, spec); // Pass spec here
             if (od) {
                 WidgetMapNode* new_onode = (WidgetMapNode*)calloc(1, sizeof(WidgetMapNode));
                 if (new_onode) {
@@ -250,15 +269,29 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
             cJSON* args_array_json = cJSON_GetObjectItemCaseSensitive(func_json_item, "args");
             FunctionArg** current_arg_ptr = &fd->args_head;
             if (cJSON_IsArray(args_array_json)) {
-                cJSON* arg_type_json_item = NULL;
-                cJSON_ArrayForEach(arg_type_json_item, args_array_json) {
-                    if (cJSON_IsString(arg_type_json_item)) {
-                        FunctionArg* fa = (FunctionArg*)calloc(1, sizeof(FunctionArg));
-                        if (!fa) break;
-                        fa->type = safe_strdup(arg_type_json_item->valuestring);
-                        *current_arg_ptr = fa;
-                        current_arg_ptr = &fa->next;
+                cJSON* arg_json_item = NULL;
+                cJSON_ArrayForEach(arg_json_item, args_array_json) {
+                    FunctionArg* fa = (FunctionArg*)calloc(1, sizeof(FunctionArg));
+                    if (!fa) break;
+                    fa->name = NULL;
+                    fa->expected_enum_type = NULL;
+
+                    if (cJSON_IsString(arg_json_item)) {
+                        fa->type = safe_strdup(arg_json_item->valuestring);
+                    } else if (cJSON_IsObject(arg_json_item)) {
+                        fa->type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "type")));
+                        fa->name = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "name")));
+                        fa->expected_enum_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "expected_enum_type")));
                     }
+
+                    if (!fa->expected_enum_type && fa->type && spec->enums) { // Use spec->enums here
+                         if (cJSON_GetObjectItem(spec->enums, fa->type)) {
+                            fa->expected_enum_type = safe_strdup(fa->type);
+                        }
+                    }
+
+                    *current_arg_ptr = fa;
+                    current_arg_ptr = &fa->next;
                 }
             }
             FunctionMapNode* new_fnode = (FunctionMapNode*)calloc(1, sizeof(FunctionMapNode));
