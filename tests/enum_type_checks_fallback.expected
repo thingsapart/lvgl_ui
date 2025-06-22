@@ -1,4 +1,0 @@
-{
-    lv_obj_t* widget3 = lv_obj_create(parent);
-    lv_obj_set_align(widget3, LV_ALIGN_TOP_LEFT);
-}

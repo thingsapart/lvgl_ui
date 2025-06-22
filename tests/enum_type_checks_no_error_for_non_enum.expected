@@ -6,9 +6,7 @@
 // Example: extern const lv_font_t my_custom_font;
 void create_ui(lv_obj_t* parent) {
     {
-        lv_obj_t* widget1 = lv_obj_create(parent);
-        lv_obj_set_style_align(widget1, LV_ALIGN_CENTER);
-        lv_obj_align(widget1, LV_ALIGN_CENTER, 10, 10);
-        lv_obj_set_style_flex_flow(widget1, LV_FLEX_FLOW_ROW);
+        lv_obj_t* widget4 = lv_obj_create(parent);
+        lv_obj_set_style_width(widget4, 123);
     }
 }

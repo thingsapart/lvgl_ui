@@ -1,10 +1,9 @@
 [
     {
-        "type": "base_widget",
+        "type": "obj",
         "named": "widget1",
-        "properties": {
-            "align": "LV_ALIGN_CENTER",
-            "flex_flow": "LV_FLEX_FLOW_ROW"
-        }
+        "align": "LV_ALIGN_CENTER",
+        "lv_obj_align": ["LV_ALIGN_CENTER", 10, 10],
+        "flex_flow": "LV_FLEX_FLOW_ROW"
     }
 ]

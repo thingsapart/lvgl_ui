@@ -1,9 +1,8 @@
 [
     {
-        "type": "base_widget",
+        "type": "button",
         "named": "widget2",
-        "properties": {
-            "align": "OTHER_ENUM_VAL1"
-        }
+        "//": "Purposely incorrectly using LV_ALIGN_CENTER instead of LV_FLEX_ALIGN_CENTER",
+        "flex_align": ["LV_ALIGN_CENTER", "LV_FLEX_ALIGN_CENTER", "LV_FLEX_ALIGN_CENTER"]
     }
 ]
