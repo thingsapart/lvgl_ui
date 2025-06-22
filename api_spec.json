@@ -24939,7 +24939,8 @@
         },
         "align": {
           "setter": "lv_obj_set_style_align",
-          "type": "lv_align_t"
+          "type": "lv_align_t",
+          "expected_enum_type": "lv_align_t"
         },
         "anim": {
           "setter": "lv_obj_set_style_anim",
