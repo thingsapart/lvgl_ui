@@ -61,7 +61,22 @@
       "x": {"unhandled_call_key_for_x": "some_func"},
 
       "// Test Case 20: Unhandled JSON type in unmarshal_value (obj.y)": "",
-      "y": {"nested_object_for_y": 10}
+      "y": {"nested_object_for_y": 10},
+
+      "// Test Case 23: Explicit JSON null as single argument (obj.text)": "",
+      "text": null,
+
+      "// Test Case 24: Explicit JSON null within a multi-arg array (obj.flex_align)": "",
+      "flex_align_with_nulls": ["LV_FLEX_ALIGN_START", null, null],
+
+      "// Test Case 25: Zero-argument function call (obj.clean - lv_obj_clean takes obj*)": "",
+      "clean": [],
+
+      "// Test Case 26: Function expecting one arg, called with zero-args via []": "",
+      "width_zero_args": [],
+
+      "// Test Case 27: Function expecting >1 args, called with zero-args via []": "",
+      "flex_align_zero_args": []
     }
   },
   {

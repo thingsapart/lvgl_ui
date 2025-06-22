@@ -427,7 +427,10 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                  }
             }
              else {
-                provided_json_args_count = (prop == NULL || cJSON_IsNull(prop)) ? 0 : 1;
+                // If prop is explicitly cJSON_IsNull, it counts as one argument.
+                // If prop is another type (string, number, bool), it also counts as one.
+                // If prop is NULL (key not found in JSON), then it's 0 arguments. This case should ideally be handled by cJSON_GetObjectItem returning NULL for 'prop'.
+                provided_json_args_count = (prop == NULL) ? 0 : 1;
             }
 
 

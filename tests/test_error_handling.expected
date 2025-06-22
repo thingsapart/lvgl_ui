@@ -10,6 +10,8 @@ Warning: Property 'non_existent_prop_on_obj' for object type 'obj' (C var 'error
 Warning: Property 'style_a_made_up_prop_on_obj' for object type 'obj' (C var 'error_test_obj') not found in API spec. Skipping.
 Warning: Unhandled JSON object structure in unmarshal_value. Object was: {"unhandled_call_key_for_x":"some_func"}
 Warning: Unhandled JSON object structure in unmarshal_value. Object was: {"nested_object_for_y":10}
+ERROR: Property 'width_zero_args' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_set_width') expects 1 JSON value argument(s), but 0 provided.
+ERROR: Property 'flex_align_zero_args' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_set_flex_align') expects 3 JSON value argument(s), but 0 provided.
 // --- Standard includes ---
 #include <stdio.h>
 #include <string.h>
@@ -70,6 +72,18 @@ void ui_error_test_obj_create(lv_obj_t* parent) {
     lv_obj_set_x(error_test_obj, NULL);
     // Test Case 20: Unhandled JSON type in unmarshal_value (obj.y)
     lv_obj_set_y(error_test_obj, NULL);
+    // Test Case 23: Explicit JSON null as single argument (obj.text)
+    // Assuming 'text' for a base 'obj' maps to lv_obj_set_style_text, which takes (obj, value, selector)
+    // The 'value' (text string) will be NULL. Selector defaults.
+    lv_obj_set_style_text(error_test_obj, NULL, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 24: Explicit JSON null within a multi-arg array (obj.flex_align)
+    lv_obj_set_flex_align(error_test_obj, LV_FLEX_ALIGN_START, NULL, NULL);
+    // Test Case 25: Zero-argument function call (obj.clean - lv_obj_clean takes obj*)
+    lv_obj_clean(error_test_obj);
+    // Test Case 26: Function expecting one arg, called with zero-args via []
+    lv_obj_set_width(error_test_obj, NULL); // Arg count error occurs, then may pass NULL if processing continues
+    // Test Case 27: Function expecting >1 args, called with zero-args via []
+    lv_obj_set_flex_align(error_test_obj, NULL, NULL, NULL); // Arg count error, then may pass NULLs
     registry_add_pointer(&ui_registry_get_default()->registry, error_test_obj, "error_test_obj", "obj");
 }
 
