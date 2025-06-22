@@ -12,14 +12,15 @@ static PropertyDefinition global_func_prop_def;
 static char global_func_setter_name[128];
 static char global_func_arg_type[64];
 
-static PropertyDefinition global_prop_def_from_root;
-static char global_prop_name_buf[128];
-static char global_prop_c_type_buf[64];
-static char global_prop_setter_buf[128];
-static char global_prop_obj_setter_prefix_buf[128];
-static char global_prop_widget_type_hint_buf[64];
-static char global_prop_part_default_buf[64];
-static char global_prop_state_default_buf[64];
+// Unused global static variables removed:
+// static PropertyDefinition global_prop_def_from_root;
+// static char global_prop_name_buf[128];
+// static char global_prop_c_type_buf[64];
+// static char global_prop_setter_buf[128];
+// static char global_prop_obj_setter_prefix_buf[128];
+// static char global_prop_widget_type_hint_buf[64];
+// static char global_prop_part_default_buf[64];
+// static char global_prop_state_default_buf[64];
 
 // New static variables for method-derived properties
 static PropertyDefinition method_prop_def;
@@ -111,15 +112,9 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             pd->obj_setter_prefix = NULL;
 
             // cJSON* style_args_item = cJSON_GetObjectItem(prop_detail_json, "style_args");
-            // if (!style_args_item) style_args_item = cJSON_GetObjectItem(prop_detail_json, "num_style_args");
-            // if (cJSON_IsNumber(style_args_item)) pd->num_style_args = style_args_item->valueint;
-            // else pd->num_style_args = 0;
-            pd->num_style_args = 0; // REMOVED - Field itself will be removed from struct
-
-            // pd->style_part_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_part_default")));
-            // pd->style_state_default = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "style_state_default")));
-            pd->style_part_default = NULL; // REMOVED - Field itself will be removed from struct
-            pd->style_state_default = NULL; // REMOVED - Field itself will be removed from struct
+            // pd->num_style_args = 0; // Field removed from struct
+            // pd->style_part_default = NULL; // Field removed from struct
+            // pd->style_state_default = NULL; // Field removed from struct
 
             pd->is_style_prop = cJSON_IsTrue(cJSON_GetObjectItem(prop_detail_json, "is_style_prop"));
             pd->func_args = NULL; // Initialize new field
@@ -135,7 +130,11 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             *current_prop_list_node = (struct PropertyDefinitionNode*)calloc(1, sizeof(struct PropertyDefinitionNode));
             if (!*current_prop_list_node) {
                 free(pd->name); free(pd->setter); free(pd->c_type); free(pd->widget_type_hint);
-                free(pd->style_part_default); free(pd->style_state_default); free(pd);
+                // free(pd->style_part_default); // Field removed
+                // free(pd->style_state_default); // Field removed
+                free(pd->expected_enum_type);
+                // func_args not owned by pd here
+                free(pd);
                 continue;
             }
             (*current_prop_list_node)->prop = pd;
@@ -226,8 +225,11 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
                     new_wnode->next = spec->widgets_list_head;
                     spec->widgets_list_head = new_wnode;
                 } else {
-                    if (wd->name) free(wd->name); if (wd->inherits) free(wd->inherits); if (wd->create) free(wd->create);
-                    free_property_definition_list(wd->properties); free(wd);
+                    if (wd->name) { free(wd->name); }
+                    if (wd->inherits) { free(wd->inherits); }
+                    if (wd->create) { free(wd->create); }
+                    free_property_definition_list(wd->properties);
+                    free(wd);
                 }
             }
         }
@@ -247,8 +249,11 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
                     new_onode->next = spec->widgets_list_head;
                     spec->widgets_list_head = new_onode;
                 } else {
-                     if (od->name) free(od->name); if (od->inherits) free(od->inherits); if (od->create) free(od->create);
-                    free_property_definition_list(od->properties); free(od);
+                     if (od->name) { free(od->name); }
+                     if (od->inherits) { free(od->inherits); }
+                     if (od->create) { free(od->create); }
+                    free_property_definition_list(od->properties);
+                    free(od);
                 }
             }
         }
@@ -323,22 +328,9 @@ static void free_property_definition_list(PropertyDefinitionNode* head) {
             free(current->prop->setter);
             free(current->prop->widget_type_hint);
             free(current->prop->obj_setter_prefix);
-            // free(current->prop->style_part_default); // REMOVED
-            // free(current->prop->style_state_default); // REMOVED
-            free(current->prop->expected_enum_type); // Free the duplicated string
-            // Ensure func_args are freed if allocated for properties
-            if(current->prop->func_args) { // Check might be redundant if calloc initializes to NULL and it's not set
-                // For PropertyDefinition, func_args might not be deeply copied in all cases,
-                // or might point to a shared FunctionDefinition's args.
-                // If they are uniquely allocated for PropertyDefinition, they need freeing.
-                // Assuming they are NOT uniquely allocated for props for now to avoid double free.
-                // If they ARE, then free_function_arg_list(current->prop->func_args); would be needed.
-                // Based on current parsing, prop_def->func_args is only set if explicitly in JSON for the property.
-                // The global function lookup returns a pointer to existing FunctionArg list.
-                // So, only free if prop_def->func_args was parsed for *this specific property*.
-                // The current parser does not seem to create a *deep copy* of func_args for properties,
-                // so no separate free here. If it did, free_function_arg_list(current->prop->func_args) here.
-            }
+            free(current->prop->expected_enum_type);
+            // func_args are not deep-copied for PropertyDefinition, so not freed here to avoid double-free.
+            // They are owned by the global FunctionDefinition or method FunctionDefinition.
             free(current->prop);
         }
         free(current);
