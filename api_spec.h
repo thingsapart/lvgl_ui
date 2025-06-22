@@ -112,4 +112,7 @@ const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* f
 // The caller should NOT free the returned list as it points to existing data.
 const FunctionArg* api_spec_get_function_args_by_name(const ApiSpec* spec, const char* func_name);
 
+// Checks if a given integer value is a valid value for any member of the specified enum type.
+bool api_spec_is_valid_enum_int_value(const ApiSpec* spec, const char* enum_type_name, int int_value);
+
 #endif // API_SPEC_H

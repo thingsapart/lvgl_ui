@@ -91,7 +91,31 @@
       "text_const_char_ptr": "Hello Literal",
 
       "// Test Case 32: JSON string with '!' for char* (or managed const char*, obj.text)": "",
-      "text_char_ptr": "!Hello Managed"
+      "text_char_ptr": "!Hello Managed",
+
+      "// Test Case 33: JSON Float for C Integer (obj.width)": "",
+      "width_float_val": 123.7,
+
+      "// Test Case 34: JSON String for C Number - Invalid (obj.height)": "",
+      "height_invalid_str": "100pixels",
+
+      "// Test Case 35: JSON String for C Number - Valid (obj.x)": "",
+      "x_valid_str_num": "25",
+
+      "// Test Case 36: Stricter Boolean - Number for bool (obj.clickable - expects bool)": "",
+      "clickable_num_val": 1,
+
+      "// Test Case 37: Stricter Boolean - Invalid String for bool (obj.hidden - expects bool)": "",
+      "hidden_invalid_str_bool": "yes",
+
+      "// Test Case 38: Plain string for char* - Using 'tooltip_text' (const char*) to observe if any warning appears if type was char*. Actual test of warning requires a true 'char*' C type.": "",
+      "tooltip_text_plain_string": "Plain String For Tooltip",
+
+      "// Test Case 39: Integer for Enum with Validation Error (obj.align_int_invalid_val maps to align)": "",
+      "align_int_invalid_val": 777,
+
+      "// Test Case 40: Integer for Enum (no validation error, but optional warning if implemented for obj.align_int_val_for_warn maps to align)": "",
+      "align_int_val_for_warn": 0
     }
   },
   {

@@ -12,6 +12,12 @@ Warning: Unhandled JSON object structure in unmarshal_value. Object was: {"unhan
 Warning: Unhandled JSON object structure in unmarshal_value. Object was: {"nested_object_for_y":10}
 ERROR: Property 'width_zero_args' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_set_width') expects 1 JSON value argument(s), but 0 provided.
 ERROR: Property 'flex_align_zero_args' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_set_flex_align') expects 3 JSON value argument(s), but 0 provided.
+WARNING: Floating point value 123.700000 provided for C integer type 'lv_coord_t'. Value will be truncated to 123.
+ERROR: String value "100pixels" is not a valid number or recognized constant/enum for C type 'lv_coord_t'.
+WARNING: Numeric value 1 provided for C bool type. Interpreting non-zero as true.
+ERROR: String value "yes" is not a valid boolean. Expected 'true' or 'false'. Defaulting to false.
+ERROR: Integer value 777 is not a defined value for expected enum type 'lv_align_t'.
+Warning: Integer value 0 used for expected enum type 'lv_align_t'. Prefer string names for clarity.
 // --- Standard includes ---
 #include <stdio.h>
 #include <string.h>
@@ -84,15 +90,31 @@ void ui_error_test_obj_create(lv_obj_t* parent) {
     // Test Case 27: Function expecting >1 args, called with zero-args via []
     lv_obj_set_flex_align(error_test_obj, NULL, NULL, NULL);
     // Test Case 28: Integer value for enum property (obj.align_int_val maps to align -> lv_obj_align)
-    lv_obj_align(error_test_obj, 1, 0, 0);
+    lv_obj_align(error_test_obj, 1, 0, 0); // Assuming 0,0 for default x_ofs, y_ofs as align expects 3 args
     // Test Case 29: Integer value for enum in func_args (obj.flex_align_int_vals maps to flex_align -> lv_obj_set_flex_align)
     lv_obj_set_flex_align(error_test_obj, 0, 1, 2);
     // Test Case 30: Integer value for enum (obj.align_int_out_of_range maps to align -> lv_obj_align)
-    lv_obj_align(error_test_obj, 99, 0, 0);
+    lv_obj_align(error_test_obj, 99, 0, 0); // Assuming 0,0 for default x_ofs, y_ofs
     // Test Case 31: JSON string for const char* (no prefix, obj.text_const_char_ptr maps to text -> lv_obj_set_style_text)
     lv_obj_set_style_text(error_test_obj, "Hello Literal", LV_PART_MAIN | LV_STATE_DEFAULT);
     // Test Case 32: JSON string with '!' for char* (obj.text_char_ptr maps to text -> lv_obj_set_style_text)
     lv_obj_set_style_text(error_test_obj, str_error_test_obj_text_char_ptr, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 33: JSON Float for C Integer (obj.width_float_val)
+    lv_obj_set_width(error_test_obj, 123);
+    // Test Case 34: JSON String for C Number - Invalid (obj.height_invalid_str)
+    lv_obj_set_height(error_test_obj, "100pixels"); // Passed as string due to parse error
+    // Test Case 35: JSON String for C Number - Valid (obj.x_valid_str_num)
+    lv_obj_set_x(error_test_obj, 25);
+    // Test Case 36: Stricter Boolean - Number for bool (obj.clickable_num_val)
+    lv_obj_add_flag(error_test_obj, LV_OBJ_FLAG_CLICKABLE); // 1 is true
+    // Test Case 37: Stricter Boolean - Invalid String for bool (obj.hidden_invalid_str_bool)
+    lv_obj_remove_flag(error_test_obj, LV_OBJ_FLAG_HIDDEN); // "yes" defaults to false
+    // Test Case 38: Plain string for char* (obj.tooltip_text_plain_string maps to lv_obj_set_style_tooltip_text)
+    lv_obj_set_style_tooltip_text(error_test_obj, "Plain String For Tooltip", LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 39: Integer for Enum with Validation Error (obj.align_int_invalid_val maps to align)
+    lv_obj_align(error_test_obj, 777, 0, 0); // Assuming 0,0 for default x_ofs, y_ofs
+    // Test Case 40: Integer for Enum (no validation error, but optional warning if implemented for obj.align_int_val_for_warn maps to align)
+    lv_obj_align(error_test_obj, 0, 0, 0); // Assuming 0,0 for default x_ofs, y_ofs
     registry_add_pointer(&ui_registry_get_default()->registry, error_test_obj, "error_test_obj", "obj");
 }
 

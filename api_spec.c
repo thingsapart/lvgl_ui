@@ -626,3 +626,34 @@ const FunctionArg* api_spec_get_function_args_by_name(const ApiSpec* spec, const
     // fprintf(stderr, "Debug: Function/method '%s' not found in api_spec_get_function_args_by_name.\n", func_name);
     return NULL; // Not found
 }
+
+bool api_spec_is_valid_enum_int_value(const ApiSpec* spec, const char* enum_type_name, int int_value) {
+    if (!spec || !spec->enums || !enum_type_name) {
+        return false; // Cannot validate
+    }
+
+    const cJSON* enum_type_json = cJSON_GetObjectItem(spec->enums, enum_type_name);
+    if (!enum_type_json || !cJSON_IsObject(enum_type_json)) {
+        // This specific enum type is not defined in the spec
+        return false;
+    }
+
+    cJSON* enum_member = NULL;
+    cJSON_ArrayForEach(enum_member, enum_type_json) {
+        if (cJSON_IsString(enum_member) && enum_member->valuestring) {
+            // Enum values in LVGL can be decimal or hex strings
+            char* endptr;
+            long val = strtol(enum_member->valuestring, &endptr, 0); // Base 0 auto-detects hex
+            if (*endptr == '\0') { // Successful conversion
+                if (val == int_value) {
+                    return true; // Found a match
+                }
+            }
+        } else if (cJSON_IsNumber(enum_member)) { // Though spec usually has them as strings
+             if (enum_member->valueint == int_value) {
+                 return true;
+             }
+        }
+    }
+    return false; // No member had a matching integer value
+}

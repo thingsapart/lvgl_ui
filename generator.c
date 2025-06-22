@@ -23,7 +23,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
 static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context); // Wrapper
 static void process_properties(GenContext* ctx, cJSON* props_json, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context);
 static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context, const char* explicit_target_var_name);
-static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* expected_enum_type_for_arg);
+static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* expected_enum_type_for_arg, const char* expected_c_type_for_arg); // New signature
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
 
@@ -94,8 +94,27 @@ static char* generate_unique_var_name(GenContext* ctx, const char* base_type) {
 
 // --- Core Processing Functions ---
 
-static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* expected_enum_type_for_arg) {
+static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* expected_enum_type_for_arg, const char* expected_c_type_for_arg) {
     if (!value) return ir_new_literal("NULL");
+
+    // Stricter Boolean Checking (if C type is bool)
+    if (expected_c_type_for_arg && strcmp(expected_c_type_for_arg, "bool") == 0) {
+        if (cJSON_IsBool(value)) {
+            return ir_new_literal(cJSON_IsTrue(value) ? "true" : "false");
+        } else if (cJSON_IsNumber(value)) {
+            fprintf(stderr, "WARNING: Numeric value %g provided for C bool type. Interpreting non-zero as true.\n", value->valuedouble);
+            return ir_new_literal(value->valuedouble != 0 ? "true" : "false");
+        } else if (cJSON_IsString(value)) {
+            const char* s = value->valuestring;
+            if (strcasecmp(s, "true") == 0) return ir_new_literal("true");
+            if (strcasecmp(s, "false") == 0) return ir_new_literal("false");
+            fprintf(stderr, "ERROR: String value \"%s\" is not a valid boolean. Expected 'true' or 'false'. Defaulting to false.\n", s);
+            return ir_new_literal("false");
+        } else {
+            fprintf(stderr, "ERROR: Incompatible JSON type for C bool. Defaulting to false.\n");
+            return ir_new_literal("false");
+        }
+    }
 
     if (cJSON_IsString(value)) {
         const char* s_orig = value->valuestring;
@@ -106,7 +125,8 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
             if (ui_context) {
                 cJSON* ctx_val = cJSON_GetObjectItem(ui_context, s_orig + 1);
                 if (ctx_val) {
-                    return unmarshal_value(ctx, ctx_val, ui_context, expected_enum_type_for_arg);
+                    // Recursive call, pass along type expectations
+                    return unmarshal_value(ctx, ctx_val, ui_context, expected_enum_type_for_arg, expected_c_type_for_arg);
                 } else {
                     fprintf(stderr, "Warning: Context variable '%s' not found.\n", s_orig + 1);
                     return ir_new_literal("NULL");
@@ -160,7 +180,60 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
             free(temp_s);
         }
 
-        // This is a plain string, not prefixed. Apply enum logic.
+        // char * vs const char * warning for plain string literals
+        if (expected_c_type_for_arg && strcmp(expected_c_type_for_arg, "char *") == 0 && s_orig[0] != '!') {
+            // It's okay if it's also an enum, constant, or special prefix like @ or #
+            bool is_special_prefix = (s_orig[0] == '@' || s_orig[0] == '#' || s_orig[0] == '%');
+            bool is_enum_or_const = false;
+            if (!is_special_prefix) {
+                if (expected_enum_type_for_arg && api_spec_is_enum_member(ctx->api_spec, expected_enum_type_for_arg, s_orig)) {
+                    is_enum_or_const = true;
+                }
+                if (!is_enum_or_const && api_spec_is_global_enum_member(ctx->api_spec, s_orig)) {
+                    is_enum_or_const = true;
+                }
+                if (!is_enum_or_const && api_spec_is_constant(ctx->api_spec, s_orig)) {
+                    is_enum_or_const = true;
+                }
+            }
+            if (!is_special_prefix && !is_enum_or_const) {
+                 fprintf(stderr, "WARNING: Plain string literal \"%s\" provided for non-const 'char *' argument. Consider using '!%s' for a heap-allocated string if modification is intended or string must persist.\n", s_orig, s_orig);
+            }
+        }
+
+        // JSON String for C Number check
+        if (expected_c_type_for_arg &&
+            (strcmp(expected_c_type_for_arg, "int") == 0 || strcmp(expected_c_type_for_arg, "int32_t") == 0 ||
+             strcmp(expected_c_type_for_arg, "uint32_t") == 0 || strcmp(expected_c_type_for_arg, "int16_t") == 0 ||
+             strcmp(expected_c_type_for_arg, "uint16_t") == 0 || strcmp(expected_c_type_for_arg, "int8_t") == 0 ||
+             strcmp(expected_c_type_for_arg, "uint8_t") == 0 || strcmp(expected_c_type_for_arg, "lv_coord_t") == 0 ||
+             strcmp(expected_c_type_for_arg, "float") == 0 || strcmp(expected_c_type_for_arg, "double") == 0)) {
+
+            bool is_numeric_string = true;
+            char *endptr;
+            if (strstr(expected_c_type_for_arg, "float") || strstr(expected_c_type_for_arg, "double")) {
+                strtod(s_orig, &endptr);
+            } else {
+                strtol(s_orig, &endptr, 10);
+            }
+            if (*endptr != '\0') { // Conversion stopped before the end of the string
+                is_numeric_string = false;
+            }
+
+            // If it's not a special prefixed string AND not an enum/constant AND not a valid number string for the expected C type
+            if (s_orig[0] != '@' && s_orig[0] != '#' && s_orig[0] != '!' && s_orig[0] != '%' &&
+                !(expected_enum_type_for_arg && api_spec_is_enum_member(ctx->api_spec, expected_enum_type_for_arg, s_orig)) &&
+                !api_spec_is_global_enum_member(ctx->api_spec, s_orig) &&
+                !api_spec_is_constant(ctx->api_spec, s_orig) &&
+                !is_numeric_string) {
+                fprintf(stderr, "ERROR: String value \"%s\" is not a valid number or recognized constant/enum for C type '%s'.\n", s_orig, expected_c_type_for_arg);
+                // Fallback to string literal, C compiler will likely error.
+                return ir_new_literal_string(s_orig);
+            }
+        }
+
+
+        // This is a plain string, not prefixed by '$', '@', '#', '!' or '%'. Apply enum logic if applicable.
         if (expected_enum_type_for_arg && expected_enum_type_for_arg[0] != '\0') {
             const cJSON* all_enums = api_spec_get_enums(ctx->api_spec);
             if (all_enums) {
@@ -170,8 +243,6 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
                     if (found_in_specific) {
                         return ir_new_literal(s_orig); // Found in specific expected enum
                     } else {
-                        // Value not found in the expected enum type.
-                        // Now, search for s_orig in *all* enums to find its actual type.
                         const char* actual_enum_type_name = NULL;
                         cJSON* current_enum_type_json = NULL;
                         for (current_enum_type_json = all_enums->child; current_enum_type_json != NULL; current_enum_type_json = current_enum_type_json->next) {
@@ -182,7 +253,6 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
                                 }
                             }
                         }
-
                         if (actual_enum_type_name) {
                             fprintf(stderr, "ERROR: \"%s\" (enum %s) is not of expected enum type %s.\n", s_orig, actual_enum_type_name, expected_enum_type_for_arg);
                         }
@@ -213,23 +283,36 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
         return ir_new_literal_string(s_orig); // Default for non-prefixed, non-enum/constant strings
 
     } else if (cJSON_IsNumber(value)) {
-        // If an enum type is expected, pass the number directly.
-        // C will handle if the int value is assignable to the enum type.
-        // Optional: Could add validation here to check if number is a valid value for the expected_enum_type.
+        // If an enum type is expected, pass the number directly, but validate it.
         if (expected_enum_type_for_arg && expected_enum_type_for_arg[0] != '\0') {
-            // Consider adding a warning:
-            // fprintf(stderr, "Warning: Integer value %d used for expected enum type '%s'. Prefer string names for clarity.\n", (int)value->valuedouble, expected_enum_type_for_arg);
+            if (!api_spec_is_valid_enum_int_value(ctx->api_spec, expected_enum_type_for_arg, (int)value->valuedouble)) {
+                fprintf(stderr, "ERROR: Integer value %d is not a defined value for expected enum type '%s'.\n", (int)value->valuedouble, expected_enum_type_for_arg);
+                // Consider adding property and object context here if available through params to unmarshal_value in future
+            }
+            // Optional: fprintf(stderr, "Warning: Integer value %d used for expected enum type '%s'. Prefer string names for clarity.\n", (int)value->valuedouble, expected_enum_type_for_arg);
+        }
+        // JSON Float for C Integer check
+        if (expected_c_type_for_arg &&
+            (strcmp(expected_c_type_for_arg, "int") == 0 || strcmp(expected_c_type_for_arg, "int32_t") == 0 ||
+             strcmp(expected_c_type_for_arg, "uint32_t") == 0 || strcmp(expected_c_type_for_arg, "int16_t") == 0 ||
+             strcmp(expected_c_type_for_arg, "uint16_t") == 0 || strcmp(expected_c_type_for_arg, "int8_t") == 0 ||
+             strcmp(expected_c_type_for_arg, "uint8_t") == 0 || strcmp(expected_c_type_for_arg, "lv_coord_t") == 0)) {
+            if (value->valuedouble != (double)((int)value->valuedouble)) {
+                fprintf(stderr, "WARNING: Floating point value %f provided for C integer type '%s'. Value will be truncated to %d.\n", value->valuedouble, expected_c_type_for_arg, (int)value->valuedouble);
+            }
         }
         char buf[32];
-        snprintf(buf, sizeof(buf), "%d", (int)value->valuedouble); // LVGL enums are typically ints
+        // TODO: Handle float/double C types more precisely if expected_c_type_for_arg indicates float/double.
+        snprintf(buf, sizeof(buf), "%d", (int)value->valuedouble);
         return ir_new_literal(buf);
-    } else if (cJSON_IsBool(value)) {
+    } else if (cJSON_IsBool(value)) { // This case is now handled earlier if expected_c_type_for_arg is "bool"
         return ir_new_literal(cJSON_IsTrue(value) ? "true" : "false");
     } else if (cJSON_IsArray(value)) {
         IRExprNode* elements = NULL;
         cJSON* elem_json;
         cJSON_ArrayForEach(elem_json, value) {
-            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, NULL));
+            // When unmarshalling array elements, we don't have specific type info for each element from here.
+            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, NULL, NULL));
         }
         return ir_new_array(elements);
     } else if (cJSON_IsObject(value)) {
@@ -241,11 +324,12 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
             if (cJSON_IsArray(args_item)) {
                  cJSON* arg_json;
                  cJSON_ArrayForEach(arg_json, args_item) {
-                    IRExpr* arg_expr = unmarshal_value(ctx, arg_json, ui_context, NULL);
+                    // For "call" objects, we don't have specific type info for each arg from here
+                    IRExpr* arg_expr = unmarshal_value(ctx, arg_json, ui_context, NULL, NULL);
                     ir_expr_list_add(&args_list, arg_expr);
                 }
             } else if (args_item != NULL) {
-                 IRExpr* arg_expr = unmarshal_value(ctx, args_item, ui_context, NULL);
+                 IRExpr* arg_expr = unmarshal_value(ctx, args_item, ui_context, NULL, NULL);
                  ir_expr_list_add(&args_list, arg_expr);
             }
             return ir_new_func_call_expr(call_name, args_list);
@@ -371,7 +455,8 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 // Add target object
                 ir_expr_list_add(&args_list, ir_new_variable(target_c_var_name));
                 // Unmarshal the single value
-                IRExpr* val_expr = unmarshal_value(ctx, prop, ui_context, prop_def->expected_enum_type);
+                // For this fallback path, prop_def->c_type is the best guess for expected C type.
+                IRExpr* val_expr = unmarshal_value(ctx, prop, ui_context, prop_def->expected_enum_type /*, prop_def->c_type */); // Add prop_def->c_type when unmarshal_value signature changes
                 ir_expr_list_add(&args_list, val_expr);
 
                 // Argument count check for this very simple case
@@ -468,10 +553,10 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                         // Too many JSON args, already warned. Break to avoid crash.
                         break;
                     }
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context, current_json_arg_def->expected_enum_type));
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context, current_json_arg_def->expected_enum_type /*, current_json_arg_def->type */)); // Add current_json_arg_def->type when unmarshal_value signature changes
                     current_json_arg_def = current_json_arg_def->next;
                 }
-            } else if (prop != NULL && !cJSON_IsNull(prop)) { // Single JSON value provided
+            } else if (prop != NULL) { // Single JSON value provided (could be cJSON_IsNull(prop) which unmarshal_value handles)
                 if (current_json_arg_def) {
                      // If JSON is {value:V, part:P, state:S} but func_args expects multiple separate args for these,
                      // this simple unmarshal_value won't work. The structure of func_args should guide decomposition.
@@ -486,11 +571,11 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                         // Simplified: if func_args expects multiple, but we have a single obj {value,part,state}
                         // this is an issue. The arg count check above should catch it.
                         // We proceed to unmarshal the single object as the first expected JSON value.
-                        ir_expr_list_add(&args_list, unmarshal_value(ctx, prop, ui_context, current_json_arg_def->expected_enum_type));
+                        ir_expr_list_add(&args_list, unmarshal_value(ctx, prop, ui_context, current_json_arg_def->expected_enum_type /*, current_json_arg_def->type */)); // Add current_json_arg_def->type
                         current_json_arg_def = current_json_arg_def->next; // Consumed one expected arg
                     } else {
                         // Standard single value for a single function argument
-                        ir_expr_list_add(&args_list, unmarshal_value(ctx, prop, ui_context, current_json_arg_def->expected_enum_type));
+                        ir_expr_list_add(&args_list, unmarshal_value(ctx, prop, ui_context, current_json_arg_def->expected_enum_type /*, current_json_arg_def->type */)); // Add current_json_arg_def->type
                         current_json_arg_def = current_json_arg_def->next;
                     }
                 } else if (provided_json_args_count > 0) {
