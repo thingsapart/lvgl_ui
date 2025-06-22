@@ -1,0 +1,15 @@
+// lv_obj_t * parent = lv_screen_active(); // Assuming a default parent screen
+
+// LVGL Objects
+lv_obj_t * widget5;
+
+// UI Setup Function
+void setup_ui(lv_obj_t *parent) {
+    widget5 = lv_obj_create(parent);
+    lv_obj_set_align(widget5, LV_IMAGE_FLAGS_MODIFIABLE); // Expecting the generator to still output this
+}
+
+/*
+Expected stderr output (will be checked separately):
+ERROR: "LV_IMAGE_FLAGS_MODIFIABLE" (enum _lvimage_flags_t) is not of expected enum type lv_align_t.
+*/

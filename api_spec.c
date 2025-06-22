@@ -118,9 +118,19 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             pd->func_args = NULL; // Initialize new field
             pd->expected_enum_type = NULL; // Initialize new field
 
-            cJSON* expected_enum_type_json = cJSON_GetObjectItem(prop_detail_json, "expected_enum_type");
-            if (cJSON_IsString(expected_enum_type_json)) {
-                pd->expected_enum_type = expected_enum_type_json->valuestring; // Point to cJSON string
+            cJSON* expected_enum_type_json = cJSON_GetObjectItem(prop_detail_json, "expected_enum_type"); // Defined ONCE
+            if (!expected_enum_type_json) {
+                // This is normal for properties without expected_enum_type
+                pd->expected_enum_type = NULL;
+            } else if (!cJSON_IsString(expected_enum_type_json)) {
+                 fprintf(stderr, "Warning: Widget '%s', Prop '%s', 'expected_enum_type' is NOT A STRING. Type: %d. Defaulting to NULL.\n", def_name, prop_name_str, expected_enum_type_json->type);
+                pd->expected_enum_type = NULL;
+            } else if (expected_enum_type_json->valuestring == NULL) {
+                 fprintf(stderr, "Warning: Widget '%s', Prop '%s', 'expected_enum_type' valuestring IS NULL. Defaulting to NULL.\n", def_name, prop_name_str);
+                pd->expected_enum_type = NULL;
+            }
+            else {
+                pd->expected_enum_type = safe_strdup(expected_enum_type_json->valuestring);
             }
 
             *current_prop_list_node = (struct PropertyDefinitionNode*)calloc(1, sizeof(struct PropertyDefinitionNode));
@@ -286,6 +296,7 @@ static void free_property_definition_list(PropertyDefinitionNode* head) {
             free(current->prop->obj_setter_prefix);
             free(current->prop->style_part_default);
             free(current->prop->style_state_default);
+            free(current->prop->expected_enum_type); // Free the duplicated string
             free(current->prop);
         }
         free(current);

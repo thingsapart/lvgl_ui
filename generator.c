@@ -155,13 +155,33 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
         if (expected_enum_type_for_arg && expected_enum_type_for_arg[0] != '\0') {
             const cJSON* all_enums = api_spec_get_enums(ctx->api_spec);
             if (all_enums) {
-                cJSON* specific_enum_type = cJSON_GetObjectItem(all_enums, expected_enum_type_for_arg);
-                if (specific_enum_type && cJSON_IsObject(specific_enum_type)) {
-                    if (cJSON_GetObjectItem(specific_enum_type, s_orig)) {
-                        return ir_new_literal(s_orig); // Found in specific enum
+                cJSON* specific_enum_type_json = cJSON_GetObjectItem(all_enums, expected_enum_type_for_arg);
+                if (specific_enum_type_json && cJSON_IsObject(specific_enum_type_json)) {
+                    if (cJSON_GetObjectItem(specific_enum_type_json, s_orig)) {
+                        return ir_new_literal(s_orig); // Found in specific expected enum
                     } else {
-                        fprintf(stderr, "Error: Enum value '%s' not found in expected enum type '%s'.\n", s_orig, expected_enum_type_for_arg);
-                        return ir_new_literal("NULL"); // Or some error marker
+                        // Value not found in the expected enum type.
+                        // Now, search for s_orig in *all* enums to find its actual type.
+                        const char* actual_enum_type_name = NULL;
+                        cJSON* current_enum_type_json = NULL;
+                        for (current_enum_type_json = all_enums->child; current_enum_type_json != NULL; current_enum_type_json = current_enum_type_json->next) {
+                            if (cJSON_IsObject(current_enum_type_json) && current_enum_type_json->string) {
+                                if (cJSON_GetObjectItem(current_enum_type_json, s_orig)) {
+                                    actual_enum_type_name = current_enum_type_json->string;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (actual_enum_type_name) {
+                            // Found in *some* enum, but it's not the expected one.
+                            fprintf(stderr, "ERROR: \"%s\" (enum %s) is not of expected enum type %s.\n", s_orig, actual_enum_type_name, expected_enum_type_for_arg);
+                            // Continue to global fallback search, as per plan, to allow generation to proceed.
+                        } else {
+                            // Not found in the expected enum, and also not found in any other enum.
+                             _dprintf(stderr, "Debug: Enum value '%s' not found in expected enum type '%s' and not in any other enum type either.\n", s_orig, expected_enum_type_for_arg);
+                        }
+                        // Fall through to global search regardless of the error, to allow generation to continue.
                     }
                 } else {
                      fprintf(stderr, "Warning: Expected enum type '%s' not found in API spec. Falling back to global search for '%s'.\n", expected_enum_type_for_arg, s_orig);
@@ -170,18 +190,22 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
             }
         }
 
-        // Fallback: global constant and enum search (original behavior if no specific enum type given or if specific search fails to find type)
+        // Fallback: global constant and enum search
         const cJSON* constants = api_spec_get_constants(ctx->api_spec);
         if (constants && cJSON_GetObjectItem(constants, s_orig)) {
             return ir_new_literal(s_orig);
         }
 
-        const cJSON* all_enum_types_json = api_spec_get_enums(ctx->api_spec);
-        if (all_enum_types_json && cJSON_IsObject(all_enum_types_json)) {
+        const cJSON* all_enum_types_json_fallback = api_spec_get_enums(ctx->api_spec); // Re-fetch or use 'all_enums' if available and in scope
+        if (all_enum_types_json_fallback && cJSON_IsObject(all_enum_types_json_fallback)) {
             cJSON* enum_type_definition_json = NULL;
-            for (enum_type_definition_json = all_enum_types_json->child; enum_type_definition_json != NULL; enum_type_definition_json = enum_type_definition_json->next) {
+            for (enum_type_definition_json = all_enum_types_json_fallback->child; enum_type_definition_json != NULL; enum_type_definition_json = enum_type_definition_json->next) {
                 if (cJSON_IsObject(enum_type_definition_json)) {
                     if (cJSON_GetObjectItem(enum_type_definition_json, s_orig)) {
+                        // If we are here, it means either:
+                        // 1. No expected_enum_type_for_arg was given, and we found it globally.
+                        // 2. An expected_enum_type_for_arg was given, it wasn't found there, an error/warning was printed,
+                        //    and now we found it globally.
                         return ir_new_literal(s_orig);
                     }
                 }
@@ -380,9 +404,28 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
 
         const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, obj_type_for_api_lookup, prop_name);
 
+        // DEBUG PRINT ADDED HERE
+        if (prop_def) {
+            fprintf(stderr, "PROCESS_PROPERTIES_DEBUG: Prop '%s' on type '%s'. Prop_def found. Expected enum type before unmarshal: '%s'\n",
+                    prop_name,
+                    obj_type_for_api_lookup,
+                    prop_def->expected_enum_type ? prop_def->expected_enum_type : "NULL");
+        } else {
+            fprintf(stderr, "PROCESS_PROPERTIES_DEBUG: Prop '%s' on type '%s'. Prop_def NOT found by api_spec_find_property.\n", prop_name, obj_type_for_api_lookup);
+        }
+
+
         if (!prop_def) {
             if (strcmp(obj_type_for_api_lookup, "obj") != 0 && strcmp(obj_type_for_api_lookup, "style") != 0) {
                 prop_def = api_spec_find_property(ctx->api_spec, "obj", prop_name);
+                 // DEBUG PRINT FOR FALLBACK
+                if (prop_def) {
+                    fprintf(stderr, "PROCESS_PROPERTIES_DEBUG: Prop '%s' (fallback to 'obj'). Prop_def found. Expected enum type before unmarshal: '%s'\n",
+                            prop_name,
+                            prop_def->expected_enum_type ? prop_def->expected_enum_type : "NULL");
+                } else {
+                     fprintf(stderr, "PROCESS_PROPERTIES_DEBUG: Prop '%s' (fallback to 'obj'). Prop_def NOT found.\n", prop_name);
+                }
             }
             if (!prop_def) {
                  if (strncmp(prop_name, "style_", 6) == 0 && strcmp(obj_type_for_api_lookup, "style") != 0) {
