@@ -115,4 +115,13 @@ const FunctionArg* api_spec_get_function_args_by_name(const ApiSpec* spec, const
 // Checks if a given integer value is a valid value for any member of the specified enum type.
 bool api_spec_is_valid_enum_int_value(const ApiSpec* spec, const char* enum_type_name, int int_value);
 
+// Checks if a string is a member of a specific enum type.
+bool api_spec_is_enum_member(const ApiSpec* spec, const char* enum_name, const char* member_name);
+
+// Checks if a string is a member of any enum type defined in the spec.
+bool api_spec_is_global_enum_member(const ApiSpec* spec, const char* member_name);
+
+// Checks if a string is a defined constant in the spec.
+bool api_spec_is_constant(const ApiSpec* spec, const char* const_name);
+
 #endif // API_SPEC_H

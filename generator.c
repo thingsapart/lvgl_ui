@@ -125,7 +125,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
             if (ui_context) {
                 cJSON* ctx_val = cJSON_GetObjectItem(ui_context, s_orig + 1);
                 if (ctx_val) {
-                    // Recursive call, pass along type expectations
+                    // Recursive call, pass along type expectations. expected_c_type_for_arg is passed through.
                     return unmarshal_value(ctx, ctx_val, ui_context, expected_enum_type_for_arg, expected_c_type_for_arg);
                 } else {
                     fprintf(stderr, "Warning: Context variable '%s' not found.\n", s_orig + 1);
@@ -312,6 +312,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
         cJSON* elem_json;
         cJSON_ArrayForEach(elem_json, value) {
             // When unmarshalling array elements, we don't have specific type info for each element from here.
+            // expected_enum_type_for_arg and expected_c_type_for_arg are NULL.
             ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, NULL, NULL));
         }
         return ir_new_array(elements);
@@ -324,11 +325,12 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
             if (cJSON_IsArray(args_item)) {
                  cJSON* arg_json;
                  cJSON_ArrayForEach(arg_json, args_item) {
-                    // For "call" objects, we don't have specific type info for each arg from here
+                    // For "call" objects, we don't have specific type info for each arg from here.
                     IRExpr* arg_expr = unmarshal_value(ctx, arg_json, ui_context, NULL, NULL);
                     ir_expr_list_add(&args_list, arg_expr);
                 }
             } else if (args_item != NULL) {
+                 // Single argument to a "call" object.
                  IRExpr* arg_expr = unmarshal_value(ctx, args_item, ui_context, NULL, NULL);
                  ir_expr_list_add(&args_list, arg_expr);
             }
@@ -376,7 +378,8 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
 
         if (strcmp(prop_name, "style") == 0) {
             if (cJSON_IsString(prop) && prop->valuestring != NULL && prop->valuestring[0] == '@') {
-                IRExpr* style_expr = unmarshal_value(ctx, prop, ui_context, NULL);
+                // For style references like "@style1", expected_enum and expected_c_type are NULL.
+                IRExpr* style_expr = unmarshal_value(ctx, prop, ui_context, NULL, NULL);
                 if (style_expr) {
                     IRExprNode* args_list = ir_new_expr_node(ir_new_variable(target_c_var_name));
                     ir_expr_list_add(&args_list, style_expr);
@@ -455,8 +458,7 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                 // Add target object
                 ir_expr_list_add(&args_list, ir_new_variable(target_c_var_name));
                 // Unmarshal the single value
-                // For this fallback path, prop_def->c_type is the best guess for expected C type.
-                IRExpr* val_expr = unmarshal_value(ctx, prop, ui_context, prop_def->expected_enum_type /*, prop_def->c_type */); // Add prop_def->c_type when unmarshal_value signature changes
+                IRExpr* val_expr = unmarshal_value(ctx, prop, ui_context, prop_def->expected_enum_type, prop_def->c_type);
                 ir_expr_list_add(&args_list, val_expr);
 
                 // Argument count check for this very simple case
@@ -528,8 +530,8 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                  bool can_have_implicit_selector = false;
                  if(is_style_setter_func && effective_func_args) {
                      const FunctionArg* last_arg = effective_func_args;
-                     int arg_idx = 0;
-                     while(last_arg->next) { last_arg = last_arg->next; arg_idx++; }
+                     // int arg_idx = 0; // Unused
+                     while(last_arg->next) { last_arg = last_arg->next; /* arg_idx++; */ }
                      // Check if the last C func arg is selector/state and if JSON provided one less
                      int c_func_value_args_count = expected_c_args_total - (first_arg_is_target_obj ? 1 : 0);
                      if(provided_json_args_count == c_func_value_args_count - 1) {
@@ -553,7 +555,7 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                         // Too many JSON args, already warned. Break to avoid crash.
                         break;
                     }
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context, current_json_arg_def->expected_enum_type /*, current_json_arg_def->type */)); // Add current_json_arg_def->type when unmarshal_value signature changes
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, val_item_json, ui_context, current_json_arg_def->expected_enum_type, current_json_arg_def->type));
                     current_json_arg_def = current_json_arg_def->next;
                 }
             } else if (prop != NULL) { // Single JSON value provided (could be cJSON_IsNull(prop) which unmarshal_value handles)
@@ -571,11 +573,11 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                         // Simplified: if func_args expects multiple, but we have a single obj {value,part,state}
                         // this is an issue. The arg count check above should catch it.
                         // We proceed to unmarshal the single object as the first expected JSON value.
-                        ir_expr_list_add(&args_list, unmarshal_value(ctx, prop, ui_context, current_json_arg_def->expected_enum_type /*, current_json_arg_def->type */)); // Add current_json_arg_def->type
+                        ir_expr_list_add(&args_list, unmarshal_value(ctx, prop, ui_context, current_json_arg_def->expected_enum_type, current_json_arg_def->type));
                         current_json_arg_def = current_json_arg_def->next; // Consumed one expected arg
                     } else {
                         // Standard single value for a single function argument
-                        ir_expr_list_add(&args_list, unmarshal_value(ctx, prop, ui_context, current_json_arg_def->expected_enum_type /*, current_json_arg_def->type */)); // Add current_json_arg_def->type
+                        ir_expr_list_add(&args_list, unmarshal_value(ctx, prop, ui_context, current_json_arg_def->expected_enum_type, current_json_arg_def->type));
                         current_json_arg_def = current_json_arg_def->next;
                     }
                 } else if (provided_json_args_count > 0) {
@@ -608,7 +610,7 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                     k++;
                 }
                 if(last_c_func_arg && last_c_func_arg->type) { // Check if this last C arg is selector or state
-                    bool is_obj_style_setter = strncmp(actual_setter_name_const, "lv_obj_set_style_", 17) == 0;
+                    // bool is_obj_style_setter = strncmp(actual_setter_name_const, "lv_obj_set_style_", 17) == 0; // Unused
                     bool is_style_style_setter = strncmp(actual_setter_name_const, "lv_style_set_", 13) == 0;
 
                     if (strcmp(last_c_func_arg->type, "lv_style_selector_t") == 0) {
@@ -616,7 +618,6 @@ static void process_properties(GenContext* ctx, cJSON* node_json_containing_prop
                     } else if (strcmp(last_c_func_arg->type, "lv_state_t") == 0 && is_style_style_setter) {
                         // Only default lv_state_t for lv_style_set_ functions if it's the pattern (style, state, value)
                         // and JSON only gave value.
-                        // This heuristic might need refinement based on actual LVGL patterns.
                         ir_expr_list_add(&args_list, ir_new_literal("LV_STATE_DEFAULT"));
                     }
                 }
@@ -1001,8 +1002,8 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
         fprintf(stderr, "Error: 'with' block missing 'obj' key (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
         return;
     }
-
-    IRExpr* obj_expr = unmarshal_value(ctx, obj_json, ui_context, NULL);
+    // For 'with obj:', expected_enum and expected_c_type are generally not known/applicable at this point.
+    IRExpr* obj_expr = unmarshal_value(ctx, obj_json, ui_context, NULL, NULL);
     if (!obj_expr) {
         fprintf(stderr, "Error: Failed to unmarshal 'obj' in 'with' block (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
         return;
@@ -1203,3 +1204,4 @@ IRStmtBlock* generate_ir_from_ui_spec_with_registry(
     return root_ir_block;
 }
 
+[end of generator.c]

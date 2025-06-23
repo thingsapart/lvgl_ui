@@ -657,3 +657,36 @@ bool api_spec_is_valid_enum_int_value(const ApiSpec* spec, const char* enum_type
     }
     return false; // No member had a matching integer value
 }
+
+bool api_spec_is_enum_member(const ApiSpec* spec, const char* enum_name, const char* member_name) {
+    if (!spec || !spec->enums || !enum_name || !member_name) {
+        return false;
+    }
+    const cJSON* enum_type_json = cJSON_GetObjectItem(spec->enums, enum_name);
+    if (!enum_type_json || !cJSON_IsObject(enum_type_json)) {
+        return false;
+    }
+    return cJSON_GetObjectItem(enum_type_json, member_name) != NULL;
+}
+
+bool api_spec_is_global_enum_member(const ApiSpec* spec, const char* member_name) {
+    if (!spec || !spec->enums || !member_name) {
+        return false;
+    }
+    cJSON* enum_type_json = NULL;
+    for (enum_type_json = spec->enums->child; enum_type_json != NULL; enum_type_json = enum_type_json->next) {
+        if (cJSON_IsObject(enum_type_json)) {
+            if (cJSON_GetObjectItem(enum_type_json, member_name) != NULL) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool api_spec_is_constant(const ApiSpec* spec, const char* const_name) {
+    if (!spec || !spec->constants || !const_name) {
+        return false;
+    }
+    return cJSON_GetObjectItem(spec->constants, const_name) != NULL;
+}

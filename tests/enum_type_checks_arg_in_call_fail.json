@@ -2,11 +2,6 @@
     {
         "type": "obj",
         "named": "widget5",
-        "align": ["LV_FLEX_ALIGN_CENTER", 10, 10],
-        "align": "LV_IMAGE_FLAGS_MODIFIABLE",
-        "align": "LV_FLEX_ALIGN_CENTER",
-        "flex_align": "LV_FLEX_ALIGN_CENTER",
-        "flex_align": ["LV_FLEX_ALIGN_CENTER", "LV_FLEX_ALIGN_CENTER", "LV_FLEX_ALIGN_CENTER"],
-        "flex_align": ["LV_ALIGN_CENTER", "LV_ALIGN_CENTER", "LV_ALIGN_CENTER"]
+        "align": "LV_IMAGE_FLAGS_MODIFIABLE"
     }
 ]

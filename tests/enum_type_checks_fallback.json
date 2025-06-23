@@ -1,9 +1,9 @@
 [
     {
         "type": "base_widget",
-        "named": "widget2",
+        "named": "widget3",
         "properties": {
-            "align": "OTHER_ENUM_VAL1"
+            "another_align": "LV_ALIGN_TOP_LEFT"
         }
     }
 ]

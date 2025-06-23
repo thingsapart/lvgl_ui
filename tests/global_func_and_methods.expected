@@ -18,11 +18,11 @@ void create_ui(lv_obj_t* parent) {
     {
         lv_obj_t* dropdown_0 = lv_dropdown_create(parent);
         lv_dropdown_set_options(dropdown_0, "Home\nZero\nG54\nG55\nG56\nG57\nG58");
-        lv_obj_add_style(dropdown_0, action_button, 0);
+        lv_obj_add_style(dropdown_0, {action_button, 0});
         lv_obj_align(dropdown_0, LV_ALIGN_BOTTOM_LEFT, 90, -10);
         lv_obj_add_flag(dropdown_0, LV_OBJ_FLAG_FLOATING);
         lv_dropdown_set_text(dropdown_0, "test-text");
-        lv_dropdown_set_symbol(dropdown_0, NULL);
+        lv_dropdown_set_symbol(dropdown_0, 0);
         lv_obj_move_foreground(dropdown_0);
     }
 }

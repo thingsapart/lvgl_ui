@@ -63,12 +63,7 @@ for test_file in *.json; do
         continue
     fi
 
-    API_SPEC=../api_spec.json
-    if [ -f "${test_name}.api_spec.json" ]; then
-        API_SPEC=${test_name}.api_spec.json
-    fi
-
-    ${GEN} ${API_SPEC} "${test_file}" > "${output_file}" 2>&1
+    ${GEN} ../api_spec.json "${test_file}" > "${output_file}" 2>&1
 
     #diff "${output_file}" "${expected_file}"
     OUT=/dev/null
