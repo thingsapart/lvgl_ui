@@ -679,24 +679,24 @@ static intptr_t ir_node_get_int_robust(IRNode* node, const char* enum_type_name)
             for key, func_list_val in self.archetypes.items():
                 dispatcher_name_json_val, dispatcher_name_ir_val = self.archetype_map[key]
                 for func_info_val in func_list_val:
-                    entry_parts = [f'{{"{func_info_val["name"]}"']
-                    if "ENABLE_CJSON_INPUTS" in f.getvalue(): # Check if CJSON is likely enabled
-                        entry_parts.append(f"{dispatcher_name_json_val}")
-                    else:
-                        entry_parts.append("NULL /* CJSON_INPUTS disabled */")
+                    entry_str = f'{{\"{func_info_val["name"]}\",\n'
+                    entry_str += "#if defined(ENABLE_CJSON_INPUTS)\n"
+                    entry_str += f"        {dispatcher_name_json_val},\n"
+                    entry_str += "#else\n"
+                    entry_str += "        NULL, // CJSON_INPUTS disabled\n"
+                    entry_str += "#endif\n"
+                    entry_str += "#if defined(ENABLE_IR_INPUTS)\n"
+                    entry_str += f"        {dispatcher_name_ir_val},\n"
+                    entry_str += "#else\n"
+                    entry_str += "        NULL, // IR_INPUTS disabled\n"
+                    entry_str += "#endif\n"
+                    entry_str += f"        (generic_lvgl_func_t){func_info_val['name']}\n    }}"
+                    registry_entries.append(entry_str)
 
-                    if "ENABLE_IR_INPUTS" in f.getvalue(): # Check if IR is likely enabled
-                        entry_parts.append(f"{dispatcher_name_ir_val}")
-                    else:
-                        entry_parts.append("NULL /* IR_INPUTS disabled */")
-
-                    entry_parts.append(f'(generic_lvgl_func_t){func_info_val["name"]}}}')
-                    registry_entries.append(", ".join(entry_parts))
-            registry_entries.sort()
+            registry_entries.sort() # Sort based on the full C string, which is fine as name is first.
             registry_entries_str = ",\n    ".join(registry_entries)
-            if not registry_entries_str: # Handle case with no archetypes/registry entries
+            if not registry_entries_str:
                 registry_entries_str = "// No functions in registry"
-
 
             f.write(c_code_後半.format(
                 registry_entries_str=registry_entries_str,
