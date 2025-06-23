@@ -1,0 +1,180 @@
+ERROR: Property 'align' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_align') expects 3 JSON value argument(s), but 1 provided.
+ERROR: "LV_IMAGE_FLAGS_MODIFIABLE" (enum _lvimage_flags_t) is not of expected enum type lv_align_t.
+ERROR: "LV_IMAGE_FLAGS_MODIFIABLE" (enum _lvimage_flags_t) is not of expected enum type lv_flex_align_t.
+Warning: Property 'align_y' for object type 'obj' (C var 'error_test_obj') not found in API spec. Skipping.
+ERROR: Property 'text_decor' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_set_style_text_decor') expects 2 JSON value argument(s), but 1 provided.
+ERROR: Property 'flex_align_too_few' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_set_flex_align') expects 3 JSON value argument(s), but 2 provided.
+ERROR: Property 'flex_align_too_many' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_set_flex_align') expects 3 JSON value argument(s), but 4 provided.
+ERROR: Property 'width_array_error' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_set_width') expects 1 JSON value argument(s), but 2 provided.
+Warning: Property 'non_existent_prop_on_obj' for object type 'obj' (C var 'error_test_obj') not found in API spec. Skipping.
+Warning: Property 'style_a_made_up_prop_on_obj' for object type 'obj' (C var 'error_test_obj') not found in API spec. Skipping.
+Warning: Unhandled JSON object structure in unmarshal_value. Object was: {"unhandled_call_key_for_x":"some_func"}
+Warning: Unhandled JSON object structure in unmarshal_value. Object was: {"nested_object_for_y":10}
+ERROR: Property 'width_zero_args' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_set_width') expects 1 JSON value argument(s), but 0 provided.
+ERROR: Property 'flex_align_zero_args' on C var 'error_test_obj' (type 'obj', setter 'lv_obj_set_flex_align') expects 3 JSON value argument(s), but 0 provided.
+WARNING: Floating point value 123.700000 provided for C integer type 'lv_coord_t'. Value will be truncated to 123.
+ERROR: String value "100pixels" is not a valid number or recognized constant/enum for C type 'lv_coord_t'.
+WARNING: Numeric value 1 provided for C bool type. Interpreting non-zero as true.
+ERROR: String value "yes" is not a valid boolean. Expected 'true' or 'false'. Defaulting to false.
+ERROR: Integer value 777 is not a defined value for expected enum type 'lv_align_t'.
+Warning: Integer value 0 used for expected enum type 'lv_align_t'. Prefer string names for clarity.
+// --- Standard includes ---
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "lvgl.h"
+#include "ui_helpers.h"
+#include "ui_registry.h"
+
+// --- Global string literals ---
+const char* str_error_test_obj_text_char_ptr = "Hello Managed";
+
+// --- UI Object Function Declarations ---
+void ui_error_test_obj_create(lv_obj_t* parent);
+void ui_error_test_style_var_create(lv_style_t* style);
+
+// --- Custom LVGL object types ---
+
+// --- UI Object Function Definitions ---
+void ui_error_test_obj_create(lv_obj_t* parent) {
+    lv_obj_t* error_test_obj = lv_obj_create(parent);
+    lv_obj_set_size(error_test_obj, LV_PCT(100), LV_PCT(100));
+    // Test Case 1: Enum Type Mismatch - Simple Property (obj.align expects lv_align_t)
+    lv_obj_align(error_test_obj, LV_IMAGE_FLAGS_MODIFIABLE, NULL, NULL);
+    // Test Case 3: Enum Type Mismatch - func_args (obj.flex_align expects 3x lv_flex_align_t)
+    lv_obj_set_flex_align(error_test_obj, LV_FLEX_ALIGN_CENTER, LV_IMAGE_FLAGS_MODIFIABLE, LV_FLEX_ALIGN_END);
+    // Test Case 4: Enum Type Mismatch - Invalid string for enum (obj.align_y expects lv_align_t)
+    // align_y is skipped due to "not found" warning as it's not a direct property of obj in the original spec.
+    // If it were found and mapped to lv_obj_set_style_align_y, it would be:
+    // lv_obj_set_style_align_y(error_test_obj, "NOT_AN_ENUM_VALUE_AT_ALL", LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // Test Case 5: Argument Count Mismatch - Simple Setter - Array given to single value prop (obj.text_decor)
+    // text_decor maps to lv_obj_set_style_text_decor(obj, value, selector). Expects 2 JSON args. JSON provides 2.
+    // The error message for this case (expecting 1 but got 2) is based on the older simple setter logic.
+    // With unified logic, it should now correctly see lv_obj_set_style_text_decor expects 2 (value, selector)
+    // and the JSON provides 2. So, no count error here.
+    lv_obj_set_style_text_decor(error_test_obj, LV_TEXT_DECOR_UNDERLINE, LV_TEXT_DECOR_STRIKETHROUGH);
+    // Test Case 6.1: Argument Count Mismatch - func_args - Too Few (obj.flex_align)
+    lv_obj_set_flex_align(error_test_obj, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, NULL);
+    // Test Case 6.2: Argument Count Mismatch - func_args - Too Many (obj.flex_align)
+    lv_obj_set_flex_align(error_test_obj, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_END);
+    // Test Case 7: Argument Count Mismatch - Simple Setter - Array given (obj.width_array_error)
+    // width_array_error maps to lv_obj_set_width(obj, width). Expects 1 JSON arg.
+    lv_obj_set_width(error_test_obj, 100); // Generator will process the first element due to arg count error.
+    // Test Case 8: Default Selector Usage - Simple value (obj.border_width, num_style_args: -1)
+    lv_obj_set_style_border_width(error_test_obj, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 9: Default Selector Usage - Explicit part, default state (obj.border_color, num_style_args: -1)
+    lv_obj_set_style_border_color(error_test_obj, lv_color_hex(0xFF0000), LV_PART_SCROLLBAR | LV_STATE_DEFAULT);
+    // Test Case 10: Default Selector Usage - Explicit state, default part (obj.outline_width, num_style_args: -1)
+    lv_obj_set_style_outline_width(error_test_obj, 2, LV_PART_MAIN | LV_STATE_FOCUSED);
+    // Test Case 11: Correct enum for simple property (obj.align)
+    lv_obj_align(error_test_obj, LV_ALIGN_CENTER, 0, 0); // Assuming 0,0 for default x_ofs, y_ofs if not provided
+    // Test Case 12: Correct enum for func_args (obj.flex_align)
+    lv_obj_set_flex_align(error_test_obj, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_END);
+    // Test Case 14: Correct arg count for simple setter (single value - obj.height)
+    lv_obj_set_height(error_test_obj, 150);
+    // Test Case 15: Correct arg count for simple setter (value/part/state object - obj.border_opa)
+    lv_obj_set_style_border_opa(error_test_obj, LV_OPA_50, LV_PART_INDICATOR | LV_STATE_CHECKED);
+    // Test Case 19: Unhandled JSON object structure in unmarshal_value (obj.x)
+    lv_obj_set_x(error_test_obj, NULL);
+    // Test Case 20: Unhandled JSON type in unmarshal_value (obj.y)
+    lv_obj_set_y(error_test_obj, NULL);
+    // Test Case 23: Explicit JSON null as single argument (obj.text)
+    lv_obj_set_style_text(error_test_obj, NULL, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 24: Explicit JSON null within a multi-arg array (obj.flex_align)
+    lv_obj_set_flex_align(error_test_obj, LV_FLEX_ALIGN_START, NULL, NULL);
+    // Test Case 25: Zero-argument function call (obj.clean - lv_obj_clean takes obj*)
+    lv_obj_clean(error_test_obj);
+    // Test Case 26: Function expecting one arg, called with zero-args via []
+    lv_obj_set_width(error_test_obj, NULL);
+    // Test Case 27: Function expecting >1 args, called with zero-args via []
+    lv_obj_set_flex_align(error_test_obj, NULL, NULL, NULL);
+    // Test Case 28: Integer value for enum property (obj.align_int_val maps to align -> lv_obj_align)
+    lv_obj_align(error_test_obj, 1, 0, 0); // Assuming 0,0 for default x_ofs, y_ofs as align expects 3 args
+    // Test Case 29: Integer value for enum in func_args (obj.flex_align_int_vals maps to flex_align -> lv_obj_set_flex_align)
+    lv_obj_set_flex_align(error_test_obj, 0, 1, 2);
+    // Test Case 30: Integer value for enum (obj.align_int_out_of_range maps to align -> lv_obj_align)
+    lv_obj_align(error_test_obj, 99, 0, 0); // Assuming 0,0 for default x_ofs, y_ofs
+    // Test Case 31: JSON string for const char* (no prefix, obj.text_const_char_ptr maps to text -> lv_obj_set_style_text)
+    lv_obj_set_style_text(error_test_obj, "Hello Literal", LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 32: JSON string with '!' for char* (obj.text_char_ptr maps to text -> lv_obj_set_style_text)
+    lv_obj_set_style_text(error_test_obj, str_error_test_obj_text_char_ptr, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 33: JSON Float for C Integer (obj.width_float_val)
+    lv_obj_set_width(error_test_obj, 123);
+    // Test Case 34: JSON String for C Number - Invalid (obj.height_invalid_str)
+    lv_obj_set_height(error_test_obj, "100pixels"); // Passed as string due to parse error
+    // Test Case 35: JSON String for C Number - Valid (obj.x_valid_str_num)
+    lv_obj_set_x(error_test_obj, 25);
+    // Test Case 36: Stricter Boolean - Number for bool (obj.clickable_num_val)
+    lv_obj_add_flag(error_test_obj, LV_OBJ_FLAG_CLICKABLE); // 1 is true
+    // Test Case 37: Stricter Boolean - Invalid String for bool (obj.hidden_invalid_str_bool)
+    lv_obj_remove_flag(error_test_obj, LV_OBJ_FLAG_HIDDEN); // "yes" defaults to false
+    // Test Case 38: Plain string for char* (obj.tooltip_text_plain_string maps to lv_obj_set_style_tooltip_text)
+    lv_obj_set_style_tooltip_text(error_test_obj, "Plain String For Tooltip", LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Test Case 39: Integer for Enum with Validation Error (obj.align_int_invalid_val maps to align)
+    lv_obj_align(error_test_obj, 777, 0, 0); // Assuming 0,0 for default x_ofs, y_ofs
+    // Test Case 40: Integer for Enum (no validation error, but optional warning if implemented for obj.align_int_val_for_warn maps to align)
+    lv_obj_align(error_test_obj, 0, 0, 0); // Assuming 0,0 for default x_ofs, y_ofs
+    registry_add_pointer(&ui_registry_get_default()->registry, error_test_obj, "error_test_obj", "obj");
+}
+
+void ui_error_test_style_var_create(lv_style_t* style) {
+    lv_style_init(style);
+    // Test Case 21: Style property, default selector (style.text_opa)
+    // lv_style_set_text_opa(style, state, value). JSON provides value. State should default.
+    lv_style_set_text_opa(style, LV_STATE_DEFAULT, LV_OPA_70);
+    // Test Case 22: Style property, explicit state (style.text_color)
+    // lv_style_set_text_color(style, state, value). JSON provides value+state.
+    lv_style_set_text_color(style, LV_STATE_HOVERED, lv_color_hex(0x123456));
+    registry_add_pointer(&ui_registry_get_default()->registry, style, "error_test_style", "style");
+}
+
+void ui_test_label_for_with_create(lv_obj_t* parent) {
+    lv_obj_t* test_label_for_with = lv_label_create(parent);
+    lv_label_set_text(test_label_for_with, "Initial Label");
+    registry_add_pointer(&ui_registry_get_default()->registry, test_label_for_with, "test_label_for_with", "label");
+}
+
+void ui_test_button_for_with_create(lv_obj_t* parent) {
+    lv_obj_t* test_button_for_with = lv_btn_create(parent);
+    registry_add_pointer(&ui_registry_get_default()->registry, test_button_for_with, "test_button_for_with", "button");
+}
+
+void ui_test_style_for_with_cvar_create(lv_style_t* style) {
+    lv_style_init(style);
+    lv_style_set_bg_color(style, LV_STATE_DEFAULT, lv_color_hex(0xABCDEF));
+    registry_add_pointer(&ui_registry_get_default()->registry, style, "test_style_for_with", "style");
+}
+
+void ui_with_block_tests_container_create(lv_obj_t* parent) {
+    lv_obj_t* with_block_tests_container = lv_obj_create(parent);
+    lv_obj_set_size(with_block_tests_container, LV_PCT(100), LV_PCT(100));
+    // Test Case 41: 'with' block targeting a registered label by @id
+    lv_obj_t* temp_obj_0 = ui_get_obj_from_registry("@test_label_for_with");
+    if (temp_obj_0) {
+        lv_label_set_text(temp_obj_0, "Text set via with-label");
+    }
+    // Test Case 42: 'with' block targeting a registered button by @id, apply button property
+    lv_obj_t* temp_obj_1 = ui_get_obj_from_registry("@test_button_for_with");
+    if (temp_obj_1) {
+        lv_obj_align(temp_obj_1, LV_ALIGN_TOP_LEFT, 0, 0);
+    }
+    // Test Case 43: 'with' block targeting a registered style by @id
+    lv_style_t* temp_style_0 = ui_get_style_from_registry("@test_style_for_with");
+    if (temp_style_0) {
+        lv_style_set_text_color(temp_style_0, LV_STATE_DEFAULT, lv_color_hex(0x112233));
+    }
+    // Test Case 44: 'with' assignment to a named variable, obj is @id
+    lv_obj_t* assigned_label_ref = ui_get_obj_from_registry("@test_label_for_with");
+    registry_add_pointer(&ui_registry_get_default()->registry, assigned_label_ref, "assigned_label_ref_id", "label");
+    // Test Case 45: 'with' assignment, then use the assigned var in another 'with'
+    lv_obj_t* assigned_button_ref = ui_get_obj_from_registry("@test_button_for_with");
+    registry_add_pointer(&ui_registry_get_default()->registry, assigned_button_ref, "assigned_button_ref_id", "button");
+    lv_obj_t* temp_obj_2 = ui_get_obj_from_registry("@assigned_button_ref_id");
+    if (temp_obj_2) {
+        lv_obj_align(temp_obj_2, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
+    }
+}
+
+//stderr_eof
+//stdout_eof

@@ -2,13 +2,14 @@
 #define API_SPEC_H
 
 #include <stdbool.h>
-#include <cJSON/cJSON.h>
+#include <cJSON.h> // Standardized include path
 
 // --- Function Definition Structures ---
 // (Moved before PropertyDefinition and WidgetDefinition)
 typedef struct FunctionArg {
     char* type; // Argument type as string (e.g., "lv_obj_t*", "int32_t")
-    // char* name; // Optional: if argument names are available in JSON in the future
+    char* name; // Optional: if argument names are available in JSON in the future
+    char* expected_enum_type; // Expected enum type for this argument, if applicable
     struct FunctionArg* next;
 } FunctionArg;
 
@@ -34,15 +35,13 @@ typedef struct {
     char* c_type;                 // Corresponding C type (e.g., "int", "const char*", "lv_color_t")
     char* setter;                 // Name of the LVGL setter function (e.g., "lv_obj_set_width")
     char* widget_type_hint;       // For which widget type this setter is primarily for (e.g. "obj", "label", "style") helps construct setter if not explicit
-    int num_style_args;           // For style properties, indicates number of leading lv_style_selector_t/lv_part_t args (0, 1, or 2 typically)
-                                  // e.g. lv_style_set_radius(style, state, value) -> 1 (state)
-                                  // e.g. lv_obj_set_style_local_radius(obj, part, state, value) -> 2 (part, state)
-    char* style_part_default;     // Default part for style properties (e.g. "LV_PART_MAIN", "LV_PART_SCROLLBAR")
-    char* style_state_default;    // Default state for style properties (e.g. "LV_STATE_DEFAULT", "LV_STATE_PRESSED")
+    // int num_style_args;           // REMOVED
+    // char* style_part_default;     // REMOVED
+    // char* style_state_default;    // REMOVED
     bool is_style_prop;           // True if this property is generally set on style objects or via local style setters
     char* obj_setter_prefix;      // For global properties, e.g. "lv_obj_set_style" for "text_color" -> "lv_obj_set_style_text_color"
     FunctionArg* func_args;       // NEW FIELD: Linked list of arguments if this property resolves to a function/method with a known signature.
-    const char* expected_enum_type; // ADDED: Name of the enum type expected by this property.
+    char* expected_enum_type; // MODIFIED: Name of the enum type expected by this property (now non-const).
 } PropertyDefinition;
 
 typedef struct PropertyDefinitionNode {
@@ -108,5 +107,21 @@ const char* widget_get_create_func(const WidgetDefinition* widget);
 // Retrieves the C return type string of a function.
 // Returns a default type (e.g., "lv_obj_t*") if the function is not found or has no return type.
 const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* func_name);
+
+// Retrieves the FunctionArg list for a given function name from the global functions or widget methods.
+// The caller should NOT free the returned list as it points to existing data.
+const FunctionArg* api_spec_get_function_args_by_name(const ApiSpec* spec, const char* func_name);
+
+// Checks if a given integer value is a valid value for any member of the specified enum type.
+bool api_spec_is_valid_enum_int_value(const ApiSpec* spec, const char* enum_type_name, int int_value);
+
+// Checks if a string is a member of a specific enum type.
+bool api_spec_is_enum_member(const ApiSpec* spec, const char* enum_name, const char* member_name);
+
+// Checks if a string is a member of any enum type defined in the spec.
+bool api_spec_is_global_enum_member(const ApiSpec* spec, const char* member_name);
+
+// Checks if a string is a defined constant in the spec.
+bool api_spec_is_constant(const ApiSpec* spec, const char* const_name);
 
 #endif // API_SPEC_H

@@ -83,7 +83,28 @@ void codegen_expr_func_call(IRNode* node, int indent_level) {
                 printf(", ");
             }
             if (current_arg->expr) {
-                codegen_expr_internal(current_arg->expr);
+                // If the argument expression is an array, and we are in a function call,
+                // we want to render its elements as comma-separated arguments,
+                // not as an array literal with {}.
+                if (current_arg->expr->type == IR_EXPR_ARRAY) {
+                    IRExprArray* arr_expr = (IRExprArray*)current_arg->expr;
+                    IRExprNode* current_elem = arr_expr->elements;
+                    int elem_count_in_array = 0;
+                    while (current_elem) {
+                        if (elem_count_in_array > 0) {
+                            printf(", ");
+                        }
+                        if (current_elem->expr) {
+                            codegen_expr_internal(current_elem->expr);
+                        } else {
+                            printf("NULL /* missing array element expr in func arg */");
+                        }
+                        current_elem = current_elem->next;
+                        elem_count_in_array++;
+                    }
+                } else {
+                    codegen_expr_internal(current_arg->expr);
+                }
             } else {
                 printf("NULL /* missing arg expr */");
             }

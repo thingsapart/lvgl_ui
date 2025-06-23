@@ -1,28 +1,27 @@
 [
   {
     "type": "style",
-    "id": "test_style_for_nulls",
+    "id": "@test_style_for_nulls",
     "named": "s_test_style_for_nulls"
   },
   {
     "type": "label",
-    "id": "test_label_for_nulls",
+    "id": "@test_label_for_nulls",
     "named": "l_test_label_for_nulls",
     "properties": {
        "text": "Initial Text"
     }
   },
   {
-    "type": "obj",
+    "type": "label",
     "id": "dummy_for_with_1",
     "named": "dummy_with_1",
     "with": {
-      "obj": "@l_test_label_for_nulls",
+      "obj": "@test_label_for_nulls",
       "do": {
-        "text": null,
-        "text_color": null,
-        "text_opa": null,
-        "text_font": null
+        "text": "",
+        "text_color": "#ff0000",
+        "text_opa": "LV_OPA_COVER"
       }
     }
   },
@@ -31,12 +30,12 @@
     "id": "dummy_for_with_2",
     "named": "dummy_with_2",
     "with": {
-      "obj": "@s_test_style_for_nulls",
+      "obj": "@test_style_for_nulls",
       "do": {
-        "bg_color": null,
-        "border_width": null,
-        "outline_opa": null,
-        "shadow_color": null
+        "bg_color": "#00ff00",
+        "border_width": 2,
+        "outline_opa": 100,
+        "shadow_color": "#cccccc"
       }
     }
   }

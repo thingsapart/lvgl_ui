@@ -5,9 +5,9 @@
 
 // --- Data structures for pointer and string registration ---
 typedef struct PointerRegistryNode {
-    char* id;
-    char* type;
-    void* ptr;
+    char* id;           // The ID used in JSON (e.g., "my_button")
+    char* json_type;    // Specific JSON type from the "type" field (e.g. "label", "button", "style")
+    void* ptr;          // Pointer to the actual C object/style (not owned by registry)
     struct PointerRegistryNode* next;
 } PointerRegistryNode;
 
@@ -70,6 +70,9 @@ void *registry_get_pointer(const Registry* reg, const char *id, const char *type
 // the input string, stores it, and returns a pointer to the new copy.
 // The registry owns the memory for these stored strings.
 const char *registry_add_str(Registry* reg, const char *value);
+
+// Retrieves the stored JSON type for a given ID.
+const char* registry_get_json_type_for_id(const Registry* reg, const char* id);
 
 // --- Registry struct ---
 // This is the full definition of the Registry.

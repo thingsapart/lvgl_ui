@@ -1,0 +1,211 @@
+[
+  {
+    "type": "obj",
+    "id": "@error_test_obj",
+    "named": "error_test_obj",
+    "properties": {
+      "// Test Case 1: Enum Type Mismatch - Simple Property (obj.align expects lv_align_t)": "",
+      "align": "LV_IMAGE_FLAGS_MODIFIABLE",
+
+      "// Test Case 3: Enum Type Mismatch - func_args (obj.flex_align expects 3x lv_flex_align_t)": "",
+      "flex_align_mismatch": ["LV_FLEX_ALIGN_CENTER", "LV_IMAGE_FLAGS_MODIFIABLE", "LV_FLEX_ALIGN_END"],
+
+      "// Test Case 4: Enum Type Mismatch - Invalid string for enum (obj.align_y expects lv_align_t)": "",
+      "align_y": "NOT_AN_ENUM_VALUE_AT_ALL",
+
+      "// Test Case 5: Argument Count Mismatch - Simple Setter - Array given to single value prop (obj.text_decor)": "",
+      "text_decor": ["LV_TEXT_DECOR_UNDERLINE", "LV_TEXT_DECOR_STRIKETHROUGH"],
+
+      "// Test Case 6.1: Argument Count Mismatch - func_args - Too Few (obj.flex_align)": "",
+      "flex_align_too_few": ["LV_FLEX_ALIGN_START", "LV_FLEX_ALIGN_CENTER"],
+
+      "// Test Case 6.2: Argument Count Mismatch - func_args - Too Many (obj.flex_align)": "",
+      "flex_align_too_many": ["LV_FLEX_ALIGN_START", "LV_FLEX_ALIGN_CENTER", "LV_FLEX_ALIGN_END", "LV_FLEX_ALIGN_START"],
+
+      "// Test Case 7: Argument Count Mismatch - Simple Setter - Array given (obj.width)": "",
+      "width_array_error": [100, 50],
+
+      "// Test Case 8: Default Selector Usage - Simple value (obj.border_width, num_style_args: -1)": "",
+      "border_width": 5,
+
+      "// Test Case 9: Default Selector Usage - Explicit part, default state (obj.border_color, num_style_args: -1)": "",
+      "border_color_part_only": {"value": "#FF0000", "part": "LV_PART_SCROLLBAR"},
+
+      "// Test Case 10: Default Selector Usage - Explicit state, default part (obj.outline_width, num_style_args: -1)": "",
+      "outline_width_state_only": {"value": 2, "state": "LV_STATE_FOCUSED"},
+
+      "// --- Correct Usage / Baseline --- ": "",
+      "// Test Case 11: Correct enum for simple property (obj.align)": "",
+      "align_correct_simple": "LV_ALIGN_CENTER",
+
+      "// Test Case 12: Correct enum for func_args (obj.flex_align)": "",
+      "flex_align_correct_enums": ["LV_FLEX_ALIGN_START", "LV_FLEX_ALIGN_CENTER", "LV_FLEX_ALIGN_END"],
+
+      "// Test Case 13: Correct arg count for func_args (obj.flex_align)": "",
+      // flex_align_correct_enums above serves this.
+
+      "// Test Case 14: Correct arg count for simple setter (single value - obj.height)": "",
+      "height_correct_simple": 150,
+
+      "// Test Case 15: Correct arg count for simple setter (value/part/state object - obj.border_opa)": "",
+      "border_opa_correct_obj": {"value": "LV_OPA_50", "part": "LV_PART_INDICATOR", "state": "LV_STATE_CHECKED"},
+
+      "// --- Other Error scenarios --- ": "",
+      "// Test Case 16: Property not found in API spec": "",
+      "non_existent_prop_on_obj": 123,
+
+      "// Test Case 17: Style property on non-style object that looks like style prop (but isn't a known style prop for obj)": "",
+      "style_a_made_up_prop_on_obj": "#00FF00",
+
+      "// Test Case 19: Unhandled JSON object structure in unmarshal_value (obj.x)": "",
+      "x": {"unhandled_call_key_for_x": "some_func"},
+
+      "// Test Case 20: Unhandled JSON type in unmarshal_value (obj.y)": "",
+      "y": {"nested_object_for_y": 10},
+
+      "// Test Case 23: Explicit JSON null as single argument (obj.text)": "",
+      "text": null,
+
+      "// Test Case 24: Explicit JSON null within a multi-arg array (obj.flex_align)": "",
+      "flex_align_with_nulls": ["LV_FLEX_ALIGN_START", null, null],
+
+      "// Test Case 25: Zero-argument function call (obj.clean - lv_obj_clean takes obj*)": "",
+      "clean": [],
+
+      "// Test Case 26: Function expecting one arg, called with zero-args via []": "",
+      "width_zero_args": [],
+
+      "// Test Case 27: Function expecting >1 args, called with zero-args via []": "",
+      "flex_align_zero_args": [],
+
+      "// Test Case 28: Integer value for enum property (obj.align)": "",
+      "align_int_val": 1,
+
+      "// Test Case 29: Integer value for enum in func_args (obj.flex_align)": "",
+      "flex_align_int_vals": [0, 1, 2],
+
+      "// Test Case 30: Integer value for enum (obj.align), potentially out of actual enum range but valid int": "",
+      "align_int_out_of_range": 99,
+
+      "// Test Case 31: JSON string for const char* (no prefix, obj.text)": "",
+      "text_const_char_ptr": "Hello Literal",
+
+      "// Test Case 32: JSON string with '!' for char* (or managed const char*, obj.text)": "",
+      "text_char_ptr": "!Hello Managed",
+
+      "// Test Case 33: JSON Float for C Integer (obj.width)": "",
+      "width_float_val": 123.7,
+
+      "// Test Case 34: JSON String for C Number - Invalid (obj.height)": "",
+      "height_invalid_str": "100pixels",
+
+      "// Test Case 35: JSON String for C Number - Valid (obj.x)": "",
+      "x_valid_str_num": "25",
+
+      "// Test Case 36: Stricter Boolean - Number for bool (obj.clickable - expects bool)": "",
+      "clickable_num_val": 1,
+
+      "// Test Case 37: Stricter Boolean - Invalid String for bool (obj.hidden - expects bool)": "",
+      "hidden_invalid_str_bool": "yes",
+
+      "// Test Case 38: Plain string for char* - Using 'tooltip_text' (const char*) to observe if any warning appears if type was char*. Actual test of warning requires a true 'char*' C type.": "",
+      "tooltip_text_plain_string": "Plain String For Tooltip",
+
+      "// Test Case 39: Integer for Enum with Validation Error (obj.align_int_invalid_val maps to align)": "",
+      "align_int_invalid_val": 777,
+
+      "// Test Case 40: Integer for Enum (no validation error, but optional warning if implemented for obj.align_int_val_for_warn maps to align)": "",
+      "align_int_val_for_warn": 0
+    }
+  },
+  {
+    "type": "style",
+    "id": "@error_test_style",
+    "named": "error_test_style_var",
+    "properties": {
+        "// Test Case 21: Style property, default selector (style.text_opa, num_style_args: 1, expects state+value)": "",
+        "text_opa": "LV_OPA_70",
+
+        "// Test Case 22: Style property, explicit state (style.text_color, num_style_args: 1, expects state+value)": "",
+        "text_color_state_only": {"value": "#123456", "state": "LV_STATE_HOVERED"}
+    }
+  },
+  {
+    "type": "label",
+    "id": "@test_label_for_with",
+    "named": "test_label_for_with",
+    "properties": {
+      "text": "Initial Label"
+    }
+  },
+  {
+    "type": "button",
+    "id": "@test_button_for_with",
+    "named": "test_button_for_with",
+    "properties": {}
+  },
+  {
+    "type": "style",
+    "id": "@test_style_for_with",
+    "named": "test_style_for_with_cvar",
+    "properties": {
+      "bg_color": "#ABCDEF"
+    }
+  },
+  {
+    "type": "obj",
+    "named": "with_block_tests_container",
+    "children": [
+      {
+        "// Test Case 41: 'with' block targeting a registered label by @id": "",
+        "with": {
+          "obj": "@test_label_for_with",
+          "do": {
+            "text": "Text set via with-label"
+          }
+        }
+      },
+      {
+        "// Test Case 42: 'with' block targeting a registered button by @id, apply button property": "",
+        "with": {
+          "obj": "@test_button_for_with",
+          "do": {
+            "// No specific button properties in api_spec.json general props like align will work"
+            "align": "LV_ALIGN_TOP_LEFT"
+          }
+        }
+      },
+      {
+        "// Test Case 43: 'with' block targeting a registered style by @id": "",
+        "with": {
+          "obj": "@test_style_for_with",
+          "do": {
+            "text_color": "#112233"
+          }
+        }
+      },
+      {
+        "// Test Case 44: 'with' assignment to a named variable, obj is @id": "",
+        "named": "assigned_label_ref",
+        "id": "@assigned_label_ref_id",
+        "with": {
+          "obj": "@test_label_for_with"
+        }
+      },
+      {
+        "// Test Case 45: 'with' assignment, then use the assigned var in another 'with'": "",
+        "named": "assigned_button_ref",
+        "id": "@assigned_button_ref_id",
+        "with": {"obj": "@test_button_for_with"}
+      },
+      {
+        "with": {
+          "obj": "@assigned_button_ref_id",
+          "do": {
+            "align": "LV_ALIGN_BOTTOM_RIGHT"
+          }
+        }
+      }
+    ]
+  }
+]
