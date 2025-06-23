@@ -4,6 +4,11 @@ import sys
 import argparse # For command-line arguments
 from collections import defaultdict
 
+# Global lists for ignoring functions
+IGNORE_FUNC_ARG_TYPE_SUFFIXES = ["_cb", "_cb_t"]
+IGNORE_FUNC_PREFIXES = []
+IGNORE_FUNC_SUFFIXES = []
+
 class LVGLApiParser:
     """
     Parses the LVGL API specification JSON and translates it into a more
@@ -188,11 +193,31 @@ class CCodeGenerator:
 
     def _is_wrappable(self, func_info):
         """Determines if a function can be automatically wrapped."""
-        if '...' in str(func_info['args']): return False # Variadic functions
-        if not func_info['name']: return False
-        for arg in func_info['args']:
-            arg_type = arg['type']
-            if '(*' in arg_type: return False # Function pointers
+        func_name = func_info.get('name', '')
+        if not func_name: return False
+
+        # Check against global ignore lists for function names
+        for prefix in IGNORE_FUNC_PREFIXES:
+            if func_name.startswith(prefix):
+                return False
+        for suffix in IGNORE_FUNC_SUFFIXES:
+            if func_name.endswith(suffix):
+                return False
+
+        if '...' in str(func_info.get('args', [])): return False # Variadic functions
+
+        for arg in func_info.get('args', []):
+            arg_type = arg.get('type', '')
+            if not arg_type: continue # Should not happen with valid spec
+
+            # Check against global ignore list for argument type suffixes
+            for suffix in IGNORE_FUNC_ARG_TYPE_SUFFIXES:
+                if arg_type.endswith(suffix):
+                    return False
+
+            if '(*' in arg_type: return False # Function pointers (callbacks often manifest this way too)
+
+            # Existing void* check for typesafe mode
             if (arg_type == 'void*' or arg_type == 'const void*') and self.consolidation_mode == "typesafe":
                 return False
         return True
