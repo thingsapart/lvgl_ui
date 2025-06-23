@@ -794,8 +794,9 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
         }
         // For use-view, the object_successfully_created flag and registry are handled here or within the recursive call.
         // Clean up and return
-        if (allocated_c_var_name) free(allocated_c_var_name);
+        if (allocated_c_var_name) { free(allocated_c_var_name); allocated_c_var_name = NULL; c_var_name_for_node = NULL; }
         if (own_effective_context) cJSON_Delete(effective_context);
+        // TODO: FIX.
         // The main registry_add_pointer call later will handle use-view if it has an id.
         // No, this is wrong. The 'object_successfully_created' and 'type_str_for_registry' must be set correctly *before* the final registry add.
         // The process_node_internal call for the component root will handle ITS OWN registry if IT has an ID.
@@ -855,7 +856,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
 
         if (!type_str_from_json || type_str_from_json[0] == '\0') {
              fprintf(stderr, "Error: Node missing valid 'type' (or default_obj_type for component root). C var: %s. Skipping node processing.\n", c_var_name_for_node);
-             if (allocated_c_var_name) free(allocated_c_var_name);
+             if (allocated_c_var_name) { free(allocated_c_var_name); allocated_c_var_name = NULL; c_var_name_for_node = NULL; }
              if (own_effective_context) cJSON_Delete(effective_context);
              return;
         }
@@ -865,7 +866,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
             const cJSON* component_root_json = registry_get_component(ctx->registry, type_str_from_json + 1);
             if (!component_root_json) {
                 fprintf(stderr, "Error: Component definition '%s' (used as type) not found. Skipping node C var: %s.\n", type_str_from_json, c_var_name_for_node);
-                if (allocated_c_var_name) free(allocated_c_var_name);
+                if (allocated_c_var_name) { free(allocated_c_var_name); allocated_c_var_name = NULL; c_var_name_for_node = NULL; }
                 if (own_effective_context) cJSON_Delete(effective_context);
                 return;
             }
@@ -1178,6 +1179,7 @@ static void process_styles(GenContext* ctx, cJSON* styles_json, IRStmtBlock* glo
     }
 }
 
+/*
 IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_spec) {
         bool regular_node_can_have_with = (widget_def && (widget_def->create || widget_def->init_func)) ||
                                      (type_str && strcmp(type_str, "style") == 0) ||
@@ -1361,6 +1363,7 @@ static void process_styles(GenContext* ctx, cJSON* styles_json, IRStmtBlock* glo
         free(style_c_var);
     }
 }
+*/
 
 IRStmtBlock* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_spec) {
     return generate_ir_from_ui_spec_with_registry(ui_spec_root, api_spec, NULL);
