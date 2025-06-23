@@ -1,3 +1,0 @@
-Warning: Unknown IRStmt type in free_stmt: 10
-Warning: Unknown IRStmt type in free_stmt: 9
-Warning: Unknown IRStmt type in free_stmt: 9
