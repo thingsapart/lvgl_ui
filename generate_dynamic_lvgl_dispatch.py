@@ -498,10 +498,24 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, {target_obj_ty
             # is now correctly placed within _write_source_file, but after the archetype generation loop.
             obj_ptr_type_c = "lv_obj_t*" if self.consolidation_mode == "typesafe" else "void*"
 
-            f.write(
-"""
+            # Define the C code block as a separate variable first for clarity
+            # and to make it easier to manage braces.
+            # All { and } characters that are part of the C code must be doubled (e.g. {{ or }})
+            # if this were an f-string. However, since we are using .format() and only
+            # substituting target_obj_type, literal C braces should be fine as long as they
+            # don't accidentally form a placeholder name that .format() tries to find.
+            # The error indicates a multi-line C string part is being seen as a key.
+            # This often happens with .format if there's an unmatched brace *or* if a line
+            # in the string *starts* with a brace in a way that confuses the parser,
+            # especially with complex multi-line strings.
+            # A safer way is to ensure NO C-code braces are at the very start of a new line
+            # within the triple-quoted string, or to use f-string and {{ }} for all C braces.
+            # For now, let's try to make the current .format() call more robust.
+            # The issue might be that the string itself contains what .format thinks is a placeholder.
+
+            c_code_後半 = """
 // --- Function Registry ---
-typedef struct {
+typedef struct {{
     const char* name;
 #if defined(ENABLE_CJSON_INPUTS)
     lvgl_json_dispatcher_t json_dispatcher;
@@ -510,28 +524,16 @@ typedef struct {
     lvgl_ir_dispatcher_t ir_dispatcher;
 #endif
     generic_lvgl_func_t func_ptr;
-} FunctionMapping;
-""")
-            registry_entries = []
-            for key, func_list_val in self.archetypes.items(): # Changed func_list to func_list_val to avoid conflict
-                dispatcher_name_json_val, dispatcher_name_ir_val = self.archetype_map[key] # Changed to _val
-                for func_info_val in func_list_val: # Changed to _val
-                    entry = f'{{"{func_info_val["name"]}", '
-                    entry += f"{dispatcher_name_json_val}, " if "ENABLE_CJSON_INPUTS" else "#if defined(ENABLE_CJSON_INPUTS)\n    NULL, // Placeholder if only IR\n#endif\n"
-                    entry += f"{dispatcher_name_ir_val}, " if "ENABLE_IR_INPUTS" else "#if defined(ENABLE_IR_INPUTS)\n    NULL, // Placeholder if only JSON\n#endif\n"
-                    entry += f'(generic_lvgl_func_t){func_info_val["name"]}}}'
-                    registry_entries.append(entry)
-            registry_entries.sort()
-            f.write("\nstatic const FunctionMapping function_registry[] = {\n    ")
-            f.write(",\n    ".join(registry_entries))
-            f.write("\n};\n\n")
+}} FunctionMapping;
 
-            f.write(
-"""
+static const FunctionMapping function_registry[] = {{
+    {registry_entries_str}
+}};
+
 // --- Dispatch Logic ---
-static int compare_func_mappings(const void* a, const void* b) {
+static int compare_func_mappings(const void* a, const void* b) {{
     return strcmp((const char*)a, ((const FunctionMapping*)b)->name);
-}
+}}
 
 #if defined(ENABLE_CJSON_INPUTS)
 lv_obj_t* dynamic_lvgl_call_json(const char* func_name, {target_obj_type} target_obj, cJSON* args) {{
@@ -672,7 +674,34 @@ static intptr_t ir_node_get_int_robust(IRNode* node, const char* enum_type_name)
     return 0;
 }}
 #endif // ENABLE_IR_INPUTS
-""".format(target_obj_type=obj_ptr_type_c))
+"""
+            registry_entries = []
+            for key, func_list_val in self.archetypes.items():
+                dispatcher_name_json_val, dispatcher_name_ir_val = self.archetype_map[key]
+                for func_info_val in func_list_val:
+                    entry_parts = [f'{{"{func_info_val["name"]}"']
+                    if "ENABLE_CJSON_INPUTS" in f.getvalue(): # Check if CJSON is likely enabled
+                        entry_parts.append(f"{dispatcher_name_json_val}")
+                    else:
+                        entry_parts.append("NULL /* CJSON_INPUTS disabled */")
+
+                    if "ENABLE_IR_INPUTS" in f.getvalue(): # Check if IR is likely enabled
+                        entry_parts.append(f"{dispatcher_name_ir_val}")
+                    else:
+                        entry_parts.append("NULL /* IR_INPUTS disabled */")
+
+                    entry_parts.append(f'(generic_lvgl_func_t){func_info_val["name"]}}}')
+                    registry_entries.append(", ".join(entry_parts))
+            registry_entries.sort()
+            registry_entries_str = ",\n    ".join(registry_entries)
+            if not registry_entries_str: # Handle case with no archetypes/registry entries
+                registry_entries_str = "// No functions in registry"
+
+
+            f.write(c_code_後半.format(
+                registry_entries_str=registry_entries_str,
+                target_obj_type=obj_ptr_type_c
+            ))
 
 def main():
     arg_parser = argparse.ArgumentParser(description="Generate dynamic LVGL dispatcher C code.")
