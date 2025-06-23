@@ -1,6 +1,8 @@
 #ifndef IR_H
 #define IR_H
 
+#include <stdint.h>
+
 // Forward declaration for IRNode to resolve circular dependency for function pointers
 struct IRNode;
 
