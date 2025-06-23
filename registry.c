@@ -94,15 +94,15 @@ void registry_add_pointer(Registry* reg, void* ptr, const char* id, const char* 
     }
 
     if (type) {
-        new_node->type = strdup(type);
-        if (!new_node->type) {
+        new_node->json_type = strdup(type);
+        if (!new_node->json_type) {
             perror("Failed to duplicate type string for pointer registry");
             free(new_node->id);
             free(new_node);
             return;
         }
     } else {
-        new_node->type = NULL;
+        new_node->json_type = NULL;
     }
 
     new_node->ptr = ptr;
@@ -116,7 +116,7 @@ void* registry_get_pointer(const Registry* reg, const char* id, const char* type
     for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
         if (strcmp(node->id, id) == 0) {
             if (type) { // Type is specified, so it must match
-                if (node->type && strcmp(node->type, type) == 0) {
+                if (node->json_type && strcmp(node->json_type, type) == 0) {
                     return node->ptr;
                 }
             } else { // Type is not specified, first ID match is sufficient
@@ -132,7 +132,7 @@ const char* registry_get_json_type_for_id(const Registry* reg, const char* id) {
 
     for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
         if (node->id && strcmp(node->id, id) == 0) {
-            return node->type; // This 'type' field stores the json_type
+            return node->json_type; // This 'json_type' field stores the json_type
         }
     }
     return NULL; // Not found or no type stored
