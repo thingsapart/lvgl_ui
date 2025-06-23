@@ -124,6 +124,72 @@ void ir_block_add_stmt(IRStmtBlock* block, IRStmt* stmt) {
     }
 }
 
+intptr_t ir_node_get_int_robust(IRNode* node, const char* enum_type_name) {
+    if (!node) {
+        fprintf(stderr, "Warning: ir_node_get_int_robust called with NULL node for enum type: %s.\n", enum_type_name ? enum_type_name : "UNKNOWN");
+        return 0;
+    }
+
+    switch (node->type) {
+        case IR_EXPR_LITERAL: {
+            IRExprLiteral* lit = (IRExprLiteral*)node;
+            if (!lit->value) {
+                fprintf(stderr, "Warning: ir_node_get_int_robust called on IRExprLiteral with NULL value for enum type: %s.\n", enum_type_name ? enum_type_name : "UNKNOWN");
+                return 0;
+            }
+            // Attempt to parse as integer
+            char* endptr;
+            long val = strtol(lit->value, &endptr, 0); // Base 0 auto-detects prefix
+            if (endptr == lit->value) { // No digits were found
+                fprintf(stderr, "Warning: ir_node_get_int_robust failed to parse int from literal: \"%s\" for enum type: %s.\n", lit->value, enum_type_name ? enum_type_name : "UNKNOWN");
+                return 0;
+            }
+            return (intptr_t)val;
+        }
+        case IR_EXPR_VARIABLE: {
+            IRExprVariable* var = (IRExprVariable*)node;
+            fprintf(stderr, "Warning: ir_node_get_int_robust cannot resolve variable IRNode value (\"%s\") for enum type: %s. Symbol resolution not supported at this level.\n", var->name ? var->name : "NULL_VAR_NAME", enum_type_name ? enum_type_name : "UNKNOWN");
+            return 0;
+        }
+        default:
+            fprintf(stderr, "Warning: ir_node_get_int_robust called with unhandled node type (%d) for enum type: %s.\n", node->type, enum_type_name ? enum_type_name : "UNKNOWN");
+            return 0;
+    }
+}
+
+intptr_t ir_node_get_int(IRNode* node) {
+    if (!node) {
+        fprintf(stderr, "Warning: ir_node_get_int called with NULL node.\n");
+        return 0;
+    }
+
+    if (node->type == IR_EXPR_LITERAL) {
+        IRExprLiteral* lit = (IRExprLiteral*)node;
+        if (!lit->value) {
+            fprintf(stderr, "Warning: ir_node_get_int called on IRExprLiteral with NULL value.\n");
+            return 0;
+        }
+        // Check for boolean strings
+        if (strcmp(lit->value, "true") == 0) {
+            return 1;
+        }
+        if (strcmp(lit->value, "false") == 0) {
+            return 0;
+        }
+        // Attempt to parse as integer
+        char* endptr;
+        long val = strtol(lit->value, &endptr, 0); // Base 0 auto-detects prefix (0x, 0)
+        if (endptr == lit->value) { // No digits were found
+            fprintf(stderr, "Warning: ir_node_get_int failed to parse int from literal: \"%s\"\n", lit->value);
+            return 0;
+        }
+        return (intptr_t)val;
+    } else {
+        fprintf(stderr, "Warning: ir_node_get_int called with non-literal node type: %d\n", node->type);
+        return 0;
+    }
+}
+
 IRStmt* ir_new_var_decl(const char* type_name, const char* var_name, IRExpr* initializer) {
     IRStmtVarDecl* decl = (IRStmtVarDecl*)calloc(1, sizeof(IRStmtVarDecl));
     if (!decl) { perror("Failed to allocate IRStmtVarDecl"); return NULL; }
@@ -321,4 +387,29 @@ static void free_stmt(IRStmt* stmt) {
 void ir_free(IRNode* node) {
     if (!node || !node->free) return;
     node->free(node);
+}
+
+// --- Node Value Accessors ---
+
+const char* ir_node_get_string(IRNode* node) {
+    if (!node) {
+        fprintf(stderr, "Warning: ir_node_get_string called with NULL node.\n");
+        return NULL;
+    }
+
+    switch (node->type) {
+        case IR_EXPR_LITERAL: {
+            IRExprLiteral* lit = (IRExprLiteral*)node;
+            // As per analysis, lit->value for strings already includes quotes.
+            // If it's a non-string literal, it's the string representation.
+            return lit->value;
+        }
+        case IR_EXPR_VARIABLE: {
+            IRExprVariable* var = (IRExprVariable*)node;
+            return var->name;
+        }
+        default:
+            fprintf(stderr, "Warning: ir_node_get_string called with unhandled node type: %d\n", node->type);
+            return NULL;
+    }
 }

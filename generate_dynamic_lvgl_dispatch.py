@@ -623,56 +623,9 @@ void obj_registry_deinit(void) {{
 }}
 
 #if defined(ENABLE_IR_INPUTS)
-// Helper functions to extract values from IRNodes robustly.
-static intptr_t ir_node_get_int(IRNode* node) {{
-    if (!node) return 0;
-    if (node->type == IR_EXPR_LITERAL) {{
-        IRExprLiteral* lit = (IRExprLiteral*)node;
-        if (lit->value) {{
-            if (strcmp(lit->value, "true") == 0) return 1;
-            if (strcmp(lit->value, "false") == 0) return 0;
-            return (intptr_t)strtol(lit->value, NULL, 0);
-        }}
-    }}
-    LV_LOG_WARN("ir_node_get_int: Could not parse int from IRNode type %d", node->type);
-    return 0;
-}}
-
-static const char* ir_node_get_string(IRNode* node) {{
-    if (!node) return NULL;
-    if (node->type == IR_EXPR_LITERAL) {{
-        IRExprLiteral* lit = (IRExprLiteral*)node;
-        return lit->value;
-    }} else if (node->type == IR_EXPR_VARIABLE) {{
-        IRExprVariable* var = (IRExprVariable*)node;
-        return var->name;
-    }}
-    LV_LOG_WARN("ir_node_get_string: Could not parse string from IRNode type %d", node->type);
-    return NULL;
-}}
-
-static intptr_t ir_node_get_int_robust(IRNode* node, const char* enum_type_name) {{
-    if (!node) return 0;
-    if (node->type == IR_EXPR_LITERAL) {{
-        IRExprLiteral* lit = (IRExprLiteral*)node;
-        if (!lit->value) {{
-             LV_LOG_WARN("ir_node_get_int_robust: Literal node has NULL value for enum %s", enum_type_name);
-             return 0;
-        }}
-        char* endptr;
-        long val = strtol(lit->value, &endptr, 0);
-        if (*endptr == '\\0') {{
-            return (intptr_t)val;
-        }}
-        LV_LOG_WARN("ir_node_get_int_robust: Cannot resolve string literal '%s' for enum type '%s' without a dedicated resolver. Returning 0.", lit->value, enum_type_name);
-    }} else if (node->type == IR_EXPR_VARIABLE) {{
-        IRExprVariable* var = (IRExprVariable*)node;
-         LV_LOG_WARN("ir_node_get_int_robust: Cannot resolve variable '%s' for enum type '%s' without a dedicated resolver. Returning 0.", var->name, enum_type_name);
-    }} else {{
-        LV_LOG_WARN("ir_node_get_int_robust: Unexpected IRNode type %d for enum %s", node->type, enum_type_name);
-    }}
-    return 0;
-}}
+// Helper functions for IRNode access (ir_node_get_int, ir_node_get_string, ir_node_get_int_robust)
+// are now defined in ir.c and declared in ir.h.
+// The #include "ir.h" is added near the top of the generated C file.
 #endif // ENABLE_IR_INPUTS
 """
             registry_entries = []

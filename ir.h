@@ -160,4 +160,9 @@ void ir_expr_list_add(IRExprNode** head, IRExpr* expr); // Helper to add to an e
 // --- Memory Management ---
 void ir_free(IRNode* node); // Master free function, dispatches based on type
 
+// --- Node Value Accessors ---
+const char* ir_node_get_string(IRNode* node);
+intptr_t ir_node_get_int(IRNode* node);
+intptr_t ir_node_get_int_robust(IRNode* node, const char* enum_type_name);
+
 #endif // IR_H
