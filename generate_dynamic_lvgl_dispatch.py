@@ -381,7 +381,7 @@ lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, {target_obj_type} target_o
  * Consolidation: {mode}
  * DO NOT EDIT MANUALLY.
  */
-#include "dynamic_lvgl.h"
+#include "lvgl_dispatch.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -709,8 +709,8 @@ def main():
     arg_parser.add_argument("--consolidation-mode", choices=["typesafe", "aggressive"],
                             default="typesafe", help="Function consolidation strategy.")
     arg_parser.add_argument("--output-json", action="store_true", help="Output the parsed API spec as JSON to stdout instead of generating C code.")
-    arg_parser.add_argument("--header-out", default="dynamic_lvgl.h", help="Output path for the generated C header file.")
-    arg_parser.add_argument("--source-out", default="dynamic_lvgl.c", help="Output path for the generated C source file.")
+    arg_parser.add_argument("--header-out", default="lvgl_dispatch.h", help="Output path for the generated C header file.")
+    arg_parser.add_argument("--source-out", default="lvgl_dispatch.c", help="Output path for the generated C source file.")
 
     args = arg_parser.parse_args()
 
