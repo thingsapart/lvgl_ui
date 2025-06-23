@@ -8,7 +8,12 @@ else
 		INC_CJSON = -I/usr/include/cjson
 endif
 
-CFLAGS = -Wall -g -std=c11 -I. $(INC_CJSON) -I./cJSON -D_GNU_SOURCE -I./lvgl
+# Define the LVGL directory relative to this script
+LVGL_DIR = $(PWD)/lvgl
+LVGL_BUILD_DIR = $(LVGL_DIR)/build"
+LV_CONF_PATH = $(LVGL_DIR)/../viewer/lv_conf.h
+
+CFLAGS = -Wall -g -std=c11 -I. $(INC_CJSON) -I./cJSON -D_GNU_SOURCE -I./lvgl -DLV_CONF_PATH='"$(LV_CONF_PATH)"' -DLV_BUILD_CONF_PATH='"$(LV_CONF_PATH)"'
 LIBS = $(LIB_CJSON) -lm
 
 TARGET = lvgl_ui_generator
