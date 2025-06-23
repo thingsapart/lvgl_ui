@@ -8,7 +8,7 @@ set -e
 # Define the LVGL directory relative to this script
 LVGL_DIR="$(pwd)/lvgl" # Assumes script is run from project root
 LVGL_BUILD_DIR="${LVGL_DIR}/build"
-LV_CONF_PATH="${LVGL_DIR}/lv_conf.h" # Path to our custom lv_conf.h
+LV_CONF_PATH="${LVGL_DIR}/../viewer/lv_conf.h" # Path to our custom lv_conf.h
 
 echo "LVGL directory: ${LVGL_DIR}"
 echo "LVGL build directory: ${LVGL_BUILD_DIR}"
@@ -37,6 +37,7 @@ echo "Configuring LVGL with CMake..."
 cmake -S . -B "${LVGL_BUILD_DIR}" \
     -DCMAKE_BUILD_TYPE=Debug \
     -DLV_CONF_PATH="${LV_CONF_PATH}" \
+    -DLV_BUILD_CONF_PATH="${LV_CONF_PATH}" \
     -DLV_USE_DEMOS=OFF \
     -DLV_USE_EXAMPLES=OFF \
     -DLV_BUILD_TESTS=OFF \
@@ -49,7 +50,7 @@ cmake --build "${LVGL_BUILD_DIR}" -j$(nproc)
 echo "LVGL build complete. Artifacts in ${LVGL_BUILD_DIR}"
 
 echo "Generating lv_def.json..."
-python ./scripts/gen_json/gen_json.py --lvgl-config=./lv_conf.h > ../data/lv_def.json
+python ./scripts/gen_json/gen_json.py --lvgl-config="${LV_CONF_PATH}" > ../data/lv_def.json
 echo "lv_def.json created. Artifacts in ../data"
 
 # Return to the original directory
