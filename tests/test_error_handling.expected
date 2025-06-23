@@ -126,7 +126,54 @@ void ui_error_test_style_var_create(lv_style_t* style) {
     // Test Case 22: Style property, explicit state (style.text_color)
     // lv_style_set_text_color(style, state, value). JSON provides value+state.
     lv_style_set_text_color(style, LV_STATE_HOVERED, lv_color_hex(0x123456));
-    registry_add_generated_var(&ui_registry_get_default()->registry, "error_test_style", "error_test_style_var");
+    registry_add_pointer(&ui_registry_get_default()->registry, style, "error_test_style", "style");
+}
+
+void ui_test_label_for_with_create(lv_obj_t* parent) {
+    lv_obj_t* test_label_for_with = lv_label_create(parent);
+    lv_label_set_text(test_label_for_with, "Initial Label");
+    registry_add_pointer(&ui_registry_get_default()->registry, test_label_for_with, "test_label_for_with", "label");
+}
+
+void ui_test_button_for_with_create(lv_obj_t* parent) {
+    lv_obj_t* test_button_for_with = lv_btn_create(parent);
+    registry_add_pointer(&ui_registry_get_default()->registry, test_button_for_with, "test_button_for_with", "button");
+}
+
+void ui_test_style_for_with_cvar_create(lv_style_t* style) {
+    lv_style_init(style);
+    lv_style_set_bg_color(style, LV_STATE_DEFAULT, lv_color_hex(0xABCDEF));
+    registry_add_pointer(&ui_registry_get_default()->registry, style, "test_style_for_with", "style");
+}
+
+void ui_with_block_tests_container_create(lv_obj_t* parent) {
+    lv_obj_t* with_block_tests_container = lv_obj_create(parent);
+    lv_obj_set_size(with_block_tests_container, LV_PCT(100), LV_PCT(100));
+    // Test Case 41: 'with' block targeting a registered label by @id
+    lv_obj_t* temp_obj_0 = ui_get_obj_from_registry("@test_label_for_with");
+    if (temp_obj_0) {
+        lv_label_set_text(temp_obj_0, "Text set via with-label");
+    }
+    // Test Case 42: 'with' block targeting a registered button by @id, apply button property
+    lv_obj_t* temp_obj_1 = ui_get_obj_from_registry("@test_button_for_with");
+    if (temp_obj_1) {
+        lv_obj_align(temp_obj_1, LV_ALIGN_TOP_LEFT, 0, 0);
+    }
+    // Test Case 43: 'with' block targeting a registered style by @id
+    lv_style_t* temp_style_0 = ui_get_style_from_registry("@test_style_for_with");
+    if (temp_style_0) {
+        lv_style_set_text_color(temp_style_0, LV_STATE_DEFAULT, lv_color_hex(0x112233));
+    }
+    // Test Case 44: 'with' assignment to a named variable, obj is @id
+    lv_obj_t* assigned_label_ref = ui_get_obj_from_registry("@test_label_for_with");
+    registry_add_pointer(&ui_registry_get_default()->registry, assigned_label_ref, "assigned_label_ref_id", "label");
+    // Test Case 45: 'with' assignment, then use the assigned var in another 'with'
+    lv_obj_t* assigned_button_ref = ui_get_obj_from_registry("@test_button_for_with");
+    registry_add_pointer(&ui_registry_get_default()->registry, assigned_button_ref, "assigned_button_ref_id", "button");
+    lv_obj_t* temp_obj_2 = ui_get_obj_from_registry("@assigned_button_ref_id");
+    if (temp_obj_2) {
+        lv_obj_align(temp_obj_2, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
+    }
 }
 
 //stderr_eof

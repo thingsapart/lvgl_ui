@@ -52,8 +52,8 @@ void registry_free(Registry* reg) {
     while (current_ptr_node) {
         PointerRegistryNode* next_ptr_node = current_ptr_node->next;
         free(current_ptr_node->id);
-        if (current_ptr_node->type) {
-            free(current_ptr_node->type);
+        if (current_ptr_node->json_type) { // Updated field name
+            free(current_ptr_node->json_type);
         }
         // DO NOT free current_ptr_node->ptr - registry does not own it
         free(current_ptr_node);
@@ -126,6 +126,18 @@ void* registry_get_pointer(const Registry* reg, const char* id, const char* type
     }
     return NULL; // Not found
 }
+
+const char* registry_get_json_type_for_id(const Registry* reg, const char* id) {
+    if (!reg || !id) return NULL;
+
+    for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
+        if (node->id && strcmp(node->id, id) == 0) {
+            return node->type; // This 'type' field stores the json_type
+        }
+    }
+    return NULL; // Not found or no type stored
+}
+
 
 // --- String Registration ---
 

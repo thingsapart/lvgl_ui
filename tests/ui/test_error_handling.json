@@ -129,5 +129,83 @@
         "// Test Case 22: Style property, explicit state (style.text_color, num_style_args: 1, expects state+value)": "",
         "text_color_state_only": {"value": "#123456", "state": "LV_STATE_HOVERED"}
     }
+  },
+  {
+    "type": "label",
+    "id": "@test_label_for_with",
+    "named": "test_label_for_with",
+    "properties": {
+      "text": "Initial Label"
+    }
+  },
+  {
+    "type": "button",
+    "id": "@test_button_for_with",
+    "named": "test_button_for_with",
+    "properties": {}
+  },
+  {
+    "type": "style",
+    "id": "@test_style_for_with",
+    "named": "test_style_for_with_cvar",
+    "properties": {
+      "bg_color": "#ABCDEF"
+    }
+  },
+  {
+    "type": "obj",
+    "named": "with_block_tests_container",
+    "children": [
+      {
+        "// Test Case 41: 'with' block targeting a registered label by @id": "",
+        "with": {
+          "obj": "@test_label_for_with",
+          "do": {
+            "text": "Text set via with-label"
+          }
+        }
+      },
+      {
+        "// Test Case 42: 'with' block targeting a registered button by @id, apply button property": "",
+        "with": {
+          "obj": "@test_button_for_with",
+          "do": {
+            "// No specific button properties in api_spec.json general props like align will work"
+            "align": "LV_ALIGN_TOP_LEFT"
+          }
+        }
+      },
+      {
+        "// Test Case 43: 'with' block targeting a registered style by @id": "",
+        "with": {
+          "obj": "@test_style_for_with",
+          "do": {
+            "text_color": "#112233"
+          }
+        }
+      },
+      {
+        "// Test Case 44: 'with' assignment to a named variable, obj is @id": "",
+        "named": "assigned_label_ref",
+        "id": "@assigned_label_ref_id",
+        "with": {
+          "obj": "@test_label_for_with"
+        }
+      },
+      {
+        "// Test Case 45: 'with' assignment, then use the assigned var in another 'with'": "",
+        "named": "assigned_button_ref",
+        "id": "@assigned_button_ref_id",
+        "with": {"obj": "@test_button_for_with"}
+      },
+      {
+        "with": {
+          "obj": "@assigned_button_ref_id",
+          "do": {
+            "align": "LV_ALIGN_BOTTOM_RIGHT"
+          }
+        }
+      }
+    ]
   }
 ]
