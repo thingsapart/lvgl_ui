@@ -5,9 +5,10 @@ import argparse # For command-line arguments
 from collections import defaultdict
 
 # Global lists for ignoring functions
-IGNORE_FUNC_ARG_TYPE_SUFFIXES = ["_cb", "_cb_t"]
+IGNORE_FUNC_ARG_TYPE_SUFFIXES = ["_cb", "_cb_t", "_xcb_t"]
 IGNORE_FUNC_PREFIXES = []
 IGNORE_FUNC_SUFFIXES = []
+IGNORE_ARG_TYPES = ["lv_cache_ops_t", "lv_draw_buf_handlers_t", "callback", "cmp_t", "cmp"] # Added callback, cmp_t and cmp
 
 class LVGLApiParser:
     """
@@ -210,12 +211,30 @@ class CCodeGenerator:
             arg_type = arg.get('type', '')
             if not arg_type: continue # Should not happen with valid spec
 
+            # Check against global ignore list for exact argument types
+            if arg_type in IGNORE_ARG_TYPES:
+                return False
+
             # Check against global ignore list for argument type suffixes
             for suffix in IGNORE_FUNC_ARG_TYPE_SUFFIXES:
                 if arg_type.endswith(suffix):
                     return False
 
-            if '(*' in arg_type: return False # Function pointers (callbacks often manifest this way too)
+            # Improved check for function pointers or types that might be function pointers
+            # LVGL typedefs for function pointers sometimes don't include '(*' directly in their name
+            # but are problematic. Suffix check handles many, but this is a fallback.
+            # Also, any type that is not a pointer and ends with _t but is not an enum or known simple type
+            # could be a struct passed by value, which we also want to avoid for now.
+            if '(*' in arg_type: return False # Explicit function pointers
+
+            # Filter out types that look like function pointer typedefs not caught by suffix,
+            # or structs passed by value that are not common/simple types.
+            # This is heuristic. A more robust way would be to have full typedef resolution.
+            if arg_type.endswith("_t") and not arg_type.startswith("lv_") and "*" not in arg_type:
+                # This could catch `callback_t`, `cmp_t` if they were named like that.
+                # The existing `callback` and `cmp` errors suggest these are direct names, not suffixed with _t.
+                # For now, direct names like 'callback' will be added to IGNORE_ARG_TYPES in the next step.
+                pass # Revisit if needed, for now rely on IGNORE_ARG_TYPES for non-suffixed problematic typedefs
 
             # Existing void* check for typesafe mode
             if (arg_type == 'void*' or arg_type == 'const void*') and self.consolidation_mode == "typesafe":
@@ -657,21 +676,32 @@ void obj_registry_deinit(void) {{
             for key, func_list_val in self.archetypes.items():
                 dispatcher_name_json_val, dispatcher_name_ir_val = self.archetype_map[key]
                 for func_info_val in func_list_val:
-                    entry_str = f'{{\"{func_info_val["name"]}\",\n'
-                    entry_str += "#if defined(ENABLE_CJSON_INPUTS)\n"
-                    entry_str += f"        {dispatcher_name_json_val},\n"
-                    entry_str += "#else\n"
-                    entry_str += "        NULL, // CJSON_INPUTS disabled\n"
-                    entry_str += "#endif\n"
-                    entry_str += "#if defined(ENABLE_IR_INPUTS)\n"
-                    entry_str += f"        {dispatcher_name_ir_val},\n"
-                    entry_str += "#else\n"
-                    entry_str += "        NULL, // IR_INPUTS disabled\n"
-                    entry_str += "#endif\n"
-                    entry_str += f"        (generic_lvgl_func_t){func_info_val['name']}\n    }}"
+                    # Start with the function name
+                    lines = [f'        /* name */ "{func_info_val["name"]}"']
+
+                    # Conditionally add json_dispatcher
+                    lines.append("#if defined(ENABLE_CJSON_INPUTS)")
+                    lines.append(f'        , /* json_dispatcher */ {dispatcher_name_json_val}')
+                    lines.append("#endif /* ENABLE_CJSON_INPUTS */")
+
+                    # Conditionally add ir_dispatcher
+                    lines.append("#if defined(ENABLE_IR_INPUTS)")
+                    lines.append(f'        , /* ir_dispatcher */ {dispatcher_name_ir_val}')
+                    lines.append("#endif /* ENABLE_IR_INPUTS */")
+
+                    # Add the actual function pointer
+                    lines.append(f'        , /* func_ptr */ (generic_lvgl_func_t){func_info_val["name"]}')
+
+                    entry_str = "    {\n" + "\n".join(lines) + "\n    }"
                     registry_entries.append(entry_str)
 
-            registry_entries.sort() # Sort based on the full C string, which is fine as name is first.
+            # Sort entries alphabetically by function name for consistent output and efficient bsearch.
+            # We need to extract the function name from the generated string for sorting.
+            def get_func_name_from_entry(entry_c_code):
+                match = re.search(r'"(lv_[^"]+)"', entry_c_code)
+                return match.group(1) if match else ""
+
+            registry_entries.sort(key=get_func_name_from_entry)
             registry_entries_str = ",\n    ".join(registry_entries)
             if not registry_entries_str:
                 registry_entries_str = "// No functions in registry"
