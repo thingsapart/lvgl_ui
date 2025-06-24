@@ -20,13 +20,12 @@ typedef struct IRNode {
         IR_EXPR_FUNC_CALL,
         IR_EXPR_ARRAY,
         IR_EXPR_ADDRESS_OF,
-        // Add other expression types here
         IR_STMT_BLOCK,
-        IR_STMT_VAR_DECL,     // Still useful for general variable declarations if needed elsewhere
+        IR_STMT_VAR_DECL,
         IR_STMT_FUNC_CALL,
         IR_STMT_COMMENT,
-        IR_STMT_WIDGET_ALLOCATE, // <-- ADDED
-        IR_STMT_OBJECT_ALLOCATE,  // <-- ADDED
+        IR_STMT_WIDGET_ALLOCATE,
+        IR_STMT_OBJECT_ALLOCATE,
         // Add other statement types here
     } type;
     IRFreeFunc free;
