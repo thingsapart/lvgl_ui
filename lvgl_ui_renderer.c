@@ -129,7 +129,7 @@ static void render_lvgl_ui_from_ir_recursive_helper(IRStmtBlock* ir_block, lv_ob
             IRStmtWidgetAllocate* stmt = (IRStmtWidgetAllocate*)stmt_node_base;
             func_name = stmt->create_func_name;
             id_to_set = stmt->c_var_name;
-
+          
             if (stmt->parent_expr) {
                 ir_args[arg_count++] = (IRNode*)stmt->parent_expr;
             } else {
