@@ -184,30 +184,54 @@ static void render_lvgl_ui_from_ir_recursive_helper(IRStmtBlock* ir_block, lv_ob
             DEBUG_LOG(LOG_MODULE_RENDERER, "IR_STMT_OBJECT_ALLOCATE: type '%s', id '%s', init_func '%s'",
                      stmt->object_c_type_name, stmt->c_var_name, stmt->init_func_name);
 
+            void* allocated_object = NULL;
+            size_t object_size = 0;
+            bool initialized_and_registered = false;
+
             if (strcmp(stmt->object_c_type_name, "lv_style_t") == 0) {
-                lv_style_t* style_obj = (lv_style_t*)malloc(sizeof(lv_style_t));
-                if (!style_obj) {
-                    DEBUG_LOG(LOG_MODULE_RENDERER, "FATAL: Failed to malloc lv_style_t for '%s'", stmt->c_var_name);
-                    stmt_idx++;
-                    current_stmt_list_node = current_stmt_list_node->next;
-                    continue;
-                }
+                object_size = sizeof(lv_style_t);
+            } else if (strcmp(stmt->object_c_type_name, "lv_anim_t") == 0) {
+                object_size = sizeof(lv_anim_t);
+            } // Add other known types that follow malloc+init pattern here
 
-                if (stmt->init_func_name && strcmp(stmt->init_func_name, "lv_style_init") == 0) {
-                    lv_style_init(style_obj); // Direct call
-                    DEBUG_LOG(LOG_MODULE_RENDERER, "Initialized style '%s' at %p with lv_style_init.", stmt->c_var_name, (void*)style_obj);
-                } else if (stmt->init_func_name) {
-                     DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Unhandled init_func_name '%s' for lv_style_t. Style memory allocated but not initialized by this function.", stmt->init_func_name);
+            if (object_size > 0) {
+                allocated_object = malloc(object_size);
+                if (!allocated_object) {
+                    DEBUG_LOG(LOG_MODULE_RENDERER, "FATAL: Failed to malloc for object type '%s', ID '%s'", stmt->object_c_type_name, stmt->c_var_name);
                 } else {
-                     DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: No init_func_name for lv_style_t. Style memory allocated but not initialized.");
-                }
+                    // Attempt to initialize
+                    if (stmt->init_func_name && stmt->init_func_name[0] != '\0') {
+                        if (strcmp(stmt->object_c_type_name, "lv_style_t") == 0 && strcmp(stmt->init_func_name, "lv_style_init") == 0) {
+                            lv_style_init((lv_style_t*)allocated_object);
+                            DEBUG_LOG(LOG_MODULE_RENDERER, "Initialized style '%s' at %p with lv_style_init.", stmt->c_var_name, allocated_object);
+                            initialized_and_registered = true;
+                        } else if (strcmp(stmt->object_c_type_name, "lv_anim_t") == 0 && strcmp(stmt->init_func_name, "lv_anim_init") == 0) {
+                            lv_anim_init((lv_anim_t*)allocated_object);
+                            DEBUG_LOG(LOG_MODULE_RENDERER, "Initialized anim '%s' at %p with lv_anim_init.", stmt->c_var_name, allocated_object);
+                            initialized_and_registered = true;
+                        } // Add other direct init calls here
+                        else {
+                            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Unhandled init_func_name '%s' for C type '%s'. Object malloc'd but not initialized by a known direct handler.", stmt->init_func_name, stmt->object_c_type_name);
+                        }
+                    } else {
+                        DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: No init_func_name for C type '%s'. Object malloc'd but not initialized.", stmt->object_c_type_name);
+                    }
 
-                obj_registry_add(stmt->c_var_name, style_obj);
-                DEBUG_LOG(LOG_MODULE_RENDERER, "Registered allocated style '%s' (%p).", stmt->c_var_name, (void*)style_obj);
+                    if (initialized_and_registered) {
+                        obj_registry_add(stmt->c_var_name, allocated_object);
+                        DEBUG_LOG(LOG_MODULE_RENDERER, "Registered allocated object '%s' (%s) at %p.", stmt->c_var_name, stmt->object_c_type_name, allocated_object);
+                    } else if(allocated_object) {
+                        // If malloc succeeded but initialization/registration didn't occur through a known path
+                        DEBUG_LOG(LOG_MODULE_RENDERER, "Object '%s' (%s) was malloc'd but not initialized/registered by a known handler. Freeing memory.", stmt->c_var_name, stmt->object_c_type_name);
+                        free(allocated_object);
+                        allocated_object = NULL;
+                    }
+                }
             } else {
-                DEBUG_LOG(LOG_MODULE_RENDERER, "Unhandled IR_STMT_OBJECT_ALLOCATE for C type '%s'. No action taken.", stmt->object_c_type_name);
+                DEBUG_LOG(LOG_MODULE_RENDERER, "Unhandled or zero-size object C type '%s' for IR_STMT_OBJECT_ALLOCATE. No action taken.", stmt->object_c_type_name);
             }
-            // This statement type (as handled for styles) does not directly result in a dynamic_lvgl_call_ir.
+
+            // This statement type does not set func_name for the main dispatch logic.
             stmt_idx++;
             current_stmt_list_node = current_stmt_list_node->next;
             continue;
