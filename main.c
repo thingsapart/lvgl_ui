@@ -4,6 +4,7 @@
 #include <string.h> // For strcmp
 #include <cJSON.h>
 
+#include "debug_log.h" // For new logging system
 #include "utils.h"    // For read_file
 #include "api_spec.h" // For ApiSpec & functions
 #include "registry.h" // For Registry (though mainly used by generator)
@@ -25,6 +26,8 @@ void print_usage(const char* prog_name) {
 }
 
 int main(int argc, char* argv[]) {
+    debug_log_init(); // Initialize the logging system
+
     CodegenMode mode = CODEGEN_MODE_C_CODE_AND_LVGL_UI; // Default mode
     char* api_spec_path = NULL;
     char* ui_spec_path = NULL;
@@ -97,9 +100,9 @@ int main(int argc, char* argv[]) {
     // 2. Generate the Intermediate Representation (IR) from the UI spec
     // The generator will create and use its own registry internally.
     IRStmtBlock* ir = generate_ir_from_ui_spec(ui_json, api_spec); // generator.c provides this
-    _dprintf(stderr, "[DEBUG_MAIN] IR generation complete. IR Block: %p\n", (void*)ir);
+    DEBUG_LOG(LOG_MODULE_MAIN, "IR generation complete. IR Block: %p", (void*)ir);
     if (ir) {
-        _dprintf(stderr, "[DEBUG_MAIN] IR Block type: %d\n", ir->base.type); // Should be IR_STMT_BLOCK
+        DEBUG_LOG(LOG_MODULE_MAIN, "IR Block type: %d", ir->base.type); // Should be IR_STMT_BLOCK
         if (ir->base.type == IR_STMT_BLOCK) {
             int stmt_count = 0;
             IRStmtNode* node = ir->stmts;
@@ -107,12 +110,12 @@ int main(int argc, char* argv[]) {
                 stmt_count++;
                 node = node->next;
             }
-            _dprintf(stderr, "[DEBUG_MAIN] IR Block contains %d statements.\n", stmt_count);
+            DEBUG_LOG(LOG_MODULE_MAIN, "IR Block contains %d statements.", stmt_count);
             if (stmt_count == 0) {
-                 _dprintf(stderr, "[DEBUG_MAIN] Warning: IR Block is empty!\n");
+                 DEBUG_LOG(LOG_MODULE_MAIN, "Warning: IR Block is empty!");
             }
         } else {
-            _dprintf(stderr, "[DEBUG_MAIN] Warning: Generated IR is not of type IR_STMT_BLOCK!\n");
+            DEBUG_LOG(LOG_MODULE_MAIN, "Warning: Generated IR is not of type IR_STMT_BLOCK!");
         }
     }
     if (!ir) {

@@ -3,6 +3,7 @@
 #include "ir.h"
 #include "utils.h"
 #include "api_spec.h" // For function definition lookups
+#include "debug_log.h" // For DEBUG_LOG
 
 #include <stdio.h>
 #include <string.h>
@@ -51,39 +52,39 @@ bool is_method_like(const char* func_name, struct ApiSpec* api_spec) {
 
     // Default: if not explicitly found as a method, assume it's a global function or creator.
     // dynamic_lvgl_call_ir will try to resolve the first argument if it's a variable.
-    _dprintf(stderr, "[RENDERER] is_method_like: Function '%s' not found as a distinct method in api_spec. Assuming global or target is first arg.\n", func_name);
+    DEBUG_LOG(LOG_MODULE_RENDERER, "is_method_like: Function '%s' not found as a distinct method in api_spec. Assuming global or target is first arg.", func_name);
     return false; // Let dynamic_lvgl_call_ir figure it out based on the first argument.
 }
 
 
 void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, struct ApiSpec* api_spec) {
-    _dprintf(stderr, "[RENDERER] Entering render_lvgl_ui_from_ir. Parent screen: %p\n", (void*)parent_screen);
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Entering render_lvgl_ui_from_ir. Parent screen: %p", (void*)parent_screen);
     if (!ir_block || !parent_screen) {
-        _dprintf(stderr, "[RENDERER] Error: IR block or parent screen is NULL.\n");
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Error: IR block or parent screen is NULL.");
         return;
     }
     if (ir_block->base.type != IR_STMT_BLOCK) {
-        _dprintf(stderr, "[RENDERER] Error: Expected IR_STMT_BLOCK, got %d\n", ir_block->base.type);
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Error: Expected IR_STMT_BLOCK, got %d", ir_block->base.type);
         return;
     }
      if (!api_spec) {
-        _dprintf(stderr, "[RENDERER] Warning: ApiSpec is NULL. Method call resolution might be impaired.\n");
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: ApiSpec is NULL. Method call resolution might be impaired.");
     }
 
     obj_registry_init(); // Ensure registry is ready
-    _dprintf(stderr, "[RENDERER] Object registry initialized.\n");
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Object registry initialized.");
     obj_registry_add("parent", parent_screen); // Register the main screen
-    _dprintf(stderr, "[RENDERER] Registered main screen as 'parent' (%p).\n", (void*)parent_screen);
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Registered main screen as 'parent' (%p).", (void*)parent_screen);
 
     IRStmtNode* current_stmt_list_node = ir_block->stmts;
     int stmt_idx = 0;
 
     while (current_stmt_list_node != NULL) {
         IRNode* stmt_node_base = (IRNode*)current_stmt_list_node->stmt;
-        _dprintf(stderr, "[RENDERER] Processing statement index %d, node %p, type %d\n", stmt_idx, (void*)stmt_node_base, stmt_node_base ? stmt_node_base->type : -1);
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Processing statement index %d, node %p, type %d", stmt_idx, (void*)stmt_node_base, stmt_node_base ? stmt_node_base->type : -1);
 
         if (!stmt_node_base) {
-            _dprintf(stderr, "[RENDERER] Statement %d is NULL.\n", stmt_idx);
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Statement %d is NULL.", stmt_idx);
             stmt_idx++;
             current_stmt_list_node = current_stmt_list_node->next;
             continue;
@@ -111,24 +112,24 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
                 if (temp_parent_node_for_freeing) {
                     ir_args[arg_count++] = temp_parent_node_for_freeing;
                 } else {
-                    _dprintf(stderr, "[RENDERER] FATAL: Failed to allocate temporary parent IRNode for %s.\n", func_name);
+                    DEBUG_LOG(LOG_MODULE_RENDERER, "FATAL: Failed to allocate temporary parent IRNode for %s.", func_name);
                     // Error handling: skip this statement or abort?
                     stmt_idx++;
                     current_stmt_list_node = current_stmt_list_node->next;
                     continue;
                 }
             }
-            _dprintf(stderr, "[RENDERER] IR_STMT_WIDGET_ALLOCATE: func='%s', id_to_set='%s'\n", func_name, id_to_set);
+            DEBUG_LOG(LOG_MODULE_RENDERER, "IR_STMT_WIDGET_ALLOCATE: func='%s', id_to_set='%s'", func_name, id_to_set);
 
         } else if (stmt_node_base->type == IR_STMT_OBJECT_ALLOCATE) {
             IRStmtObjectAllocate* stmt = (IRStmtObjectAllocate*)stmt_node_base;
-            _dprintf(stderr, "[RENDERER] IR_STMT_OBJECT_ALLOCATE: type '%s', id '%s', init_func '%s'\n",
+            DEBUG_LOG(LOG_MODULE_RENDERER, "IR_STMT_OBJECT_ALLOCATE: type '%s', id '%s', init_func '%s'",
                      stmt->object_c_type_name, stmt->c_var_name, stmt->init_func_name);
 
             if (strcmp(stmt->object_c_type_name, "lv_style_t") == 0) {
                 lv_style_t* style_obj = (lv_style_t*)malloc(sizeof(lv_style_t));
                 if (!style_obj) {
-                    _dprintf(stderr, "[RENDERER] FATAL: Failed to malloc lv_style_t for '%s'\n", stmt->c_var_name);
+                    DEBUG_LOG(LOG_MODULE_RENDERER, "FATAL: Failed to malloc lv_style_t for '%s'", stmt->c_var_name);
                     stmt_idx++;
                     current_stmt_list_node = current_stmt_list_node->next;
                     continue;
@@ -136,17 +137,17 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
 
                 if (stmt->init_func_name && strcmp(stmt->init_func_name, "lv_style_init") == 0) {
                     lv_style_init(style_obj); // Direct call
-                    _dprintf(stderr, "[RENDERER] Initialized style '%s' at %p with lv_style_init.\n", stmt->c_var_name, (void*)style_obj);
+                    DEBUG_LOG(LOG_MODULE_RENDERER, "Initialized style '%s' at %p with lv_style_init.", stmt->c_var_name, (void*)style_obj);
                 } else if (stmt->init_func_name) {
-                     _dprintf(stderr, "[RENDERER] Warning: Unhandled init_func_name '%s' for lv_style_t. Style memory allocated but not initialized by this function.\n", stmt->init_func_name);
+                     DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Unhandled init_func_name '%s' for lv_style_t. Style memory allocated but not initialized by this function.", stmt->init_func_name);
                 } else {
-                     _dprintf(stderr, "[RENDERER] Warning: No init_func_name for lv_style_t. Style memory allocated but not initialized.\n");
+                     DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: No init_func_name for lv_style_t. Style memory allocated but not initialized.");
                 }
 
                 obj_registry_add(stmt->c_var_name, style_obj);
-                _dprintf(stderr, "[RENDERER] Registered allocated style '%s' (%p).\n", stmt->c_var_name, (void*)style_obj);
+                DEBUG_LOG(LOG_MODULE_RENDERER, "Registered allocated style '%s' (%p).", stmt->c_var_name, (void*)style_obj);
             } else {
-                _dprintf(stderr, "[RENDERER] Unhandled IR_STMT_OBJECT_ALLOCATE for C type '%s'. No action taken.\n", stmt->object_c_type_name);
+                DEBUG_LOG(LOG_MODULE_RENDERER, "Unhandled IR_STMT_OBJECT_ALLOCATE for C type '%s'. No action taken.", stmt->object_c_type_name);
             }
             // This statement type (as handled for styles) does not directly result in a dynamic_lvgl_call_ir.
             stmt_idx++;
@@ -156,13 +157,13 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
         } else if (stmt_node_base->type == IR_STMT_FUNC_CALL) {
             IRStmtFuncCall* stmt = (IRStmtFuncCall*)stmt_node_base;
             if (!stmt->call || !stmt->call->func_name) {
-                _dprintf(stderr, "[RENDERER] IR_STMT_FUNC_CALL (idx %d) missing call or func_name.\n", stmt_idx);
+                DEBUG_LOG(LOG_MODULE_RENDERER, "IR_STMT_FUNC_CALL (idx %d) missing call or func_name.", stmt_idx);
                 stmt_idx++;
                 current_stmt_list_node = current_stmt_list_node->next;
                 continue;
             }
             func_name = stmt->call->func_name;
-            _dprintf(stderr, "[RENDERER] IR_STMT_FUNC_CALL: func='%s'\n", func_name);
+            DEBUG_LOG(LOG_MODULE_RENDERER, "IR_STMT_FUNC_CALL: func='%s'", func_name);
 
             IRExprNode* current_arg_node = stmt->call->args;
             while (current_arg_node != NULL && arg_count < MAX_RENDER_ARGS) {
@@ -179,7 +180,7 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
                     IRExprVariable* var_node = (IRExprVariable*)first_arg_node;
                     target_obj = obj_registry_get(var_node->name);
                     if (!target_obj) {
-                        _dprintf(stderr, "[RENDERER] Error: Method call to '%s': target object ID '%s' not found in registry.\n", func_name, var_node->name);
+                        DEBUG_LOG(LOG_MODULE_RENDERER, "Error: Method call to '%s': target object ID '%s' not found in registry.", func_name, var_node->name);
                         if (temp_parent_node_for_freeing) { // Clean up if we allocated it this iteration
                             ir_free(temp_parent_node_for_freeing);
                             temp_parent_node_for_freeing = NULL;
@@ -188,22 +189,22 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
                         current_stmt_list_node = current_stmt_list_node->next;
                         continue;
                     }
-                    _dprintf(stderr, "[RENDERER] Method call: Extracted target_obj '%s' (%p) for func '%s'.\n", var_node->name, target_obj, func_name);
+                    DEBUG_LOG(LOG_MODULE_RENDERER, "Method call: Extracted target_obj '%s' (%p) for func '%s'.", var_node->name, target_obj, func_name);
                     for (int i = 0; i < arg_count - 1; i++) {
                         ir_args[i] = ir_args[i+1];
                     }
                     arg_count--;
                 } else {
-                    _dprintf(stderr, "[RENDERER] Warning: First argument for supposed method '%s' is not an IR_EXPR_VARIABLE. Treating as global call.\n", func_name);
+                    DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: First argument for supposed method '%s' is not an IR_EXPR_VARIABLE. Treating as global call.", func_name);
                     target_obj = NULL;
                 }
             } else {
-                 _dprintf(stderr, "[RENDERER] Not a method call or no args for func '%s'. target_obj is NULL.\n", func_name);
+                 DEBUG_LOG(LOG_MODULE_RENDERER, "Not a method call or no args for func '%s'. target_obj is NULL.", func_name);
                 target_obj = NULL;
             }
 
         } else {
-            _dprintf(stderr, "[RENDERER] Skipping unhandled statement type %d at index %d.\n", stmt_node_base->type, stmt_idx);
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Skipping unhandled statement type %d at index %d.", stmt_node_base->type, stmt_idx);
             if (temp_parent_node_for_freeing) { // Clean up if allocated and statement skipped
                 ir_free(temp_parent_node_for_freeing);
                 temp_parent_node_for_freeing = NULL;
@@ -214,19 +215,19 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
         }
 
         if (func_name) {
-            _dprintf(stderr, "[RENDERER] Dispatching to dynamic_lvgl_call_ir: func='%s', target_obj=%p, arg_count=%d\n",
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Dispatching to dynamic_lvgl_call_ir: func='%s', target_obj=%p, arg_count=%d",
                      func_name, target_obj, arg_count);
             for(int i=0; i<arg_count; ++i) {
                 if (ir_args[i]) {
                     if(ir_args[i]->type == IR_EXPR_LITERAL) {
-                        _dprintf(stderr, "  Arg %d: type=LITERAL, val_str=%s\n", i, ((IRExprLiteral*)ir_args[i])->value);
+                        DEBUG_LOG(LOG_MODULE_RENDERER, "  Arg %d: type=LITERAL, val_str=%s", i, ((IRExprLiteral*)ir_args[i])->value);
                     } else if (ir_args[i]->type == IR_EXPR_VARIABLE) {
-                        _dprintf(stderr, "  Arg %d: type=VARIABLE, var_name=%s\n", i, ((IRExprVariable*)ir_args[i])->name);
+                        DEBUG_LOG(LOG_MODULE_RENDERER, "  Arg %d: type=VARIABLE, var_name=%s", i, ((IRExprVariable*)ir_args[i])->name);
                     } else {
-                        _dprintf(stderr, "  Arg %d: type=%d (complex)\n", i, ir_args[i]->type);
+                        DEBUG_LOG(LOG_MODULE_RENDERER, "  Arg %d: type=%d (complex)", i, ir_args[i]->type);
                     }
                 } else {
-                     _dprintf(stderr, "  Arg %d: NULL\n", i);
+                     DEBUG_LOG(LOG_MODULE_RENDERER, "  Arg %d: NULL", i);
                 }
             }
 
@@ -234,12 +235,12 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
 
             if (id_to_set && created_obj_ptr) {
                 obj_registry_add(id_to_set, created_obj_ptr);
-                _dprintf(stderr, "[RENDERER] Registered object from dispatch: ID '%s' (%p).\n", id_to_set, created_obj_ptr);
+                DEBUG_LOG(LOG_MODULE_RENDERER, "Registered object from dispatch: ID '%s' (%p).", id_to_set, created_obj_ptr);
             } else if (id_to_set && !created_obj_ptr) {
-                _dprintf(stderr, "[RENDERER] Warning: func '%s' was expected to create object for ID '%s', but returned NULL.\n", func_name, id_to_set);
+                DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: func '%s' was expected to create object for ID '%s', but returned NULL.", func_name, id_to_set);
             }
         } else {
-            _dprintf(stderr, "[RENDERER] No func_name to dispatch for statement index %d.\n", stmt_idx);
+            DEBUG_LOG(LOG_MODULE_RENDERER, "No func_name to dispatch for statement index %d.", stmt_idx);
         }
 
         if (temp_parent_node_for_freeing) {
@@ -252,5 +253,5 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
     }
 
     // obj_registry_deinit(); // Deinit is typically handled by the caller that initialized.
-    _dprintf(stderr, "[RENDERER] Finished render_lvgl_ui_from_ir.\n");
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Finished render_lvgl_ui_from_ir.");
 }
