@@ -87,7 +87,8 @@ void debug_log_init(void) {
         }
         free(env_val_copy);
     } else {
-        fprintf(stderr, "[DEBUG_LOG] LVGL_DEBUG_MODULES not set. All module logging disabled by default.\n");
+        // Silence.
+        // fprintf(stderr, "[DEBUG_LOG] LVGL_DEBUG_MODULES not set. All module logging disabled by default.\n");
     }
 }
 
