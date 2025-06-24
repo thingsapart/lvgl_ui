@@ -97,6 +97,24 @@ int main(int argc, char* argv[]) {
     // 2. Generate the Intermediate Representation (IR) from the UI spec
     // The generator will create and use its own registry internally.
     IRStmtBlock* ir = generate_ir_from_ui_spec(ui_json, api_spec); // generator.c provides this
+    _dprintf(stderr, "[DEBUG_MAIN] IR generation complete. IR Block: %p\n", (void*)ir);
+    if (ir) {
+        _dprintf(stderr, "[DEBUG_MAIN] IR Block type: %d\n", ir->base.type); // Should be IR_STMT_BLOCK
+        if (ir->base.type == IR_STMT_BLOCK) {
+            int stmt_count = 0;
+            IRStmtNode* node = ir->stmts;
+            while(node) {
+                stmt_count++;
+                node = node->next;
+            }
+            _dprintf(stderr, "[DEBUG_MAIN] IR Block contains %d statements.\n", stmt_count);
+            if (stmt_count == 0) {
+                 _dprintf(stderr, "[DEBUG_MAIN] Warning: IR Block is empty!\n");
+            }
+        } else {
+            _dprintf(stderr, "[DEBUG_MAIN] Warning: Generated IR is not of type IR_STMT_BLOCK!\n");
+        }
+    }
     if (!ir) {
         fprintf(stderr, "Error: Failed to generate IR from UI spec.\n");
         api_spec_free(api_spec); // Free api_spec before goto

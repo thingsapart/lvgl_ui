@@ -12,94 +12,129 @@
 
 // Corrected function definition to match header
 void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, struct ApiSpec* api_spec) {
+    _dprintf(stderr, "[RENDERER] Entering render_lvgl_ui_from_ir. Parent screen: %p\n", (void*)parent_screen);
     if (!ir_block || !parent_screen) {
-        _dprintf(stderr, "Error: IR block or parent screen is NULL in render_lvgl_ui_from_ir.\n");
+        _dprintf(stderr, "[RENDERER] Error: IR block or parent screen is NULL.\n");
+        return;
+    }
+    if (ir_block->base.type != IR_STMT_BLOCK) {
+        _dprintf(stderr, "[RENDERER] Error: Expected IR_STMT_BLOCK, got %d\n", ir_block->base.type);
         return;
     }
     if (!api_spec) {
-        // This is a critical issue for method resolution.
-        // However, dynamic_lvgl_call_ir might still work for global functions if api_spec is NULL.
-        _dprintf(stderr, "Warning: ApiSpec is NULL in render_lvgl_ui_from_ir. Method call resolution might be impaired.\n");
+        _dprintf(stderr, "[RENDERER] Warning: ApiSpec is NULL. Method call resolution might be impaired.\n");
     }
 
     obj_registry_init();
+    _dprintf(stderr, "[RENDERER] Object registry initialized.\n");
     obj_registry_add("parent", parent_screen);
+    _dprintf(stderr, "[RENDERER] Registered main screen as 'parent' (%p).\n", (void*)parent_screen);
 
     IRStmtNode* current_stmt_list_node = ir_block->stmts;
+    int stmt_idx = 0;
     while (current_stmt_list_node != NULL) {
-        IRNode* stmt_node = (IRNode*)current_stmt_list_node->stmt; // IRStmt is typedef IRNode
+        IRNode* stmt_node = (IRNode*)current_stmt_list_node->stmt;
+        _dprintf(stderr, "[RENDERER] Processing statement index %d, node %p\n", stmt_idx, (void*)stmt_node);
+
         if (!stmt_node) {
-            current_stmt_list_node = current_stmt_list_node->next;
-            continue;
+            _dprintf(stderr, "[RENDERER] Statement %d is NULL.\n", stmt_idx);
+            goto next_statement;
         }
+        _dprintf(stderr, "[RENDERER] Statement %d type: %d\n", stmt_idx, stmt_node->type);
 
-        const char* func_name = NULL;
-        void* target_obj = NULL;
-        IRNode* prepared_args[MAX_ARGS];
-        int arg_count = 0;
-        const char* id_to_set = NULL;
+        const char* func_name_to_dispatch = NULL;
+        void* target_obj_for_dispatch = NULL;
+        IRNode* prepared_args_for_dispatch[MAX_ARGS];
+        int arg_count_for_dispatch = 0;
+        const char* id_for_created_object = NULL;
+        void* object_to_register_manually = NULL; // For objects like styles not returned by a dispatchable func
 
-        if (stmt_node->type == IR_STMT_FUNC_CALL) {
-            IRStmtFuncCall* stmt_func_call = (IRStmtFuncCall*)stmt_node;
-            if (!stmt_func_call->call) {
-                 _dprintf(stderr, "Warning: IR_STMT_FUNC_CALL has NULL call member.\n");
-                 current_stmt_list_node = current_stmt_list_node->next;
-                 continue;
+        // Reset for each statement
+        for(int i=0; i<MAX_ARGS; ++i) prepared_args_for_dispatch[i] = NULL;
+
+
+        if (stmt_node->type == IR_STMT_OBJECT_ALLOCATE) {
+            IRStmtObjectAllocate* stmt_obj_alloc = (IRStmtObjectAllocate*)stmt_node;
+            _dprintf(stderr, "[RENDERER] IR_STMT_OBJECT_ALLOCATE: type '%s', id '%s', init_func '%s'\n",
+                     stmt_obj_alloc->object_c_type_name, stmt_obj_alloc->c_var_name, stmt_obj_alloc->init_func_name);
+
+            if (strcmp(stmt_obj_alloc->object_c_type_name, "lv_style_t") == 0 &&
+                strcmp(stmt_obj_alloc->init_func_name, "lv_style_init") == 0) {
+
+                lv_style_t* style_obj = (lv_style_t*)malloc(sizeof(lv_style_t));
+                if (style_obj) {
+                    lv_style_init(style_obj); // Direct LVGL call
+                    id_for_created_object = stmt_obj_alloc->c_var_name;
+                    object_to_register_manually = style_obj;
+                    _dprintf(stderr, "[RENDERER] Allocated and initialized lv_style_t for ID '%s' at %p\n", id_for_created_object, object_to_register_manually);
+                } else {
+                    _dprintf(stderr, "[RENDERER] Error: Failed to malloc for lv_style_t with ID '%s'\n", stmt_obj_alloc->c_var_name);
+                }
+            } else {
+                _dprintf(stderr, "[RENDERER] Unhandled IR_STMT_OBJECT_ALLOCATE for C type '%s'\n", stmt_obj_alloc->object_c_type_name);
             }
-            func_name = stmt_func_call->call->func_name;
+            // This IR statement type does not directly result in a dynamic_lvgl_call_ir itself.
+            // Properties will be set by subsequent IR_STMT_FUNC_CALL.
+            goto register_and_continue;
+        }
+        else if (stmt_node->type == IR_STMT_WIDGET_ALLOCATE) {
+            IRStmtWidgetAllocate* stmt_widget_alloc = (IRStmtWidgetAllocate*)stmt_node;
+            if (!stmt_widget_alloc->create_func_name || !stmt_widget_alloc->c_var_name) {
+                _dprintf(stderr, "[RENDERER] IR_STMT_WIDGET_ALLOCATE (idx %d) missing create_func_name or c_var_name.\n", stmt_idx);
+                goto next_statement;
+            }
+            func_name_to_dispatch = stmt_widget_alloc->create_func_name;
+            id_for_created_object = stmt_widget_alloc->c_var_name;
+            _dprintf(stderr, "[RENDERER] IR_STMT_WIDGET_ALLOCATE: func='%s', id_to_set='%s'\n", func_name_to_dispatch, id_for_created_object);
+
+            if (stmt_widget_alloc->parent_expr && arg_count_for_dispatch < MAX_ARGS) {
+                prepared_args_for_dispatch[arg_count_for_dispatch++] = (IRNode*)stmt_widget_alloc->parent_expr;
+            } else if (!stmt_widget_alloc->parent_expr && arg_count_for_dispatch < MAX_ARGS) {
+                IRExpr* parent_var_expr = ir_new_variable("parent");
+                prepared_args_for_dispatch[arg_count_for_dispatch++] = (IRNode*)parent_var_expr;
+                 _dprintf(stderr, "[RENDERER] Using 'parent' variable for widget allocation.\n");
+            }
+        }
+        else if (stmt_node->type == IR_STMT_FUNC_CALL) {
+            IRStmtFuncCall* stmt_func_call = (IRStmtFuncCall*)stmt_node;
+            if (!stmt_func_call->call || !stmt_func_call->call->func_name) {
+                 _dprintf(stderr, "[RENDERER] IR_STMT_FUNC_CALL (idx %d) missing call or func_name.\n", stmt_idx);
+                 goto next_statement;
+            }
+            func_name_to_dispatch = stmt_func_call->call->func_name;
+            _dprintf(stderr, "[RENDERER] IR_STMT_FUNC_CALL: func='%s'\n", func_name_to_dispatch);
 
             IRExprNode* current_arg_node = stmt_func_call->call->args;
-            while (current_arg_node != NULL && arg_count < MAX_ARGS) {
-                prepared_args[arg_count++] = (IRNode*)current_arg_node->expr;
+            while (current_arg_node != NULL && arg_count_for_dispatch < MAX_ARGS) {
+                if (current_arg_node->expr) {
+                    prepared_args_for_dispatch[arg_count_for_dispatch++] = (IRNode*)current_arg_node->expr;
+                } else {
+                     _dprintf(stderr, "[RENDERER] Warning: NULL expr in arg list for %s\n", func_name_to_dispatch);
+                }
                 current_arg_node = current_arg_node->next;
             }
-        } else if (stmt_node->type == IR_STMT_WIDGET_ALLOCATE) {
-            IRStmtWidgetAllocate* stmt_widget_alloc = (IRStmtWidgetAllocate*)stmt_node;
-            func_name = stmt_widget_alloc->create_func_name;
-            id_to_set = stmt_widget_alloc->c_var_name; // ID for the new widget
-
-            // The parent_expr is the first argument to the create function
-            if (stmt_widget_alloc->parent_expr && arg_count < MAX_ARGS) {
-                prepared_args[arg_count++] = (IRNode*)stmt_widget_alloc->parent_expr;
-            } else if (!stmt_widget_alloc->parent_expr && arg_count < MAX_ARGS) {
-                // If parent_expr is NULL in IR, it means use lv_scr_act() or current default parent.
-                // We need to pass an IRNode representing "parent" (the main screen) or have dynamic_lvgl_call_ir handle NULL.
-                // For lv_obj_create(NULL), it's valid. For widget_create(NULL), also valid.
-                // Let's create a temporary IRNode that dynamic_lvgl_call_ir can interpret as "use default/active screen"
-                // or pass a variable that resolves to parent_screen.
-                // Simplest: if parent_expr is NULL, it's like passing lv_scr_act().
-                // dynamic_lvgl_call_ir might need to know that a NULL IRNode* means lv_scr_act() for parent args.
-                // Or, we use the "parent" variable we registered.
-                prepared_args[arg_count++] = (IRNode*)ir_new_variable("parent"); // This will be looked up by dynamic_lvgl_call_ir
-            }
-        } else {
-            // Other statement types not handled for rendering (e.g., comments)
-            current_stmt_list_node = current_stmt_list_node->next;
-            continue;
+        }
+        else {
+            _dprintf(stderr, "[RENDERER] Skipping unhandled statement type %d at index %d.\n", stmt_node->type, stmt_idx);
+            goto next_statement;
         }
 
-        if (!func_name) {
-            current_stmt_list_node = current_stmt_list_node->next;
-            continue;
+        if (!func_name_to_dispatch) { // Should only happen if logic error above or unhandled path
+            _dprintf(stderr, "[RENDERER] No function to dispatch for stmt index %d.\n", stmt_idx);
+            goto register_and_continue; // Still try to register if object_to_register_manually was set
         }
 
+        // --- Resolve function definition and target_obj for func_name_to_dispatch ---
         FunctionDefinition* func_def = NULL;
         bool is_method_call = false;
-        // const char* associated_widget_type = NULL; // To store the type if it's a method
-
         if (api_spec) {
-            // 1. Search global functions
             FunctionMapNode* global_func_node = api_spec->functions;
             while (global_func_node) {
-                if (global_func_node->name && strcmp(global_func_node->name, func_name) == 0) {
-                    func_def = global_func_node->func_def;
-                    is_method_call = false; // Global functions are not methods on specific instances here
-                    break;
+                if (global_func_node->name && strcmp(global_func_node->name, func_name_to_dispatch) == 0) {
+                    func_def = global_func_node->func_def; is_method_call = false; break;
                 }
                 global_func_node = global_func_node->next;
             }
-
-            // 2. If not found globally, search widget methods
             if (!func_def) {
                 WidgetMapNode* widget_list_node = api_spec->widgets_list_head;
                 while (widget_list_node) {
@@ -107,11 +142,8 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
                     if (widget_def && widget_def->methods) {
                         FunctionMapNode* method_node = widget_def->methods;
                         while (method_node) {
-                            if (method_node->name && strcmp(method_node->name, func_name) == 0) {
-                                func_def = method_node->func_def;
-                                is_method_call = true;
-                                // associated_widget_type = widget_def->name; // or widget_def->c_type
-                                goto found_func_def; // Exit outer loop once method is found
+                            if (method_node->name && strcmp(method_node->name, func_name_to_dispatch) == 0) {
+                                func_def = method_node->func_def; is_method_call = true; goto found_func_def_dispatch;
                             }
                             method_node = method_node->next;
                         }
