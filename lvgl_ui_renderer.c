@@ -119,7 +119,7 @@ static void render_lvgl_ui_from_ir_recursive_helper(IRStmtBlock* ir_block, lv_ob
         }
 
         const char* func_name = NULL;
-        void* target_obj = NULL; // For actual method calls where target is implicit
+        void* target_obj = current_lvgl_parent; // For actual method calls where target is implicit
         IRNode* ir_args[MAX_RENDER_ARGS];
         int arg_count = 0;
         const char* id_to_set = NULL; // For objects created that need registration
@@ -129,7 +129,6 @@ static void render_lvgl_ui_from_ir_recursive_helper(IRStmtBlock* ir_block, lv_ob
             IRStmtWidgetAllocate* stmt = (IRStmtWidgetAllocate*)stmt_node_base;
             func_name = stmt->create_func_name;
             id_to_set = stmt->c_var_name;
-            target_obj = NULL; // Create functions don't have a target obj in this sense
 
             if (stmt->parent_expr) {
                 ir_args[arg_count++] = (IRNode*)stmt->parent_expr;
@@ -211,7 +210,9 @@ static void render_lvgl_ui_from_ir_recursive_helper(IRStmtBlock* ir_block, lv_ob
                             initialized_and_registered = true;
                         } // Add other direct init calls here
                         else {
-                            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Unhandled init_func_name '%s' for C type '%s'. Object malloc'd but not initialized by a known direct handler.", stmt->init_func_name, stmt->object_c_type_name);
+                            // TODO: execute dynamcally:
+                            // dynamic_lvgl_call_ir(func_name, target_obj, ir_args, arg_count);
+                            DEBUG_LOG(LOG_MODULE_RENDERER, "Info: Not builtin init_func_name '%s' for C type '%s'. Object malloc'd and initialized by dyn_lvgl_call_ir.", stmt->init_func_name, stmt->object_c_type_name);
                         }
                     } else {
                         DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: No init_func_name for C type '%s'. Object malloc'd but not initialized.", stmt->object_c_type_name);
