@@ -653,7 +653,34 @@ static lv_obj_t* dispatch_ir_archetype_89(generic_lvgl_func_t fn, void* target, 
 
 
 // --- Archetype Dispatcher Implementations ---
-// Archetype for 24 funcs like uint16_t lv_anim_count_running()
+// Archetype C Signature Example: uint16_t archetype_func(void)
+// Dispatcher for 24 LVGL function(s) including: lv_anim_count_running
+// Consolidated functions (24 total):
+//   - lv_anim_count_running
+//   - lv_draw_get_unit_count
+//   - lv_event_register_id
+//   - lv_group_get_count
+//   - lv_image_cache_is_enabled
+//   - lv_image_header_cache_is_enabled
+//   - lv_is_initialized
+//   - lv_lock_isr
+//   - lv_mem_test
+//   - lv_mem_test_core
+//   - lv_os_get_idle_percent
+//   - lv_style_get_num_custom_props
+//   - lv_task_handler
+//   - lv_theme_default_is_inited
+//   - lv_theme_mono_is_inited
+//   - lv_theme_simple_is_inited
+//   - lv_tick_get
+//   - lv_tick_get_cb
+//   - lv_timer_get_idle
+//   - lv_timer_get_time_until_next
+//   - lv_timer_handler
+//   - lv_version_major
+//   - lv_version_minor
+//   - lv_version_patch
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_0(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef uint16_t (*specific_func_t)(void);
@@ -665,7 +692,7 @@ static lv_obj_t* dispatch_json_archetype_0(generic_lvgl_func_t fn, void* target_
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_0(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 0) {
-        LV_LOG_WARN("IR call to lv_anim_count_running: expected 0 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_anim_count_running: expected 0 args, got %d", arg_count);
         return NULL;
     }
 
@@ -675,7 +702,37 @@ static lv_obj_t* dispatch_ir_archetype_0(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 27 funcs like void lv_anim_delete_all()
+// Archetype C Signature Example: void archetype_func(void)
+// Dispatcher for 27 LVGL function(s) including: lv_anim_delete_all
+// Consolidated functions (27 total):
+//   - lv_anim_delete_all
+//   - lv_anim_refr_now
+//   - lv_assert_handler
+//   - lv_bin_decoder_init
+//   - lv_deinit
+//   - lv_draw_deinit
+//   - lv_draw_dispatch
+//   - lv_draw_dispatch_request
+//   - lv_draw_dispatch_wait_for_request
+//   - lv_draw_init
+//   - lv_draw_wait_for_finish
+//   - lv_flex_init
+//   - lv_grid_init
+//   - lv_image_cache_dump
+//   - lv_image_header_cache_dump
+//   - lv_init
+//   - lv_lock
+//   - lv_mem_deinit
+//   - lv_mem_init
+//   - lv_sdl_quit
+//   - lv_span_stack_deinit
+//   - lv_span_stack_init
+//   - lv_theme_default_deinit
+//   - lv_theme_mono_deinit
+//   - lv_theme_simple_deinit
+//   - lv_timer_periodic_handler
+//   - lv_unlock
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_1(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef void (*specific_func_t)(void);
@@ -687,7 +744,7 @@ static lv_obj_t* dispatch_json_archetype_1(generic_lvgl_func_t fn, void* target_
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_1(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 0) {
-        LV_LOG_WARN("IR call to lv_anim_delete_all: expected 0 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_anim_delete_all: expected 0 args, got %d", arg_count);
         return NULL;
     }
 
@@ -697,7 +754,261 @@ static lv_obj_t* dispatch_ir_archetype_1(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 251 funcs like uint32_t lv_anim_get_delay()
+// Archetype C Signature Example: uint32_t archetype_func(lv_anim_t* target)
+// Dispatcher for 251 LVGL function(s) including: lv_anim_get_delay
+// Consolidated functions (251 total):
+//   - lv_anim_get_delay
+//   - lv_anim_get_playtime
+//   - lv_anim_get_repeat_count
+//   - lv_anim_get_time
+//   - lv_anim_is_paused
+//   - lv_anim_path_bounce
+//   - lv_anim_path_custom_bezier3
+//   - lv_anim_path_ease_in
+//   - lv_anim_path_ease_in_out
+//   - lv_anim_path_ease_out
+//   - lv_anim_path_linear
+//   - lv_anim_path_overshoot
+//   - lv_anim_path_step
+//   - lv_anim_timeline_get_playtime
+//   - lv_anim_timeline_get_progress
+//   - lv_anim_timeline_get_repeat_count
+//   - lv_anim_timeline_get_repeat_delay
+//   - lv_anim_timeline_get_reverse
+//   - lv_anim_timeline_start
+//   - lv_animimg_delete
+//   - lv_animimg_get_duration
+//   - lv_animimg_get_repeat_count
+//   - lv_animimg_get_src_count
+//   - lv_arc_get_angle_end
+//   - lv_arc_get_angle_start
+//   - lv_arc_get_bg_angle_end
+//   - lv_arc_get_bg_angle_start
+//   - lv_arc_get_knob_offset
+//   - lv_arc_get_max_value
+//   - lv_arc_get_min_value
+//   - lv_arc_get_mode
+//   - lv_arc_get_rotation
+//   - lv_arc_get_value
+//   - lv_arclabel_get_angle_size
+//   - lv_arclabel_get_angle_start
+//   - lv_arclabel_get_center_offset_x
+//   - lv_arclabel_get_center_offset_y
+//   - lv_arclabel_get_dir
+//   - lv_arclabel_get_radius
+//   - lv_arclabel_get_recolor
+//   - lv_arclabel_get_text_horizontal_align
+//   - lv_arclabel_get_text_vertical_align
+//   - lv_area_get_height
+//   - lv_area_get_size
+//   - lv_area_get_width
+//   - lv_array_capacity
+//   - lv_array_is_empty
+//   - lv_array_is_full
+//   - lv_array_size
+//   - lv_bar_get_max_value
+//   - lv_bar_get_min_value
+//   - lv_bar_get_mode
+//   - lv_bar_get_orientation
+//   - lv_bar_get_start_value
+//   - lv_bar_get_value
+//   - lv_bar_is_symmetrical
+//   - lv_buttonmatrix_get_one_checked
+//   - lv_buttonmatrix_get_selected_button
+//   - lv_cache_entry_get_node_size
+//   - lv_cache_entry_get_ref
+//   - lv_cache_entry_is_invalid
+//   - lv_cache_is_enabled
+//   - lv_calendar_get_highlighted_dates_num
+//   - lv_chart_get_first_point_center_offset
+//   - lv_chart_get_point_count
+//   - lv_chart_get_pressed_point
+//   - lv_chart_get_type
+//   - lv_circle_buf_capacity
+//   - lv_circle_buf_is_empty
+//   - lv_circle_buf_is_full
+//   - lv_circle_buf_remain
+//   - lv_circle_buf_size
+//   - lv_circle_buf_skip
+//   - lv_color24_luminance
+//   - lv_display_flush_is_last
+//   - lv_display_get_antialiasing
+//   - lv_display_get_color_format
+//   - lv_display_get_dpi
+//   - lv_display_get_draw_buf_size
+//   - lv_display_get_event_count
+//   - lv_display_get_horizontal_resolution
+//   - lv_display_get_inactive_time
+//   - lv_display_get_matrix_rotation
+//   - lv_display_get_offset_x
+//   - lv_display_get_offset_y
+//   - lv_display_get_original_horizontal_resolution
+//   - lv_display_get_original_vertical_resolution
+//   - lv_display_get_physical_horizontal_resolution
+//   - lv_display_get_physical_vertical_resolution
+//   - lv_display_get_rotation
+//   - lv_display_get_tile_cnt
+//   - lv_display_get_vertical_resolution
+//   - lv_display_is_double_buffered
+//   - lv_display_is_invalidation_enabled
+//   - lv_draw_buf_premultiply
+//   - lv_draw_get_dependent_count
+//   - lv_draw_task_get_type
+//   - lv_dropdown_get_dir
+//   - lv_dropdown_get_option_count
+//   - lv_dropdown_get_selected
+//   - lv_dropdown_get_selected_highlight
+//   - lv_dropdown_is_open
+//   - lv_event_dsc_get_cb
+//   - lv_event_get_code
+//   - lv_event_get_count
+//   - lv_event_get_key
+//   - lv_event_get_rotary_diff
+//   - lv_font_get_line_height
+//   - lv_font_has_static_bitmap
+//   - lv_fs_close
+//   - lv_fs_dir_close
+//   - lv_group_get_edge_cb
+//   - lv_group_get_editing
+//   - lv_group_get_focus_cb
+//   - lv_group_get_obj_count
+//   - lv_group_get_wrap
+//   - lv_image_get_antialias
+//   - lv_image_get_blend_mode
+//   - lv_image_get_inner_align
+//   - lv_image_get_offset_x
+//   - lv_image_get_offset_y
+//   - lv_image_get_rotation
+//   - lv_image_get_scale
+//   - lv_image_get_scale_x
+//   - lv_image_get_scale_y
+//   - lv_image_get_src_height
+//   - lv_image_get_src_width
+//   - lv_image_get_transformed_height
+//   - lv_image_get_transformed_width
+//   - lv_image_src_get_type
+//   - lv_indev_get_event_count
+//   - lv_indev_get_gesture_dir
+//   - lv_indev_get_key
+//   - lv_indev_get_mode
+//   - lv_indev_get_press_moved
+//   - lv_indev_get_read_cb
+//   - lv_indev_get_scroll_dir
+//   - lv_indev_get_short_click_streak
+//   - lv_indev_get_state
+//   - lv_indev_get_type
+//   - lv_iter_peek_advance
+//   - lv_iter_peek_reset
+//   - lv_keyboard_get_mode
+//   - lv_keyboard_get_popovers
+//   - lv_keyboard_get_selected_button
+//   - lv_label_get_long_mode
+//   - lv_label_get_recolor
+//   - lv_label_get_text_selection_end
+//   - lv_label_get_text_selection_start
+//   - lv_led_get_brightness
+//   - lv_line_get_point_count
+//   - lv_line_get_y_invert
+//   - lv_line_is_point_array_mutable
+//   - lv_ll_get_len
+//   - lv_ll_is_empty
+//   - lv_mutex_delete
+//   - lv_mutex_init
+//   - lv_mutex_lock
+//   - lv_mutex_lock_isr
+//   - lv_mutex_unlock
+//   - lv_obj_get_child_count
+//   - lv_obj_get_content_height
+//   - lv_obj_get_content_width
+//   - lv_obj_get_event_count
+//   - lv_obj_get_height
+//   - lv_obj_get_index
+//   - lv_obj_get_scroll_bottom
+//   - lv_obj_get_scroll_dir
+//   - lv_obj_get_scroll_left
+//   - lv_obj_get_scroll_right
+//   - lv_obj_get_scroll_snap_x
+//   - lv_obj_get_scroll_snap_y
+//   - lv_obj_get_scroll_top
+//   - lv_obj_get_scroll_x
+//   - lv_obj_get_scroll_y
+//   - lv_obj_get_scrollbar_mode
+//   - lv_obj_get_self_height
+//   - lv_obj_get_self_width
+//   - lv_obj_get_state
+//   - lv_obj_get_width
+//   - lv_obj_get_x
+//   - lv_obj_get_x2
+//   - lv_obj_get_x_aligned
+//   - lv_obj_get_y
+//   - lv_obj_get_y2
+//   - lv_obj_get_y_aligned
+//   - lv_obj_is_editable
+//   - lv_obj_is_group_def
+//   - lv_obj_is_layout_positioned
+//   - lv_obj_is_scrolling
+//   - lv_obj_is_valid
+//   - lv_obj_is_visible
+//   - lv_obj_refr_size
+//   - lv_obj_refresh_self_size
+//   - lv_point_from_precise
+//   - lv_point_to_precise
+//   - lv_roller_get_option_count
+//   - lv_roller_get_selected
+//   - lv_scale_get_angle_range
+//   - lv_scale_get_label_show
+//   - lv_scale_get_major_tick_every
+//   - lv_scale_get_mode
+//   - lv_scale_get_range_max_value
+//   - lv_scale_get_range_min_value
+//   - lv_scale_get_rotation
+//   - lv_scale_get_total_tick_count
+//   - lv_sdl_window_get_zoom
+//   - lv_slider_get_left_value
+//   - lv_slider_get_max_value
+//   - lv_slider_get_min_value
+//   - lv_slider_get_mode
+//   - lv_slider_get_orientation
+//   - lv_slider_get_value
+//   - lv_slider_is_dragged
+//   - lv_slider_is_symmetrical
+//   - lv_spangroup_get_align
+//   - lv_spangroup_get_indent
+//   - lv_spangroup_get_max_line_height
+//   - lv_spangroup_get_max_lines
+//   - lv_spangroup_get_mode
+//   - lv_spangroup_get_overflow
+//   - lv_spangroup_get_span_count
+//   - lv_spinbox_get_rollover
+//   - lv_spinbox_get_step
+//   - lv_spinbox_get_value
+//   - lv_strlen
+//   - lv_style_is_const
+//   - lv_style_is_empty
+//   - lv_subject_get_int
+//   - lv_subject_get_previous_int
+//   - lv_switch_get_orientation
+//   - lv_table_get_column_count
+//   - lv_table_get_row_count
+//   - lv_tabview_get_tab_active
+//   - lv_tabview_get_tab_count
+//   - lv_textarea_get_current_char
+//   - lv_textarea_get_cursor_click_pos
+//   - lv_textarea_get_cursor_pos
+//   - lv_textarea_get_max_length
+//   - lv_textarea_get_one_line
+//   - lv_textarea_get_password_mode
+//   - lv_textarea_get_password_show_time
+//   - lv_textarea_get_text_selection
+//   - lv_textarea_text_is_selected
+//   - lv_thread_delete
+//   - lv_thread_sync_delete
+//   - lv_thread_sync_init
+//   - lv_thread_sync_signal
+//   - lv_thread_sync_signal_isr
+//   - lv_thread_sync_wait
+//   - lv_timer_get_paused
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_2(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef uint32_t (*specific_func_t)(lv_anim_t*);
@@ -708,8 +1019,8 @@ static lv_obj_t* dispatch_json_archetype_2(generic_lvgl_func_t fn, void* target_
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_2(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 0) {
-        LV_LOG_WARN("IR call to lv_anim_get_delay: expected 0 args, got %d", arg_count);
+    if (arg_count != 1) {
+        _eprintf(stderr, "IR call to lv_anim_get_delay: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
@@ -719,7 +1030,37 @@ static lv_obj_t* dispatch_ir_archetype_2(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 27 funcs like lv_timer_t* lv_anim_get_timer()
+// Archetype C Signature Example: lv_timer_t* archetype_func(void)
+// Dispatcher for 27 LVGL function(s) including: lv_anim_get_timer
+// Consolidated functions (27 total):
+//   - lv_anim_get_timer
+//   - lv_anim_timeline_create
+//   - lv_display_get_default
+//   - lv_draw_buf_get_font_handlers
+//   - lv_draw_buf_get_handlers
+//   - lv_draw_buf_get_image_handlers
+//   - lv_font_get_default
+//   - lv_group_create
+//   - lv_group_get_default
+//   - lv_image_cache_iter_create
+//   - lv_image_decoder_create
+//   - lv_image_header_cache_iter_create
+//   - lv_indev_active
+//   - lv_indev_create
+//   - lv_indev_get_active_obj
+//   - lv_layer_bottom
+//   - lv_layer_sys
+//   - lv_layer_top
+//   - lv_screen_active
+//   - lv_sdl_keyboard_create
+//   - lv_sdl_mouse_create
+//   - lv_sdl_mousewheel_create
+//   - lv_theme_default_get
+//   - lv_theme_mono_get
+//   - lv_theme_simple_get
+//   - lv_timer_create_basic
+//   - lv_version_info
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_3(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef lv_timer_t* (*specific_func_t)(void);
@@ -730,7 +1071,7 @@ static lv_obj_t* dispatch_json_archetype_3(generic_lvgl_func_t fn, void* target_
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_3(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 0) {
-        LV_LOG_WARN("IR call to lv_anim_get_timer: expected 0 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_anim_get_timer: expected 0 args, got %d", arg_count);
         return NULL;
     }
 
@@ -739,7 +1080,193 @@ static lv_obj_t* dispatch_ir_archetype_3(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 183 funcs like void* lv_anim_get_user_data()
+// Archetype C Signature Example: void* archetype_func(lv_anim_t* target)
+// Dispatcher for 183 LVGL function(s) including: lv_anim_get_user_data
+// Consolidated functions (183 total):
+//   - lv_anim_get_user_data
+//   - lv_anim_start
+//   - lv_animimg_create
+//   - lv_animimg_get_anim
+//   - lv_animimg_get_src
+//   - lv_arc_create
+//   - lv_arclabel_create
+//   - lv_array_back
+//   - lv_array_front
+//   - lv_bar_create
+//   - lv_binfont_create
+//   - lv_button_create
+//   - lv_buttonmatrix_create
+//   - lv_buttonmatrix_get_map
+//   - lv_cache_entry_get_cache
+//   - lv_cache_entry_get_data
+//   - lv_cache_get_name
+//   - lv_cache_iter_create
+//   - lv_calendar_add_header_arrow
+//   - lv_calendar_add_header_dropdown
+//   - lv_calendar_create
+//   - lv_calendar_get_btnmatrix
+//   - lv_calendar_get_highlighted_dates
+//   - lv_calendar_get_showed_date
+//   - lv_calendar_get_today_date
+//   - lv_canvas_create
+//   - lv_canvas_get_buf
+//   - lv_canvas_get_draw_buf
+//   - lv_canvas_get_image
+//   - lv_chart_create
+//   - lv_checkbox_create
+//   - lv_checkbox_get_text
+//   - lv_circle_buf_create_from_array
+//   - lv_circle_buf_head
+//   - lv_circle_buf_tail
+//   - lv_display_get_buf_active
+//   - lv_display_get_driver_data
+//   - lv_display_get_layer_bottom
+//   - lv_display_get_layer_sys
+//   - lv_display_get_layer_top
+//   - lv_display_get_next
+//   - lv_display_get_refr_timer
+//   - lv_display_get_screen_active
+//   - lv_display_get_screen_prev
+//   - lv_display_get_theme
+//   - lv_display_get_user_data
+//   - lv_draw_buf_dup
+//   - lv_draw_layer_alloc_buf
+//   - lv_draw_task_get_arc_dsc
+//   - lv_draw_task_get_border_dsc
+//   - lv_draw_task_get_box_shadow_dsc
+//   - lv_draw_task_get_draw_dsc
+//   - lv_draw_task_get_fill_dsc
+//   - lv_draw_task_get_image_dsc
+//   - lv_draw_task_get_label_dsc
+//   - lv_draw_task_get_line_dsc
+//   - lv_draw_task_get_triangle_dsc
+//   - lv_dropdown_create
+//   - lv_dropdown_get_list
+//   - lv_dropdown_get_options
+//   - lv_dropdown_get_symbol
+//   - lv_dropdown_get_text
+//   - lv_event_dsc_get_user_data
+//   - lv_event_get_cover_area
+//   - lv_event_get_current_target
+//   - lv_event_get_current_target_obj
+//   - lv_event_get_draw_task
+//   - lv_event_get_hit_test_info
+//   - lv_event_get_indev
+//   - lv_event_get_invalidated_area
+//   - lv_event_get_layer
+//   - lv_event_get_old_size
+//   - lv_event_get_param
+//   - lv_event_get_scroll_anim
+//   - lv_event_get_self_size_info
+//   - lv_event_get_target
+//   - lv_event_get_target_obj
+//   - lv_event_get_user_data
+//   - lv_font_get_glyph_static_bitmap
+//   - lv_fs_get_ext
+//   - lv_fs_get_last
+//   - lv_fs_get_letters
+//   - lv_fs_up
+//   - lv_group_get_focused
+//   - lv_image_create
+//   - lv_image_decoder_get_next
+//   - lv_image_get_bitmap_map_src
+//   - lv_image_get_src
+//   - lv_imagebutton_create
+//   - lv_indev_get_cursor
+//   - lv_indev_get_display
+//   - lv_indev_get_driver_data
+//   - lv_indev_get_group
+//   - lv_indev_get_next
+//   - lv_indev_get_read_timer
+//   - lv_indev_get_scroll_obj
+//   - lv_indev_get_user_data
+//   - lv_iter_get_context
+//   - lv_keyboard_create
+//   - lv_keyboard_get_map_array
+//   - lv_keyboard_get_textarea
+//   - lv_label_create
+//   - lv_label_get_text
+//   - lv_led_create
+//   - lv_line_create
+//   - lv_line_get_points
+//   - lv_line_get_points_mutable
+//   - lv_list_create
+//   - lv_ll_get_head
+//   - lv_ll_get_tail
+//   - lv_ll_ins_head
+//   - lv_ll_ins_tail
+//   - lv_menu_cont_create
+//   - lv_menu_create
+//   - lv_menu_get_cur_main_page
+//   - lv_menu_get_cur_sidebar_page
+//   - lv_menu_get_main_header
+//   - lv_menu_get_main_header_back_button
+//   - lv_menu_get_sidebar_header
+//   - lv_menu_get_sidebar_header_back_button
+//   - lv_menu_section_create
+//   - lv_menu_separator_create
+//   - lv_msgbox_add_close_button
+//   - lv_msgbox_create
+//   - lv_msgbox_get_content
+//   - lv_msgbox_get_footer
+//   - lv_msgbox_get_header
+//   - lv_msgbox_get_title
+//   - lv_obj_create
+//   - lv_obj_get_class
+//   - lv_obj_get_display
+//   - lv_obj_get_group
+//   - lv_obj_get_parent
+//   - lv_obj_get_screen
+//   - lv_obj_get_transform
+//   - lv_obj_get_user_data
+//   - lv_observer_get_target
+//   - lv_observer_get_target_obj
+//   - lv_observer_get_user_data
+//   - lv_rb_maximum
+//   - lv_rb_maximum_from
+//   - lv_rb_minimum
+//   - lv_rb_minimum_from
+//   - lv_roller_create
+//   - lv_roller_get_options
+//   - lv_scale_add_section
+//   - lv_scale_create
+//   - lv_sdl_window_get_renderer
+//   - lv_slider_create
+//   - lv_span_get_style
+//   - lv_span_get_text
+//   - lv_spangroup_add_span
+//   - lv_spangroup_create
+//   - lv_spinbox_create
+//   - lv_spinner_create
+//   - lv_strdup
+//   - lv_subject_get_pointer
+//   - lv_subject_get_previous_pointer
+//   - lv_subject_get_previous_string
+//   - lv_subject_get_string
+//   - lv_switch_create
+//   - lv_table_create
+//   - lv_tabview_create
+//   - lv_tabview_get_content
+//   - lv_tabview_get_tab_bar
+//   - lv_textarea_create
+//   - lv_textarea_get_accepted_chars
+//   - lv_textarea_get_label
+//   - lv_textarea_get_password_bullet
+//   - lv_textarea_get_placeholder_text
+//   - lv_textarea_get_text
+//   - lv_theme_get_font_large
+//   - lv_theme_get_font_normal
+//   - lv_theme_get_font_small
+//   - lv_theme_get_from_obj
+//   - lv_theme_simple_init
+//   - lv_tileview_create
+//   - lv_tileview_get_tile_active
+//   - lv_timer_get_next
+//   - lv_timer_get_user_data
+//   - lv_win_create
+//   - lv_win_get_content
+//   - lv_win_get_header
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_4(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef void* (*specific_func_t)(lv_anim_t*);
@@ -749,8 +1276,8 @@ static lv_obj_t* dispatch_json_archetype_4(generic_lvgl_func_t fn, void* target_
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_4(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 0) {
-        LV_LOG_WARN("IR call to lv_anim_get_user_data: expected 0 args, got %d", arg_count);
+    if (arg_count != 1) {
+        _eprintf(stderr, "IR call to lv_anim_get_user_data: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
@@ -759,7 +1286,136 @@ static lv_obj_t* dispatch_ir_archetype_4(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 126 funcs like void lv_anim_init()
+// Archetype C Signature Example: void archetype_func(lv_anim_t* target)
+// Dispatcher for 126 LVGL function(s) including: lv_anim_init
+// Consolidated functions (126 total):
+//   - lv_anim_init
+//   - lv_anim_pause
+//   - lv_anim_resume
+//   - lv_anim_timeline_delete
+//   - lv_anim_timeline_pause
+//   - lv_animimg_start
+//   - lv_array_clear
+//   - lv_array_deinit
+//   - lv_array_shrink
+//   - lv_binfont_destroy
+//   - lv_cache_entry_delete
+//   - lv_chart_refresh
+//   - lv_circle_buf_destroy
+//   - lv_circle_buf_reset
+//   - lv_color_premultiply
+//   - lv_display_delete
+//   - lv_display_delete_refr_timer
+//   - lv_display_flush_ready
+//   - lv_display_refr_timer
+//   - lv_display_set_default
+//   - lv_display_trigger_activity
+//   - lv_draw_arc_dsc_init
+//   - lv_draw_border_dsc_init
+//   - lv_draw_box_shadow_dsc_init
+//   - lv_draw_buf_destroy
+//   - lv_draw_buf_init_with_default_handlers
+//   - lv_draw_fill_dsc_init
+//   - lv_draw_glyph_dsc_init
+//   - lv_draw_image_dsc_init
+//   - lv_draw_label_dsc_init
+//   - lv_draw_letter_dsc_init
+//   - lv_draw_line_dsc_init
+//   - lv_draw_rect_dsc_init
+//   - lv_draw_triangle_dsc_init
+//   - lv_dropdown_clear_options
+//   - lv_dropdown_close
+//   - lv_dropdown_open
+//   - lv_event_remove_all
+//   - lv_event_stop_bubbling
+//   - lv_event_stop_processing
+//   - lv_font_glyph_release_draw_data
+//   - lv_free
+//   - lv_free_core
+//   - lv_fs_drv_init
+//   - lv_fs_drv_register
+//   - lv_grad_horizontal_init
+//   - lv_grad_vertical_init
+//   - lv_group_delete
+//   - lv_group_focus_next
+//   - lv_group_focus_obj
+//   - lv_group_focus_prev
+//   - lv_group_remove_all_objs
+//   - lv_group_remove_obj
+//   - lv_group_set_default
+//   - lv_image_buf_free
+//   - lv_image_cache_drop
+//   - lv_image_decoder_close
+//   - lv_image_decoder_delete
+//   - lv_image_header_cache_drop
+//   - lv_indev_delete
+//   - lv_indev_read
+//   - lv_indev_read_timer_cb
+//   - lv_indev_reset_long_press
+//   - lv_indev_stop_processing
+//   - lv_indev_wait_release
+//   - lv_iter_destroy
+//   - lv_keyboard_def_event_cb
+//   - lv_layer_init
+//   - lv_layer_reset
+//   - lv_led_off
+//   - lv_led_on
+//   - lv_led_toggle
+//   - lv_ll_clear
+//   - lv_mem_monitor
+//   - lv_mem_monitor_core
+//   - lv_menu_clear_history
+//   - lv_msgbox_close
+//   - lv_msgbox_close_async
+//   - lv_obj_allocate_spec_attr
+//   - lv_obj_center
+//   - lv_obj_class_init_obj
+//   - lv_obj_clean
+//   - lv_obj_delete
+//   - lv_obj_delete_anim_completed_cb
+//   - lv_obj_delete_async
+//   - lv_obj_dump_tree
+//   - lv_obj_invalidate
+//   - lv_obj_mark_layout_as_dirty
+//   - lv_obj_move_background
+//   - lv_obj_move_foreground
+//   - lv_obj_null_on_delete
+//   - lv_obj_refr_pos
+//   - lv_obj_refresh_ext_draw_size
+//   - lv_obj_remove_style_all
+//   - lv_obj_report_style_change
+//   - lv_obj_reset_transform
+//   - lv_obj_scrollbar_invalidate
+//   - lv_obj_stop_scroll_anim
+//   - lv_obj_update_layout
+//   - lv_observer_remove
+//   - lv_rb_destroy
+//   - lv_refr_now
+//   - lv_screen_load
+//   - lv_spangroup_refresh
+//   - lv_spinbox_decrement
+//   - lv_spinbox_increment
+//   - lv_spinbox_step_next
+//   - lv_spinbox_step_prev
+//   - lv_style_init
+//   - lv_style_reset
+//   - lv_subject_deinit
+//   - lv_subject_notify
+//   - lv_textarea_clear_selection
+//   - lv_textarea_cursor_down
+//   - lv_textarea_cursor_left
+//   - lv_textarea_cursor_right
+//   - lv_textarea_cursor_up
+//   - lv_textarea_delete_char
+//   - lv_textarea_delete_char_forward
+//   - lv_theme_apply
+//   - lv_timer_delete
+//   - lv_timer_pause
+//   - lv_timer_ready
+//   - lv_timer_reset
+//   - lv_timer_resume
+//   - lv_tree_node_delete
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_5(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef void (*specific_func_t)(lv_anim_t*);
@@ -770,8 +1426,8 @@ static lv_obj_t* dispatch_json_archetype_5(generic_lvgl_func_t fn, void* target_
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_5(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 0) {
-        LV_LOG_WARN("IR call to lv_anim_init: expected 0 args, got %d", arg_count);
+    if (arg_count != 1) {
+        _eprintf(stderr, "IR call to lv_anim_init: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
@@ -781,7 +1437,306 @@ static lv_obj_t* dispatch_ir_archetype_5(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 296 funcs like void lv_anim_pause_for(intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_anim_t* target, uint32_t ms)
+// Dispatcher for 296 LVGL function(s) including: lv_anim_pause_for
+// Consolidated functions (296 total):
+//   - lv_anim_pause_for
+//   - lv_anim_set_delay
+//   - lv_anim_set_duration
+//   - lv_anim_set_early_apply
+//   - lv_anim_set_repeat_count
+//   - lv_anim_set_repeat_delay
+//   - lv_anim_set_reverse_delay
+//   - lv_anim_set_reverse_duration
+//   - lv_anim_set_reverse_time
+//   - lv_anim_timeline_set_progress
+//   - lv_anim_timeline_set_repeat_count
+//   - lv_anim_timeline_set_repeat_delay
+//   - lv_anim_timeline_set_reverse
+//   - lv_animimg_set_duration
+//   - lv_animimg_set_repeat_count
+//   - lv_animimg_set_reverse_delay
+//   - lv_animimg_set_reverse_duration
+//   - lv_arc_set_bg_end_angle
+//   - lv_arc_set_bg_start_angle
+//   - lv_arc_set_change_rate
+//   - lv_arc_set_end_angle
+//   - lv_arc_set_knob_offset
+//   - lv_arc_set_max_value
+//   - lv_arc_set_min_value
+//   - lv_arc_set_mode
+//   - lv_arc_set_rotation
+//   - lv_arc_set_start_angle
+//   - lv_arc_set_value
+//   - lv_arclabel_set_angle_size
+//   - lv_arclabel_set_angle_start
+//   - lv_arclabel_set_center_offset_x
+//   - lv_arclabel_set_center_offset_y
+//   - lv_arclabel_set_dir
+//   - lv_arclabel_set_offset
+//   - lv_arclabel_set_radius
+//   - lv_arclabel_set_recolor
+//   - lv_arclabel_set_text_horizontal_align
+//   - lv_arclabel_set_text_vertical_align
+//   - lv_area_set_height
+//   - lv_area_set_width
+//   - lv_bar_set_max_value
+//   - lv_bar_set_min_value
+//   - lv_bar_set_mode
+//   - lv_bar_set_orientation
+//   - lv_buttonmatrix_clear_button_ctrl_all
+//   - lv_buttonmatrix_set_button_ctrl_all
+//   - lv_buttonmatrix_set_ctrl_map
+//   - lv_buttonmatrix_set_map
+//   - lv_buttonmatrix_set_one_checked
+//   - lv_buttonmatrix_set_selected_button
+//   - lv_calendar_set_shown_month
+//   - lv_calendar_set_shown_year
+//   - lv_calendar_set_today_day
+//   - lv_calendar_set_today_month
+//   - lv_calendar_set_today_year
+//   - lv_chart_set_hor_div_line_count
+//   - lv_chart_set_point_count
+//   - lv_chart_set_type
+//   - lv_chart_set_update_mode
+//   - lv_chart_set_ver_div_line_count
+//   - lv_color16_premultiply
+//   - lv_display_enable_invalidation
+//   - lv_display_set_antialiasing
+//   - lv_display_set_color_format
+//   - lv_display_set_dpi
+//   - lv_display_set_matrix_rotation
+//   - lv_display_set_render_mode
+//   - lv_display_set_rotation
+//   - lv_display_set_tile_cnt
+//   - lv_draw_buf_clear_flag
+//   - lv_draw_buf_set_flag
+//   - lv_draw_sw_i1_invert
+//   - lv_draw_sw_rgb565_swap
+//   - lv_dropdown_set_dir
+//   - lv_dropdown_set_selected
+//   - lv_dropdown_set_selected_highlight
+//   - lv_event_set_cover_res
+//   - lv_event_set_ext_draw_size
+//   - lv_font_set_kerning
+//   - lv_group_focus_freeze
+//   - lv_group_set_editing
+//   - lv_group_set_refocus_policy
+//   - lv_group_set_wrap
+//   - lv_image_decoder_set_close_cb
+//   - lv_image_decoder_set_info_cb
+//   - lv_image_decoder_set_open_cb
+//   - lv_image_set_antialias
+//   - lv_image_set_blend_mode
+//   - lv_image_set_inner_align
+//   - lv_image_set_offset_x
+//   - lv_image_set_offset_y
+//   - lv_image_set_pivot_x
+//   - lv_image_set_pivot_y
+//   - lv_image_set_rotation
+//   - lv_image_set_scale
+//   - lv_image_set_scale_x
+//   - lv_image_set_scale_y
+//   - lv_imagebutton_set_state
+//   - lv_indev_enable
+//   - lv_indev_set_button_points
+//   - lv_indev_set_long_press_repeat_time
+//   - lv_indev_set_long_press_time
+//   - lv_indev_set_mode
+//   - lv_indev_set_scroll_limit
+//   - lv_indev_set_scroll_throw
+//   - lv_indev_set_type
+//   - lv_iter_make_peekable
+//   - lv_keyboard_set_mode
+//   - lv_keyboard_set_popovers
+//   - lv_label_set_long_mode
+//   - lv_label_set_recolor
+//   - lv_label_set_text_selection_end
+//   - lv_label_set_text_selection_start
+//   - lv_led_set_brightness
+//   - lv_line_set_y_invert
+//   - lv_ll_clear_custom
+//   - lv_ll_init
+//   - lv_memzero
+//   - lv_menu_set_mode_header
+//   - lv_menu_set_mode_root_back_button
+//   - lv_obj_add_flag
+//   - lv_obj_add_state
+//   - lv_obj_delete_delayed
+//   - lv_obj_move_to_index
+//   - lv_obj_readjust_scroll
+//   - lv_obj_remove_flag
+//   - lv_obj_remove_state
+//   - lv_obj_scroll_to_view
+//   - lv_obj_scroll_to_view_recursive
+//   - lv_obj_set_align
+//   - lv_obj_set_content_height
+//   - lv_obj_set_content_width
+//   - lv_obj_set_ext_click_area
+//   - lv_obj_set_flex_flow
+//   - lv_obj_set_flex_grow
+//   - lv_obj_set_height
+//   - lv_obj_set_layout
+//   - lv_obj_set_scroll_dir
+//   - lv_obj_set_scroll_snap_x
+//   - lv_obj_set_scroll_snap_y
+//   - lv_obj_set_scrollbar_mode
+//   - lv_obj_set_width
+//   - lv_obj_set_x
+//   - lv_obj_set_y
+//   - lv_obj_update_snap
+//   - lv_roller_set_visible_row_count
+//   - lv_scale_set_angle_range
+//   - lv_scale_set_draw_ticks_on_top
+//   - lv_scale_set_label_show
+//   - lv_scale_set_major_tick_every
+//   - lv_scale_set_max_value
+//   - lv_scale_set_min_value
+//   - lv_scale_set_mode
+//   - lv_scale_set_post_draw
+//   - lv_scale_set_rotation
+//   - lv_scale_set_text_src
+//   - lv_scale_set_total_tick_count
+//   - lv_sdl_window_set_resizeable
+//   - lv_sdl_window_set_zoom
+//   - lv_slider_set_max_value
+//   - lv_slider_set_min_value
+//   - lv_slider_set_mode
+//   - lv_slider_set_orientation
+//   - lv_spangroup_set_align
+//   - lv_spangroup_set_indent
+//   - lv_spangroup_set_max_lines
+//   - lv_spangroup_set_mode
+//   - lv_spangroup_set_overflow
+//   - lv_spinbox_set_cursor_pos
+//   - lv_spinbox_set_digit_step_direction
+//   - lv_spinbox_set_rollover
+//   - lv_spinbox_set_step
+//   - lv_spinbox_set_value
+//   - lv_style_set_align
+//   - lv_style_set_anim_duration
+//   - lv_style_set_arc_opa
+//   - lv_style_set_arc_rounded
+//   - lv_style_set_arc_width
+//   - lv_style_set_base_dir
+//   - lv_style_set_bg_grad_dir
+//   - lv_style_set_bg_grad_opa
+//   - lv_style_set_bg_grad_stop
+//   - lv_style_set_bg_image_opa
+//   - lv_style_set_bg_image_recolor_opa
+//   - lv_style_set_bg_image_tiled
+//   - lv_style_set_bg_main_opa
+//   - lv_style_set_bg_main_stop
+//   - lv_style_set_bg_opa
+//   - lv_style_set_blend_mode
+//   - lv_style_set_border_opa
+//   - lv_style_set_border_post
+//   - lv_style_set_border_side
+//   - lv_style_set_border_width
+//   - lv_style_set_clip_corner
+//   - lv_style_set_color_filter_opa
+//   - lv_style_set_flex_cross_place
+//   - lv_style_set_flex_flow
+//   - lv_style_set_flex_grow
+//   - lv_style_set_flex_main_place
+//   - lv_style_set_flex_track_place
+//   - lv_style_set_grid_cell_column_pos
+//   - lv_style_set_grid_cell_column_span
+//   - lv_style_set_grid_cell_row_pos
+//   - lv_style_set_grid_cell_row_span
+//   - lv_style_set_grid_cell_x_align
+//   - lv_style_set_grid_cell_y_align
+//   - lv_style_set_grid_column_align
+//   - lv_style_set_grid_row_align
+//   - lv_style_set_height
+//   - lv_style_set_image_opa
+//   - lv_style_set_image_recolor_opa
+//   - lv_style_set_layout
+//   - lv_style_set_length
+//   - lv_style_set_line_dash_gap
+//   - lv_style_set_line_dash_width
+//   - lv_style_set_line_opa
+//   - lv_style_set_line_rounded
+//   - lv_style_set_line_width
+//   - lv_style_set_margin_all
+//   - lv_style_set_margin_bottom
+//   - lv_style_set_margin_hor
+//   - lv_style_set_margin_left
+//   - lv_style_set_margin_right
+//   - lv_style_set_margin_top
+//   - lv_style_set_margin_ver
+//   - lv_style_set_max_height
+//   - lv_style_set_max_width
+//   - lv_style_set_min_height
+//   - lv_style_set_min_width
+//   - lv_style_set_opa
+//   - lv_style_set_opa_layered
+//   - lv_style_set_outline_opa
+//   - lv_style_set_outline_pad
+//   - lv_style_set_outline_width
+//   - lv_style_set_pad_all
+//   - lv_style_set_pad_bottom
+//   - lv_style_set_pad_column
+//   - lv_style_set_pad_gap
+//   - lv_style_set_pad_hor
+//   - lv_style_set_pad_left
+//   - lv_style_set_pad_radial
+//   - lv_style_set_pad_right
+//   - lv_style_set_pad_row
+//   - lv_style_set_pad_top
+//   - lv_style_set_pad_ver
+//   - lv_style_set_radial_offset
+//   - lv_style_set_radius
+//   - lv_style_set_recolor_opa
+//   - lv_style_set_rotary_sensitivity
+//   - lv_style_set_shadow_offset_x
+//   - lv_style_set_shadow_offset_y
+//   - lv_style_set_shadow_opa
+//   - lv_style_set_shadow_spread
+//   - lv_style_set_shadow_width
+//   - lv_style_set_text_align
+//   - lv_style_set_text_decor
+//   - lv_style_set_text_letter_space
+//   - lv_style_set_text_line_space
+//   - lv_style_set_text_opa
+//   - lv_style_set_text_outline_stroke_opa
+//   - lv_style_set_text_outline_stroke_width
+//   - lv_style_set_transform_height
+//   - lv_style_set_transform_pivot_x
+//   - lv_style_set_transform_pivot_y
+//   - lv_style_set_transform_rotation
+//   - lv_style_set_transform_scale
+//   - lv_style_set_transform_scale_x
+//   - lv_style_set_transform_scale_y
+//   - lv_style_set_transform_skew_x
+//   - lv_style_set_transform_skew_y
+//   - lv_style_set_transform_width
+//   - lv_style_set_translate_radial
+//   - lv_style_set_translate_x
+//   - lv_style_set_translate_y
+//   - lv_style_set_width
+//   - lv_style_set_x
+//   - lv_style_set_y
+//   - lv_subject_init_int
+//   - lv_subject_set_int
+//   - lv_switch_set_orientation
+//   - lv_table_set_column_count
+//   - lv_table_set_row_count
+//   - lv_tabview_set_tab_bar_position
+//   - lv_tabview_set_tab_bar_size
+//   - lv_textarea_add_char
+//   - lv_textarea_set_align
+//   - lv_textarea_set_cursor_click_pos
+//   - lv_textarea_set_cursor_pos
+//   - lv_textarea_set_max_length
+//   - lv_textarea_set_one_line
+//   - lv_textarea_set_password_mode
+//   - lv_textarea_set_password_show_time
+//   - lv_textarea_set_text_selection
+//   - lv_timer_set_auto_delete
+//   - lv_timer_set_period
+//   - lv_timer_set_repeat_count
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_6(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -793,15 +1748,15 @@ static lv_obj_t* dispatch_json_archetype_6(generic_lvgl_func_t fn, void* target_
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_6(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_anim_pause_for: expected 1 args, got %d", arg_count);
+    if (arg_count != 2) {
+        _eprintf(stderr, "IR call to lv_anim_pause_for: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_anim_pause_for: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_pause_for: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -812,7 +1767,15 @@ static lv_obj_t* dispatch_ir_archetype_6(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 5 funcs like uint32_t lv_anim_resolve_speed(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: uint32_t archetype_func(uint32_t speed, int32_t start, int32_t end)
+// Dispatcher for 5 LVGL function(s) including: lv_anim_resolve_speed
+// Consolidated functions (5 total):
+//   - lv_anim_resolve_speed
+//   - lv_anim_speed_clamped
+//   - lv_anim_speed_to_time
+//   - lv_color_16_16_mix
+//   - lv_color_rgb_to_hsv
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_7(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -827,14 +1790,14 @@ static lv_obj_t* dispatch_json_archetype_7(generic_lvgl_func_t fn, void* target_
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_7(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_anim_resolve_speed: expected 3 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_anim_resolve_speed: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_anim_resolve_speed: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_resolve_speed: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -842,7 +1805,7 @@ static lv_obj_t* dispatch_ir_archetype_7(generic_lvgl_func_t fn, void* target_vo
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_anim_resolve_speed: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_resolve_speed: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int32_t)ir_node_get_int(ir_args[1]);
@@ -850,7 +1813,7 @@ static lv_obj_t* dispatch_ir_archetype_7(generic_lvgl_func_t fn, void* target_vo
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_anim_resolve_speed: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_resolve_speed: arg 2 is NULL");
         return NULL;
     }
     arg2 = (int32_t)ir_node_get_int(ir_args[2]);
@@ -861,7 +1824,13 @@ static lv_obj_t* dispatch_ir_archetype_7(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 3 funcs like void lv_anim_set_bezier3_param(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_anim_t* target, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+// Dispatcher for 3 LVGL function(s) including: lv_anim_set_bezier3_param
+// Consolidated functions (3 total):
+//   - lv_anim_set_bezier3_param
+//   - lv_area_set
+//   - lv_screen_load_anim
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_8(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (int16_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -876,15 +1845,15 @@ static lv_obj_t* dispatch_json_archetype_8(generic_lvgl_func_t fn, void* target_
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_anim_set_bezier3_param: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_anim_set_bezier3_param: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_anim_set_bezier3_param: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_set_bezier3_param: arg 0 is NULL");
         return NULL;
     }
     arg0 = (int16_t)ir_node_get_int(ir_args[0]);
@@ -892,7 +1861,7 @@ static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target_vo
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_anim_set_bezier3_param: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_set_bezier3_param: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int16_t)ir_node_get_int(ir_args[1]);
@@ -900,7 +1869,7 @@ static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target_vo
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_anim_set_bezier3_param: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_set_bezier3_param: arg 2 is NULL");
         return NULL;
     }
     arg2 = (int16_t)ir_node_get_int(ir_args[2]);
@@ -908,7 +1877,7 @@ static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target_vo
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_anim_set_bezier3_param: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_set_bezier3_param: arg 3 is NULL");
         return NULL;
     }
     arg3 = (int16_t)ir_node_get_int(ir_args[3]);
@@ -919,7 +1888,106 @@ static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 96 funcs like void lv_anim_set_user_data(void* (ANY_POINTER))
+// Archetype C Signature Example: void archetype_func(lv_anim_t* target, void* user_data)
+// Dispatcher for 96 LVGL function(s) including: lv_anim_set_user_data
+// Consolidated functions (96 total):
+//   - lv_anim_set_user_data
+//   - lv_anim_set_var
+//   - lv_arclabel_set_text
+//   - lv_arclabel_set_text_static
+//   - lv_area_copy
+//   - lv_array_copy
+//   - lv_bin_decoder_close
+//   - lv_cache_destroy
+//   - lv_cache_drop_all
+//   - lv_cache_set_name
+//   - lv_calendar_header_dropdown_set_year_list
+//   - lv_calendar_set_day_names
+//   - lv_canvas_finish_layer
+//   - lv_canvas_init_layer
+//   - lv_canvas_set_draw_buf
+//   - lv_chart_remove_series
+//   - lv_checkbox_set_text
+//   - lv_checkbox_set_text_static
+//   - lv_display_rotate_area
+//   - lv_display_set_3rd_draw_buffer
+//   - lv_display_set_driver_data
+//   - lv_display_set_theme
+//   - lv_display_set_user_data
+//   - lv_draw_arc
+//   - lv_draw_buf_clear
+//   - lv_draw_buf_flush_cache
+//   - lv_draw_buf_invalidate_cache
+//   - lv_draw_buf_to_image
+//   - lv_draw_finalize_task_creation
+//   - lv_draw_line
+//   - lv_draw_task_get_area
+//   - lv_draw_triangle
+//   - lv_dropdown_set_options
+//   - lv_dropdown_set_options_static
+//   - lv_dropdown_set_symbol
+//   - lv_dropdown_set_text
+//   - lv_group_add_obj
+//   - lv_group_swap_obj
+//   - lv_image_get_pivot
+//   - lv_image_set_bitmap_map_src
+//   - lv_image_set_src
+//   - lv_indev_get_point
+//   - lv_indev_get_vect
+//   - lv_indev_reset
+//   - lv_indev_set_cursor
+//   - lv_indev_set_display
+//   - lv_indev_set_driver_data
+//   - lv_indev_set_group
+//   - lv_indev_set_user_data
+//   - lv_keyboard_set_textarea
+//   - lv_label_set_text
+//   - lv_label_set_text_static
+//   - lv_ll_remove
+//   - lv_menu_set_page
+//   - lv_menu_set_page_title
+//   - lv_menu_set_page_title_static
+//   - lv_menu_set_sidebar_page
+//   - lv_obj_get_click_area
+//   - lv_obj_get_content_coords
+//   - lv_obj_get_coords
+//   - lv_obj_get_scroll_end
+//   - lv_obj_invalidate_area
+//   - lv_obj_redraw
+//   - lv_obj_remove_from_subject
+//   - lv_obj_set_parent
+//   - lv_obj_set_transform
+//   - lv_obj_set_user_data
+//   - lv_obj_swap
+//   - lv_point_precise_swap
+//   - lv_point_swap
+//   - lv_sdl_window_set_title
+//   - lv_span_set_text
+//   - lv_span_set_text_static
+//   - lv_spangroup_delete_span
+//   - lv_style_copy
+//   - lv_style_set_anim
+//   - lv_style_set_arc_image_src
+//   - lv_style_set_bg_grad
+//   - lv_style_set_bg_image_src
+//   - lv_style_set_bitmap_mask_src
+//   - lv_style_set_color_filter_dsc
+//   - lv_style_set_grid_column_dsc_array
+//   - lv_style_set_grid_row_dsc_array
+//   - lv_style_set_text_font
+//   - lv_style_set_transition
+//   - lv_subject_copy_string
+//   - lv_subject_init_pointer
+//   - lv_subject_set_pointer
+//   - lv_textarea_add_text
+//   - lv_textarea_set_accepted_chars
+//   - lv_textarea_set_insert_replace
+//   - lv_textarea_set_password_bullet
+//   - lv_textarea_set_placeholder_text
+//   - lv_textarea_set_text
+//   - lv_theme_set_parent
+//   - lv_timer_set_user_data
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_9(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (void*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -931,15 +1999,15 @@ static lv_obj_t* dispatch_json_archetype_9(generic_lvgl_func_t fn, void* target_
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_9(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_anim_set_user_data: expected 1 args, got %d", arg_count);
+    if (arg_count != 2) {
+        _eprintf(stderr, "IR call to lv_anim_set_user_data: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_anim_set_user_data: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_set_user_data: arg 0 is NULL");
         return NULL;
     }
     arg0 = (void*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -950,7 +2018,174 @@ static lv_obj_t* dispatch_ir_archetype_9(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 164 funcs like void lv_anim_set_values(intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_anim_t* target, int32_t start, int32_t end)
+// Dispatcher for 164 LVGL function(s) including: lv_anim_set_values
+// Consolidated functions (164 total):
+//   - lv_anim_set_values
+//   - lv_animimg_set_src
+//   - lv_animimg_set_src_reverse
+//   - lv_arc_set_angles
+//   - lv_arc_set_bg_angles
+//   - lv_arc_set_range
+//   - lv_area_increase
+//   - lv_area_move
+//   - lv_array_init
+//   - lv_bar_set_range
+//   - lv_bar_set_start_value
+//   - lv_bar_set_value
+//   - lv_buttonmatrix_clear_button_ctrl
+//   - lv_buttonmatrix_set_button_ctrl
+//   - lv_buttonmatrix_set_button_width
+//   - lv_calendar_set_highlighted_dates
+//   - lv_calendar_set_month_shown
+//   - lv_canvas_set_palette
+//   - lv_chart_set_axis_max_value
+//   - lv_chart_set_axis_min_value
+//   - lv_chart_set_div_line_count
+//   - lv_display_set_offset
+//   - lv_display_set_physical_resolution
+//   - lv_display_set_resolution
+//   - lv_draw_buf_set_palette
+//   - lv_image_buf_set_palette
+//   - lv_image_set_pivot
+//   - lv_label_cut_text
+//   - lv_line_set_points
+//   - lv_line_set_points_mutable
+//   - lv_memset
+//   - lv_obj_fade_in
+//   - lv_obj_fade_out
+//   - lv_obj_move_to
+//   - lv_obj_refresh_style
+//   - lv_obj_scroll_to_x
+//   - lv_obj_scroll_to_y
+//   - lv_obj_set_flag
+//   - lv_obj_set_grid_align
+//   - lv_obj_set_grid_dsc_array
+//   - lv_obj_set_pos
+//   - lv_obj_set_size
+//   - lv_obj_set_state
+//   - lv_obj_set_style_align
+//   - lv_obj_set_style_anim_duration
+//   - lv_obj_set_style_arc_opa
+//   - lv_obj_set_style_arc_rounded
+//   - lv_obj_set_style_arc_width
+//   - lv_obj_set_style_base_dir
+//   - lv_obj_set_style_bg_grad_dir
+//   - lv_obj_set_style_bg_grad_opa
+//   - lv_obj_set_style_bg_grad_stop
+//   - lv_obj_set_style_bg_image_opa
+//   - lv_obj_set_style_bg_image_recolor_opa
+//   - lv_obj_set_style_bg_image_tiled
+//   - lv_obj_set_style_bg_main_opa
+//   - lv_obj_set_style_bg_main_stop
+//   - lv_obj_set_style_bg_opa
+//   - lv_obj_set_style_blend_mode
+//   - lv_obj_set_style_border_opa
+//   - lv_obj_set_style_border_post
+//   - lv_obj_set_style_border_side
+//   - lv_obj_set_style_border_width
+//   - lv_obj_set_style_clip_corner
+//   - lv_obj_set_style_color_filter_opa
+//   - lv_obj_set_style_flex_cross_place
+//   - lv_obj_set_style_flex_flow
+//   - lv_obj_set_style_flex_grow
+//   - lv_obj_set_style_flex_main_place
+//   - lv_obj_set_style_flex_track_place
+//   - lv_obj_set_style_grid_cell_column_pos
+//   - lv_obj_set_style_grid_cell_column_span
+//   - lv_obj_set_style_grid_cell_row_pos
+//   - lv_obj_set_style_grid_cell_row_span
+//   - lv_obj_set_style_grid_cell_x_align
+//   - lv_obj_set_style_grid_cell_y_align
+//   - lv_obj_set_style_grid_column_align
+//   - lv_obj_set_style_grid_row_align
+//   - lv_obj_set_style_height
+//   - lv_obj_set_style_image_opa
+//   - lv_obj_set_style_image_recolor_opa
+//   - lv_obj_set_style_layout
+//   - lv_obj_set_style_length
+//   - lv_obj_set_style_line_dash_gap
+//   - lv_obj_set_style_line_dash_width
+//   - lv_obj_set_style_line_opa
+//   - lv_obj_set_style_line_rounded
+//   - lv_obj_set_style_line_width
+//   - lv_obj_set_style_margin_all
+//   - lv_obj_set_style_margin_bottom
+//   - lv_obj_set_style_margin_hor
+//   - lv_obj_set_style_margin_left
+//   - lv_obj_set_style_margin_right
+//   - lv_obj_set_style_margin_top
+//   - lv_obj_set_style_margin_ver
+//   - lv_obj_set_style_max_height
+//   - lv_obj_set_style_max_width
+//   - lv_obj_set_style_min_height
+//   - lv_obj_set_style_min_width
+//   - lv_obj_set_style_opa
+//   - lv_obj_set_style_opa_layered
+//   - lv_obj_set_style_outline_opa
+//   - lv_obj_set_style_outline_pad
+//   - lv_obj_set_style_outline_width
+//   - lv_obj_set_style_pad_all
+//   - lv_obj_set_style_pad_bottom
+//   - lv_obj_set_style_pad_column
+//   - lv_obj_set_style_pad_gap
+//   - lv_obj_set_style_pad_hor
+//   - lv_obj_set_style_pad_left
+//   - lv_obj_set_style_pad_radial
+//   - lv_obj_set_style_pad_right
+//   - lv_obj_set_style_pad_row
+//   - lv_obj_set_style_pad_top
+//   - lv_obj_set_style_pad_ver
+//   - lv_obj_set_style_radial_offset
+//   - lv_obj_set_style_radius
+//   - lv_obj_set_style_recolor_opa
+//   - lv_obj_set_style_rotary_sensitivity
+//   - lv_obj_set_style_shadow_offset_x
+//   - lv_obj_set_style_shadow_offset_y
+//   - lv_obj_set_style_shadow_opa
+//   - lv_obj_set_style_shadow_spread
+//   - lv_obj_set_style_shadow_width
+//   - lv_obj_set_style_text_align
+//   - lv_obj_set_style_text_decor
+//   - lv_obj_set_style_text_letter_space
+//   - lv_obj_set_style_text_line_space
+//   - lv_obj_set_style_text_opa
+//   - lv_obj_set_style_text_outline_stroke_opa
+//   - lv_obj_set_style_text_outline_stroke_width
+//   - lv_obj_set_style_transform_height
+//   - lv_obj_set_style_transform_pivot_x
+//   - lv_obj_set_style_transform_pivot_y
+//   - lv_obj_set_style_transform_rotation
+//   - lv_obj_set_style_transform_scale
+//   - lv_obj_set_style_transform_scale_x
+//   - lv_obj_set_style_transform_scale_y
+//   - lv_obj_set_style_transform_skew_x
+//   - lv_obj_set_style_transform_skew_y
+//   - lv_obj_set_style_transform_width
+//   - lv_obj_set_style_translate_radial
+//   - lv_obj_set_style_translate_x
+//   - lv_obj_set_style_translate_y
+//   - lv_obj_set_style_width
+//   - lv_obj_set_style_x
+//   - lv_obj_set_style_y
+//   - lv_point_precise_set
+//   - lv_point_set
+//   - lv_roller_set_selected
+//   - lv_scale_section_set_range
+//   - lv_scale_set_range
+//   - lv_slider_set_range
+//   - lv_slider_set_start_value
+//   - lv_slider_set_value
+//   - lv_spinbox_set_digit_format
+//   - lv_spinbox_set_range
+//   - lv_spinner_set_anim_params
+//   - lv_style_set_prop
+//   - lv_style_set_size
+//   - lv_subject_init_group
+//   - lv_table_set_column_width
+//   - lv_table_set_selected_cell
+//   - lv_tabview_set_active
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_10(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (int32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -963,15 +2198,15 @@ static lv_obj_t* dispatch_json_archetype_10(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_10(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_anim_set_values: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_anim_set_values: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_anim_set_values: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_set_values: arg 0 is NULL");
         return NULL;
     }
     arg0 = (int32_t)ir_node_get_int(ir_args[0]);
@@ -979,7 +2214,7 @@ static lv_obj_t* dispatch_ir_archetype_10(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_anim_set_values: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_set_values: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int32_t)ir_node_get_int(ir_args[1]);
@@ -990,7 +2225,38 @@ static lv_obj_t* dispatch_ir_archetype_10(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 28 funcs like uint32_t lv_anim_speed(intptr_t (INT_LIKE))
+// Archetype C Signature Example: uint32_t archetype_func(uint32_t speed)
+// Dispatcher for 28 LVGL function(s) including: lv_anim_speed
+// Consolidated functions (28 total):
+//   - lv_anim_speed
+//   - lv_cache_entry_get_size
+//   - lv_color16_luminance
+//   - lv_color32_luminance
+//   - lv_color_format_get_bpp
+//   - lv_color_format_get_size
+//   - lv_color_format_has_alpha
+//   - lv_color_swap_16
+//   - lv_dpx
+//   - lv_fs_is_ready
+//   - lv_grid_fr
+//   - lv_image_cache_init
+//   - lv_image_header_cache_init
+//   - lv_obj_style_get_selector_part
+//   - lv_obj_style_get_selector_state
+//   - lv_pct
+//   - lv_sqr
+//   - lv_sqrt32
+//   - lv_style_get_prop_group
+//   - lv_style_prop_get_default
+//   - lv_style_prop_lookup_flags
+//   - lv_style_register_prop
+//   - lv_swap_bytes_16
+//   - lv_swap_bytes_32
+//   - lv_tick_elaps
+//   - lv_timer_handler_run_in_period
+//   - lv_trigo_cos
+//   - lv_trigo_sin
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_11(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1003,14 +2269,14 @@ static lv_obj_t* dispatch_json_archetype_11(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_11(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_anim_speed: expected 1 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_anim_speed: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_anim_speed: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_speed: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -1021,7 +2287,22 @@ static lv_obj_t* dispatch_ir_archetype_11(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 12 funcs like void lv_anim_timeline_add(intptr_t (INT_LIKE), void* (ANY_POINTER))
+// Archetype C Signature Example: void archetype_func(lv_anim_timeline_t* target, uint32_t start_time, lv_anim_t* a)
+// Dispatcher for 12 LVGL function(s) including: lv_anim_timeline_add
+// Consolidated functions (12 total):
+//   - lv_anim_timeline_add
+//   - lv_cache_reserve
+//   - lv_cache_set_max_size
+//   - lv_label_get_letter_pos
+//   - lv_label_ins_text
+//   - lv_obj_init_draw_arc_dsc
+//   - lv_obj_init_draw_image_dsc
+//   - lv_obj_init_draw_label_dsc
+//   - lv_obj_init_draw_line_dsc
+//   - lv_obj_init_draw_rect_dsc
+//   - lv_scale_section_set_style
+//   - lv_tabview_rename_tab
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_12(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1034,15 +2315,15 @@ static lv_obj_t* dispatch_json_archetype_12(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_12(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_anim_timeline_add: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_anim_timeline_add: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_anim_timeline_add: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_timeline_add: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -1050,7 +2331,7 @@ static lv_obj_t* dispatch_ir_archetype_12(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_anim_timeline_add: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_anim_timeline_add: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_anim_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -1061,7 +2342,43 @@ static lv_obj_t* dispatch_ir_archetype_12(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 33 funcs like void lv_arc_align_obj_to_angle(void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_obj_t* obj_to_align, int32_t r_offset)
+// Dispatcher for 33 LVGL function(s) including: lv_arc_align_obj_to_angle
+// Consolidated functions (33 total):
+//   - lv_arc_align_obj_to_angle
+//   - lv_arc_rotate_obj_to_angle
+//   - lv_cache_entry_init
+//   - lv_chart_hide_series
+//   - lv_chart_set_all_values
+//   - lv_chart_set_cursor_pos_x
+//   - lv_chart_set_cursor_pos_y
+//   - lv_chart_set_next_value
+//   - lv_chart_set_series_ext_x_array
+//   - lv_chart_set_series_ext_y_array
+//   - lv_chart_set_x_start_point
+//   - lv_dropdown_add_option
+//   - lv_dropdown_get_selected_str
+//   - lv_obj_add_style
+//   - lv_obj_get_transformed_area
+//   - lv_obj_remove_style
+//   - lv_obj_set_style_anim
+//   - lv_obj_set_style_arc_image_src
+//   - lv_obj_set_style_bg_grad
+//   - lv_obj_set_style_bg_image_src
+//   - lv_obj_set_style_bitmap_mask_src
+//   - lv_obj_set_style_color_filter_dsc
+//   - lv_obj_set_style_grid_column_dsc_array
+//   - lv_obj_set_style_grid_row_dsc_array
+//   - lv_obj_set_style_text_font
+//   - lv_obj_set_style_transition
+//   - lv_obj_transform_point
+//   - lv_roller_get_selected_str
+//   - lv_roller_set_options
+//   - lv_scale_set_image_needle_value
+//   - lv_scale_set_section_max_value
+//   - lv_scale_set_section_min_value
+//   - lv_tileview_set_tile
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_13(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_obj_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1074,15 +2391,15 @@ static lv_obj_t* dispatch_json_archetype_13(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_13(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_arc_align_obj_to_angle: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_arc_align_obj_to_angle: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_arc_align_obj_to_angle: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_arc_align_obj_to_angle: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -1090,7 +2407,7 @@ static lv_obj_t* dispatch_ir_archetype_13(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_arc_align_obj_to_angle: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_arc_align_obj_to_angle: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int32_t)ir_node_get_int(ir_args[1]);
@@ -1101,7 +2418,44 @@ static lv_obj_t* dispatch_ir_archetype_13(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 34 funcs like lv_observer_t* lv_arc_bind_value(void* (ANY_POINTER))
+// Archetype C Signature Example: lv_observer_t* archetype_func(lv_obj_t* target, lv_subject_t* subject)
+// Dispatcher for 34 LVGL function(s) including: lv_arc_bind_value
+// Consolidated functions (34 total):
+//   - lv_arc_bind_value
+//   - lv_chart_get_series_next
+//   - lv_chart_get_series_x_array
+//   - lv_chart_get_series_y_array
+//   - lv_draw_buf_dup_ex
+//   - lv_dropdown_bind_value
+//   - lv_font_get_bitmap_fmt_txt
+//   - lv_font_get_glyph_bitmap
+//   - lv_image_decoder_post_process
+//   - lv_indev_search_obj
+//   - lv_list_add_text
+//   - lv_list_get_button_text
+//   - lv_ll_get_next
+//   - lv_ll_get_prev
+//   - lv_ll_ins_prev
+//   - lv_menu_page_create
+//   - lv_msgbox_add_footer_button
+//   - lv_msgbox_add_header_button
+//   - lv_msgbox_add_text
+//   - lv_msgbox_add_title
+//   - lv_obj_bind_checked
+//   - lv_obj_class_create_obj
+//   - lv_rb_find
+//   - lv_rb_insert
+//   - lv_rb_remove
+//   - lv_rb_remove_node
+//   - lv_roller_bind_value
+//   - lv_slider_bind_value
+//   - lv_spangroup_get_span_by_point
+//   - lv_strcat
+//   - lv_strcpy
+//   - lv_tabview_add_tab
+//   - lv_tree_node_create
+//   - lv_win_add_title
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_14(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_subject_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1112,15 +2466,15 @@ static lv_obj_t* dispatch_json_archetype_14(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_14(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_arc_bind_value: expected 1 args, got %d", arg_count);
+    if (arg_count != 2) {
+        _eprintf(stderr, "IR call to lv_arc_bind_value: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_arc_bind_value: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_arc_bind_value: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -1130,7 +2484,15 @@ static lv_obj_t* dispatch_ir_archetype_14(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 5 funcs like void lv_area_align(void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_area_t* target, lv_area_t* to_align, lv_align_t align, int32_t ofs_x, int32_t ofs_y)
+// Dispatcher for 5 LVGL function(s) including: lv_area_align
+// Consolidated functions (5 total):
+//   - lv_area_align
+//   - lv_canvas_set_buffer
+//   - lv_chart_set_series_value_by_id2
+//   - lv_chart_set_series_values2
+//   - lv_obj_align_to
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_15(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_area_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1145,15 +2507,15 @@ static lv_obj_t* dispatch_json_archetype_15(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_15(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_area_align: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_area_align: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_area_align: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_area_align: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -1161,7 +2523,7 @@ static lv_obj_t* dispatch_ir_archetype_15(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_area_align: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_area_align: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_align_t)ir_node_get_int_robust(ir_args[1], "lv_align_t");
@@ -1169,7 +2531,7 @@ static lv_obj_t* dispatch_ir_archetype_15(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_area_align: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_area_align: arg 2 is NULL");
         return NULL;
     }
     arg2 = (int32_t)ir_node_get_int(ir_args[2]);
@@ -1177,7 +2539,7 @@ static lv_obj_t* dispatch_ir_archetype_15(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_area_align: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_area_align: arg 3 is NULL");
         return NULL;
     }
     arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -1188,7 +2550,18 @@ static lv_obj_t* dispatch_ir_archetype_15(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 8 funcs like lv_result_t lv_array_assign(intptr_t (INT_LIKE), void* (ANY_POINTER))
+// Archetype C Signature Example: lv_result_t archetype_func(lv_array_t* target, uint32_t index, void* value)
+// Dispatcher for 8 LVGL function(s) including: lv_array_assign
+// Consolidated functions (8 total):
+//   - lv_array_assign
+//   - lv_circle_buf_peek_at
+//   - lv_display_send_event
+//   - lv_indev_send_event
+//   - lv_obj_calculate_style_text_align
+//   - lv_obj_send_event
+//   - lv_style_get_prop
+//   - lv_style_get_prop_inlined
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_16(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1201,15 +2574,15 @@ static lv_obj_t* dispatch_json_archetype_16(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_16(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_array_assign: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_array_assign: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_array_assign: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_array_assign: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -1217,7 +2590,7 @@ static lv_obj_t* dispatch_ir_archetype_16(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_array_assign: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_array_assign: arg 1 is NULL");
         return NULL;
     }
     arg1 = (void*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -1228,7 +2601,42 @@ static lv_obj_t* dispatch_ir_archetype_16(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 32 funcs like void* lv_array_at(intptr_t (INT_LIKE))
+// Archetype C Signature Example: void* archetype_func(lv_array_t* target, uint32_t index)
+// Dispatcher for 32 LVGL function(s) including: lv_array_at
+// Consolidated functions (32 total):
+//   - lv_array_at
+//   - lv_buttonmatrix_get_button_text
+//   - lv_cache_entry_get_entry
+//   - lv_display_get_event_dsc
+//   - lv_draw_buf_align
+//   - lv_event_get_dsc
+//   - lv_group_get_obj_by_index
+//   - lv_imagebutton_get_src_left
+//   - lv_imagebutton_get_src_middle
+//   - lv_imagebutton_get_src_right
+//   - lv_indev_get_event_dsc
+//   - lv_keyboard_get_button_text
+//   - lv_obj_get_child
+//   - lv_obj_get_event_dsc
+//   - lv_obj_get_sibling
+//   - lv_obj_get_style_anim
+//   - lv_obj_get_style_arc_image_src
+//   - lv_obj_get_style_bg_grad
+//   - lv_obj_get_style_bg_image_src
+//   - lv_obj_get_style_bitmap_mask_src
+//   - lv_obj_get_style_color_filter_dsc
+//   - lv_obj_get_style_grid_column_dsc_array
+//   - lv_obj_get_style_grid_row_dsc_array
+//   - lv_obj_get_style_text_font
+//   - lv_obj_get_style_transition
+//   - lv_realloc
+//   - lv_realloc_core
+//   - lv_reallocf
+//   - lv_spangroup_get_child
+//   - lv_strchr
+//   - lv_strndup
+//   - lv_subject_get_group_element
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_17(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1239,15 +2647,15 @@ static lv_obj_t* dispatch_json_archetype_17(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_17(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_array_at: expected 1 args, got %d", arg_count);
+    if (arg_count != 2) {
+        _eprintf(stderr, "IR call to lv_array_at: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_array_at: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_array_at: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -1257,7 +2665,50 @@ static lv_obj_t* dispatch_ir_archetype_17(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 40 funcs like lv_result_t lv_array_concat(void* (ANY_POINTER))
+// Archetype C Signature Example: lv_result_t archetype_func(lv_array_t* target, lv_array_t* other)
+// Dispatcher for 40 LVGL function(s) including: lv_array_concat
+// Consolidated functions (40 total):
+//   - lv_array_concat
+//   - lv_array_push_back
+//   - lv_bin_decoder_open
+//   - lv_cache_evict_one
+//   - lv_cache_get_free_size
+//   - lv_cache_get_max_size
+//   - lv_cache_get_size
+//   - lv_calendar_get_pressed_date
+//   - lv_chart_get_cursor_point
+//   - lv_chart_get_x_start_point
+//   - lv_circle_buf_peek
+//   - lv_circle_buf_read
+//   - lv_circle_buf_write
+//   - lv_display_send_vsync_event
+//   - lv_draw_buf_from_image
+//   - lv_draw_buf_save_to_file
+//   - lv_draw_dispatch_layer
+//   - lv_dropdown_get_option_index
+//   - lv_event_remove_dsc
+//   - lv_font_info_is_equal
+//   - lv_fs_dir_open
+//   - lv_fs_tell
+//   - lv_image_decoder_get_info
+//   - lv_iter_next
+//   - lv_iter_peek
+//   - lv_label_is_char_under_pos
+//   - lv_menu_back_button_is_root
+//   - lv_obj_area_is_visible
+//   - lv_obj_check_type
+//   - lv_obj_event_base
+//   - lv_obj_get_child_count_by_type
+//   - lv_obj_get_index_by_type
+//   - lv_obj_has_class
+//   - lv_obj_hit_test
+//   - lv_obj_remove_event_dsc
+//   - lv_rb_drop
+//   - lv_rb_drop_node
+//   - lv_spangroup_get_span_coords
+//   - lv_strcmp
+//   - lv_streq
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_18(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_array_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1269,15 +2720,15 @@ static lv_obj_t* dispatch_json_archetype_18(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_18(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_array_concat: expected 1 args, got %d", arg_count);
+    if (arg_count != 2) {
+        _eprintf(stderr, "IR call to lv_array_concat: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_array_concat: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_array_concat: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_array_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -1288,7 +2739,23 @@ static lv_obj_t* dispatch_ir_archetype_18(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 13 funcs like lv_result_t lv_array_erase(intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_result_t archetype_func(lv_array_t* target, uint32_t start, uint32_t end)
+// Dispatcher for 13 LVGL function(s) including: lv_array_erase
+// Consolidated functions (13 total):
+//   - lv_array_erase
+//   - lv_buttonmatrix_has_button_ctrl
+//   - lv_canvas_get_px
+//   - lv_display_get_invalidated_draw_buf_size
+//   - lv_draw_buf_width_to_stride_ex
+//   - lv_font_get_glyph_width
+//   - lv_fs_seek
+//   - lv_obj_get_style_prop
+//   - lv_obj_has_style_prop
+//   - lv_obj_remove_local_style_prop
+//   - lv_obj_style_apply_color_filter
+//   - lv_obj_style_apply_recolor
+//   - lv_rb_init
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_19(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1301,15 +2768,15 @@ static lv_obj_t* dispatch_json_archetype_19(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_19(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_array_erase: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_array_erase: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_array_erase: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_array_erase: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -1317,7 +2784,7 @@ static lv_obj_t* dispatch_ir_archetype_19(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_array_erase: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_array_erase: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -1328,7 +2795,19 @@ static lv_obj_t* dispatch_ir_archetype_19(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 9 funcs like void lv_array_init_from_buf(void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_array_t* target, void* buf, uint32_t capacity, uint32_t element_size)
+// Dispatcher for 9 LVGL function(s) including: lv_array_init_from_buf
+// Consolidated functions (9 total):
+//   - lv_array_init_from_buf
+//   - lv_chart_set_next_value2
+//   - lv_chart_set_series_value_by_id
+//   - lv_chart_set_series_values
+//   - lv_obj_add_subject_set_int_event
+//   - lv_obj_style_set_disabled
+//   - lv_scale_set_line_needle_value
+//   - lv_scale_set_section_range
+//   - lv_sdl_window_set_icon
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_20(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (void*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1342,15 +2821,15 @@ static lv_obj_t* dispatch_json_archetype_20(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_20(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_array_init_from_buf: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_array_init_from_buf: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_array_init_from_buf: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_array_init_from_buf: arg 0 is NULL");
         return NULL;
     }
     arg0 = (void*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -1358,7 +2837,7 @@ static lv_obj_t* dispatch_ir_archetype_20(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_array_init_from_buf: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_array_init_from_buf: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -1366,7 +2845,7 @@ static lv_obj_t* dispatch_ir_archetype_20(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_array_init_from_buf: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_array_init_from_buf: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -1377,7 +2856,136 @@ static lv_obj_t* dispatch_ir_archetype_20(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 126 funcs like lv_result_t lv_array_remove(intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_result_t archetype_func(lv_array_t* target, uint32_t index)
+// Dispatcher for 126 LVGL function(s) including: lv_array_remove
+// Consolidated functions (126 total):
+//   - lv_array_remove
+//   - lv_array_resize
+//   - lv_circle_buf_resize
+//   - lv_display_delete_event
+//   - lv_display_dpx
+//   - lv_draw_buf_adjust_stride
+//   - lv_draw_buf_has_flag
+//   - lv_event_remove
+//   - lv_group_send_data
+//   - lv_indev_remove_event
+//   - lv_mem_add_pool
+//   - lv_obj_calculate_ext_draw_size
+//   - lv_obj_get_style_align
+//   - lv_obj_get_style_anim_duration
+//   - lv_obj_get_style_arc_opa
+//   - lv_obj_get_style_arc_rounded
+//   - lv_obj_get_style_arc_width
+//   - lv_obj_get_style_base_dir
+//   - lv_obj_get_style_bg_grad_dir
+//   - lv_obj_get_style_bg_grad_opa
+//   - lv_obj_get_style_bg_grad_stop
+//   - lv_obj_get_style_bg_image_opa
+//   - lv_obj_get_style_bg_image_recolor_opa
+//   - lv_obj_get_style_bg_image_tiled
+//   - lv_obj_get_style_bg_main_opa
+//   - lv_obj_get_style_bg_main_stop
+//   - lv_obj_get_style_bg_opa
+//   - lv_obj_get_style_blend_mode
+//   - lv_obj_get_style_border_opa
+//   - lv_obj_get_style_border_post
+//   - lv_obj_get_style_border_side
+//   - lv_obj_get_style_border_width
+//   - lv_obj_get_style_clip_corner
+//   - lv_obj_get_style_color_filter_opa
+//   - lv_obj_get_style_flex_cross_place
+//   - lv_obj_get_style_flex_flow
+//   - lv_obj_get_style_flex_grow
+//   - lv_obj_get_style_flex_main_place
+//   - lv_obj_get_style_flex_track_place
+//   - lv_obj_get_style_grid_cell_column_pos
+//   - lv_obj_get_style_grid_cell_column_span
+//   - lv_obj_get_style_grid_cell_row_pos
+//   - lv_obj_get_style_grid_cell_row_span
+//   - lv_obj_get_style_grid_cell_x_align
+//   - lv_obj_get_style_grid_cell_y_align
+//   - lv_obj_get_style_grid_column_align
+//   - lv_obj_get_style_grid_row_align
+//   - lv_obj_get_style_height
+//   - lv_obj_get_style_image_opa
+//   - lv_obj_get_style_image_recolor_opa
+//   - lv_obj_get_style_layout
+//   - lv_obj_get_style_length
+//   - lv_obj_get_style_line_dash_gap
+//   - lv_obj_get_style_line_dash_width
+//   - lv_obj_get_style_line_opa
+//   - lv_obj_get_style_line_rounded
+//   - lv_obj_get_style_line_width
+//   - lv_obj_get_style_margin_bottom
+//   - lv_obj_get_style_margin_left
+//   - lv_obj_get_style_margin_right
+//   - lv_obj_get_style_margin_top
+//   - lv_obj_get_style_max_height
+//   - lv_obj_get_style_max_width
+//   - lv_obj_get_style_min_height
+//   - lv_obj_get_style_min_width
+//   - lv_obj_get_style_opa
+//   - lv_obj_get_style_opa_layered
+//   - lv_obj_get_style_opa_recursive
+//   - lv_obj_get_style_outline_opa
+//   - lv_obj_get_style_outline_pad
+//   - lv_obj_get_style_outline_width
+//   - lv_obj_get_style_pad_bottom
+//   - lv_obj_get_style_pad_column
+//   - lv_obj_get_style_pad_left
+//   - lv_obj_get_style_pad_radial
+//   - lv_obj_get_style_pad_right
+//   - lv_obj_get_style_pad_row
+//   - lv_obj_get_style_pad_top
+//   - lv_obj_get_style_radial_offset
+//   - lv_obj_get_style_radius
+//   - lv_obj_get_style_recolor_opa
+//   - lv_obj_get_style_recolor_recursive
+//   - lv_obj_get_style_rotary_sensitivity
+//   - lv_obj_get_style_shadow_offset_x
+//   - lv_obj_get_style_shadow_offset_y
+//   - lv_obj_get_style_shadow_opa
+//   - lv_obj_get_style_shadow_spread
+//   - lv_obj_get_style_shadow_width
+//   - lv_obj_get_style_space_bottom
+//   - lv_obj_get_style_space_left
+//   - lv_obj_get_style_space_right
+//   - lv_obj_get_style_space_top
+//   - lv_obj_get_style_text_align
+//   - lv_obj_get_style_text_decor
+//   - lv_obj_get_style_text_letter_space
+//   - lv_obj_get_style_text_line_space
+//   - lv_obj_get_style_text_opa
+//   - lv_obj_get_style_text_outline_stroke_opa
+//   - lv_obj_get_style_text_outline_stroke_width
+//   - lv_obj_get_style_transform_height
+//   - lv_obj_get_style_transform_pivot_x
+//   - lv_obj_get_style_transform_pivot_y
+//   - lv_obj_get_style_transform_rotation
+//   - lv_obj_get_style_transform_scale_x
+//   - lv_obj_get_style_transform_scale_x_safe
+//   - lv_obj_get_style_transform_scale_y
+//   - lv_obj_get_style_transform_scale_y_safe
+//   - lv_obj_get_style_transform_skew_x
+//   - lv_obj_get_style_transform_skew_y
+//   - lv_obj_get_style_transform_width
+//   - lv_obj_get_style_translate_radial
+//   - lv_obj_get_style_translate_x
+//   - lv_obj_get_style_translate_y
+//   - lv_obj_get_style_width
+//   - lv_obj_get_style_x
+//   - lv_obj_get_style_y
+//   - lv_obj_has_flag
+//   - lv_obj_has_flag_any
+//   - lv_obj_has_state
+//   - lv_obj_remove_event
+//   - lv_spangroup_get_expand_height
+//   - lv_spangroup_get_expand_width
+//   - lv_strnlen
+//   - lv_style_remove_prop
+//   - lv_table_get_column_width
+//   - lv_text_is_cmd
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_21(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1389,15 +2997,15 @@ static lv_obj_t* dispatch_json_archetype_21(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_21(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_array_remove: expected 1 args, got %d", arg_count);
+    if (arg_count != 2) {
+        _eprintf(stderr, "IR call to lv_array_remove: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_array_remove: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_array_remove: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -1408,7 +3016,20 @@ static lv_obj_t* dispatch_ir_archetype_21(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 10 funcs like uint16_t lv_atan2(intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: uint16_t archetype_func(int x, int y)
+// Dispatcher for 10 LVGL function(s) including: lv_atan2
+// Consolidated functions (10 total):
+//   - lv_atan2
+//   - lv_color32_eq
+//   - lv_color_mix32
+//   - lv_color_mix32_premultiplied
+//   - lv_color_over32
+//   - lv_draw_buf_width_to_stride
+//   - lv_pct_to_px
+//   - lv_pow
+//   - lv_rand
+//   - lv_style_prop_has_flag
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_22(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (int)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1422,14 +3043,14 @@ static lv_obj_t* dispatch_json_archetype_22(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_22(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_atan2: expected 2 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_atan2: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_atan2: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_atan2: arg 0 is NULL");
         return NULL;
     }
     arg0 = (int)ir_node_get_int(ir_args[0]);
@@ -1437,7 +3058,7 @@ static lv_obj_t* dispatch_ir_archetype_22(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_atan2: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_atan2: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int)ir_node_get_int(ir_args[1]);
@@ -1448,7 +3069,13 @@ static lv_obj_t* dispatch_ir_archetype_22(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 3 funcs like int32_t lv_bezier3(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: int32_t archetype_func(int32_t t, int32_t u0, uint32_t u1, int32_t u2, int32_t u3)
+// Dispatcher for 3 LVGL function(s) including: lv_bezier3
+// Consolidated functions (3 total):
+//   - lv_bezier3
+//   - lv_cubic_bezier
+//   - lv_map
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_23(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (int32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1465,14 +3092,14 @@ static lv_obj_t* dispatch_json_archetype_23(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 5) {
-        LV_LOG_WARN("IR call to lv_bezier3: expected 5 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_bezier3: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_bezier3: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_bezier3: arg 0 is NULL");
         return NULL;
     }
     arg0 = (int32_t)ir_node_get_int(ir_args[0]);
@@ -1480,7 +3107,7 @@ static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_bezier3: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_bezier3: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int32_t)ir_node_get_int(ir_args[1]);
@@ -1488,7 +3115,7 @@ static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_bezier3: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_bezier3: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -1496,7 +3123,7 @@ static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_bezier3: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_bezier3: arg 3 is NULL");
         return NULL;
     }
     arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -1504,7 +3131,7 @@ static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target_v
     intptr_t arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_bezier3: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_bezier3: arg 4 is NULL");
         return NULL;
     }
     arg4 = (int32_t)ir_node_get_int(ir_args[4]);
@@ -1515,7 +3142,34 @@ static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 24 funcs like void lv_bidi_calculate_align(void* (ANY_POINTER), void* (ANY_POINTER))
+// Archetype C Signature Example: void archetype_func(lv_text_align_t* target, lv_base_dir_t* base_dir, char* txt)
+// Dispatcher for 24 LVGL function(s) including: lv_bidi_calculate_align
+// Consolidated functions (24 total):
+//   - lv_bidi_calculate_align
+//   - lv_cache_drop
+//   - lv_cache_release
+//   - lv_chart_set_cursor_pos
+//   - lv_display_set_draw_buffers
+//   - lv_draw_border
+//   - lv_draw_box_shadow
+//   - lv_draw_fill
+//   - lv_draw_image
+//   - lv_draw_label
+//   - lv_draw_layer
+//   - lv_draw_letter
+//   - lv_draw_rect
+//   - lv_list_set_button_text
+//   - lv_ll_move_before
+//   - lv_menu_set_load_page_event
+//   - lv_obj_get_scrollbar_area
+//   - lv_scale_set_section_style_indicator
+//   - lv_scale_set_section_style_items
+//   - lv_scale_set_section_style_main
+//   - lv_spangroup_set_span_style
+//   - lv_spangroup_set_span_text
+//   - lv_spangroup_set_span_text_static
+//   - lv_table_get_selected_cell
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_24(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_base_dir_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1528,15 +3182,15 @@ static lv_obj_t* dispatch_json_archetype_24(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_24(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_bidi_calculate_align: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_bidi_calculate_align: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_bidi_calculate_align: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_bidi_calculate_align: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_base_dir_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -1544,7 +3198,7 @@ static lv_obj_t* dispatch_ir_archetype_24(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_bidi_calculate_align: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_bidi_calculate_align: arg 1 is NULL");
         return NULL;
     }
     arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -1555,7 +3209,9 @@ static lv_obj_t* dispatch_ir_archetype_24(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_result_t lv_bin_decoder_get_area(void* (ANY_POINTER), void* (ANY_POINTER), void* (ANY_POINTER))
+// Archetype C Signature Example: lv_result_t archetype_func(lv_image_decoder_t* target, lv_image_decoder_dsc_t* dsc, lv_area_t* full_area, lv_area_t* decoded_area)
+// Dispatcher for 1 LVGL function(s) including: lv_bin_decoder_get_area
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_25(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_image_decoder_dsc_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1569,15 +3225,15 @@ static lv_obj_t* dispatch_json_archetype_25(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_25(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_bin_decoder_get_area: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_bin_decoder_get_area: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_bin_decoder_get_area: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_bin_decoder_get_area: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_image_decoder_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -1585,7 +3241,7 @@ static lv_obj_t* dispatch_ir_archetype_25(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_bin_decoder_get_area: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_bin_decoder_get_area: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -1593,7 +3249,7 @@ static lv_obj_t* dispatch_ir_archetype_25(generic_lvgl_func_t fn, void* target_v
     void* arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_bin_decoder_get_area: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_bin_decoder_get_area: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
@@ -1604,7 +3260,13 @@ static lv_obj_t* dispatch_ir_archetype_25(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 3 funcs like lv_result_t lv_bin_decoder_info(void* (ANY_POINTER), void* (ANY_POINTER))
+// Archetype C Signature Example: lv_result_t archetype_func(lv_image_decoder_t* target, lv_image_decoder_dsc_t* dsc, lv_image_header_t* header)
+// Dispatcher for 3 LVGL function(s) including: lv_bin_decoder_info
+// Consolidated functions (3 total):
+//   - lv_bin_decoder_info
+//   - lv_image_decoder_get_area
+//   - lv_image_decoder_open
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_26(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_image_decoder_dsc_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1617,15 +3279,15 @@ static lv_obj_t* dispatch_json_archetype_26(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_26(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_bin_decoder_info: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_bin_decoder_info: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_bin_decoder_info: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_bin_decoder_info: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_image_decoder_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -1633,7 +3295,7 @@ static lv_obj_t* dispatch_ir_archetype_26(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_bin_decoder_info: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_bin_decoder_info: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_image_header_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -1644,7 +3306,15 @@ static lv_obj_t* dispatch_ir_archetype_26(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 5 funcs like lv_cache_entry_t* lv_cache_acquire(void* (ANY_POINTER), void* (ANY_POINTER))
+// Archetype C Signature Example: lv_cache_entry_t* archetype_func(lv_cache_t* target, void* key, void* user_data)
+// Dispatcher for 5 LVGL function(s) including: lv_cache_acquire
+// Consolidated functions (5 total):
+//   - lv_cache_acquire
+//   - lv_cache_acquire_or_create
+//   - lv_cache_add
+//   - lv_label_bind_text
+//   - lv_list_add_button
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_27(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (void*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1656,15 +3326,15 @@ static lv_obj_t* dispatch_json_archetype_27(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_27(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_cache_acquire: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_cache_acquire: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_cache_acquire: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_cache_acquire: arg 0 is NULL");
         return NULL;
     }
     arg0 = (void*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -1672,7 +3342,7 @@ static lv_obj_t* dispatch_ir_archetype_27(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_cache_acquire: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_cache_acquire: arg 1 is NULL");
         return NULL;
     }
     arg1 = (void*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -1682,7 +3352,9 @@ static lv_obj_t* dispatch_ir_archetype_27(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_cache_entry_t* lv_cache_entry_alloc(intptr_t (INT_LIKE), void* (ANY_POINTER))
+// Archetype C Signature Example: lv_cache_entry_t* archetype_func(uint32_t node_size, lv_cache_t* cache)
+// Dispatcher for 1 LVGL function(s) including: lv_cache_entry_alloc
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_28(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1695,14 +3367,14 @@ static lv_obj_t* dispatch_json_archetype_28(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_28(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_cache_entry_alloc: expected 2 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_cache_entry_alloc: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_cache_entry_alloc: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_cache_entry_alloc: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -1710,7 +3382,7 @@ static lv_obj_t* dispatch_ir_archetype_28(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_cache_entry_alloc: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_cache_entry_alloc: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_cache_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -1720,7 +3392,25 @@ static lv_obj_t* dispatch_ir_archetype_28(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 15 funcs like void lv_calendar_set_today_date(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, uint32_t year, uint32_t month, uint32_t day)
+// Dispatcher for 15 LVGL function(s) including: lv_calendar_set_today_date
+// Consolidated functions (15 total):
+//   - lv_calendar_set_today_date
+//   - lv_chart_set_axis_range
+//   - lv_keyboard_set_map
+//   - lv_obj_align
+//   - lv_obj_move_children_by
+//   - lv_obj_scroll_by
+//   - lv_obj_scroll_by_bounded
+//   - lv_obj_scroll_to
+//   - lv_obj_set_flex_align
+//   - lv_obj_set_local_style_prop
+//   - lv_obj_set_style_size
+//   - lv_obj_transform_point_array
+//   - lv_table_clear_cell_ctrl
+//   - lv_table_set_cell_ctrl
+//   - lv_tileview_set_tile_by_index
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_29(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1734,15 +3424,15 @@ static lv_obj_t* dispatch_json_archetype_29(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_29(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_calendar_set_today_date: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_calendar_set_today_date: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_calendar_set_today_date: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_calendar_set_today_date: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -1750,7 +3440,7 @@ static lv_obj_t* dispatch_ir_archetype_29(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_calendar_set_today_date: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_calendar_set_today_date: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -1758,7 +3448,7 @@ static lv_obj_t* dispatch_ir_archetype_29(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_calendar_set_today_date: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_calendar_set_today_date: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -1769,7 +3459,14 @@ static lv_obj_t* dispatch_ir_archetype_29(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 4 funcs like void* lv_calloc(intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void* archetype_func(size_t num, size_t size)
+// Dispatcher for 4 LVGL function(s) including: lv_calloc
+// Consolidated functions (4 total):
+//   - lv_calloc
+//   - lv_circle_buf_create
+//   - lv_display_create
+//   - lv_sdl_window_create
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_30(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (size_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1782,14 +3479,14 @@ static lv_obj_t* dispatch_json_archetype_30(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_30(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_calloc: expected 2 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_calloc: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_calloc: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_calloc: arg 0 is NULL");
         return NULL;
     }
     arg0 = (size_t)ir_node_get_int(ir_args[0]);
@@ -1797,7 +3494,7 @@ static lv_obj_t* dispatch_ir_archetype_30(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_calloc: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_calloc: arg 1 is NULL");
         return NULL;
     }
     arg1 = (size_t)ir_node_get_int(ir_args[1]);
@@ -1807,7 +3504,14 @@ static lv_obj_t* dispatch_ir_archetype_30(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 4 funcs like uint32_t lv_canvas_buf_size(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: uint32_t archetype_func(int32_t w, int32_t h, uint8_t bpp, uint8_t stride)
+// Dispatcher for 4 LVGL function(s) including: lv_canvas_buf_size
+// Consolidated functions (4 total):
+//   - lv_canvas_buf_size
+//   - lv_clamp_height
+//   - lv_clamp_width
+//   - lv_color32_make
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_31(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (int32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1823,14 +3527,14 @@ static lv_obj_t* dispatch_json_archetype_31(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_31(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_canvas_buf_size: expected 4 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_canvas_buf_size: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_canvas_buf_size: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_buf_size: arg 0 is NULL");
         return NULL;
     }
     arg0 = (int32_t)ir_node_get_int(ir_args[0]);
@@ -1838,7 +3542,7 @@ static lv_obj_t* dispatch_ir_archetype_31(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_canvas_buf_size: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_buf_size: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int32_t)ir_node_get_int(ir_args[1]);
@@ -1846,7 +3550,7 @@ static lv_obj_t* dispatch_ir_archetype_31(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_canvas_buf_size: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_buf_size: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint8_t)ir_node_get_int(ir_args[2]);
@@ -1854,7 +3558,7 @@ static lv_obj_t* dispatch_ir_archetype_31(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_canvas_buf_size: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_buf_size: arg 3 is NULL");
         return NULL;
     }
     arg3 = (uint8_t)ir_node_get_int(ir_args[3]);
@@ -1865,7 +3569,12 @@ static lv_obj_t* dispatch_ir_archetype_31(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like void lv_canvas_copy_buf(void* (ANY_POINTER), void* (ANY_POINTER), void* (ANY_POINTER))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_area_t* canvas_area, lv_draw_buf_t* dest_buf, lv_area_t* dest_area)
+// Dispatcher for 2 LVGL function(s) including: lv_canvas_copy_buf
+// Consolidated functions (2 total):
+//   - lv_canvas_copy_buf
+//   - lv_draw_buf_copy
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_32(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_area_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1879,15 +3588,15 @@ static lv_obj_t* dispatch_json_archetype_32(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_32(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_canvas_copy_buf: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_canvas_copy_buf: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_canvas_copy_buf: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_copy_buf: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -1895,7 +3604,7 @@ static lv_obj_t* dispatch_ir_archetype_32(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_canvas_copy_buf: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_copy_buf: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -1903,7 +3612,7 @@ static lv_obj_t* dispatch_ir_archetype_32(generic_lvgl_func_t fn, void* target_v
     void* arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_canvas_copy_buf: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_copy_buf: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
@@ -1914,7 +3623,23 @@ static lv_obj_t* dispatch_ir_archetype_32(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 13 funcs like void lv_canvas_fill_bg(lv_color_t (COLOR), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_color_t color, lv_opa_t opa)
+// Dispatcher for 13 LVGL function(s) including: lv_canvas_fill_bg
+// Consolidated functions (13 total):
+//   - lv_canvas_fill_bg
+//   - lv_obj_set_style_arc_color
+//   - lv_obj_set_style_bg_color
+//   - lv_obj_set_style_bg_grad_color
+//   - lv_obj_set_style_bg_image_recolor
+//   - lv_obj_set_style_border_color
+//   - lv_obj_set_style_image_recolor
+//   - lv_obj_set_style_line_color
+//   - lv_obj_set_style_outline_color
+//   - lv_obj_set_style_recolor
+//   - lv_obj_set_style_shadow_color
+//   - lv_obj_set_style_text_color
+//   - lv_obj_set_style_text_outline_stroke_color
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_33(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     lv_color_t arg0 = lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0)));
@@ -1927,15 +3652,15 @@ static lv_obj_t* dispatch_json_archetype_33(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_33(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_canvas_fill_bg: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_canvas_fill_bg: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_canvas_fill_bg: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_fill_bg: arg 0 is NULL");
         return NULL;
     }
     arg0 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[0]));
@@ -1943,7 +3668,7 @@ static lv_obj_t* dispatch_ir_archetype_33(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_canvas_fill_bg: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_fill_bg: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_opa_t)ir_node_get_int(ir_args[1]);
@@ -1954,7 +3679,9 @@ static lv_obj_t* dispatch_ir_archetype_33(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_canvas_set_px(intptr_t (INT_LIKE), intptr_t (INT_LIKE), lv_color_t (COLOR), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, int32_t x, int32_t y, lv_color_t color, lv_opa_t opa)
+// Dispatcher for 1 LVGL function(s) including: lv_canvas_set_px
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_34(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (int32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -1969,15 +3696,15 @@ static lv_obj_t* dispatch_json_archetype_34(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_34(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_canvas_set_px: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_canvas_set_px: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_canvas_set_px: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_set_px: arg 0 is NULL");
         return NULL;
     }
     arg0 = (int32_t)ir_node_get_int(ir_args[0]);
@@ -1985,7 +3712,7 @@ static lv_obj_t* dispatch_ir_archetype_34(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_canvas_set_px: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_set_px: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int32_t)ir_node_get_int(ir_args[1]);
@@ -1993,7 +3720,7 @@ static lv_obj_t* dispatch_ir_archetype_34(generic_lvgl_func_t fn, void* target_v
     lv_color_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_canvas_set_px: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_set_px: arg 2 is NULL");
         return NULL;
     }
     arg2 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[2]));
@@ -2001,7 +3728,7 @@ static lv_obj_t* dispatch_ir_archetype_34(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_canvas_set_px: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_canvas_set_px: arg 3 is NULL");
         return NULL;
     }
     arg3 = (lv_opa_t)ir_node_get_int(ir_args[3]);
@@ -2012,7 +3739,12 @@ static lv_obj_t* dispatch_ir_archetype_34(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like lv_chart_cursor_t* lv_chart_add_cursor(lv_color_t (COLOR), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_chart_cursor_t* archetype_func(lv_obj_t* target, lv_color_t color, lv_dir_t dir)
+// Dispatcher for 2 LVGL function(s) including: lv_chart_add_cursor
+// Consolidated functions (2 total):
+//   - lv_chart_add_cursor
+//   - lv_chart_add_series
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_35(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     lv_color_t arg0 = lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0)));
@@ -2024,15 +3756,15 @@ static lv_obj_t* dispatch_json_archetype_35(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_35(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_chart_add_cursor: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_chart_add_cursor: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_chart_add_cursor: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_add_cursor: arg 0 is NULL");
         return NULL;
     }
     arg0 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[0]));
@@ -2040,7 +3772,7 @@ static lv_obj_t* dispatch_ir_archetype_35(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_chart_add_cursor: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_add_cursor: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_dir_t)ir_node_get_int_robust(ir_args[1], "lv_dir_t");
@@ -2050,7 +3782,13 @@ static lv_obj_t* dispatch_ir_archetype_35(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 3 funcs like void lv_chart_get_point_pos_by_id(void* (ANY_POINTER), intptr_t (INT_LIKE), void* (ANY_POINTER))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_chart_series_t* ser, uint32_t id, lv_point_t* p_out)
+// Dispatcher for 3 LVGL function(s) including: lv_chart_get_point_pos_by_id
+// Consolidated functions (3 total):
+//   - lv_chart_get_point_pos_by_id
+//   - lv_draw_layer_init
+//   - lv_obj_add_subject_set_string_event
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_36(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_chart_series_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -2064,15 +3802,15 @@ static lv_obj_t* dispatch_json_archetype_36(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_36(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_chart_get_point_pos_by_id: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_chart_get_point_pos_by_id: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_chart_get_point_pos_by_id: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_get_point_pos_by_id: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -2080,7 +3818,7 @@ static lv_obj_t* dispatch_ir_archetype_36(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_chart_get_point_pos_by_id: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_get_point_pos_by_id: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -2088,7 +3826,7 @@ static lv_obj_t* dispatch_ir_archetype_36(generic_lvgl_func_t fn, void* target_v
     void* arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_chart_get_point_pos_by_id: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_get_point_pos_by_id: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
@@ -2099,7 +3837,9 @@ static lv_obj_t* dispatch_ir_archetype_36(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_color_t lv_chart_get_series_color(void* (ANY_POINTER))
+// Archetype C Signature Example: lv_color_t archetype_func(lv_obj_t* target, lv_chart_series_t* series)
+// Dispatcher for 1 LVGL function(s) including: lv_chart_get_series_color
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_37(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_chart_series_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -2111,15 +3851,15 @@ static lv_obj_t* dispatch_json_archetype_37(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_37(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_chart_get_series_color: expected 1 args, got %d", arg_count);
+    if (arg_count != 2) {
+        _eprintf(stderr, "IR call to lv_chart_get_series_color: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_chart_get_series_color: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_get_series_color: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -2130,7 +3870,13 @@ static lv_obj_t* dispatch_ir_archetype_37(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 3 funcs like void lv_chart_set_cursor_point(void* (ANY_POINTER), void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_chart_cursor_t* cursor, lv_chart_series_t* ser, uint32_t point_id)
+// Dispatcher for 3 LVGL function(s) including: lv_chart_set_cursor_point
+// Consolidated functions (3 total):
+//   - lv_chart_set_cursor_point
+//   - lv_draw_character
+//   - lv_ll_chg_list
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_38(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_chart_cursor_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -2144,15 +3890,15 @@ static lv_obj_t* dispatch_json_archetype_38(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_38(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_chart_set_cursor_point: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_chart_set_cursor_point: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_chart_set_cursor_point: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_set_cursor_point: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_chart_cursor_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -2160,7 +3906,7 @@ static lv_obj_t* dispatch_ir_archetype_38(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_chart_set_cursor_point: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_set_cursor_point: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -2168,7 +3914,7 @@ static lv_obj_t* dispatch_ir_archetype_38(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_chart_set_cursor_point: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_set_cursor_point: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -2179,7 +3925,9 @@ static lv_obj_t* dispatch_ir_archetype_38(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_chart_set_series_color(void* (ANY_POINTER), lv_color_t (COLOR))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_chart_series_t* series, lv_color_t color)
+// Dispatcher for 1 LVGL function(s) including: lv_chart_set_series_color
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_39(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_chart_series_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -2192,15 +3940,15 @@ static lv_obj_t* dispatch_json_archetype_39(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_39(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_chart_set_series_color: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_chart_set_series_color: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_chart_set_series_color: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_set_series_color: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -2208,7 +3956,7 @@ static lv_obj_t* dispatch_ir_archetype_39(generic_lvgl_func_t fn, void* target_v
     lv_color_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_chart_set_series_color: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_chart_set_series_color: arg 1 is NULL");
         return NULL;
     }
     arg1 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[1]));
@@ -2219,7 +3967,15 @@ static lv_obj_t* dispatch_ir_archetype_39(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 5 funcs like lv_circle_buf_t* lv_circle_buf_create_from_buf(intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_circle_buf_t* archetype_func(void* target_voidp, uint32_t capacity, uint32_t element_size)
+// Dispatcher for 5 LVGL function(s) including: lv_circle_buf_create_from_buf
+// Consolidated functions (5 total):
+//   - lv_circle_buf_create_from_buf
+//   - lv_draw_buf_goto_xy
+//   - lv_draw_layer_go_to_xy
+//   - lv_table_get_cell_user_data
+//   - lv_table_get_cell_value
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_40(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -2231,15 +3987,15 @@ static lv_obj_t* dispatch_json_archetype_40(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_40(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_circle_buf_create_from_buf: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_circle_buf_create_from_buf: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_circle_buf_create_from_buf: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_circle_buf_create_from_buf: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -2247,7 +4003,7 @@ static lv_obj_t* dispatch_ir_archetype_40(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_circle_buf_create_from_buf: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_circle_buf_create_from_buf: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -2257,7 +4013,12 @@ static lv_obj_t* dispatch_ir_archetype_40(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like lv_color_t lv_color_black()
+// Archetype C Signature Example: lv_color_t archetype_func(void)
+// Dispatcher for 2 LVGL function(s) including: lv_color_black
+// Consolidated functions (2 total):
+//   - lv_color_black
+//   - lv_color_white
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_41(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef lv_color_t (*specific_func_t)(void);
@@ -2269,7 +4030,7 @@ static lv_obj_t* dispatch_json_archetype_41(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_41(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 0) {
-        LV_LOG_WARN("IR call to lv_color_black: expected 0 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_color_black: expected 0 args, got %d", arg_count);
         return NULL;
     }
 
@@ -2279,7 +4040,16 @@ static lv_obj_t* dispatch_ir_archetype_41(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 6 funcs like uint8_t lv_color_brightness(lv_color_t (COLOR))
+// Archetype C Signature Example: uint8_t archetype_func(lv_color_t c)
+// Dispatcher for 6 LVGL function(s) including: lv_color_brightness
+// Consolidated functions (6 total):
+//   - lv_color_brightness
+//   - lv_color_luminance
+//   - lv_color_to_hsv
+//   - lv_color_to_int
+//   - lv_color_to_u16
+//   - lv_color_to_u32
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_42(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     lv_color_t arg0 = lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0)));
@@ -2292,14 +4062,14 @@ static lv_obj_t* dispatch_json_archetype_42(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_42(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_color_brightness: expected 1 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_color_brightness: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_color_brightness: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_color_brightness: arg 0 is NULL");
         return NULL;
     }
     arg0 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[0]));
@@ -2310,7 +4080,12 @@ static lv_obj_t* dispatch_ir_archetype_42(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like lv_color_t lv_color_darken(lv_color_t (COLOR), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_color_t archetype_func(lv_color_t c, lv_opa_t lvl)
+// Dispatcher for 2 LVGL function(s) including: lv_color_darken
+// Consolidated functions (2 total):
+//   - lv_color_darken
+//   - lv_color_lighten
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_43(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     lv_color_t arg0 = lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0)));
@@ -2324,14 +4099,14 @@ static lv_obj_t* dispatch_json_archetype_43(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_43(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_color_darken: expected 2 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_color_darken: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_color_darken: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_color_darken: arg 0 is NULL");
         return NULL;
     }
     arg0 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[0]));
@@ -2339,7 +4114,7 @@ static lv_obj_t* dispatch_ir_archetype_43(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_color_darken: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_color_darken: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_opa_t)ir_node_get_int(ir_args[1]);
@@ -2350,7 +4125,9 @@ static lv_obj_t* dispatch_ir_archetype_43(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like bool lv_color_eq(lv_color_t (COLOR), lv_color_t (COLOR))
+// Archetype C Signature Example: bool archetype_func(lv_color_t c1, lv_color_t c2)
+// Dispatcher for 1 LVGL function(s) including: lv_color_eq
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_44(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     lv_color_t arg0 = lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0)));
@@ -2364,14 +4141,14 @@ static lv_obj_t* dispatch_json_archetype_44(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_44(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_color_eq: expected 2 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_color_eq: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_color_eq: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_color_eq: arg 0 is NULL");
         return NULL;
     }
     arg0 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[0]));
@@ -2379,7 +4156,7 @@ static lv_obj_t* dispatch_ir_archetype_44(generic_lvgl_func_t fn, void* target_v
     lv_color_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_color_eq: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_color_eq: arg 1 is NULL");
         return NULL;
     }
     arg1 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[1]));
@@ -2390,7 +4167,13 @@ static lv_obj_t* dispatch_ir_archetype_44(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 3 funcs like lv_color_t lv_color_hex(intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_color_t archetype_func(uint32_t c)
+// Dispatcher for 3 LVGL function(s) including: lv_color_hex
+// Consolidated functions (3 total):
+//   - lv_color_hex
+//   - lv_color_hex3
+//   - lv_palette_main
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_45(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -2403,14 +4186,14 @@ static lv_obj_t* dispatch_json_archetype_45(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_45(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_color_hex: expected 1 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_color_hex: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_color_hex: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_color_hex: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -2421,7 +4204,12 @@ static lv_obj_t* dispatch_ir_archetype_45(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like lv_color_t lv_color_hsv_to_rgb(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_color_t archetype_func(uint16_t h, uint8_t s, uint8_t v)
+// Dispatcher for 2 LVGL function(s) including: lv_color_hsv_to_rgb
+// Consolidated functions (2 total):
+//   - lv_color_hsv_to_rgb
+//   - lv_color_make
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_46(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint16_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -2436,14 +4224,14 @@ static lv_obj_t* dispatch_json_archetype_46(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_46(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_color_hsv_to_rgb: expected 3 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_color_hsv_to_rgb: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_color_hsv_to_rgb: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_color_hsv_to_rgb: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint16_t)ir_node_get_int(ir_args[0]);
@@ -2451,7 +4239,7 @@ static lv_obj_t* dispatch_ir_archetype_46(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_color_hsv_to_rgb: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_color_hsv_to_rgb: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint8_t)ir_node_get_int(ir_args[1]);
@@ -2459,7 +4247,7 @@ static lv_obj_t* dispatch_ir_archetype_46(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_color_hsv_to_rgb: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_color_hsv_to_rgb: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint8_t)ir_node_get_int(ir_args[2]);
@@ -2470,7 +4258,9 @@ static lv_obj_t* dispatch_ir_archetype_46(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_color_t lv_color_mix(lv_color_t (COLOR), lv_color_t (COLOR), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_color_t archetype_func(lv_color_t c1, lv_color_t c2, uint8_t mix)
+// Dispatcher for 1 LVGL function(s) including: lv_color_mix
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_47(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     lv_color_t arg0 = lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0)));
@@ -2485,14 +4275,14 @@ static lv_obj_t* dispatch_json_archetype_47(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_47(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_color_mix: expected 3 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_color_mix: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_color_mix: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_color_mix: arg 0 is NULL");
         return NULL;
     }
     arg0 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[0]));
@@ -2500,7 +4290,7 @@ static lv_obj_t* dispatch_ir_archetype_47(generic_lvgl_func_t fn, void* target_v
     lv_color_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_color_mix: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_color_mix: arg 1 is NULL");
         return NULL;
     }
     arg1 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[1]));
@@ -2508,7 +4298,7 @@ static lv_obj_t* dispatch_ir_archetype_47(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_color_mix: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_color_mix: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint8_t)ir_node_get_int(ir_args[2]);
@@ -2519,7 +4309,9 @@ static lv_obj_t* dispatch_ir_archetype_47(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_color32_t lv_color_to_32(lv_color_t (COLOR), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_color32_t archetype_func(lv_color_t color, lv_opa_t opa)
+// Dispatcher for 1 LVGL function(s) including: lv_color_to_32
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_48(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     lv_color_t arg0 = lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0)));
@@ -2533,14 +4325,14 @@ static lv_obj_t* dispatch_json_archetype_48(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_48(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_color_to_32: expected 2 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_color_to_32: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_color_to_32: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_color_to_32: arg 0 is NULL");
         return NULL;
     }
     arg0 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[0]));
@@ -2548,7 +4340,7 @@ static lv_obj_t* dispatch_ir_archetype_48(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_color_to_32: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_color_to_32: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_opa_t)ir_node_get_int(ir_args[1]);
@@ -2559,7 +4351,16 @@ static lv_obj_t* dispatch_ir_archetype_48(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 6 funcs like void lv_delay_ms(intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(uint32_t ms)
+// Dispatcher for 6 LVGL function(s) including: lv_delay_ms
+// Consolidated functions (6 total):
+//   - lv_delay_ms
+//   - lv_mem_remove_pool
+//   - lv_obj_enable_style_refresh
+//   - lv_rand_set_seed
+//   - lv_tick_inc
+//   - lv_timer_enable
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_49(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -2572,14 +4373,14 @@ static lv_obj_t* dispatch_json_archetype_49(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_49(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_delay_ms: expected 1 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_delay_ms: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_delay_ms: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_delay_ms: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -2590,7 +4391,9 @@ static lv_obj_t* dispatch_ir_archetype_49(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_display_set_buffers(void* (ANY_POINTER), void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_display_t* target, void* buf1, void* buf2, uint32_t buf_size, lv_display_render_mode_t render_mode)
+// Dispatcher for 1 LVGL function(s) including: lv_display_set_buffers
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_50(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (void*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -2605,15 +4408,15 @@ static lv_obj_t* dispatch_json_archetype_50(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_50(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_display_set_buffers: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_display_set_buffers: arg 0 is NULL");
         return NULL;
     }
     arg0 = (void*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -2621,7 +4424,7 @@ static lv_obj_t* dispatch_ir_archetype_50(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_display_set_buffers: arg 1 is NULL");
         return NULL;
     }
     arg1 = (void*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -2629,7 +4432,7 @@ static lv_obj_t* dispatch_ir_archetype_50(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_display_set_buffers: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -2637,7 +4440,7 @@ static lv_obj_t* dispatch_ir_archetype_50(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_display_set_buffers: arg 3 is NULL");
         return NULL;
     }
     arg3 = (lv_display_render_mode_t)ir_node_get_int_robust(ir_args[3], "lv_display_render_mode_t");
@@ -2648,7 +4451,9 @@ static lv_obj_t* dispatch_ir_archetype_50(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_display_set_buffers_with_stride(void* (ANY_POINTER), void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_display_t* target, void* buf1, void* buf2, uint32_t buf_size, uint32_t stride, lv_display_render_mode_t render_mode)
+// Dispatcher for 1 LVGL function(s) including: lv_display_set_buffers_with_stride
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_51(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (void*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -2664,15 +4469,15 @@ static lv_obj_t* dispatch_json_archetype_51(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 5) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers_with_stride: expected 5 args, got %d", arg_count);
+    if (arg_count != 6) {
+        _eprintf(stderr, "IR call to lv_display_set_buffers_with_stride: expected 6 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers_with_stride: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_display_set_buffers_with_stride: arg 0 is NULL");
         return NULL;
     }
     arg0 = (void*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -2680,7 +4485,7 @@ static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers_with_stride: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_display_set_buffers_with_stride: arg 1 is NULL");
         return NULL;
     }
     arg1 = (void*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -2688,7 +4493,7 @@ static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers_with_stride: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_display_set_buffers_with_stride: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -2696,7 +4501,7 @@ static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers_with_stride: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_display_set_buffers_with_stride: arg 3 is NULL");
         return NULL;
     }
     arg3 = (uint32_t)ir_node_get_int(ir_args[3]);
@@ -2704,7 +4509,7 @@ static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target_v
     intptr_t arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_display_set_buffers_with_stride: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_display_set_buffers_with_stride: arg 4 is NULL");
         return NULL;
     }
     arg4 = (lv_display_render_mode_t)ir_node_get_int_robust(ir_args[4], "lv_display_render_mode_t");
@@ -2715,7 +4520,19 @@ static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 9 funcs like lv_draw_task_t* lv_draw_add_task(void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_draw_task_t* archetype_func(lv_layer_t* target, lv_area_t* coords, lv_draw_task_type_t type)
+// Dispatcher for 9 LVGL function(s) including: lv_draw_add_task
+// Consolidated functions (9 total):
+//   - lv_draw_add_task
+//   - lv_draw_buf_align_ex
+//   - lv_draw_get_available_task
+//   - lv_draw_get_next_available_task
+//   - lv_memcpy
+//   - lv_memmove
+//   - lv_strncat
+//   - lv_strncpy
+//   - lv_win_add_button
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_52(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_area_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -2727,15 +4544,15 @@ static lv_obj_t* dispatch_json_archetype_52(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_52(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_draw_add_task: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_draw_add_task: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_draw_add_task: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_add_task: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -2743,7 +4560,7 @@ static lv_obj_t* dispatch_ir_archetype_52(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_draw_add_task: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_add_task: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_draw_task_type_t)ir_node_get_int_robust(ir_args[1], "lv_draw_task_type_t");
@@ -2753,7 +4570,9 @@ static lv_obj_t* dispatch_ir_archetype_52(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_draw_arc_get_area(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), void* (ANY_POINTER))
+// Archetype C Signature Example: void archetype_func(int32_t x, int32_t y, uint16_t radius, lv_value_precise_t start_angle, lv_value_precise_t end_angle, int32_t w, bool rounded, lv_area_t* area)
+// Dispatcher for 1 LVGL function(s) including: lv_draw_arc_get_area
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_53(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (int32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -2773,14 +4592,14 @@ static lv_obj_t* dispatch_json_archetype_53(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 8) {
-        LV_LOG_WARN("IR call to lv_draw_arc_get_area: expected 8 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_draw_arc_get_area: expected 8 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_draw_arc_get_area: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_arc_get_area: arg 0 is NULL");
         return NULL;
     }
     arg0 = (int32_t)ir_node_get_int(ir_args[0]);
@@ -2788,7 +4607,7 @@ static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_draw_arc_get_area: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_arc_get_area: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int32_t)ir_node_get_int(ir_args[1]);
@@ -2796,7 +4615,7 @@ static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_draw_arc_get_area: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_arc_get_area: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint16_t)ir_node_get_int(ir_args[2]);
@@ -2804,7 +4623,7 @@ static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_draw_arc_get_area: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_arc_get_area: arg 3 is NULL");
         return NULL;
     }
     arg3 = (lv_value_precise_t)ir_node_get_int(ir_args[3]);
@@ -2812,7 +4631,7 @@ static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target_v
     intptr_t arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_draw_arc_get_area: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_arc_get_area: arg 4 is NULL");
         return NULL;
     }
     arg4 = (lv_value_precise_t)ir_node_get_int(ir_args[4]);
@@ -2820,7 +4639,7 @@ static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target_v
     intptr_t arg5;
     IRNode* current_ir_arg5 = ir_args[5];
     if (!current_ir_arg5) {
-        LV_LOG_WARN("IR call to lv_draw_arc_get_area: arg 5 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_arc_get_area: arg 5 is NULL");
         return NULL;
     }
     arg5 = (int32_t)ir_node_get_int(ir_args[5]);
@@ -2828,7 +4647,7 @@ static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target_v
     intptr_t arg6;
     IRNode* current_ir_arg6 = ir_args[6];
     if (!current_ir_arg6) {
-        LV_LOG_WARN("IR call to lv_draw_arc_get_area: arg 6 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_arc_get_area: arg 6 is NULL");
         return NULL;
     }
     arg6 = (bool)ir_node_get_int(ir_args[6]);
@@ -2836,7 +4655,7 @@ static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target_v
     void* arg7;
     IRNode* current_ir_arg7 = ir_args[7];
     if (!current_ir_arg7) {
-        LV_LOG_WARN("IR call to lv_draw_arc_get_area: arg 7 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_arc_get_area: arg 7 is NULL");
         return NULL;
     }
     arg7 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[7]));
@@ -2847,7 +4666,9 @@ static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_draw_buf_t* lv_draw_buf_create(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_draw_buf_t* archetype_func(uint32_t w, uint32_t h, lv_color_format_t cf, uint32_t stride)
+// Dispatcher for 1 LVGL function(s) including: lv_draw_buf_create
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_54(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -2862,14 +4683,14 @@ static lv_obj_t* dispatch_json_archetype_54(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_54(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_draw_buf_create: expected 4 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_draw_buf_create: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_draw_buf_create: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_create: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -2877,7 +4698,7 @@ static lv_obj_t* dispatch_ir_archetype_54(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_draw_buf_create: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_create: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -2885,7 +4706,7 @@ static lv_obj_t* dispatch_ir_archetype_54(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_draw_buf_create: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_create: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_color_format_t)ir_node_get_int_robust(ir_args[2], "lv_color_format_t");
@@ -2893,7 +4714,7 @@ static lv_obj_t* dispatch_ir_archetype_54(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_draw_buf_create: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_create: arg 3 is NULL");
         return NULL;
     }
     arg3 = (uint32_t)ir_node_get_int(ir_args[3]);
@@ -2903,7 +4724,12 @@ static lv_obj_t* dispatch_ir_archetype_54(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like lv_draw_buf_t* lv_draw_buf_create_ex(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_draw_buf_t* archetype_func(lv_draw_buf_handlers_t* target, uint32_t w, uint32_t h, lv_color_format_t cf, uint32_t stride)
+// Dispatcher for 2 LVGL function(s) including: lv_draw_buf_create_ex
+// Consolidated functions (2 total):
+//   - lv_draw_buf_create_ex
+//   - lv_draw_buf_reshape
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_55(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -2917,15 +4743,15 @@ static lv_obj_t* dispatch_json_archetype_55(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_55(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_draw_buf_create_ex: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_draw_buf_create_ex: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_draw_buf_create_ex: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_create_ex: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -2933,7 +4759,7 @@ static lv_obj_t* dispatch_ir_archetype_55(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_draw_buf_create_ex: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_create_ex: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -2941,7 +4767,7 @@ static lv_obj_t* dispatch_ir_archetype_55(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_draw_buf_create_ex: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_create_ex: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_color_format_t)ir_node_get_int_robust(ir_args[2], "lv_color_format_t");
@@ -2949,7 +4775,7 @@ static lv_obj_t* dispatch_ir_archetype_55(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_draw_buf_create_ex: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_create_ex: arg 3 is NULL");
         return NULL;
     }
     arg3 = (uint32_t)ir_node_get_int(ir_args[3]);
@@ -2959,7 +4785,9 @@ static lv_obj_t* dispatch_ir_archetype_55(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_result_t lv_draw_buf_init(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_result_t archetype_func(lv_draw_buf_t* target, uint32_t w, uint32_t h, lv_color_format_t cf, uint32_t stride, void* data, uint32_t data_size)
+// Dispatcher for 1 LVGL function(s) including: lv_draw_buf_init
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_56(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -2976,15 +4804,15 @@ static lv_obj_t* dispatch_json_archetype_56(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 6) {
-        LV_LOG_WARN("IR call to lv_draw_buf_init: expected 6 args, got %d", arg_count);
+    if (arg_count != 7) {
+        _eprintf(stderr, "IR call to lv_draw_buf_init: expected 7 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_draw_buf_init: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_init: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -2992,7 +4820,7 @@ static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_draw_buf_init: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_init: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -3000,7 +4828,7 @@ static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_draw_buf_init: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_init: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_color_format_t)ir_node_get_int_robust(ir_args[2], "lv_color_format_t");
@@ -3008,7 +4836,7 @@ static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_draw_buf_init: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_init: arg 3 is NULL");
         return NULL;
     }
     arg3 = (uint32_t)ir_node_get_int(ir_args[3]);
@@ -3016,7 +4844,7 @@ static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target_v
     void* arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_draw_buf_init: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_init: arg 4 is NULL");
         return NULL;
     }
     arg4 = (void*)obj_registry_get(ir_node_get_string(ir_args[4]));
@@ -3024,7 +4852,7 @@ static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target_v
     intptr_t arg5;
     IRNode* current_ir_arg5 = ir_args[5];
     if (!current_ir_arg5) {
-        LV_LOG_WARN("IR call to lv_draw_buf_init: arg 5 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_buf_init: arg 5 is NULL");
         return NULL;
     }
     arg5 = (uint32_t)ir_node_get_int(ir_args[5]);
@@ -3035,7 +4863,18 @@ static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 8 funcs like void* lv_draw_create_unit(intptr_t (INT_LIKE))
+// Archetype C Signature Example: void* archetype_func(size_t size)
+// Dispatcher for 8 LVGL function(s) including: lv_draw_create_unit
+// Consolidated functions (8 total):
+//   - lv_draw_create_unit
+//   - lv_event_code_get_name
+//   - lv_fs_get_drv
+//   - lv_group_by_index
+//   - lv_malloc
+//   - lv_malloc_core
+//   - lv_malloc_zeroed
+//   - lv_zalloc
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_57(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (size_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -3047,14 +4886,14 @@ static lv_obj_t* dispatch_json_archetype_57(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_57(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_draw_create_unit: expected 1 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_draw_create_unit: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_draw_create_unit: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_create_unit: arg 0 is NULL");
         return NULL;
     }
     arg0 = (size_t)ir_node_get_int(ir_args[0]);
@@ -3064,7 +4903,14 @@ static lv_obj_t* dispatch_ir_archetype_57(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 4 funcs like lv_layer_t* lv_draw_layer_create(intptr_t (INT_LIKE), void* (ANY_POINTER))
+// Archetype C Signature Example: lv_layer_t* archetype_func(lv_layer_t* target, lv_color_format_t color_format, lv_area_t* area)
+// Dispatcher for 4 LVGL function(s) including: lv_draw_layer_create
+// Consolidated functions (4 total):
+//   - lv_draw_layer_create
+//   - lv_obj_get_child_by_type
+//   - lv_obj_get_sibling_by_type
+//   - lv_theme_mono_init
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_58(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = unmarshal_value(cJSON_GetArrayItem(args, 0), "lv_color_format_t");
@@ -3076,15 +4922,15 @@ static lv_obj_t* dispatch_json_archetype_58(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_58(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_draw_layer_create: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_draw_layer_create: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_draw_layer_create: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_layer_create: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_color_format_t)ir_node_get_int_robust(ir_args[0], "lv_color_format_t");
@@ -3092,7 +4938,7 @@ static lv_obj_t* dispatch_ir_archetype_58(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_draw_layer_create: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_layer_create: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -3102,7 +4948,9 @@ static lv_obj_t* dispatch_ir_archetype_58(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_draw_sw_i1_convert_to_vtiled(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(void* target_voidp, uint32_t buf_size, uint32_t width, uint32_t height, void* out_buf, uint32_t out_buf_size, bool bit_order_lsb)
+// Dispatcher for 1 LVGL function(s) including: lv_draw_sw_i1_convert_to_vtiled
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_59(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -3119,15 +4967,15 @@ static lv_obj_t* dispatch_json_archetype_59(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 6) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_convert_to_vtiled: expected 6 args, got %d", arg_count);
+    if (arg_count != 7) {
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_convert_to_vtiled: expected 7 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_convert_to_vtiled: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_convert_to_vtiled: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -3135,7 +4983,7 @@ static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_convert_to_vtiled: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_convert_to_vtiled: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -3143,7 +4991,7 @@ static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_convert_to_vtiled: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_convert_to_vtiled: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -3151,7 +4999,7 @@ static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target_v
     void* arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_convert_to_vtiled: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_convert_to_vtiled: arg 3 is NULL");
         return NULL;
     }
     arg3 = (void*)obj_registry_get(ir_node_get_string(ir_args[3]));
@@ -3159,7 +5007,7 @@ static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target_v
     intptr_t arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_convert_to_vtiled: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_convert_to_vtiled: arg 4 is NULL");
         return NULL;
     }
     arg4 = (uint32_t)ir_node_get_int(ir_args[4]);
@@ -3167,7 +5015,7 @@ static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target_v
     intptr_t arg5;
     IRNode* current_ir_arg5 = ir_args[5];
     if (!current_ir_arg5) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_convert_to_vtiled: arg 5 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_convert_to_vtiled: arg 5 is NULL");
         return NULL;
     }
     arg5 = (bool)ir_node_get_int(ir_args[5]);
@@ -3178,7 +5026,12 @@ static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like void lv_draw_sw_i1_to_argb8888(void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(void* target_voidp, void* buf_argb8888, uint32_t width, uint32_t height, uint32_t buf_i1_stride, uint32_t buf_argb8888_stride, uint32_t index0_color, uint32_t index1_color)
+// Dispatcher for 2 LVGL function(s) including: lv_draw_sw_i1_to_argb8888
+// Consolidated functions (2 total):
+//   - lv_draw_sw_i1_to_argb8888
+//   - lv_draw_sw_rotate
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_60(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (void*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -3196,15 +5049,15 @@ static lv_obj_t* dispatch_json_archetype_60(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 7) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_to_argb8888: expected 7 args, got %d", arg_count);
+    if (arg_count != 8) {
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_to_argb8888: expected 8 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_to_argb8888: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_to_argb8888: arg 0 is NULL");
         return NULL;
     }
     arg0 = (void*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -3212,7 +5065,7 @@ static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_to_argb8888: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_to_argb8888: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -3220,7 +5073,7 @@ static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_to_argb8888: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_to_argb8888: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -3228,7 +5081,7 @@ static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_to_argb8888: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_to_argb8888: arg 3 is NULL");
         return NULL;
     }
     arg3 = (uint32_t)ir_node_get_int(ir_args[3]);
@@ -3236,7 +5089,7 @@ static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target_v
     intptr_t arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_to_argb8888: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_to_argb8888: arg 4 is NULL");
         return NULL;
     }
     arg4 = (uint32_t)ir_node_get_int(ir_args[4]);
@@ -3244,7 +5097,7 @@ static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target_v
     intptr_t arg5;
     IRNode* current_ir_arg5 = ir_args[5];
     if (!current_ir_arg5) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_to_argb8888: arg 5 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_to_argb8888: arg 5 is NULL");
         return NULL;
     }
     arg5 = (uint32_t)ir_node_get_int(ir_args[5]);
@@ -3252,7 +5105,7 @@ static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target_v
     intptr_t arg6;
     IRNode* current_ir_arg6 = ir_args[6];
     if (!current_ir_arg6) {
-        LV_LOG_WARN("IR call to lv_draw_sw_i1_to_argb8888: arg 6 is NULL");
+        _eprintf(stderr, "IR call to lv_draw_sw_i1_to_argb8888: arg 6 is NULL");
         return NULL;
     }
     arg6 = (uint32_t)ir_node_get_int(ir_args[6]);
@@ -3263,7 +5116,19 @@ static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 9 funcs like lv_result_t lv_event_send(void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_result_t archetype_func(lv_event_list_t* target, lv_event_t* e, bool preprocess)
+// Dispatcher for 9 LVGL function(s) including: lv_event_send
+// Consolidated functions (9 total):
+//   - lv_event_send
+//   - lv_fs_dir_read
+//   - lv_fs_open
+//   - lv_label_get_letter_on
+//   - lv_memcmp
+//   - lv_obj_style_get_disabled
+//   - lv_roller_set_selected_str
+//   - lv_strlcpy
+//   - lv_strncmp
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_61(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_event_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -3276,15 +5141,15 @@ static lv_obj_t* dispatch_json_archetype_61(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_61(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_event_send: expected 2 args, got %d", arg_count);
+    if (arg_count != 3) {
+        _eprintf(stderr, "IR call to lv_event_send: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_event_send: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_event_send: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_event_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -3292,7 +5157,7 @@ static lv_obj_t* dispatch_ir_archetype_61(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_event_send: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_event_send: arg 1 is NULL");
         return NULL;
     }
     arg1 = (bool)ir_node_get_int(ir_args[1]);
@@ -3303,7 +5168,12 @@ static lv_obj_t* dispatch_ir_archetype_61(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like bool lv_font_get_glyph_dsc(void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: bool archetype_func(lv_font_t* target, lv_font_glyph_dsc_t* dsc_out, uint32_t letter, uint32_t letter_next)
+// Dispatcher for 2 LVGL function(s) including: lv_font_get_glyph_dsc
+// Consolidated functions (2 total):
+//   - lv_font_get_glyph_dsc
+//   - lv_font_get_glyph_dsc_fmt_txt
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_62(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_font_glyph_dsc_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -3317,15 +5187,15 @@ static lv_obj_t* dispatch_json_archetype_62(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_62(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_font_get_glyph_dsc: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_font_get_glyph_dsc: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_font_get_glyph_dsc: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_font_get_glyph_dsc: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_font_glyph_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -3333,7 +5203,7 @@ static lv_obj_t* dispatch_ir_archetype_62(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_font_get_glyph_dsc: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_font_get_glyph_dsc: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -3341,7 +5211,7 @@ static lv_obj_t* dispatch_ir_archetype_62(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_font_get_glyph_dsc: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_font_get_glyph_dsc: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -3352,7 +5222,9 @@ static lv_obj_t* dispatch_ir_archetype_62(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_fs_make_path_from_buffer(intptr_t (INT_LIKE), void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_fs_path_ex_t* target, char letter, void* buf, uint32_t size)
+// Dispatcher for 1 LVGL function(s) including: lv_fs_make_path_from_buffer
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_63(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (char)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -3366,15 +5238,15 @@ static lv_obj_t* dispatch_json_archetype_63(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_63(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_fs_make_path_from_buffer: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_fs_make_path_from_buffer: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_fs_make_path_from_buffer: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_fs_make_path_from_buffer: arg 0 is NULL");
         return NULL;
     }
     arg0 = (char)ir_node_get_int(ir_args[0]);
@@ -3382,7 +5254,7 @@ static lv_obj_t* dispatch_ir_archetype_63(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_fs_make_path_from_buffer: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_fs_make_path_from_buffer: arg 1 is NULL");
         return NULL;
     }
     arg1 = (void*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -3390,7 +5262,7 @@ static lv_obj_t* dispatch_ir_archetype_63(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_fs_make_path_from_buffer: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_fs_make_path_from_buffer: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -3401,7 +5273,12 @@ static lv_obj_t* dispatch_ir_archetype_63(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like lv_fs_res_t lv_fs_read(void* (ANY_POINTER), intptr_t (INT_LIKE), void* (ANY_POINTER))
+// Archetype C Signature Example: lv_fs_res_t archetype_func(lv_fs_file_t* target, void* buf, uint32_t btr, uint32_t* br)
+// Dispatcher for 2 LVGL function(s) including: lv_fs_read
+// Consolidated functions (2 total):
+//   - lv_fs_read
+//   - lv_fs_write
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_64(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (void*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -3415,15 +5292,15 @@ static lv_obj_t* dispatch_json_archetype_64(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_64(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_fs_read: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_fs_read: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_fs_read: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_fs_read: arg 0 is NULL");
         return NULL;
     }
     arg0 = (void*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -3431,7 +5308,7 @@ static lv_obj_t* dispatch_ir_archetype_64(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_fs_read: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_fs_read: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -3439,7 +5316,7 @@ static lv_obj_t* dispatch_ir_archetype_64(generic_lvgl_func_t fn, void* target_v
     void* arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_fs_read: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_fs_read: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
@@ -3450,7 +5327,9 @@ static lv_obj_t* dispatch_ir_archetype_64(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_grad_init_stops(lv_color_t (COLOR), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_grad_dsc_t* target, lv_color_t colors, lv_opa_t opa, uint8_t fracs, int num_stops)
+// Dispatcher for 1 LVGL function(s) including: lv_grad_init_stops
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_65(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     lv_color_t arg0 = lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0)));
@@ -3465,15 +5344,15 @@ static lv_obj_t* dispatch_json_archetype_65(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_65(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_grad_init_stops: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_grad_init_stops: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_grad_init_stops: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_grad_init_stops: arg 0 is NULL");
         return NULL;
     }
     arg0 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[0]));
@@ -3481,7 +5360,7 @@ static lv_obj_t* dispatch_ir_archetype_65(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_grad_init_stops: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_grad_init_stops: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_opa_t)ir_node_get_int(ir_args[1]);
@@ -3489,7 +5368,7 @@ static lv_obj_t* dispatch_ir_archetype_65(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_grad_init_stops: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_grad_init_stops: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint8_t)ir_node_get_int(ir_args[2]);
@@ -3497,7 +5376,7 @@ static lv_obj_t* dispatch_ir_archetype_65(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_grad_init_stops: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_grad_init_stops: arg 3 is NULL");
         return NULL;
     }
     arg3 = (int)ir_node_get_int(ir_args[3]);
@@ -3508,7 +5387,12 @@ static lv_obj_t* dispatch_ir_archetype_65(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like void lv_image_cache_resize(intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(uint32_t new_size, bool evict_now)
+// Dispatcher for 2 LVGL function(s) including: lv_image_cache_resize
+// Consolidated functions (2 total):
+//   - lv_image_cache_resize
+//   - lv_image_header_cache_resize
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_66(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -3522,14 +5406,14 @@ static lv_obj_t* dispatch_json_archetype_66(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_66(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_image_cache_resize: expected 2 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_image_cache_resize: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_image_cache_resize: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_image_cache_resize: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -3537,7 +5421,7 @@ static lv_obj_t* dispatch_ir_archetype_66(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_image_cache_resize: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_image_cache_resize: arg 1 is NULL");
         return NULL;
     }
     arg1 = (bool)ir_node_get_int(ir_args[1]);
@@ -3548,7 +5432,9 @@ static lv_obj_t* dispatch_ir_archetype_66(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_cache_entry_t* lv_image_decoder_add_to_cache(void* (ANY_POINTER), void* (ANY_POINTER), void* (ANY_POINTER))
+// Archetype C Signature Example: lv_cache_entry_t* archetype_func(lv_image_decoder_t* target, lv_image_cache_data_t* search_key, lv_draw_buf_t* decoded, void* user_data)
+// Dispatcher for 1 LVGL function(s) including: lv_image_decoder_add_to_cache
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_67(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_image_cache_data_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -3561,15 +5447,15 @@ static lv_obj_t* dispatch_json_archetype_67(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_67(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_image_decoder_add_to_cache: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_image_decoder_add_to_cache: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_image_decoder_add_to_cache: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_image_decoder_add_to_cache: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_image_cache_data_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -3577,7 +5463,7 @@ static lv_obj_t* dispatch_ir_archetype_67(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_image_decoder_add_to_cache: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_image_decoder_add_to_cache: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -3585,7 +5471,7 @@ static lv_obj_t* dispatch_ir_archetype_67(generic_lvgl_func_t fn, void* target_v
     void* arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_image_decoder_add_to_cache: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_image_decoder_add_to_cache: arg 2 is NULL");
         return NULL;
     }
     arg2 = (void*)obj_registry_get(ir_node_get_string(ir_args[2]));
@@ -3595,7 +5481,9 @@ static lv_obj_t* dispatch_ir_archetype_67(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_imagebutton_set_src(intptr_t (INT_LIKE), void* (ANY_POINTER), void* (ANY_POINTER), void* (ANY_POINTER))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_imagebutton_state_t state, void* src_left, void* src_mid, void* src_right)
+// Dispatcher for 1 LVGL function(s) including: lv_imagebutton_set_src
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_68(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = unmarshal_value(cJSON_GetArrayItem(args, 0), "lv_imagebutton_state_t");
@@ -3610,15 +5498,15 @@ static lv_obj_t* dispatch_json_archetype_68(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_68(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_imagebutton_set_src: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_imagebutton_set_src: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_imagebutton_set_src: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_imagebutton_set_src: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_imagebutton_state_t)ir_node_get_int_robust(ir_args[0], "lv_imagebutton_state_t");
@@ -3626,7 +5514,7 @@ static lv_obj_t* dispatch_ir_archetype_68(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_imagebutton_set_src: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_imagebutton_set_src: arg 1 is NULL");
         return NULL;
     }
     arg1 = (void*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -3634,7 +5522,7 @@ static lv_obj_t* dispatch_ir_archetype_68(generic_lvgl_func_t fn, void* target_v
     void* arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_imagebutton_set_src: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_imagebutton_set_src: arg 2 is NULL");
         return NULL;
     }
     arg2 = (void*)obj_registry_get(ir_node_get_string(ir_args[2]));
@@ -3642,7 +5530,7 @@ static lv_obj_t* dispatch_ir_archetype_68(generic_lvgl_func_t fn, void* target_v
     void* arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_imagebutton_set_src: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_imagebutton_set_src: arg 3 is NULL");
         return NULL;
     }
     arg3 = (void*)obj_registry_get(ir_node_get_string(ir_args[3]));
@@ -3653,7 +5541,25 @@ static lv_obj_t* dispatch_ir_archetype_68(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 15 funcs like void lv_led_set_color(lv_color_t (COLOR))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_color_t color)
+// Dispatcher for 15 LVGL function(s) including: lv_led_set_color
+// Consolidated functions (15 total):
+//   - lv_led_set_color
+//   - lv_style_set_arc_color
+//   - lv_style_set_bg_color
+//   - lv_style_set_bg_grad_color
+//   - lv_style_set_bg_image_recolor
+//   - lv_style_set_border_color
+//   - lv_style_set_image_recolor
+//   - lv_style_set_line_color
+//   - lv_style_set_outline_color
+//   - lv_style_set_recolor
+//   - lv_style_set_shadow_color
+//   - lv_style_set_text_color
+//   - lv_style_set_text_outline_stroke_color
+//   - lv_subject_init_color
+//   - lv_subject_set_color
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_69(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     lv_color_t arg0 = lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0)));
@@ -3665,15 +5571,15 @@ static lv_obj_t* dispatch_json_archetype_69(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_69(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_led_set_color: expected 1 args, got %d", arg_count);
+    if (arg_count != 2) {
+        _eprintf(stderr, "IR call to lv_led_set_color: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_led_set_color: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_led_set_color: arg 0 is NULL");
         return NULL;
     }
     arg0 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[0]));
@@ -3684,7 +5590,9 @@ static lv_obj_t* dispatch_ir_archetype_69(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_obj_add_screen_load_event(intptr_t (INT_LIKE), void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_event_code_t trigger, lv_obj_t* screen, lv_screen_load_anim_t anim_type, uint32_t duration, uint32_t delay)
+// Dispatcher for 1 LVGL function(s) including: lv_obj_add_screen_load_event
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_70(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = unmarshal_value(cJSON_GetArrayItem(args, 0), "lv_event_code_t");
@@ -3700,15 +5608,15 @@ static lv_obj_t* dispatch_json_archetype_70(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 5) {
-        LV_LOG_WARN("IR call to lv_obj_add_screen_load_event: expected 5 args, got %d", arg_count);
+    if (arg_count != 6) {
+        _eprintf(stderr, "IR call to lv_obj_add_screen_load_event: expected 6 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_obj_add_screen_load_event: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_add_screen_load_event: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_event_code_t)ir_node_get_int_robust(ir_args[0], "lv_event_code_t");
@@ -3716,7 +5624,7 @@ static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_obj_add_screen_load_event: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_add_screen_load_event: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -3724,7 +5632,7 @@ static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_obj_add_screen_load_event: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_add_screen_load_event: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_screen_load_anim_t)ir_node_get_int_robust(ir_args[2], "lv_screen_load_anim_t");
@@ -3732,7 +5640,7 @@ static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_obj_add_screen_load_event: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_add_screen_load_event: arg 3 is NULL");
         return NULL;
     }
     arg3 = (uint32_t)ir_node_get_int(ir_args[3]);
@@ -3740,7 +5648,7 @@ static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target_v
     intptr_t arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_obj_add_screen_load_event: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_add_screen_load_event: arg 4 is NULL");
         return NULL;
     }
     arg4 = (uint32_t)ir_node_get_int(ir_args[4]);
@@ -3751,7 +5659,9 @@ static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_obj_add_subject_increment_event(void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_subject_t* subject, lv_event_code_t trigger, int32_t step, int32_t min, int32_t max)
+// Dispatcher for 1 LVGL function(s) including: lv_obj_add_subject_increment_event
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_71(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_subject_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -3767,15 +5677,15 @@ static lv_obj_t* dispatch_json_archetype_71(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 5) {
-        LV_LOG_WARN("IR call to lv_obj_add_subject_increment_event: expected 5 args, got %d", arg_count);
+    if (arg_count != 6) {
+        _eprintf(stderr, "IR call to lv_obj_add_subject_increment_event: expected 6 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_obj_add_subject_increment_event: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_add_subject_increment_event: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -3783,7 +5693,7 @@ static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_obj_add_subject_increment_event: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_add_subject_increment_event: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_event_code_t)ir_node_get_int_robust(ir_args[1], "lv_event_code_t");
@@ -3791,7 +5701,7 @@ static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_obj_add_subject_increment_event: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_add_subject_increment_event: arg 2 is NULL");
         return NULL;
     }
     arg2 = (int32_t)ir_node_get_int(ir_args[2]);
@@ -3799,7 +5709,7 @@ static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_obj_add_subject_increment_event: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_add_subject_increment_event: arg 3 is NULL");
         return NULL;
     }
     arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -3807,7 +5717,7 @@ static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target_v
     intptr_t arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_obj_add_subject_increment_event: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_add_subject_increment_event: arg 4 is NULL");
         return NULL;
     }
     arg4 = (int32_t)ir_node_get_int(ir_args[4]);
@@ -3818,7 +5728,22 @@ static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 12 funcs like lv_observer_t* lv_obj_bind_flag_if_eq(void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_observer_t* archetype_func(lv_obj_t* target, lv_subject_t* subject, lv_obj_flag_t flag, int32_t ref_value)
+// Dispatcher for 12 LVGL function(s) including: lv_obj_bind_flag_if_eq
+// Consolidated functions (12 total):
+//   - lv_obj_bind_flag_if_eq
+//   - lv_obj_bind_flag_if_ge
+//   - lv_obj_bind_flag_if_gt
+//   - lv_obj_bind_flag_if_le
+//   - lv_obj_bind_flag_if_lt
+//   - lv_obj_bind_flag_if_not_eq
+//   - lv_obj_bind_state_if_eq
+//   - lv_obj_bind_state_if_ge
+//   - lv_obj_bind_state_if_gt
+//   - lv_obj_bind_state_if_le
+//   - lv_obj_bind_state_if_lt
+//   - lv_obj_bind_state_if_not_eq
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_72(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_subject_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -3831,15 +5756,15 @@ static lv_obj_t* dispatch_json_archetype_72(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_72(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_obj_bind_flag_if_eq: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_obj_bind_flag_if_eq: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_obj_bind_flag_if_eq: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_bind_flag_if_eq: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -3847,7 +5772,7 @@ static lv_obj_t* dispatch_ir_archetype_72(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_obj_bind_flag_if_eq: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_bind_flag_if_eq: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_obj_flag_t)ir_node_get_int_robust(ir_args[1], "lv_obj_flag_t");
@@ -3855,7 +5780,7 @@ static lv_obj_t* dispatch_ir_archetype_72(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_obj_bind_flag_if_eq: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_bind_flag_if_eq: arg 2 is NULL");
         return NULL;
     }
     arg2 = (int32_t)ir_node_get_int(ir_args[2]);
@@ -3865,7 +5790,9 @@ static lv_obj_t* dispatch_ir_archetype_72(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_observer_t* lv_obj_bind_style(void* (ANY_POINTER), intptr_t (INT_LIKE), void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_observer_t* archetype_func(lv_obj_t* target, lv_style_t* style, lv_style_selector_t selector, lv_subject_t* subject, int32_t ref_value)
+// Dispatcher for 1 LVGL function(s) including: lv_obj_bind_style
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_73(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_style_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -3879,15 +5806,15 @@ static lv_obj_t* dispatch_json_archetype_73(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_73(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_obj_bind_style: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_obj_bind_style: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_obj_bind_style: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_bind_style: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -3895,7 +5822,7 @@ static lv_obj_t* dispatch_ir_archetype_73(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_obj_bind_style: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_bind_style: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
@@ -3903,7 +5830,7 @@ static lv_obj_t* dispatch_ir_archetype_73(generic_lvgl_func_t fn, void* target_v
     void* arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_obj_bind_style: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_bind_style: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
@@ -3911,7 +5838,7 @@ static lv_obj_t* dispatch_ir_archetype_73(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_obj_bind_style: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_bind_style: arg 3 is NULL");
         return NULL;
     }
     arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -3921,7 +5848,13 @@ static lv_obj_t* dispatch_ir_archetype_73(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 3 funcs like lv_style_res_t lv_obj_get_local_style_prop(intptr_t (INT_LIKE), void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_style_res_t archetype_func(lv_obj_t* target, lv_style_prop_t prop, lv_style_value_t* value, lv_style_selector_t selector)
+// Dispatcher for 3 LVGL function(s) including: lv_obj_get_local_style_prop
+// Consolidated functions (3 total):
+//   - lv_obj_get_local_style_prop
+//   - lv_text_get_width
+//   - lv_vsnprintf
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_74(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (lv_style_prop_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -3935,15 +5868,15 @@ static lv_obj_t* dispatch_json_archetype_74(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_74(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_obj_get_local_style_prop: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_obj_get_local_style_prop: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_obj_get_local_style_prop: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_get_local_style_prop: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_style_prop_t)ir_node_get_int(ir_args[0]);
@@ -3951,7 +5884,7 @@ static lv_obj_t* dispatch_ir_archetype_74(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_obj_get_local_style_prop: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_get_local_style_prop: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_style_value_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -3959,7 +5892,7 @@ static lv_obj_t* dispatch_ir_archetype_74(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_obj_get_local_style_prop: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_get_local_style_prop: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_style_selector_t)ir_node_get_int(ir_args[2]);
@@ -3970,7 +5903,33 @@ static lv_obj_t* dispatch_ir_archetype_74(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 23 funcs like lv_color_t lv_obj_get_style_arc_color(intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_color_t archetype_func(lv_obj_t* target, lv_part_t part)
+// Dispatcher for 23 LVGL function(s) including: lv_obj_get_style_arc_color
+// Consolidated functions (23 total):
+//   - lv_obj_get_style_arc_color
+//   - lv_obj_get_style_arc_color_filtered
+//   - lv_obj_get_style_bg_color
+//   - lv_obj_get_style_bg_color_filtered
+//   - lv_obj_get_style_bg_grad_color
+//   - lv_obj_get_style_bg_grad_color_filtered
+//   - lv_obj_get_style_bg_image_recolor
+//   - lv_obj_get_style_bg_image_recolor_filtered
+//   - lv_obj_get_style_border_color
+//   - lv_obj_get_style_border_color_filtered
+//   - lv_obj_get_style_image_recolor
+//   - lv_obj_get_style_image_recolor_filtered
+//   - lv_obj_get_style_line_color
+//   - lv_obj_get_style_line_color_filtered
+//   - lv_obj_get_style_outline_color
+//   - lv_obj_get_style_outline_color_filtered
+//   - lv_obj_get_style_recolor
+//   - lv_obj_get_style_shadow_color
+//   - lv_obj_get_style_shadow_color_filtered
+//   - lv_obj_get_style_text_color
+//   - lv_obj_get_style_text_color_filtered
+//   - lv_obj_get_style_text_outline_stroke_color
+//   - lv_obj_get_style_text_outline_stroke_color_filtered
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_75(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (lv_part_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -3982,15 +5941,15 @@ static lv_obj_t* dispatch_json_archetype_75(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_75(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 1) {
-        LV_LOG_WARN("IR call to lv_obj_get_style_arc_color: expected 1 args, got %d", arg_count);
+    if (arg_count != 2) {
+        _eprintf(stderr, "IR call to lv_obj_get_style_arc_color: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_obj_get_style_arc_color: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_get_style_arc_color: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_part_t)ir_node_get_int(ir_args[0]);
@@ -4001,7 +5960,9 @@ static lv_obj_t* dispatch_ir_archetype_75(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like bool lv_obj_replace_style(void* (ANY_POINTER), void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: bool archetype_func(lv_obj_t* target, lv_style_t* old_style, lv_style_t* new_style, lv_style_selector_t selector)
+// Dispatcher for 1 LVGL function(s) including: lv_obj_replace_style
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_76(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (lv_style_t*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -4015,15 +5976,15 @@ static lv_obj_t* dispatch_json_archetype_76(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_76(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_obj_replace_style: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_obj_replace_style: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_obj_replace_style: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_replace_style: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -4031,7 +5992,7 @@ static lv_obj_t* dispatch_ir_archetype_76(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_obj_replace_style: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_replace_style: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -4039,7 +6000,7 @@ static lv_obj_t* dispatch_ir_archetype_76(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_obj_replace_style: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_replace_style: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_style_selector_t)ir_node_get_int(ir_args[2]);
@@ -4050,7 +6011,9 @@ static lv_obj_t* dispatch_ir_archetype_76(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_obj_set_grid_cell(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, lv_grid_align_t column_align, int32_t col_pos, int32_t col_span, lv_grid_align_t row_align, int32_t row_pos, int32_t row_span)
+// Dispatcher for 1 LVGL function(s) including: lv_obj_set_grid_cell
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_77(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = unmarshal_value(cJSON_GetArrayItem(args, 0), "lv_grid_align_t");
@@ -4067,15 +6030,15 @@ static lv_obj_t* dispatch_json_archetype_77(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 6) {
-        LV_LOG_WARN("IR call to lv_obj_set_grid_cell: expected 6 args, got %d", arg_count);
+    if (arg_count != 7) {
+        _eprintf(stderr, "IR call to lv_obj_set_grid_cell: expected 7 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_obj_set_grid_cell: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_set_grid_cell: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_grid_align_t)ir_node_get_int_robust(ir_args[0], "lv_grid_align_t");
@@ -4083,7 +6046,7 @@ static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_obj_set_grid_cell: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_set_grid_cell: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int32_t)ir_node_get_int(ir_args[1]);
@@ -4091,7 +6054,7 @@ static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_obj_set_grid_cell: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_set_grid_cell: arg 2 is NULL");
         return NULL;
     }
     arg2 = (int32_t)ir_node_get_int(ir_args[2]);
@@ -4099,7 +6062,7 @@ static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_obj_set_grid_cell: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_set_grid_cell: arg 3 is NULL");
         return NULL;
     }
     arg3 = (lv_grid_align_t)ir_node_get_int_robust(ir_args[3], "lv_grid_align_t");
@@ -4107,7 +6070,7 @@ static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target_v
     intptr_t arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_obj_set_grid_cell: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_set_grid_cell: arg 4 is NULL");
         return NULL;
     }
     arg4 = (int32_t)ir_node_get_int(ir_args[4]);
@@ -4115,7 +6078,7 @@ static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target_v
     intptr_t arg5;
     IRNode* current_ir_arg5 = ir_args[5];
     if (!current_ir_arg5) {
-        LV_LOG_WARN("IR call to lv_obj_set_grid_cell: arg 5 is NULL");
+        _eprintf(stderr, "IR call to lv_obj_set_grid_cell: arg 5 is NULL");
         return NULL;
     }
     arg5 = (int32_t)ir_node_get_int(ir_args[5]);
@@ -4126,7 +6089,12 @@ static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like lv_color_t lv_palette_darken(intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_color_t archetype_func(lv_palette_t p, uint8_t lvl)
+// Dispatcher for 2 LVGL function(s) including: lv_palette_darken
+// Consolidated functions (2 total):
+//   - lv_palette_darken
+//   - lv_palette_lighten
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_78(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = unmarshal_value(cJSON_GetArrayItem(args, 0), "lv_palette_t");
@@ -4140,14 +6108,14 @@ static lv_obj_t* dispatch_json_archetype_78(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_78(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 2) {
-        LV_LOG_WARN("IR call to lv_palette_darken: expected 2 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_palette_darken: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_palette_darken: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_palette_darken: arg 0 is NULL");
         return NULL;
     }
     arg0 = (lv_palette_t)ir_node_get_int_robust(ir_args[0], "lv_palette_t");
@@ -4155,7 +6123,7 @@ static lv_obj_t* dispatch_ir_archetype_78(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_palette_darken: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_palette_darken: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint8_t)ir_node_get_int(ir_args[1]);
@@ -4166,7 +6134,9 @@ static lv_obj_t* dispatch_ir_archetype_78(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_point_array_transform(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_point_t* target, size_t count, int32_t angle, int32_t scale_x, int32_t scale_y, lv_point_t* pivot, bool zoom_first)
+// Dispatcher for 1 LVGL function(s) including: lv_point_array_transform
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_79(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (size_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -4183,15 +6153,15 @@ static lv_obj_t* dispatch_json_archetype_79(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 6) {
-        LV_LOG_WARN("IR call to lv_point_array_transform: expected 6 args, got %d", arg_count);
+    if (arg_count != 7) {
+        _eprintf(stderr, "IR call to lv_point_array_transform: expected 7 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_point_array_transform: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_point_array_transform: arg 0 is NULL");
         return NULL;
     }
     arg0 = (size_t)ir_node_get_int(ir_args[0]);
@@ -4199,7 +6169,7 @@ static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_point_array_transform: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_point_array_transform: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int32_t)ir_node_get_int(ir_args[1]);
@@ -4207,7 +6177,7 @@ static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_point_array_transform: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_point_array_transform: arg 2 is NULL");
         return NULL;
     }
     arg2 = (int32_t)ir_node_get_int(ir_args[2]);
@@ -4215,7 +6185,7 @@ static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_point_array_transform: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_point_array_transform: arg 3 is NULL");
         return NULL;
     }
     arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -4223,7 +6193,7 @@ static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target_v
     void* arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_point_array_transform: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_point_array_transform: arg 4 is NULL");
         return NULL;
     }
     arg4 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[4]));
@@ -4231,7 +6201,7 @@ static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target_v
     intptr_t arg5;
     IRNode* current_ir_arg5 = ir_args[5];
     if (!current_ir_arg5) {
-        LV_LOG_WARN("IR call to lv_point_array_transform: arg 5 is NULL");
+        _eprintf(stderr, "IR call to lv_point_array_transform: arg 5 is NULL");
         return NULL;
     }
     arg5 = (bool)ir_node_get_int(ir_args[5]);
@@ -4242,7 +6212,9 @@ static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_point_transform(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_point_t* target, int32_t angle, int32_t scale_x, int32_t scale_y, lv_point_t* pivot, bool zoom_first)
+// Dispatcher for 1 LVGL function(s) including: lv_point_transform
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_80(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (int32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -4258,15 +6230,15 @@ static lv_obj_t* dispatch_json_archetype_80(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 5) {
-        LV_LOG_WARN("IR call to lv_point_transform: expected 5 args, got %d", arg_count);
+    if (arg_count != 6) {
+        _eprintf(stderr, "IR call to lv_point_transform: expected 6 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_point_transform: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_point_transform: arg 0 is NULL");
         return NULL;
     }
     arg0 = (int32_t)ir_node_get_int(ir_args[0]);
@@ -4274,7 +6246,7 @@ static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_point_transform: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_point_transform: arg 1 is NULL");
         return NULL;
     }
     arg1 = (int32_t)ir_node_get_int(ir_args[1]);
@@ -4282,7 +6254,7 @@ static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_point_transform: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_point_transform: arg 2 is NULL");
         return NULL;
     }
     arg2 = (int32_t)ir_node_get_int(ir_args[2]);
@@ -4290,7 +6262,7 @@ static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target_v
     void* arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_point_transform: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_point_transform: arg 3 is NULL");
         return NULL;
     }
     arg3 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[3]));
@@ -4298,7 +6270,7 @@ static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target_v
     intptr_t arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_point_transform: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_point_transform: arg 4 is NULL");
         return NULL;
     }
     arg4 = (bool)ir_node_get_int(ir_args[4]);
@@ -4309,7 +6281,9 @@ static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_sqrt(intptr_t (INT_LIKE), void* (ANY_POINTER), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(uint32_t x, lv_sqrt_res_t* q, uint32_t mask)
+// Dispatcher for 1 LVGL function(s) including: lv_sqrt
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_81(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -4324,14 +6298,14 @@ static lv_obj_t* dispatch_json_archetype_81(generic_lvgl_func_t fn, void* target
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_81(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
     if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_sqrt: expected 3 args, got %d", arg_count);
+        _eprintf(stderr, "IR call to lv_sqrt: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_sqrt: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_sqrt: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -4339,7 +6313,7 @@ static lv_obj_t* dispatch_ir_archetype_81(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_sqrt: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_sqrt: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_sqrt_res_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -4347,7 +6321,7 @@ static lv_obj_t* dispatch_ir_archetype_81(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_sqrt: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_sqrt: arg 2 is NULL");
         return NULL;
     }
     arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
@@ -4358,7 +6332,14 @@ static lv_obj_t* dispatch_ir_archetype_81(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 4 funcs like lv_color_t lv_subject_get_color()
+// Archetype C Signature Example: lv_color_t archetype_func(lv_subject_t* target)
+// Dispatcher for 4 LVGL function(s) including: lv_subject_get_color
+// Consolidated functions (4 total):
+//   - lv_subject_get_color
+//   - lv_subject_get_previous_color
+//   - lv_theme_get_color_primary
+//   - lv_theme_get_color_secondary
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_82(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef lv_color_t (*specific_func_t)(lv_subject_t*);
@@ -4369,8 +6350,8 @@ static lv_obj_t* dispatch_json_archetype_82(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_82(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 0) {
-        LV_LOG_WARN("IR call to lv_subject_get_color: expected 0 args, got %d", arg_count);
+    if (arg_count != 1) {
+        _eprintf(stderr, "IR call to lv_subject_get_color: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
@@ -4380,7 +6361,9 @@ static lv_obj_t* dispatch_ir_archetype_82(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_subject_init_string(void* (ANY_POINTER), void* (ANY_POINTER), intptr_t (INT_LIKE), void* (ANY_POINTER))
+// Archetype C Signature Example: void archetype_func(lv_subject_t* target, char* buf, char* prev_buf, size_t size, char* value)
+// Dispatcher for 1 LVGL function(s) including: lv_subject_init_string
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_83(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (char*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -4395,15 +6378,15 @@ static lv_obj_t* dispatch_json_archetype_83(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_83(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_subject_init_string: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_subject_init_string: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_subject_init_string: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_subject_init_string: arg 0 is NULL");
         return NULL;
     }
     arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -4411,7 +6394,7 @@ static lv_obj_t* dispatch_ir_archetype_83(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_subject_init_string: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_subject_init_string: arg 1 is NULL");
         return NULL;
     }
     arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -4419,7 +6402,7 @@ static lv_obj_t* dispatch_ir_archetype_83(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_subject_init_string: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_subject_init_string: arg 2 is NULL");
         return NULL;
     }
     arg2 = (size_t)ir_node_get_int(ir_args[2]);
@@ -4427,7 +6410,7 @@ static lv_obj_t* dispatch_ir_archetype_83(generic_lvgl_func_t fn, void* target_v
     void* arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_subject_init_string: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_subject_init_string: arg 3 is NULL");
         return NULL;
     }
     arg3 = (char*)obj_registry_get(ir_node_get_string(ir_args[3]));
@@ -4438,7 +6421,9 @@ static lv_obj_t* dispatch_ir_archetype_83(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like bool lv_table_has_cell_ctrl(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: bool archetype_func(lv_obj_t* target, uint32_t row, uint32_t col, lv_table_cell_ctrl_t ctrl)
+// Dispatcher for 1 LVGL function(s) including: lv_table_has_cell_ctrl
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_84(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -4452,15 +6437,15 @@ static lv_obj_t* dispatch_json_archetype_84(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_84(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_table_has_cell_ctrl: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_table_has_cell_ctrl: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_table_has_cell_ctrl: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_table_has_cell_ctrl: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -4468,7 +6453,7 @@ static lv_obj_t* dispatch_ir_archetype_84(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_table_has_cell_ctrl: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_table_has_cell_ctrl: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
@@ -4476,7 +6461,7 @@ static lv_obj_t* dispatch_ir_archetype_84(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_table_has_cell_ctrl: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_table_has_cell_ctrl: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_table_cell_ctrl_t)ir_node_get_int_robust(ir_args[2], "lv_table_cell_ctrl_t");
@@ -4487,7 +6472,12 @@ static lv_obj_t* dispatch_ir_archetype_84(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 2 funcs like void lv_table_set_cell_user_data(intptr_t (INT_LIKE), intptr_t (INT_LIKE), void* (ANY_POINTER))
+// Archetype C Signature Example: void archetype_func(lv_obj_t* target, uint16_t row, uint16_t col, void* user_data)
+// Dispatcher for 2 LVGL function(s) including: lv_table_set_cell_user_data
+// Consolidated functions (2 total):
+//   - lv_table_set_cell_user_data
+//   - lv_table_set_cell_value
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_85(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint16_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -4501,15 +6491,15 @@ static lv_obj_t* dispatch_json_archetype_85(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_85(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_table_set_cell_user_data: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_table_set_cell_user_data: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_table_set_cell_user_data: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_table_set_cell_user_data: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint16_t)ir_node_get_int(ir_args[0]);
@@ -4517,7 +6507,7 @@ static lv_obj_t* dispatch_ir_archetype_85(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_table_set_cell_user_data: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_table_set_cell_user_data: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint16_t)ir_node_get_int(ir_args[1]);
@@ -4525,7 +6515,7 @@ static lv_obj_t* dispatch_ir_archetype_85(generic_lvgl_func_t fn, void* target_v
     void* arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_table_set_cell_user_data: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_table_set_cell_user_data: arg 2 is NULL");
         return NULL;
     }
     arg2 = (void*)obj_registry_get(ir_node_get_string(ir_args[2]));
@@ -4536,7 +6526,9 @@ static lv_obj_t* dispatch_ir_archetype_85(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like void lv_text_get_size(void* (ANY_POINTER), void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: void archetype_func(lv_point_t* target, char* text, lv_font_t* font, int32_t letter_space, int32_t line_space, int32_t max_width, lv_text_flag_t flag)
+// Dispatcher for 1 LVGL function(s) including: lv_text_get_size
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_86(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (char*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -4553,15 +6545,15 @@ static lv_obj_t* dispatch_json_archetype_86(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 6) {
-        LV_LOG_WARN("IR call to lv_text_get_size: expected 6 args, got %d", arg_count);
+    if (arg_count != 7) {
+        _eprintf(stderr, "IR call to lv_text_get_size: expected 7 args, got %d", arg_count);
         return NULL;
     }
 
     void* arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_text_get_size: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_text_get_size: arg 0 is NULL");
         return NULL;
     }
     arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
@@ -4569,7 +6561,7 @@ static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_text_get_size: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_text_get_size: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -4577,7 +6569,7 @@ static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_text_get_size: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_text_get_size: arg 2 is NULL");
         return NULL;
     }
     arg2 = (int32_t)ir_node_get_int(ir_args[2]);
@@ -4585,7 +6577,7 @@ static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_text_get_size: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_text_get_size: arg 3 is NULL");
         return NULL;
     }
     arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -4593,7 +6585,7 @@ static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target_v
     intptr_t arg4;
     IRNode* current_ir_arg4 = ir_args[4];
     if (!current_ir_arg4) {
-        LV_LOG_WARN("IR call to lv_text_get_size: arg 4 is NULL");
+        _eprintf(stderr, "IR call to lv_text_get_size: arg 4 is NULL");
         return NULL;
     }
     arg4 = (int32_t)ir_node_get_int(ir_args[4]);
@@ -4601,7 +6593,7 @@ static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target_v
     intptr_t arg5;
     IRNode* current_ir_arg5 = ir_args[5];
     if (!current_ir_arg5) {
-        LV_LOG_WARN("IR call to lv_text_get_size: arg 5 is NULL");
+        _eprintf(stderr, "IR call to lv_text_get_size: arg 5 is NULL");
         return NULL;
     }
     arg5 = (lv_text_flag_t)ir_node_get_int_robust(ir_args[5], "lv_text_flag_t");
@@ -4612,7 +6604,9 @@ static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like int32_t lv_text_get_width_with_flags(intptr_t (INT_LIKE), void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: int32_t archetype_func(char* target, uint32_t length, lv_font_t* font, int32_t letter_space, lv_text_flag_t flags)
+// Dispatcher for 1 LVGL function(s) including: lv_text_get_width_with_flags
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_87(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -4627,15 +6621,15 @@ static lv_obj_t* dispatch_json_archetype_87(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_87(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_text_get_width_with_flags: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_text_get_width_with_flags: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_text_get_width_with_flags: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_text_get_width_with_flags: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
@@ -4643,7 +6637,7 @@ static lv_obj_t* dispatch_ir_archetype_87(generic_lvgl_func_t fn, void* target_v
     void* arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_text_get_width_with_flags: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_text_get_width_with_flags: arg 1 is NULL");
         return NULL;
     }
     arg1 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
@@ -4651,7 +6645,7 @@ static lv_obj_t* dispatch_ir_archetype_87(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_text_get_width_with_flags: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_text_get_width_with_flags: arg 2 is NULL");
         return NULL;
     }
     arg2 = (int32_t)ir_node_get_int(ir_args[2]);
@@ -4659,7 +6653,7 @@ static lv_obj_t* dispatch_ir_archetype_87(generic_lvgl_func_t fn, void* target_v
     intptr_t arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_text_get_width_with_flags: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_text_get_width_with_flags: arg 3 is NULL");
         return NULL;
     }
     arg3 = (lv_text_flag_t)ir_node_get_int_robust(ir_args[3], "lv_text_flag_t");
@@ -4670,7 +6664,9 @@ static lv_obj_t* dispatch_ir_archetype_87(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_theme_t* lv_theme_default_init(lv_color_t (COLOR), lv_color_t (COLOR), intptr_t (INT_LIKE), void* (ANY_POINTER))
+// Archetype C Signature Example: lv_theme_t* archetype_func(lv_display_t* target, lv_color_t color_primary, lv_color_t color_secondary, bool dark, lv_font_t* font)
+// Dispatcher for 1 LVGL function(s) including: lv_theme_default_init
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_88(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     lv_color_t arg0 = lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0)));
@@ -4684,15 +6680,15 @@ static lv_obj_t* dispatch_json_archetype_88(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_88(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 4) {
-        LV_LOG_WARN("IR call to lv_theme_default_init: expected 4 args, got %d", arg_count);
+    if (arg_count != 5) {
+        _eprintf(stderr, "IR call to lv_theme_default_init: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_theme_default_init: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_theme_default_init: arg 0 is NULL");
         return NULL;
     }
     arg0 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[0]));
@@ -4700,7 +6696,7 @@ static lv_obj_t* dispatch_ir_archetype_88(generic_lvgl_func_t fn, void* target_v
     lv_color_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_theme_default_init: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_theme_default_init: arg 1 is NULL");
         return NULL;
     }
     arg1 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[1]));
@@ -4708,7 +6704,7 @@ static lv_obj_t* dispatch_ir_archetype_88(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_theme_default_init: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_theme_default_init: arg 2 is NULL");
         return NULL;
     }
     arg2 = (bool)ir_node_get_int(ir_args[2]);
@@ -4716,7 +6712,7 @@ static lv_obj_t* dispatch_ir_archetype_88(generic_lvgl_func_t fn, void* target_v
     void* arg3;
     IRNode* current_ir_arg3 = ir_args[3];
     if (!current_ir_arg3) {
-        LV_LOG_WARN("IR call to lv_theme_default_init: arg 3 is NULL");
+        _eprintf(stderr, "IR call to lv_theme_default_init: arg 3 is NULL");
         return NULL;
     }
     arg3 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[3]));
@@ -4726,7 +6722,9 @@ static lv_obj_t* dispatch_ir_archetype_88(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 1 funcs like lv_obj_t* lv_tileview_add_tile(intptr_t (INT_LIKE), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype C Signature Example: lv_obj_t* archetype_func(lv_obj_t* target, uint8_t col_id, uint8_t row_id, lv_dir_t dir)
+// Dispatcher for 1 LVGL function(s) including: lv_tileview_add_tile
+
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_89(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint8_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -4739,15 +6737,15 @@ static lv_obj_t* dispatch_json_archetype_89(generic_lvgl_func_t fn, void* target
 
 #if defined(ENABLE_IR_INPUTS)
 static lv_obj_t* dispatch_ir_archetype_89(generic_lvgl_func_t fn, void* target_voidp, IRNode** ir_args, int arg_count) {
-    if (arg_count != 3) {
-        LV_LOG_WARN("IR call to lv_tileview_add_tile: expected 3 args, got %d", arg_count);
+    if (arg_count != 4) {
+        _eprintf(stderr, "IR call to lv_tileview_add_tile: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
     intptr_t arg0;
     IRNode* current_ir_arg0 = ir_args[0];
     if (!current_ir_arg0) {
-        LV_LOG_WARN("IR call to lv_tileview_add_tile: arg 0 is NULL");
+        _eprintf(stderr, "IR call to lv_tileview_add_tile: arg 0 is NULL");
         return NULL;
     }
     arg0 = (uint8_t)ir_node_get_int(ir_args[0]);
@@ -4755,7 +6753,7 @@ static lv_obj_t* dispatch_ir_archetype_89(generic_lvgl_func_t fn, void* target_v
     intptr_t arg1;
     IRNode* current_ir_arg1 = ir_args[1];
     if (!current_ir_arg1) {
-        LV_LOG_WARN("IR call to lv_tileview_add_tile: arg 1 is NULL");
+        _eprintf(stderr, "IR call to lv_tileview_add_tile: arg 1 is NULL");
         return NULL;
     }
     arg1 = (uint8_t)ir_node_get_int(ir_args[1]);
@@ -4763,7 +6761,7 @@ static lv_obj_t* dispatch_ir_archetype_89(generic_lvgl_func_t fn, void* target_v
     intptr_t arg2;
     IRNode* current_ir_arg2 = ir_args[2];
     if (!current_ir_arg2) {
-        LV_LOG_WARN("IR call to lv_tileview_add_tile: arg 2 is NULL");
+        _eprintf(stderr, "IR call to lv_tileview_add_tile: arg 2 is NULL");
         return NULL;
     }
     arg2 = (lv_dir_t)ir_node_get_int_robust(ir_args[2], "lv_dir_t");
