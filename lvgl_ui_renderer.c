@@ -121,6 +121,36 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
             }
             DEBUG_LOG(LOG_MODULE_RENDERER, "IR_STMT_WIDGET_ALLOCATE: func='%s', id_to_set='%s'", func_name, id_to_set);
 
+        } else if (stmt_node_base->type == IR_STMT_VAR_DECL) {
+            IRStmtVarDecl* stmt = (IRStmtVarDecl*)stmt_node_base;
+            DEBUG_LOG(LOG_MODULE_RENDERER, "IR_STMT_VAR_DECL: var_name='%s', type_name='%s'", stmt->var_name, stmt->type_name);
+            if (stmt->initializer && stmt->initializer->type == IR_EXPR_FUNC_CALL) {
+                IRExprFuncCall* initializer_func_call = (IRExprFuncCall*)stmt->initializer;
+                func_name = initializer_func_call->func_name;
+                id_to_set = stmt->var_name; // The result of the func call will be assigned to this variable
+                target_obj = NULL; // Initializer functions usually don't have a target object
+
+                DEBUG_LOG(LOG_MODULE_RENDERER, "Initializer is FUNC_CALL: func='%s', result_id_to_set='%s'", func_name, id_to_set);
+
+                IRExprNode* current_arg_node = initializer_func_call->args;
+                while (current_arg_node != NULL && arg_count < MAX_RENDER_ARGS) {
+                    if (current_arg_node->expr) {
+                        ir_args[arg_count++] = (IRNode*)current_arg_node->expr;
+                    }
+                    current_arg_node = current_arg_node->next;
+                }
+                // Note: No target_obj extraction for initializer function calls, assuming they are global/static.
+            } else if (stmt->initializer) {
+                DEBUG_LOG(LOG_MODULE_RENDERER, "IR_STMT_VAR_DECL for '%s' has an initializer of type %d, not a function call. Value not directly used for rendering.", stmt->var_name, stmt->initializer->type);
+                // For lvgl_ui mode, if a var is declared with a literal, it might not directly translate to an LVGL action
+                // unless it's used later. For now, we only act on function call initializers that create objects.
+                // No func_name means this will skip the dispatch logic later in the loop.
+            } else {
+                 DEBUG_LOG(LOG_MODULE_RENDERER, "IR_STMT_VAR_DECL for '%s' has no initializer.", stmt->var_name);
+            }
+             // If func_name got set (from initializer_func_call), it will be dispatched.
+             // Otherwise, this IR_STMT_VAR_DECL (e.g. with literal init) is processed, but no dispatch occurs.
+
         } else if (stmt_node_base->type == IR_STMT_OBJECT_ALLOCATE) {
             IRStmtObjectAllocate* stmt = (IRStmtObjectAllocate*)stmt_node_base;
             DEBUG_LOG(LOG_MODULE_RENDERER, "IR_STMT_OBJECT_ALLOCATE: type '%s', id '%s', init_func '%s'",
