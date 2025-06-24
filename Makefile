@@ -13,8 +13,13 @@ LVGL_DIR = $(PWD)/lvgl
 LVGL_BUILD_DIR = $(LVGL_DIR)/build
 LV_CONF_PATH = $(LVGL_DIR)/../viewer/lv_conf.h
 
-CFLAGS = -Wall -g -std=c11 -I. $(INC_CJSON) -I./cJSON -D_GNU_SOURCE -I./lvgl -DLV_CONF_PATH='"$(LV_CONF_PATH)"' -DLV_BUILD_CONF_PATH='"$(LV_CONF_PATH)"'
-LIBS = $(LIB_CJSON) -lm $(LVGL_BUILD_DIR)/lib/liblvgl.a
+SDL_LIBS = `pkg-config sdl2 -libs`
+SDL_CFLAGS = `pkg-config sdl2 -cflags`
+
+LVGL_INC = -I./lvgl/src
+
+CFLAGS = -Wall -g -std=c11 -I. $(INC_CJSON) -I./cJSON -D_GNU_SOURCE -I./lvgl -DLV_CONF_PATH='"$(LV_CONF_PATH)"' -DLV_BUILD_CONF_PATH='"$(LV_CONF_PATH)"' $(SDL_CFLAGS) $(LVGL_INC)
+LIBS = $(LIB_CJSON) -lm $(LVGL_BUILD_DIR)/lib/liblvgl.a $(SDL_LIBS)
 
 TARGET = lvgl_ui_generator
 
@@ -35,7 +40,7 @@ DYNAMIC_LVGL_CFLAGS ?= -DENABLE_IR_INPUTS # Default to only IR inputs
 # Add DYNAMIC_LVGL_CFLAGS to general CFLAGS
 CFLAGS += $(DYNAMIC_LVGL_CFLAGS)
 
-SOURCES = main.c api_spec.c ir.c registry.c generator.c codegen.c utils.c cJSON/cJSON.c $(DYNAMIC_LVGL_C)
+SOURCES = main.c api_spec.c ir.c registry.c generator.c codegen.c utils.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c
 OBJECTS = $(SOURCES:.c=.o)
 
 $(TARGET): $(OBJECTS)

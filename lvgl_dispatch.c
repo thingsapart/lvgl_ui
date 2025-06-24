@@ -675,7 +675,7 @@ static lv_obj_t* dispatch_ir_archetype_0(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 26 funcs like void lv_anim_delete_all()
+// Archetype for 27 funcs like void lv_anim_delete_all()
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_1(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef void (*specific_func_t)(void);
@@ -697,7 +697,7 @@ static lv_obj_t* dispatch_ir_archetype_1(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 250 funcs like uint32_t lv_anim_get_delay()
+// Archetype for 251 funcs like uint32_t lv_anim_get_delay()
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_2(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef uint32_t (*specific_func_t)(lv_anim_t*);
@@ -719,7 +719,7 @@ static lv_obj_t* dispatch_ir_archetype_2(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 24 funcs like lv_timer_t* lv_anim_get_timer()
+// Archetype for 27 funcs like lv_timer_t* lv_anim_get_timer()
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_3(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef lv_timer_t* (*specific_func_t)(void);
@@ -739,7 +739,7 @@ static lv_obj_t* dispatch_ir_archetype_3(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 182 funcs like void* lv_anim_get_user_data()
+// Archetype for 183 funcs like void* lv_anim_get_user_data()
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_4(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     typedef void* (*specific_func_t)(lv_anim_t*);
@@ -781,7 +781,7 @@ static lv_obj_t* dispatch_ir_archetype_5(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 294 funcs like void lv_anim_pause_for(intptr_t (INT_LIKE))
+// Archetype for 296 funcs like void lv_anim_pause_for(intptr_t (INT_LIKE))
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_6(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -919,7 +919,7 @@ static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target_vo
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 95 funcs like void lv_anim_set_user_data(void* (ANY_POINTER))
+// Archetype for 96 funcs like void lv_anim_set_user_data(void* (ANY_POINTER))
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_9(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (void*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1328,7 +1328,7 @@ static lv_obj_t* dispatch_ir_archetype_19(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 8 funcs like void lv_array_init_from_buf(void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype for 9 funcs like void lv_array_init_from_buf(void* (ANY_POINTER), intptr_t (INT_LIKE), intptr_t (INT_LIKE))
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_20(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     void* arg0 = (void*)obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem(args, 0)));
@@ -1769,7 +1769,7 @@ static lv_obj_t* dispatch_ir_archetype_29(generic_lvgl_func_t fn, void* target_v
 }
 #endif // ENABLE_IR_INPUTS
 
-// Archetype for 3 funcs like void* lv_calloc(intptr_t (INT_LIKE), intptr_t (INT_LIKE))
+// Archetype for 4 funcs like void* lv_calloc(intptr_t (INT_LIKE), intptr_t (INT_LIKE))
 #if defined(ENABLE_CJSON_INPUTS)
 static lv_obj_t* dispatch_json_archetype_30(generic_lvgl_func_t fn, void* target_voidp, cJSON* args) {
     intptr_t arg0 = (size_t)cJSON_GetNumberValue(cJSON_GetArrayItem(args, 0));
@@ -18746,6 +18746,116 @@ static const FunctionMapping function_registry[] = {
         , /* ir_dispatcher */ dispatch_ir_archetype_8
 #endif /* ENABLE_IR_INPUTS */
         , /* func_ptr */ (generic_lvgl_func_t)lv_screen_load_anim
+    },
+        {
+        /* name */ "lv_sdl_keyboard_create"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_3
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_3
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_keyboard_create
+    },
+        {
+        /* name */ "lv_sdl_mouse_create"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_3
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_3
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_mouse_create
+    },
+        {
+        /* name */ "lv_sdl_mousewheel_create"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_3
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_3
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_mousewheel_create
+    },
+        {
+        /* name */ "lv_sdl_quit"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_1
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_1
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_quit
+    },
+        {
+        /* name */ "lv_sdl_window_create"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_30
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_30
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_window_create
+    },
+        {
+        /* name */ "lv_sdl_window_get_renderer"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_4
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_4
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_window_get_renderer
+    },
+        {
+        /* name */ "lv_sdl_window_get_zoom"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_2
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_2
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_window_get_zoom
+    },
+        {
+        /* name */ "lv_sdl_window_set_icon"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_20
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_20
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_window_set_icon
+    },
+        {
+        /* name */ "lv_sdl_window_set_resizeable"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_6
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_6
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_window_set_resizeable
+    },
+        {
+        /* name */ "lv_sdl_window_set_title"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_9
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_9
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_window_set_title
+    },
+        {
+        /* name */ "lv_sdl_window_set_zoom"
+#if defined(ENABLE_CJSON_INPUTS)
+        , /* json_dispatcher */ dispatch_json_archetype_6
+#endif /* ENABLE_CJSON_INPUTS */
+#if defined(ENABLE_IR_INPUTS)
+        , /* ir_dispatcher */ dispatch_ir_archetype_6
+#endif /* ENABLE_IR_INPUTS */
+        , /* func_ptr */ (generic_lvgl_func_t)lv_sdl_window_set_zoom
     },
         {
         /* name */ "lv_slider_bind_value"

@@ -86093,6 +86093,420 @@
             ]
         },
         {
+            "name": "lv_sdl_window_create",
+            "type": {
+                "type": {
+                    "type": {
+                        "name": "lv_display_t",
+                        "json_type": "lvgl_type",
+                        "quals": []
+                    },
+                    "json_type": "pointer",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": "hor_res",
+                    "type": {
+                        "name": "int32_t",
+                        "json_type": "stdlib_type",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                },
+                {
+                    "name": "ver_res",
+                    "type": {
+                        "name": "int32_t",
+                        "json_type": "stdlib_type",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                }
+            ]
+        },
+        {
+            "name": "lv_sdl_window_set_resizeable",
+            "type": {
+                "type": {
+                    "name": "void",
+                    "json_type": "primitive_type",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": "disp",
+                    "type": {
+                        "type": {
+                            "name": "lv_display_t",
+                            "json_type": "lvgl_type",
+                            "quals": []
+                        },
+                        "json_type": "pointer",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                },
+                {
+                    "name": "value",
+                    "type": {
+                        "name": "bool",
+                        "json_type": "primitive_type",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                }
+            ]
+        },
+        {
+            "name": "lv_sdl_window_set_zoom",
+            "type": {
+                "type": {
+                    "name": "void",
+                    "json_type": "primitive_type",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": "disp",
+                    "type": {
+                        "type": {
+                            "name": "lv_display_t",
+                            "json_type": "lvgl_type",
+                            "quals": []
+                        },
+                        "json_type": "pointer",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                },
+                {
+                    "name": "zoom",
+                    "type": {
+                        "name": "float",
+                        "json_type": "primitive_type",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                }
+            ]
+        },
+        {
+            "name": "lv_sdl_window_get_zoom",
+            "type": {
+                "type": {
+                    "name": "float",
+                    "json_type": "primitive_type",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": "disp",
+                    "type": {
+                        "type": {
+                            "name": "lv_display_t",
+                            "json_type": "lvgl_type",
+                            "quals": []
+                        },
+                        "json_type": "pointer",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                }
+            ]
+        },
+        {
+            "name": "lv_sdl_window_set_title",
+            "type": {
+                "type": {
+                    "name": "void",
+                    "json_type": "primitive_type",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": "disp",
+                    "type": {
+                        "type": {
+                            "name": "lv_display_t",
+                            "json_type": "lvgl_type",
+                            "quals": []
+                        },
+                        "json_type": "pointer",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                },
+                {
+                    "name": "title",
+                    "type": {
+                        "type": {
+                            "name": "char",
+                            "json_type": "primitive_type",
+                            "quals": [
+                                "const"
+                            ]
+                        },
+                        "json_type": "pointer",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                }
+            ]
+        },
+        {
+            "name": "lv_sdl_window_set_icon",
+            "type": {
+                "type": {
+                    "name": "void",
+                    "json_type": "primitive_type",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": "disp",
+                    "type": {
+                        "type": {
+                            "name": "lv_display_t",
+                            "json_type": "lvgl_type",
+                            "quals": []
+                        },
+                        "json_type": "pointer",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                },
+                {
+                    "name": "icon",
+                    "type": {
+                        "type": {
+                            "name": "void",
+                            "json_type": "primitive_type",
+                            "quals": []
+                        },
+                        "json_type": "pointer",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                },
+                {
+                    "name": "width",
+                    "type": {
+                        "name": "int32_t",
+                        "json_type": "stdlib_type",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                },
+                {
+                    "name": "height",
+                    "type": {
+                        "name": "int32_t",
+                        "json_type": "stdlib_type",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                }
+            ]
+        },
+        {
+            "name": "lv_sdl_window_get_renderer",
+            "type": {
+                "type": {
+                    "type": {
+                        "name": "void",
+                        "json_type": "primitive_type",
+                        "quals": []
+                    },
+                    "json_type": "pointer",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": "disp",
+                    "type": {
+                        "type": {
+                            "name": "lv_display_t",
+                            "json_type": "lvgl_type",
+                            "quals": []
+                        },
+                        "json_type": "pointer",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": ""
+                }
+            ]
+        },
+        {
+            "name": "lv_sdl_quit",
+            "type": {
+                "type": {
+                    "name": "void",
+                    "json_type": "primitive_type",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": null,
+                    "type": {
+                        "name": "void",
+                        "json_type": "primitive_type",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": "",
+                    "quals": []
+                }
+            ]
+        },
+        {
+            "name": "lv_sdl_mouse_create",
+            "type": {
+                "type": {
+                    "type": {
+                        "name": "lv_indev_t",
+                        "json_type": "lvgl_type",
+                        "quals": []
+                    },
+                    "json_type": "pointer",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": null,
+                    "type": {
+                        "name": "void",
+                        "json_type": "primitive_type",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": "",
+                    "quals": []
+                }
+            ]
+        },
+        {
+            "name": "lv_sdl_mousewheel_create",
+            "type": {
+                "type": {
+                    "type": {
+                        "name": "lv_indev_t",
+                        "json_type": "lvgl_type",
+                        "quals": []
+                    },
+                    "json_type": "pointer",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": null,
+                    "type": {
+                        "name": "void",
+                        "json_type": "primitive_type",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": "",
+                    "quals": []
+                }
+            ]
+        },
+        {
+            "name": "lv_sdl_keyboard_create",
+            "type": {
+                "type": {
+                    "type": {
+                        "name": "lv_indev_t",
+                        "json_type": "lvgl_type",
+                        "quals": []
+                    },
+                    "json_type": "pointer",
+                    "quals": []
+                },
+                "json_type": "ret_type",
+                "docstring": ""
+            },
+            "json_type": "function",
+            "docstring": "",
+            "args": [
+                {
+                    "name": null,
+                    "type": {
+                        "name": "void",
+                        "json_type": "primitive_type",
+                        "quals": []
+                    },
+                    "json_type": "arg",
+                    "docstring": "",
+                    "quals": []
+                }
+            ]
+        },
+        {
             "name": "lv_task_handler",
             "type": {
                 "type": {
@@ -102656,6 +103070,27 @@
                 "y"
             ],
             "initializer": "((44UL<<24)|(((y)&131071UL)<<0)) "
+        },
+        {
+            "name": "KEYBOARD_BUFFER_SIZE",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "32 "
+        },
+        {
+            "name": "LV_SDL_MOUSEWHEEL_MODE_ENCODER",
+            "json_type": "macro",
+            "docstring": "Modified by NXP in 2025 ",
+            "params": null,
+            "initializer": "0  /* The mousewheel emulates an encoder input device*/ "
+        },
+        {
+            "name": "LV_SDL_MOUSEWHEEL_MODE_CROWN",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "1  /* The mousewheel emulates a smart watch crown*/ "
         },
         {
             "name": "LV_FONT_DECLARE",

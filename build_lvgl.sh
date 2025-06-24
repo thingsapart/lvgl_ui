@@ -10,6 +10,10 @@ LVGL_DIR="$(pwd)/lvgl" # Assumes script is run from project root
 LVGL_BUILD_DIR="${LVGL_DIR}/build"
 LV_CONF_PATH="${LVGL_DIR}/../viewer/lv_conf.h" # Path to our custom lv_conf.h
 
+# SDL
+SDL_INCLUDES="$(pkg-config sdl2 -cflags-only-I)"
+SDL_LIBS="$(pkg-config sdl2 -libs)"
+
 echo "LVGL directory: ${LVGL_DIR}"
 echo "LVGL build directory: ${LVGL_BUILD_DIR}"
 echo "LV_CONF_PATH: ${LV_CONF_PATH}"
@@ -41,7 +45,9 @@ cmake -S . -B "${LVGL_BUILD_DIR}" \
     -DLV_USE_DEMOS=OFF \
     -DLV_USE_EXAMPLES=OFF \
     -DLV_BUILD_TESTS=OFF \
-    -DCMAKE_C_COMPILER=gcc
+    -DCMAKE_C_COMPILER=gcc \
+    -DCMAKE_C_FLAGS="${SDL_INCLUDES}" \
+    -DCMAKE_LD_FLAGS="${SDL_LIBS}"
 
 echo "Building LVGL library..."
 # Build the library
