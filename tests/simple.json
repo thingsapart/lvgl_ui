@@ -2,6 +2,7 @@
   {
     "type": "label",
     "text": "TEST LABEL",
+    "layout": "LV_LAYOUT_FLEX",
     "lv_obj_align": ["LV_ALIGN_CENTER", 0, 50]
   }
 ]
