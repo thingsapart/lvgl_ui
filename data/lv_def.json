@@ -75540,7 +75540,7 @@
                 "docstring": ""
             },
             "json_type": "function",
-            "docstring": "Point image needle to specified value; image must point to the right. E.g. -O------> ",
+            "docstring": "Point image needle to specified value; image must point to the right. E.g. -O--- > ",
             "args": [
                 {
                     "name": "obj",
