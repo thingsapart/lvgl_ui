@@ -46,7 +46,7 @@ for test_file in *.json; do
     test_count=$((test_count + 1))
     test_name=$(basename "${test_file}" .json)
     expected_file="${test_name}.expected"
-    output_file="${test_name}.output"
+    output_file="/tmp/${test_name}.output"
 
     if [ -f "${expected_file}" ]; then
       printf "[RUNNING] %-40s" "${test_name}"
@@ -63,7 +63,7 @@ for test_file in *.json; do
         continue
     fi
 
-    ${GEN} ../api_spec.json "${test_file}" > "${output_file}" 2>&1
+    ${GEN} ../api_spec.json "${test_file}" --codegen c_code > "${output_file}" 2>&1
 
     #diff "${output_file}" "${expected_file}"
     OUT=/dev/null

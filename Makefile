@@ -32,7 +32,7 @@ DYNAMIC_LVGL_O = $(DYNAMIC_LVGL_C:.c=.o)
 
 # Options for the python script
 CONSOLIDATION_MODE ?= aggressive # Default to aggressive, can be overridden: make CONSOLIDATION_MODE=typesafe
-# CONSOLIDATION_MODE ?= typesafe # Default to typesafe, can be overridden: make CONSOLIDATION_MODE=aggressive
+#CONSOLIDATION_MODE ?= typesafe # Default to typesafe, can be overridden: make CONSOLIDATION_MODE=aggressive
 # To enable specific input methods for dynamic_lvgl:
 # Override with make DYNAMIC_LVGL_CFLAGS="-DENABLE_CJSON_INPUTS -DENABLE_IR_INPUTS"
 DYNAMIC_LVGL_CFLAGS ?= -DENABLE_IR_INPUTS # Default to only IR inputs
@@ -40,7 +40,7 @@ DYNAMIC_LVGL_CFLAGS ?= -DENABLE_IR_INPUTS # Default to only IR inputs
 # Add DYNAMIC_LVGL_CFLAGS to general CFLAGS
 CFLAGS += $(DYNAMIC_LVGL_CFLAGS)
 
-SOURCES = main.c api_spec.c ir.c registry.c generator.c codegen.c utils.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c
+SOURCES = main.c api_spec.c ir.c registry.c generator.c codegen.c utils.c debug_log.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c lvgl_ui_renderer.c
 OBJECTS = $(SOURCES:.c=.o)
 
 $(TARGET): $(OBJECTS)

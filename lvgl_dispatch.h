@@ -10,8 +10,13 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "lvgl.h"
 #include "cJSON.h"
+
+#include "utils.h"
 
 #if defined(ENABLE_IR_INPUTS)
 typedef struct IRNode IRNode;

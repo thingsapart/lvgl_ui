@@ -382,8 +382,13 @@ class CCodeGenerator:
 extern "C" {{
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "lvgl.h"
 #include "cJSON.h"
+
+#include "utils.h"
 
 #if defined(ENABLE_IR_INPUTS)
 typedef struct IRNode IRNode;
@@ -464,21 +469,67 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, {target_obj_ty
                 dispatcher_name_json, dispatcher_name_ir = self.archetype_map[key]
                 first_func = func_list[0]
 
+                # Determine target type and original arguments for comment generation
+                # This logic mirrors what's used later for the actual C code generation
+                # to ensure consistency in how the signature is derived.
+                original_args_for_comment = []
+                target_c_type_for_comment = "void*" # Default for aggressive or no target
+
+                if self.consolidation_mode == "typesafe":
+                    _, target_c_type_key_comment, *_ = key
+                    target_c_type_for_comment = target_c_type_key_comment
+                    if target_c_type_key_comment != 'void' and first_func['args']:
+                        original_args_for_comment = first_func['args'][1:]
+                    else:
+                        original_args_for_comment = first_func['args']
+                else: # aggressive
+                    _, has_target_key_comment, *_ = key
+                    if has_target_key_comment and first_func['args']:
+                        target_c_type_for_comment = first_func['args'][0]['type'] # Use actual type of first arg
+                        original_args_for_comment = first_func['args'][1:]
+                    else:
+                        target_c_type_for_comment = "void*" # No distinct target, or void target
+                        original_args_for_comment = first_func['args']
+
+                # Construct C-like signature for comment
+                comment_ret_type = first_func['return_type']
+                comment_arg_parts = []
+                if target_c_type_for_comment != "void*": # If there's a specific target type for the first param
+                    comment_arg_parts.append(f"{target_c_type_for_comment} target")
+                elif self.consolidation_mode == "aggressive" and key[1]: # has_target for aggressive uses generic void* target
+                     comment_arg_parts.append(f"void* target_voidp")
+
+
+                for k_idx, arg_detail in enumerate(original_args_for_comment):
+                    # Handle case where arg_detail might be just a type string if 'args' was minimal
+                    arg_type_str = arg_detail.get('type', 'unknown_type') if isinstance(arg_detail, dict) else str(arg_detail)
+                    arg_name_str = arg_detail.get('name', f'arg{k_idx}') if isinstance(arg_detail, dict) else f'arg{k_idx}'
+                    comment_arg_parts.append(f"{arg_type_str} {arg_name_str}")
+
+                param_list_for_comment = ", ".join(comment_arg_parts) if comment_arg_parts else "void"
+                archetype_c_signature_comment = f"{comment_ret_type} archetype_func({param_list_for_comment})"
+
+                f.write(f"// Archetype C Signature Example: {archetype_c_signature_comment}\n")
+                f.write(f"// Dispatcher for {len(func_list)} LVGL function(s) including: {first_func['name']}\n")
+                if len(func_list) > 1:
+                    f.write(f"// Consolidated functions ({len(func_list)} total):\n")
+                    for func_info_item in sorted(func_list, key=lambda x: x['name']): # Sort for consistent output
+                        f.write(f"//   - {func_info_item['name']}\n")
+                f.write("\n")
+
+
+                # Original logic for determining target_param_type_c and original_args for C code generation
                 if self.consolidation_mode == "typesafe":
                     ret_type, target_c_type_key, *generalized_arg_types_key = key
                     original_args = (first_func['args'][1:] if target_c_type_key != 'void' else first_func['args'])
-                    comment_args_str = ", ".join(f"{self._get_generalized_c_type(t)} ({t})" for t in generalized_arg_types_key)
                     target_param_type_c = target_c_type_key
                     target_param_name = "target"
                 else: # aggressive
                     generalized_ret_type_key, has_target_key, *generalized_arg_types_key = key
                     ret_type = first_func['return_type']
                     original_args = (first_func['args'][1:] if has_target_key else first_func['args'])
-                    comment_args_str = ", ".join(f"{self._get_generalized_c_type(t)} ({t})" for t in generalized_arg_types_key)
                     target_param_type_c = "void*"
                     target_param_name = "target_voidp"
-
-                f.write(f"// Archetype for {len(func_list)} funcs like {first_func['return_type']} {first_func['name']}({comment_args_str})\n")
 
                 f.write(f"#if defined(ENABLE_CJSON_INPUTS)\n")
                 f.write(f"static lv_obj_t* {dispatcher_name_json}(generic_lvgl_func_t fn, {target_param_type_c} {target_param_name}, cJSON* args) {{\n")
@@ -504,8 +555,8 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, {target_obj_ty
 
                 f.write(f"#if defined(ENABLE_IR_INPUTS)\n")
                 f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, {target_param_type_c} {target_param_name}, IRNode** ir_args, int arg_count) {{\n")
-                f.write(f"    if (arg_count != {len(original_args)}) {{\n")
-                f.write(f"        LV_LOG_WARN(\"IR call to {first_func['name']}: expected {len(original_args)} args, got %d\", arg_count);\n")
+                f.write(f"    if (arg_count != {len(first_func['args'])}) {{\n")
+                f.write(f"        _eprintf(stderr, \"IR call to {first_func['name']}: expected {len(first_func['args'])} args, got %d\", arg_count);\n")
                 f.write(f"        return NULL;\n")
                 f.write(f"    }}\n\n")
                 for j, arg_info in enumerate(original_args):
@@ -515,7 +566,7 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, {target_obj_ty
                     f.write(f"    {var_c_type} arg{j};\n")
                     f.write(f"    IRNode* current_ir_arg{j} = ir_args[{j}];\n")
                     f.write(f"    if (!current_ir_arg{j}) {{\n")
-                    f.write(f"        LV_LOG_WARN(\"IR call to {first_func['name']}: arg {j} is NULL\");\n")
+                    f.write(f"        _eprintf(stderr, \"IR call to {first_func['name']}: arg {j} is NULL\");\n")
                     f.write(f"        return NULL;\n")
                     f.write(f"    }}\n")
                     f.write(f"    arg{j} = {parser_code};\n\n")
@@ -752,3 +803,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

@@ -9,6 +9,7 @@
 #include "ir.h"
 #include "registry.h"
 #include "utils.h"
+#include "debug_log.h"
 
 // --- Context for Generation ---
 typedef struct {

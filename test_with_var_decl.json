@@ -1,0 +1,26 @@
+[
+  {
+    "id": "@screen1",
+    "type": "obj",
+    "children": [
+      {
+        "id": "@label1",
+        "type": "label",
+        "properties": {
+          "text": "Original Text"
+        }
+      }
+    ]
+  },
+  {
+    "with": {
+      "obj": {
+        "call": "lv_obj_get_child",
+        "args": ["@screen1", 0]
+      },
+      "do": {
+        "text": "New Text via With"
+      }
+    }
+  }
+]

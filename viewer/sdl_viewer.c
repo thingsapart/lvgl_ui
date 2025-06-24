@@ -21,7 +21,10 @@ static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
 }
 #endif
 
-lv_obj_t * init_viewer(size_t width, size_t height) {
+#define DEFAULT_WIDTH 800
+#define DEFAULT_HEIGHT 480
+
+int sdl_viewer_init(void) {
     /* initialize lvgl */
     lv_init();
 
@@ -39,18 +42,25 @@ lv_obj_t * init_viewer(size_t width, size_t height) {
     /* Add a display
     * Use the 'monitor' driver which creates window on PC's monitor to simulate a display*/
 
-    lvDisplay = lv_sdl_window_create(width, height);
+    lvDisplay = lv_sdl_window_create(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    if (!lvDisplay) {
+        // Handle error, perhaps log and return -1
+        return -1;
+    }
     lvMouse = lv_sdl_mouse_create();
     lvMouseWheel = lv_sdl_mousewheel_create();
     lvKeyboard = lv_sdl_keyboard_create();
 
+    return 0; // Success
+}
+
+lv_obj_t* sdl_viewer_create_main_screen(void) {
     /* create Widgets on the screen */
     lv_obj_t *screen = lv_scr_act();
-
     return screen;
 }
 
-int lvgl_loop() {
+void sdl_viewer_loop(void) {
     Uint32 lastTick = SDL_GetTicks();
     while(1) {
         SDL_Delay(5);
@@ -60,7 +70,8 @@ int lvgl_loop() {
         lv_timer_handler(); // Update the UI-
     }
 
-    return 0;
+    // This part is unreachable due to the infinite loop, but if it were, it shouldn't return a value.
+    // return 0;
 }
 
 void sdl_viewer_deinit(void) {
