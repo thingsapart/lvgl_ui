@@ -56,25 +56,53 @@ bool is_method_like(const char* func_name, struct ApiSpec* api_spec) {
     return false; // Let dynamic_lvgl_call_ir figure it out based on the first argument.
 }
 
+// Forward declaration for the recursive helper
+static void render_lvgl_ui_from_ir_recursive_helper(IRStmtBlock* ir_block, lv_obj_t* current_lvgl_parent, struct ApiSpec* api_spec);
 
-void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, struct ApiSpec* api_spec) {
-    DEBUG_LOG(LOG_MODULE_RENDERER, "Entering render_lvgl_ui_from_ir. Parent screen: %p", (void*)parent_screen);
-    if (!ir_block || !parent_screen) {
-        DEBUG_LOG(LOG_MODULE_RENDERER, "Error: IR block or parent screen is NULL.");
+// Main entry point for rendering
+void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* initial_parent_screen, struct ApiSpec* api_spec) {
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Entering render_lvgl_ui_from_ir (main). Initial parent screen: %p", (void*)initial_parent_screen);
+    if (!ir_block || !initial_parent_screen) {
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Error: Top-level IR block or initial parent screen is NULL.");
+        return;
+    }
+    if (ir_block->base.type != IR_STMT_BLOCK) {
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Error: Expected top-level IR_STMT_BLOCK, got %d", ir_block->base.type);
+        return;
+    }
+     if (!api_spec) {
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: ApiSpec is NULL. Method call resolution might be impaired.");
+        // Potentially return or handle, but for now, allow proceeding with caution
+    }
+
+    obj_registry_init(); // Initialize registry ONCE at the top level
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Object registry initialized.");
+    obj_registry_add("parent", initial_parent_screen); // Register the initial main screen
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Registered initial main screen as 'parent' (%p).", (void*)initial_parent_screen);
+
+    render_lvgl_ui_from_ir_recursive_helper(ir_block, initial_parent_screen, api_spec);
+
+    // Deinitialization of registry could happen here if this function owned its lifecycle fully,
+    // or be handled by the caller that also handles SDL deinit.
+    // obj_registry_deinit();
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Finished render_lvgl_ui_from_ir (main).");
+}
+
+// Recursive helper function to process statements in a block
+static void render_lvgl_ui_from_ir_recursive_helper(IRStmtBlock* ir_block, lv_obj_t* current_lvgl_parent, struct ApiSpec* api_spec) {
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Recursive helper processing block. Current LVGL parent: %p", (void*)current_lvgl_parent);
+
+    if (!ir_block || ir_block->base.type != IR_STMT_BLOCK) {
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Error in recursive helper: Invalid IR block.");
         return;
     }
     if (ir_block->base.type != IR_STMT_BLOCK) {
         DEBUG_LOG(LOG_MODULE_RENDERER, "Error: Expected IR_STMT_BLOCK, got %d", ir_block->base.type);
         return;
     }
-     if (!api_spec) {
-        DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: ApiSpec is NULL. Method call resolution might be impaired.");
-    }
-
-    obj_registry_init(); // Ensure registry is ready
-    DEBUG_LOG(LOG_MODULE_RENDERER, "Object registry initialized.");
-    obj_registry_add("parent", parent_screen); // Register the main screen
-    DEBUG_LOG(LOG_MODULE_RENDERER, "Registered main screen as 'parent' (%p).", (void*)parent_screen);
+    // Note: api_spec validity is checked by the main entry function.
+    // Object registry is also initialized by the main entry function.
+    // The 'current_lvgl_parent' parameter tracks the LVGL parent context for this block.
 
     IRStmtNode* current_stmt_list_node = ir_block->stmts;
     int stmt_idx = 0;
@@ -232,6 +260,26 @@ void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, stru
                  DEBUG_LOG(LOG_MODULE_RENDERER, "Not a method call or no args for func '%s'. target_obj is NULL.", func_name);
                 target_obj = NULL;
             }
+
+        } else if (stmt_node_base->type == IR_STMT_BLOCK) {
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Processing nested IR_STMT_BLOCK.");
+            IRStmtBlock* nested_block = (IRStmtBlock*)stmt_node_base;
+            // Recursively process the nested block.
+            // Pass current_lvgl_parent along; widget creation within the block should use their explicit parent from IR.
+            render_lvgl_ui_from_ir_recursive_helper(nested_block, current_lvgl_parent, api_spec);
+
+            // After processing a nested block, we don't dispatch it as a single function.
+            func_name = NULL;
+            id_to_set = NULL;
+
+            // Skip the common dispatch logic at the end of the loop for this statement type
+            stmt_idx++;
+            current_stmt_list_node = current_stmt_list_node->next;
+            if (temp_parent_node_for_freeing) {
+                ir_free(temp_parent_node_for_freeing);
+                temp_parent_node_for_freeing = NULL;
+            }
+            continue;
 
         } else {
             DEBUG_LOG(LOG_MODULE_RENDERER, "Skipping unhandled statement type %d at index %d.", stmt_node_base->type, stmt_idx);
