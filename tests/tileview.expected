@@ -17,42 +17,42 @@ void create_ui(lv_obj_t* parent) {
     }
     {
         lv_obj_t* tileview_0 = lv_tileview_create(parent);
-        lv_obj_add_style(tileview_0, {container, 0});
-        lv_obj_set_style_size(tileview_0, {lv_pct(100), lv_pct(100)});
-        lv_obj_set_style_pad_row(tileview_0, 0);
-        lv_obj_set_style_pad_column(tileview_0, 0);
+        lv_obj_add_style(tileview_0, container, 0);
+        lv_obj_set_size(tileview_0, lv_pct(100), lv_pct(100));
+        lv_obj_set_style_pad_row(tileview_0, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_column(tileview_0, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         // First WITH
+        lv_obj_t* obj_1 = lv_tileview_add_tile(tileview_0, 0, 0, LV_DIR_RIGHT);
         // Second WITH
-        // Third WITH
-        lv_obj_t* obj_1 = lv_tileview_add_tile(0, 0, LV_DIR_RIGHT);
-        lv_obj_t* obj_2 = lv_tileview_add_tile(0, 0, LV_DIR_RIGHT);
+        lv_obj_t* obj_2 = lv_tileview_add_tile(tileview_0, 0, 0, LV_DIR_RIGHT);
         {
             // Second DO
-            lv_obj_add_style(obj_2, {container, 0});
-            lv_obj_set_style_bg_color(obj_2, lv_color_hex(0xFF0000));
-            lv_obj_set_style_bg_opa(obj_2, LV_OPA_COVER);
+            lv_obj_add_style(obj_2, container, 0);
+            lv_obj_set_style_bg_color(obj_2, lv_color_hex(0xff0000), LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(obj_2, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
             {
                 lv_obj_t* label_3 = lv_label_create(obj_2);
                 lv_obj_center(label_3);
                 lv_label_set_text(label_3, "Scroll right");
             }
         }
-        lv_obj_t* obj_4 = lv_tileview_add_tile(1, 0, LV_DIR_LEFT);
+        // Third WITH
+        lv_obj_t* obj_4 = lv_tileview_add_tile(tileview_0, 1, 0, LV_DIR_LEFT);
         {
             // Third DO
-            lv_obj_add_style(obj_4, {container, 0});
+            lv_obj_add_style(obj_4, container, 0);
             {
                 lv_obj_t* label_5 = lv_label_create(obj_4);
                 lv_label_set_text(label_5, "TEST");
             }
             {
+                lv_obj_t* jog_view = lv_obj_create(obj_4);
+                registry_add_pointer(ui_registry, jog_view, "jog_view", "obj");
+                lv_obj_set_style_bg_color(jog_view, lv_color_hex(0x00ff00), LV_PART_MAIN | LV_STATE_DEFAULT);
+                lv_obj_set_size(jog_view, lv_pct(100), lv_pct(100));
                 {
-                    lv_obj_set_style_bg_color(jog_view, lv_color_hex(0x00FF00));
-                    lv_obj_set_style_size(jog_view, {lv_pct(100), lv_pct(100)});
-                    {
-                        lv_obj_t* label_6 = lv_label_create(jog_view);
-                        lv_label_set_text(label_6, "TEST");
-                    }
+                    lv_obj_t* label_6 = lv_label_create(jog_view);
+                    lv_label_set_text(label_6, "TEST");
                 }
             }
         }

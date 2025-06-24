@@ -31,30 +31,40 @@ static void init_ir_node(IRNode* node, void (*free_func)(IRNode*), void (*codege
 
 // --- Factory functions for Expressions ---
 
-IRExpr* ir_new_literal(const char* value) {
+// Internal helper to create literals
+static IRExpr* ir_new_literal_internal(const char* value, bool is_string) {
     IRExprLiteral* lit = (IRExprLiteral*)calloc(1, sizeof(IRExprLiteral));
     if (!lit) { perror("Failed to allocate IRExprLiteral"); return NULL; }
     init_ir_node((IRNode*)lit, (void (*)(IRNode*))free_expr, codegen_expr_literal);
     lit->base.type = IR_EXPR_LITERAL;
     lit->value = value ? strdup(value) : NULL;
     if (value && !lit->value) { perror("Failed to strdup literal value"); free(lit); return NULL; }
+    lit->is_string = is_string;
+    lit->is_enum = false;
+    lit->enum_value = 0;
     return (IRExpr*)lit;
 }
 
+// For numbers, enums, boolean symbols etc.
+IRExpr* ir_new_literal(const char* value) {
+    return ir_new_literal_internal(value, false);
+}
+
+// For string literals
 IRExpr* ir_new_literal_string(const char* value) {
+    return ir_new_literal_internal(value, true);
+}
+
+IRExpr* ir_new_literal_enum(const char* symbol, intptr_t val) {
     IRExprLiteral* lit = (IRExprLiteral*)calloc(1, sizeof(IRExprLiteral));
-    if (!lit) { perror("Failed to allocate IRExprLiteral for string"); return NULL; }
+    if (!lit) { perror("Failed to allocate IRExprLiteral for enum"); return NULL; }
     init_ir_node((IRNode*)lit, (void (*)(IRNode*))free_expr, codegen_expr_literal);
     lit->base.type = IR_EXPR_LITERAL;
-    if (value) {
-        char* quoted_value = (char*)malloc(strlen(value) + 3);
-        if (!quoted_value) { perror("Failed to allocate for quoted string"); free(lit); return NULL; }
-        sprintf(quoted_value, "\"%s\"", value);
-        lit->value = quoted_value;
-    } else {
-        lit->value = strdup("\"\"");
-        if (!lit->value) { perror("Failed to strdup empty quoted string"); free(lit); return NULL;}
-    }
+    lit->value = symbol ? strdup(symbol) : NULL;
+    if (symbol && !lit->value) { perror("Failed to strdup enum symbol"); free(lit); return NULL; }
+    lit->is_string = false;
+    lit->is_enum = true;
+    lit->enum_value = val;
     return (IRExpr*)lit;
 }
 
@@ -133,6 +143,9 @@ intptr_t ir_node_get_int_robust(IRNode* node, const char* enum_type_name) {
     switch (node->type) {
         case IR_EXPR_LITERAL: {
             IRExprLiteral* lit = (IRExprLiteral*)node;
+            if (lit->is_enum) {
+                return lit->enum_value;
+            }
             if (!lit->value) {
                 fprintf(stderr, "Warning: ir_node_get_int_robust called on IRExprLiteral with NULL value for enum type: %s.\n", enum_type_name ? enum_type_name : "UNKNOWN");
                 return 0;
@@ -165,6 +178,9 @@ intptr_t ir_node_get_int(IRNode* node) {
 
     if (node->type == IR_EXPR_LITERAL) {
         IRExprLiteral* lit = (IRExprLiteral*)node;
+        if (lit->is_enum) {
+            return lit->enum_value;
+        }
         if (!lit->value) {
             fprintf(stderr, "Warning: ir_node_get_int called on IRExprLiteral with NULL value.\n");
             return 0;
@@ -180,6 +196,8 @@ intptr_t ir_node_get_int(IRNode* node) {
         char* endptr;
         long val = strtol(lit->value, &endptr, 0); // Base 0 auto-detects prefix (0x, 0)
         if (endptr == lit->value) { // No digits were found
+            // This warning is the one we want to fix.
+            // With correct enum handling in generator.c, this path shouldn't be taken for enum symbols.
             fprintf(stderr, "Warning: ir_node_get_int failed to parse int from literal: \"%s\"\n", lit->value);
             return 0;
         }
@@ -400,8 +418,8 @@ const char* ir_node_get_string(IRNode* node) {
     switch (node->type) {
         case IR_EXPR_LITERAL: {
             IRExprLiteral* lit = (IRExprLiteral*)node;
-            // As per analysis, lit->value for strings already includes quotes.
-            // If it's a non-string literal, it's the string representation.
+            // The value is stored raw. This accessor just returns it.
+            // The caller must know whether it's a string or symbol.
             return lit->value;
         }
         case IR_EXPR_VARIABLE: {

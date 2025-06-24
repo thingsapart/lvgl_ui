@@ -1,6 +1,7 @@
 [
   {
     "type": "label",
-    "text": "TEST LABEL"
+    "text": "TEST LABEL",
+    "lv_obj_align": ["LV_ALIGN_CENTER", 0, 50]
   }
 ]

@@ -8,7 +8,7 @@ from collections import defaultdict
 IGNORE_FUNC_ARG_TYPE_SUFFIXES = ["_cb", "_cb_t", "_xcb_t"]
 IGNORE_FUNC_PREFIXES = []
 IGNORE_FUNC_SUFFIXES = []
-IGNORE_ARG_TYPES = ["lv_cache_ops_t", "lv_draw_buf_handlers_t", "callback", "cmp_t", "cmp"] # Added callback, cmp_t and cmp
+IGNORE_ARG_TYPES = ["lv_cache_ops_t", "lv_draw_buf_handlers_t", "callback", "cmp_t", "cmp", "va_list"]
 
 class LVGLApiParser:
     """
@@ -233,7 +233,7 @@ class CCodeGenerator:
             if arg_type.endswith("_t") and not arg_type.startswith("lv_") and "*" not in arg_type:
                 # This could catch `callback_t`, `cmp_t` if they were named like that.
                 # The existing `callback` and `cmp` errors suggest these are direct names, not suffixed with _t.
-                # For now, direct names like 'callback' will be added to IGNORE_ARG_TYPES in the next step.
+                # For now, rely on IGNORE_ARG_TYPES for non-suffixed problematic typedefs
                 pass # Revisit if needed, for now rely on IGNORE_ARG_TYPES for non-suffixed problematic typedefs
 
             # Existing void* check for typesafe mode
@@ -254,15 +254,23 @@ class CCodeGenerator:
 
     def _get_generalized_type_aggressive(self, c_type):
         if c_type == "void": return "VOID"
+
+        # 1. String pointers are special and directly represented in JSON/IR.
+        if c_type == 'const char*' or c_type == 'char*':
+            return 'STRING'
+
+        # 2. Other pointers refer to objects in the registry.
+        if c_type.endswith('*'):
+            return 'REGISTRY_PTR'
+
+        # 3. Non-pointer types
         c_type_no_const = c_type.replace('const ', '').strip()
         if c_type_no_const in self.enum_types: return 'INT_LIKE'
         if c_type_no_const.endswith('_t') and 'int' in c_type_no_const: return 'INT_LIKE'
         if c_type_no_const in ['bool', 'char', 'short', 'int', 'long']: return 'INT_LIKE'
-        if c_type == 'const char*': return 'STRING'
-        if (c_type.startswith('lv_') and c_type.endswith('_t*')) or c_type.endswith('*'):
-            return 'ANY_POINTER'
         if c_type == 'lv_color_t': return 'COLOR'
-        return 'INT_LIKE'
+
+        return 'INT_LIKE' # Default for primitives
 
     def _get_generalized_type(self, c_type):
         if self.consolidation_mode == "aggressive":
@@ -282,9 +290,14 @@ class CCodeGenerator:
     def _get_archetype_key_aggressive(self, func_info):
         generalized_ret_type = self._get_generalized_type(func_info['return_type'])
         args = func_info['args']
-        has_target = bool(args and args[0]['type'].endswith('*'))
+
+        # A function has a "target" if its first argument is a pointer to a registry object.
+        has_target = bool(args and self._get_generalized_type(args[0]['type']) == 'REGISTRY_PTR')
+
         arg_list = args[1:] if has_target else args
         generalized_arg_types = [self._get_generalized_type(arg['type']) for arg in arg_list]
+
+        # Key: (return_type, has_target_object, ...arg_types)
         return (generalized_ret_type, has_target, *generalized_arg_types)
 
     def _get_archetype_key(self, func_info):
@@ -304,7 +317,7 @@ class CCodeGenerator:
         if self.consolidation_mode == "aggressive":
             return {
                 'VOID': 'void', 'INT_LIKE': 'intptr_t', 'STRING': 'const char*',
-                'ANY_POINTER': 'void*', 'COLOR': 'lv_color_t',
+                'REGISTRY_PTR': 'void*', 'COLOR': 'lv_color_t',
             }.get(generalized_type, 'intptr_t')
         else: # typesafe
             return {
@@ -314,26 +327,31 @@ class CCodeGenerator:
 
     def _get_parser_for_type(self, c_type, json_var, arg_index):
         c_type_no_const = c_type.replace('const ', '').strip()
+        json_item = f'cJSON_GetArrayItem({json_var}, {arg_index})'
+
         if c_type_no_const in self.enum_types:
-            return f'unmarshal_value(cJSON_GetArrayItem({json_var}, {arg_index}), "{c_type_no_const}")'
+            return f'unmarshal_value({json_item}, "{c_type_no_const}")'
+
         gen_type = self._get_generalized_type(c_type)
         if gen_type == 'INT_LIKE':
-             return f'({c_type_no_const if c_type_no_const != "bool" else "int"})cJSON_GetNumberValue(cJSON_GetArrayItem({json_var}, {arg_index}))'
+             c_cast = c_type_no_const if c_type_no_const != "bool" else "int"
+             return f'({c_cast})cJSON_GetNumberValue({json_item})'
         if gen_type == 'STRING':
-            return f'cJSON_GetStringValue(cJSON_GetArrayItem({json_var}, {arg_index}))'
+            return f'({c_type})cJSON_GetStringValue({json_item})'
+        if gen_type == 'COLOR':
+             return f'lv_color_hex((uint32_t)cJSON_GetNumberValue({json_item}))'
+
         if self.consolidation_mode == "typesafe":
             if self._is_obj_ptr(c_type):
-                return f'({c_type})obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem({json_var}, {arg_index})))'
+                return f'({c_type})obj_registry_get(cJSON_GetStringValue({json_item}))'
             elif c_type.endswith('*'):
-                 return f'({c_type})obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem({json_var}, {arg_index})))'
+                 return f'({c_type})obj_registry_get(cJSON_GetStringValue({json_item}))'
         else: # aggressive
-            if gen_type == 'ANY_POINTER':
-                 return f'({c_type})obj_registry_get(cJSON_GetStringValue(cJSON_GetArrayItem({json_var}, {arg_index})))'
-        if c_type == 'lv_color_t':
-             return f'lv_color_hex((uint32_t)cJSON_GetNumberValue(cJSON_GetArrayItem({json_var}, {arg_index})))'
-        return f'({c_type})cJSON_GetNumberValue(cJSON_GetArrayItem({json_var}, {arg_index}))'
+            if gen_type == 'REGISTRY_PTR':
+                 return f'({c_type})obj_registry_get(cJSON_GetStringValue({json_item}))'
 
-    # Correctly indented as a method of CCodeGenerator
+        return f'({c_type})cJSON_GetNumberValue({json_item})'
+
     def _get_parser_for_ir_node_type(self, c_type, ir_args_var, arg_index):
         """Gets the C code snippet to parse an IRNode* into a C type."""
         c_type_no_const = c_type.replace('const ', '').strip()
@@ -351,16 +369,18 @@ class CCodeGenerator:
                 return f"({c_type_no_const})ir_node_get_int({ir_node_accessor})"
         if gen_type == 'STRING':
             return f"({c_type})ir_node_get_string({ir_node_accessor})"
+        if gen_type == 'COLOR':
+            return f"lv_color_hex((uint32_t)ir_node_get_int({ir_node_accessor}))"
+
         if self.consolidation_mode == "typesafe":
             if self._is_obj_ptr(c_type):
                 return f"({c_type})obj_registry_get(ir_node_get_string({ir_node_accessor}))"
             elif c_type.endswith('*'):
                  return f"({c_type})obj_registry_get(ir_node_get_string({ir_node_accessor}))"
         else: # aggressive
-            if gen_type == 'ANY_POINTER':
+            if gen_type == 'REGISTRY_PTR':
                  return f"({c_type})obj_registry_get(ir_node_get_string({ir_node_accessor}))"
-        if c_type == 'lv_color_t':
-            return f"lv_color_hex((uint32_t)ir_node_get_int({ir_node_accessor}))"
+
         return f"({c_type})ir_node_get_int({ir_node_accessor})"
 
     def generate_files(self, header_path, source_path):
@@ -546,7 +566,7 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, {target_obj_ty
                 call_str = f"((specific_func_t)fn)({', '.join(call_params)})"
                 if ret_type == "void":
                     f.write(f"    {call_str};\n    return NULL;\n")
-                elif self._is_obj_ptr(ret_type) or (self.consolidation_mode == "aggressive" and self._get_generalized_type(ret_type) == "ANY_POINTER"):
+                elif self._is_obj_ptr(ret_type) or (self.consolidation_mode == "aggressive" and self._get_generalized_type(ret_type) == "REGISTRY_PTR"):
                     f.write(f"    return (lv_obj_t*){call_str};\n")
                 else:
                     f.write(f"    (void){call_str};\n    return NULL;\n")
@@ -555,8 +575,9 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, {target_obj_ty
 
                 f.write(f"#if defined(ENABLE_IR_INPUTS)\n")
                 f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, {target_param_type_c} {target_param_name}, IRNode** ir_args, int arg_count) {{\n")
-                f.write(f"    if (arg_count != {len(first_func['args'])}) {{\n")
-                f.write(f"        _eprintf(stderr, \"IR call to {first_func['name']}: expected {len(first_func['args'])} args, got %d\", arg_count);\n")
+                num_expected_ir_args = len(original_args)
+                f.write(f"    if (arg_count != {num_expected_ir_args}) {{\n")
+                f.write(f"        LV_LOG_WARN(\"IR call to {first_func['name']}: expected {num_expected_ir_args} args, got %d\", arg_count);\n")
                 f.write(f"        return NULL;\n")
                 f.write(f"    }}\n\n")
                 for j, arg_info in enumerate(original_args):
@@ -566,7 +587,7 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, {target_obj_ty
                     f.write(f"    {var_c_type} arg{j};\n")
                     f.write(f"    IRNode* current_ir_arg{j} = ir_args[{j}];\n")
                     f.write(f"    if (!current_ir_arg{j}) {{\n")
-                    f.write(f"        _eprintf(stderr, \"IR call to {first_func['name']}: arg {j} is NULL\");\n")
+                    f.write(f"        LV_LOG_ERROR(\"IR call to {first_func['name']}: arg {j} is NULL\");\n")
                     f.write(f"        return NULL;\n")
                     f.write(f"    }}\n")
                     f.write(f"    arg{j} = {parser_code};\n\n")
@@ -580,7 +601,7 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, {target_obj_ty
                 if ret_type == "void":
                     f.write(f"    {call_str_ir};\n    return NULL;\n")
                 elif self._is_obj_ptr(ret_type) or \
-                     (self.consolidation_mode == "aggressive" and self._get_generalized_type(ret_type) == "ANY_POINTER"):
+                     (self.consolidation_mode == "aggressive" and self._get_generalized_type(ret_type) == "REGISTRY_PTR"):
                     f.write(f"    return (lv_obj_t*){call_str_ir};\n")
                 else:
                     f.write(f"    (void){call_str_ir};\n")
@@ -803,4 +824,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

@@ -25,38 +25,35 @@ static void print_indent(int level) {
 void codegen_expr_literal(IRNode* node, int indent_level) {
     (void)indent_level;
     IRExprLiteral* lit = (IRExprLiteral*)node;
-    if (lit->value) {
-        size_t len = strlen(lit->value);
-        // String literals from ir_new_literal_string are already quoted (e.g., ""foo \n bar"").
-        // Non-string literals (numbers, enums like LV_ALIGN_CENTER, true, false) are not quoted by ir_new_literal.
-        if (len >= 2 && lit->value[0] == '"' && lit->value[len - 1] == '"') {
-            printf("\""); // Print opening quote
-            for (size_t i = 1; i < len - 1; ++i) { // Iterate content inside the existing quotes
-                char ch = lit->value[i];
-                switch (ch) {
-                    case '\n': printf("\\n"); break;
-                    case '\r': printf("\\r"); break;
-                    case '\t': printf("\\t"); break;
-                    case '\\': printf("\\\\"); break; // Escape the backslash itself
-                    case '"': printf("\\\""); break; // Escape the double quote
-                    default:
-                        // Print printable characters directly.
-                        // For non-printable, use hex escape.
-                        if (isprint((unsigned char)ch)) {
-                            printf("%c", ch);
-                        } else {
-                            printf("\\x%02x", (unsigned char)ch);
-                        }
-                        break;
-                }
+    if (!lit->value) {
+        printf("NULL");
+        return;
+    }
+
+    if (lit->is_string) {
+        // It's a string literal, so print it quoted and with C-style escapes.
+        printf("\"");
+        for (const char* p = lit->value; *p; p++) {
+            switch (*p) {
+                case '\n': printf("\\n"); break;
+                case '\r': printf("\\r"); break;
+                case '\t': printf("\\t"); break;
+                case '\\': printf("\\\\"); break;
+                case '"':  printf("\\\""); break;
+                default:
+                    if (isprint((unsigned char)*p)) {
+                        printf("%c", *p);
+                    } else {
+                        // Print non-printable characters as hex escape codes
+                        printf("\\x%02x", (unsigned char)*p);
+                    }
+                    break;
             }
-            printf("\""); // Print closing quote
-        } else {
-            // Not a string literal (e.g. number, enum symbol, true, false)
-            printf("%s", lit->value);
         }
+        printf("\"");
     } else {
-        printf("NULL"); // This case is for when the pointer lit->value itself is NULL
+        // It's a number, boolean, or enum symbol. Print it as-is.
+        printf("%s", lit->value);
     }
 }
 
@@ -83,28 +80,10 @@ void codegen_expr_func_call(IRNode* node, int indent_level) {
                 printf(", ");
             }
             if (current_arg->expr) {
-                // If the argument expression is an array, and we are in a function call,
-                // we want to render its elements as comma-separated arguments,
-                // not as an array literal with {}.
-                if (current_arg->expr->type == IR_EXPR_ARRAY) {
-                    IRExprArray* arr_expr = (IRExprArray*)current_arg->expr;
-                    IRExprNode* current_elem = arr_expr->elements;
-                    int elem_count_in_array = 0;
-                    while (current_elem) {
-                        if (elem_count_in_array > 0) {
-                            printf(", ");
-                        }
-                        if (current_elem->expr) {
-                            codegen_expr_internal(current_elem->expr);
-                        } else {
-                            printf("NULL /* missing array element expr in func arg */");
-                        }
-                        current_elem = current_elem->next;
-                        elem_count_in_array++;
-                    }
-                } else {
-                    codegen_expr_internal(current_arg->expr);
-                }
+                // An argument is just an expression. Generate it.
+                // The incorrect special handling for arrays has been removed.
+                // An array literal is a single argument, and codegen_expr_array will handle it.
+                codegen_expr_internal(current_arg->expr);
             } else {
                 printf("NULL /* missing arg expr */");
             }
@@ -120,15 +99,8 @@ void codegen_expr_func_call(IRNode* node, int indent_level) {
 void codegen_expr_array(IRNode* node, int indent_level) {
     (void)indent_level;
     IRExprArray* arr = (IRExprArray*)node;
-    // C array initializers are tricky without knowing the type.
-    // LVGL often uses them for lv_style_prop_t value arrays or point arrays.
-    // For generic C, it would be like '(type_t[]){elem1, elem2}'
-    // For now, let's assume a simple comma-separated list suitable for function args
-    // or simple array initializers where type is inferred or fixed.
-    // This might need refinement based on how arrays are used by LVGL setters.
-    // If it's for a style property array, the setter handles it.
-    // If it's for, e.g., lv_chart_set_points, it's also fine.
-    printf("{"); // Using braces for compound literal or array init
+    // Generates a C compound literal initializer, e.g., {elem1, elem2}
+    printf("{");
     IRExprNode* current_elem = arr->elements;
     int elem_count = 0;
     while (current_elem) {

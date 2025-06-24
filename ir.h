@@ -2,6 +2,7 @@
 #define IR_H
 
 #include <stdint.h>
+#include <stdbool.h> // For bool type in IRExprLiteral
 
 // Forward declaration for IRNode to resolve circular dependency for function pointers
 struct IRNode;
@@ -43,11 +44,13 @@ typedef struct IRExprNode {
     struct IRExprNode* next;
 } IRExprNode;
 
-// Literal (e.g., "hello", 123, true)
+// Literal (e.g., "hello", 123, true, LV_ALIGN_CENTER)
 typedef struct {
     IRNode base;
-    char* value; // Store all literals as strings for now, parse during codegen
-                 // For strings, 'value' will include the quotes, e.g., ""actual_string_value""
+    char* value;     // Stored as a raw string (e.g., "hello", "123", "LV_ALIGN_CENTER")
+    bool is_string;  // true if this is a string literal, false for numbers, enums, bools
+    bool is_enum;      // true if 'value' is an enum symbol and enum_value holds its integer value
+    intptr_t enum_value; // The integer value of the enum, if is_enum is true
 } IRExprLiteral;
 
 // Variable reference
@@ -133,11 +136,12 @@ typedef struct {
 
 // --- Factory functions for Expressions ---
 IRExpr* ir_new_literal(const char* value);
+IRExpr* ir_new_literal_string(const char* value);
+IRExpr* ir_new_literal_enum(const char* symbol, intptr_t val);
 IRExpr* ir_new_variable(const char* name);
 IRExpr* ir_new_func_call_expr(const char* func_name, IRExprNode* args);
 IRExpr* ir_new_array(IRExprNode* elements);
 IRExpr* ir_new_address_of(IRExpr* expr);
-IRExpr* ir_new_literal_string(const char* value);
 // REMOVED: IRExpr* ir_new_cast_expr(const char* target_type_name, IRExpr* expr_to_cast);
 
 

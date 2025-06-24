@@ -23,10 +23,45 @@ typedef struct {
 static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context, const char* forced_c_var_name);
 static void process_node(GenContext* ctx, cJSON* node_json, IRStmtBlock* parent_block, const char* parent_c_var, const char* default_obj_type, cJSON* ui_context); // Wrapper
 static void process_properties(GenContext* ctx, cJSON* props_json, const char* target_c_var_name, IRStmtBlock* current_block, const char* obj_type_for_api_lookup, cJSON* ui_context);
-static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context, const char* explicit_target_var_name);
+static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context, const char* explicit_target_var_name, const char* owner_c_var_name);
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* expected_enum_type_for_arg, const char* expected_c_type_for_arg); // New signature
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
+static bool parse_enum_value_from_json(cJSON* enum_member_json, intptr_t* out_value);
+
+// --- Helper to parse various number formats for enum values from API spec ---
+static bool parse_enum_value_from_json(cJSON* enum_member_json, intptr_t* out_value) {
+    if (!enum_member_json || !out_value) return false;
+
+    if (cJSON_IsNumber(enum_member_json)) {
+        *out_value = (intptr_t)enum_member_json->valuedouble;
+        return true;
+    }
+
+    if (cJSON_IsString(enum_member_json)) {
+        const char* s = enum_member_json->valuestring;
+        if (!s) return false;
+
+        // Check for bit shift expressions first: e.g. "(1 << 5)"
+        int base, shift;
+        if (sscanf(s, " ( %d << %d )", &base, &shift) == 2) {
+             *out_value = (intptr_t)(base << shift);
+             return true;
+        }
+
+        // Try parsing as a number (handles dec, hex "0x", octal "0")
+        char* endptr;
+        long val = strtol(s, &endptr, 0);
+        // Check if the entire string was consumed
+        while(isspace((unsigned char)*endptr)) endptr++;
+        if (*endptr == '\0' && s != endptr) { // check s != endptr for empty string case
+            *out_value = (intptr_t)val;
+            return true;
+        }
+    }
+
+    return false;
+}
 
 // --- Helper to count expected arguments from FunctionArg list (excluding initial object pointer) ---
 static int count_expected_json_args(const FunctionArg* head) {
@@ -93,6 +128,21 @@ static char* generate_unique_var_name(GenContext* ctx, const char* base_type) {
     return strdup(buf);
 }
 
+/*
+// This helper infers a JSON object type (e.g., "style", "obj") from a C type string.
+const char* get_obj_type_from_c_type(const char* c_type) {
+    if (!c_type) return "obj";
+    if (strcmp(c_type, "lv_style_t*") == 0) return "style";
+    if (strcmp(c_type, "lv_obj_t*") == 0) return "obj";
+
+    // Fallback for other lv_..._t* types
+    if (strncmp(c_type, "lv_", 3) == 0 && strstr(c_type, "_t*")) {
+        return "obj";
+    }
+
+    return "obj"; // Default
+}*/
+
 // --- Core Processing Functions ---
 
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* expected_enum_type_for_arg, const char* expected_c_type_for_arg) {
@@ -140,9 +190,8 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
         if (s_orig[0] == '@' && s_orig[1] != '\0') {
             const char* registered_c_var = registry_get_generated_var(ctx->registry, s_orig + 1);
             if (registered_c_var) {
-                if (strstr(s_orig + 1, "style") != NULL || strstr(registered_c_var, "style") != NULL || strncmp(registered_c_var, "s_", 2) == 0 ) {
-                    return ir_new_address_of(ir_new_variable(registered_c_var));
-                }
+                // Style objects are allocated as pointers (lv_style_t*). We just need the variable name.
+                // Other objects (widgets) are also pointers. So just return the variable.
                 return ir_new_variable(registered_c_var);
             }
             fprintf(stderr, "Info: ID '%s' not found in registry, treating as direct variable name.\n", s_orig + 1);
@@ -238,14 +287,22 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
         if (expected_enum_type_for_arg && expected_enum_type_for_arg[0] != '\0') {
             const cJSON* all_enums = api_spec_get_enums(ctx->api_spec);
             if (all_enums) {
-                cJSON* specific_enum_type_json = cJSON_GetObjectItem(all_enums, expected_enum_type_for_arg);
+                const cJSON* specific_enum_type_json = cJSON_GetObjectItem(all_enums, expected_enum_type_for_arg);
                 if (specific_enum_type_json && cJSON_IsObject(specific_enum_type_json)) {
-                    bool found_in_specific = cJSON_GetObjectItem(specific_enum_type_json, s_orig) != NULL;
-                    if (found_in_specific) {
-                        return ir_new_literal(s_orig); // Found in specific expected enum
+                    const cJSON* enum_member_json = cJSON_GetObjectItem(specific_enum_type_json, s_orig);
+                    if (enum_member_json) { // Found in specific expected enum
+                        intptr_t enum_val;
+                        if (parse_enum_value_from_json(enum_member_json, &enum_val)) {
+                            return ir_new_literal_enum(s_orig, enum_val);
+                        } else {
+                            const char* value_str = cJSON_PrintUnformatted(enum_member_json);
+                            fprintf(stderr, "Warning: Enum member '%s' in '%s' has unparsable value '%s' in API spec. Storing as symbol.\n", s_orig, expected_enum_type_for_arg, value_str);
+                            free((void*)value_str);
+                            return ir_new_literal(s_orig);
+                        }
                     } else {
                         const char* actual_enum_type_name = NULL;
-                        cJSON* current_enum_type_json = NULL;
+                        const cJSON* current_enum_type_json = NULL;
                         for (current_enum_type_json = all_enums->child; current_enum_type_json != NULL; current_enum_type_json = current_enum_type_json->next) {
                             if (cJSON_IsObject(current_enum_type_json) && current_enum_type_json->string) {
                                 if (cJSON_GetObjectItem(current_enum_type_json, s_orig)) {
@@ -272,11 +329,20 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
         }
         const cJSON* all_enum_types_json_fallback = api_spec_get_enums(ctx->api_spec);
         if (all_enum_types_json_fallback && cJSON_IsObject(all_enum_types_json_fallback)) {
-            cJSON* enum_type_definition_json = NULL;
+            const cJSON* enum_type_definition_json = NULL;
             for (enum_type_definition_json = all_enum_types_json_fallback->child; enum_type_definition_json != NULL; enum_type_definition_json = enum_type_definition_json->next) {
                 if (cJSON_IsObject(enum_type_definition_json)) {
-                    if (cJSON_GetObjectItem(enum_type_definition_json, s_orig)) {
-                        return ir_new_literal(s_orig);
+                    const cJSON* enum_member_json = cJSON_GetObjectItem(enum_type_definition_json, s_orig);
+                    if (enum_member_json) {
+                        intptr_t enum_val;
+                        if (parse_enum_value_from_json(enum_member_json, &enum_val)) {
+                            return ir_new_literal_enum(s_orig, enum_val);
+                        } else {
+                            const char* value_str = cJSON_PrintUnformatted(enum_member_json);
+                            fprintf(stderr, "Warning: Enum member '%s' in '%s' has unparsable value '%s' in API spec. Storing as symbol.\n", s_orig, enum_type_definition_json->string, value_str);
+                            free((void*)value_str);
+                            return ir_new_literal(s_orig);
+                        }
                     }
                 }
             }
@@ -834,7 +900,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
                     type_str_for_registry = "obj"; // Fallback
                     obj_type_for_api_lookup = "obj";
                 }
-                process_single_with_block(ctx, item_w_assign, current_node_ir_block, effective_context, c_var_name_for_node);
+                process_single_with_block(ctx, item_w_assign, current_node_ir_block, effective_context, c_var_name_for_node, NULL);
                 object_successfully_created = true; // The variable is created/assigned.
             }
         }
@@ -982,7 +1048,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
                 if (item_w_regular->string && strcmp(item_w_regular->string, "with") == 0) {
                     // 'with' block on a regular node does not get an explicit target var name from here.
                     // It will generate its own temp var if needed or use direct var from its 'obj'.
-                    process_single_with_block(ctx, item_w_regular, current_node_ir_block, effective_context, NULL);
+                    process_single_with_block(ctx, item_w_regular, current_node_ir_block, effective_context, NULL, c_var_name_for_node);
                 }
             }
         }
@@ -997,7 +1063,7 @@ static void process_node_internal(GenContext* ctx, cJSON* node_json, IRStmtBlock
     }
 }
 
-static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context, const char* explicit_target_var_name) {
+static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtBlock* parent_ir_block, cJSON* ui_context, const char* explicit_target_var_name, const char* owner_c_var_name) {
     if (!cJSON_IsObject(with_node)) {
         fprintf(stderr, "Error: 'with' block item must be an object (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
         return;
@@ -1014,6 +1080,14 @@ static void process_single_with_block(GenContext* ctx, cJSON* with_node, IRStmtB
     if (!obj_expr) {
         fprintf(stderr, "Error: Failed to unmarshal 'obj' in 'with' block (when processing for target: %s).\n", explicit_target_var_name ? explicit_target_var_name : "temp_var");
         return;
+    }
+
+    if (owner_c_var_name && obj_expr && obj_expr->type == IR_EXPR_FUNC_CALL) {
+        IRExprFuncCall* call = (IRExprFuncCall*)obj_expr;
+        // Prepend owner_c_var_name as the first argument, making it a method call on the owner.
+        IRExprNode* new_first_arg = ir_new_expr_node(ir_new_variable(owner_c_var_name));
+        new_first_arg->next = call->args;
+        call->args = new_first_arg;
     }
 
     const char* target_c_var_name = NULL;
@@ -1464,4 +1538,3 @@ IRStmtBlock* generate_ir_from_ui_spec_with_registry(
     }
     return root_ir_block;
 }
-
