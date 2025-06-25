@@ -717,3 +717,43 @@ bool api_spec_has_function(const ApiSpec* spec, const char* func_name) {
     }
     return false; // Function not found
 }
+
+// Finds the integer value of a specific enum member within a given enum type.
+// Returns true if found and out_value is set, false otherwise.
+bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_type_name, const char* member_name, long* out_value) {
+    if (!spec || !spec->enums || !enum_type_name || !member_name || !out_value) {
+        return false;
+    }
+
+    const cJSON* enum_type_obj = cJSON_GetObjectItemCaseSensitive(spec->enums, enum_type_name);
+    if (!cJSON_IsObject(enum_type_obj)) {
+        // fprintf(stderr, "Enum type '%s' not found in API spec.\n", enum_type_name);
+        return false;
+    }
+
+    const cJSON* enum_member_json = cJSON_GetObjectItemCaseSensitive(enum_type_obj, member_name);
+    if (!enum_member_json) {
+        // fprintf(stderr, "Enum member '%s' not found in enum type '%s'.\n", member_name, enum_type_name);
+        return false;
+    }
+
+    if (cJSON_IsString(enum_member_json) && enum_member_json->valuestring != NULL) {
+        // Value is stored as a string, potentially hex or decimal
+        char* endptr;
+        *out_value = strtol(enum_member_json->valuestring, &endptr, 0); // Base 0 auto-detects hex
+        if (*endptr == '\0' && endptr != enum_member_json->valuestring) { // Successful conversion
+            return true;
+        } else {
+            // This case might indicate a non-integer string value for an enum, which is unusual.
+            // fprintf(stderr, "Enum member '%s' in '%s' has non-integer string value '%s'.\n", member_name, enum_type_name, enum_member_json->valuestring);
+            return false;
+        }
+    } else if (cJSON_IsNumber(enum_member_json)) {
+        // Direct number, though spec usually has them as strings
+        *out_value = (long)enum_member_json->valuedouble;
+        return true;
+    }
+
+    // fprintf(stderr, "Enum member '%s' in '%s' has unexpected JSON type.\n", member_name, enum_type_name);
+    return false;
+}

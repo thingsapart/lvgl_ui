@@ -217,16 +217,20 @@ static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
         if (with_block_target_for_do) {
             // Process the "do" part: properties and/or children, using with_block_target_for_do as their target/parent.
             if (wb->properties) { // Properties from the "do" block
-                // TODO: Determine the json_type of with_block_target_for_do more accurately if possible.
-                // For now, using "obj" as a generic type for applying properties.
-                // If wb->target_expr was a call, could try to get json_type from function's return type in api_spec.
-                const char* json_type_for_do_properties = "obj";
+                // Determine the json_type of with_block_target_for_do for applying properties correctly.
+                const char* json_type_for_do_properties = "obj"; // Default
                 if (wb->target_expr && wb->target_expr->type == IR_EXPR_FUNCTION_CALL) {
-                    const FunctionDefinition* func_def = api_spec_find_function(ctx->api_spec, ((IRExprFunctionCall*)wb->target_expr)->func_name);
-                    // Assuming func_def might have a hint for json_type of return, e.g. func_def->return_type_json_hint
-                    // This is a placeholder for future enhancement.
-                    if (func_def && func_def->return_type && strstr(func_def->return_type, "style_t") != NULL) {
-                         json_type_for_do_properties = "style"; // Basic heuristic
+                    const char* func_name = ((IRExprFunctionCall*)wb->target_expr)->func_name;
+                    // Use the existing helper to get the C return type string.
+                    const char* return_c_type = api_spec_get_function_return_type(ctx->api_spec, func_name);
+
+                    if (return_c_type) {
+                        // Basic heuristic: if the C return type contains "style_t", assume json_type "style".
+                        if (strstr(return_c_type, "style_t") != NULL) {
+                             json_type_for_do_properties = "style";
+                        }
+                        // TODO: Add more heuristics or a mapping from C return types to json_types in api_spec if needed.
+                        // For example, if "lv_tileview_tile_t*", map to a hypothetical "tile" json_type.
                     }
                 }
 

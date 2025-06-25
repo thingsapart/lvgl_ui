@@ -127,4 +127,8 @@ bool api_spec_is_constant(const ApiSpec* spec, const char* const_name);
 // Checks if a function name exists in the API spec's global functions.
 bool api_spec_has_function(const ApiSpec* spec, const char* func_name);
 
+// Finds the integer value of a specific enum member within a given enum type.
+// Returns true if found and out_value is set, false otherwise.
+bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_type_name, const char* member_name, long* out_value);
+
 #endif // API_SPEC_H

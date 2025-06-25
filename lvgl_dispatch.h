@@ -14,6 +14,7 @@ extern "C" {
 #include <stdlib.h>
 
 typedef struct IRNode IRNode;
+struct ApiSpec; /* Forward declaration for ApiSpec pointer usage */
 
 // --- Object Registry ---
 // A simple dynamic registry to map string IDs to created LVGL objects (widgets, styles, etc.).
