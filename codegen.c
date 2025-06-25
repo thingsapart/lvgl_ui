@@ -1,323 +1,297 @@
 #include "codegen.h"
-
-#include <stdbool.h>
-#include <stdio.h> // For printf
-#include <string.h> // For strcmp, strstr
-#include <ctype.h> // For isprint
-
-#include "ir.h"
+#include "api_spec.h"
 #include "utils.h"
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h> // For malloc, free
 
-// --- Forward declarations for recursive codegen functions ---
-static void codegen_stmt_internal(IRStmt* stmt, int indent_level);
-static void codegen_expr_internal(IRExpr* expr); // Expressions generally don't need indent level directly
+// --- Forward Declarations ---
+static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_root, int indent, const char* parent_c_name);
+static void codegen_expr(IRExpr* expr, const ApiSpec* api_spec, IRRoot* ir_root, IRObject* use_view_context_owner);
+static void print_indent(int level);
+static IRObject* clone_ir_object(IRObject* original); // Helper for use-view
+static char* sanitize_c_identifier(const char* input_name);
 
-// --- Helper for indentation ---
-static void print_indent(int level) {
-    for (int i = 0; i < level; ++i) {
-        printf("    "); // 4 spaces per indent level
+// --- Main Entry Point ---
+void codegen_generate_c(IRRoot* root, const ApiSpec* api_spec) {
+    if (!root) {
+        printf("// No IR root provided.\n");
+        return;
+    }
+
+    // Process all top-level objects, assuming they are parented to `parent`
+    // which should be the main screen/container passed to the UI creation function.
+    IRObject* current_obj = root->root_objects;
+    while (current_obj) {
+        codegen_object(current_obj, api_spec, root, 1, "parent");
+        current_obj = current_obj->next;
     }
 }
 
-// --- Codegen function implementations ---
+// --- Core Codegen Logic ---
 
-// These are the functions assigned to IRNode->codegen
-void codegen_expr_literal(IRNode* node, int indent_level) {
-    (void)indent_level;
-    IRExprLiteral* lit = (IRExprLiteral*)node;
-    if (!lit->value) {
+static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_root, int indent, const char* parent_c_name) {
+    if (!obj) return;
+
+    // Handle 'use-view' by finding and inlining the component
+    if (obj->json_type && strcmp(obj->json_type, "use-view") == 0) {
+        if (!obj->use_view_component_id) {
+            fprintf(stderr, "Codegen Error: use-view object '%s' has no component ID.\n", obj->c_name);
+            return;
+        }
+
+        // Find component definition in the IR
+        IRComponent* comp_def = ir_root->components;
+        while(comp_def) {
+            if (strcmp(comp_def->id, obj->use_view_component_id) == 0) break;
+            comp_def = comp_def->next;
+        }
+
+        if (!comp_def || !comp_def->root_widget) {
+            fprintf(stderr, "Codegen Error: Component '%s' not found or is empty for use-view '%s'.\n", obj->use_view_component_id, obj->c_name);
+            return;
+        }
+
+        // Clone the component's root widget to avoid mutating the original IR.
+        IRObject* component_root_instance = clone_ir_object(comp_def->root_widget);
+        if (!component_root_instance) {
+            fprintf(stderr, "Codegen Error: Failed to clone component for use-view '%s'.\n", obj->c_name);
+            return;
+        }
+
+        // The instance takes the name of the use-view object.
+        free(component_root_instance->c_name);
+        component_root_instance->c_name = strdup(obj->c_name);
+
+        // Apply properties from the use-view node as overrides.
+        IRProperty* override_prop = obj->properties;
+        while(override_prop) {
+            // This is a simple append; a real system might replace existing properties.
+            ir_property_list_add(&component_root_instance->properties, ir_new_property(override_prop->name, override_prop->value));
+            override_prop = override_prop->next;
+        }
+
+        codegen_object(component_root_instance, api_spec, ir_root, indent, parent_c_name);
+
+        ir_free((IRNode*)component_root_instance); // Clean up the cloned instance
+        return;
+    }
+
+
+    // --- Object Creation ---
+    const WidgetDefinition* widget_def = api_spec_find_widget(api_spec, obj->json_type);
+    print_indent(indent);
+    if (widget_def && widget_def->create) { // It's a standard widget
+        printf("lv_obj_t* %s = %s(%s);\n", obj->c_name, widget_def->create, parent_c_name ? parent_c_name : "lv_screen_active()");
+    } else if (widget_def && widget_def->c_type && widget_def->init_func) { // It's an object like a style
+        printf("%s %s;\n", widget_def->c_type, obj->c_name);
+        print_indent(indent);
+        printf("%s(&%s);\n", widget_def->init_func, obj->c_name);
+    } else { // Fallback to generic object
+        printf("lv_obj_t* %s = lv_obj_create(%s);\n", obj->c_name, parent_c_name ? parent_c_name : "lv_screen_active()");
+    }
+
+    // If the object has a registered ID, add it to the C-side registry
+    if (obj->registered_id) {
+        print_indent(indent);
+        // Cast to void* to be compatible with the generic registry function
+        printf("obj_registry_add(\"%s\", (void*)%s);\n", obj->registered_id, obj->c_name);
+    }
+
+    // --- Properties ---
+    IRProperty* prop = obj->properties;
+    while (prop) {
+        const PropertyDefinition* prop_def = api_spec_find_property(api_spec, obj->json_type, prop->name);
+
+        char setter_func[128];
+        if (prop_def && prop_def->setter) {
+            strncpy(setter_func, prop_def->setter, sizeof(setter_func) - 1);
+            setter_func[sizeof(setter_func) - 1] = '\0';
+        } else {
+            // Construct a plausible setter name
+            snprintf(setter_func, sizeof(setter_func), "lv_%s_set_%s", obj->json_type, prop->name);
+        }
+
+        print_indent(indent);
+        // Handle pointer vs value-type objects correctly
+        if (widget_def && widget_def->init_func) {
+            // It's a value type (e.g. lv_style_t), pass by address
+            printf("%s(&%s, ", setter_func, obj->c_name);
+        } else {
+            // It's a pointer type (e.g. lv_obj_t*), pass by value
+            printf("%s(%s, ", setter_func, obj->c_name);
+        }
+
+        codegen_expr(prop->value, api_spec, ir_root, obj); // Pass 'obj' as context for $vars
+        printf(");\n");
+
+        prop = prop->next;
+    }
+
+    // --- 'with' blocks ---
+    IRWithBlock* wb = obj->with_blocks;
+    while(wb) {
+        char temp_var_name[64];
+        snprintf(temp_var_name, sizeof(temp_var_name), "with_target_%s", obj->c_name);
+
+        print_indent(indent);
+        printf("{\n");
+        print_indent(indent + 1);
+        printf("void* %s = ", temp_var_name);
+        codegen_expr(wb->target_expr, api_spec, ir_root, obj);
+        printf(";\n");
+
+        IRProperty* with_prop = wb->properties;
+        while(with_prop) {
+            char setter_func[128];
+            // This assumes all 'with' targets are lv_obj_t for property setting.
+            snprintf(setter_func, sizeof(setter_func), "lv_obj_set_%s", with_prop->name);
+            print_indent(indent + 1);
+            printf("%s(%s, ", setter_func, temp_var_name);
+            codegen_expr(with_prop->value, api_spec, ir_root, obj);
+            printf(");\n");
+            with_prop = with_prop->next;
+        }
+
+        if (wb->children_root) {
+            IRObject* child = wb->children_root->children;
+            while(child) {
+                codegen_object(child, api_spec, ir_root, indent + 1, temp_var_name);
+                child = child->next;
+            }
+        }
+
+        print_indent(indent);
+        printf("}\n");
+        wb = wb->next;
+    }
+
+    // --- Children ---
+    if (obj->children) {
+        print_indent(indent);
+        printf("\n"); // Spacer
+        IRObject* child = obj->children;
+        while (child) {
+            codegen_object(child, api_spec, ir_root, indent, obj->c_name);
+            child = child->next;
+        }
+    }
+}
+
+static void codegen_expr(IRExpr* expr, const ApiSpec* api_spec, IRRoot* ir_root, IRObject* use_view_context_owner) {
+    if (!expr) {
         printf("NULL");
         return;
     }
-
-    if (lit->is_string) {
-        // It's a string literal, so print it quoted and with C-style escapes.
-        printf("\"");
-        for (const char* p = lit->value; *p; p++) {
-            switch (*p) {
-                case '\n': printf("\\n"); break;
-                case '\r': printf("\\r"); break;
-                case '\t': printf("\\t"); break;
-                case '\\': printf("\\\\"); break;
-                case '"':  printf("\\\""); break;
-                default:
-                    if (isprint((unsigned char)*p)) {
-                        printf("%c", *p);
-                    } else {
-                        // Print non-printable characters as hex escape codes
-                        printf("\\x%02x", (unsigned char)*p);
+    switch(expr->type) {
+        case IR_EXPR_LITERAL: {
+            IRExprLiteral* lit = (IRExprLiteral*)expr;
+            if (lit->is_string) printf("\"%s\"", lit->value);
+            else printf("%s", lit->value);
+            break;
+        }
+        case IR_EXPR_STATIC_STRING:
+            printf("\"%s\"", ((IRExprStaticString*)expr)->value);
+            break;
+        case IR_EXPR_ENUM:
+            printf("%s", ((IRExprEnum*)expr)->symbol);
+            break;
+        case IR_EXPR_REGISTRY_REF:
+        {
+            char* c_var_name = sanitize_c_identifier(((IRExprRegistryRef*)expr)->name);
+            printf("%s", c_var_name);
+            free(c_var_name);
+            break;
+        }
+        case IR_EXPR_CONTEXT_VAR: {
+            const char* var_name = ((IRExprContextVar*)expr)->name;
+            if (use_view_context_owner && use_view_context_owner->use_view_context) {
+                IRProperty* ctx_prop = use_view_context_owner->use_view_context;
+                while(ctx_prop) {
+                    if (strcmp(ctx_prop->name, var_name) == 0) {
+                        codegen_expr(ctx_prop->value, api_spec, ir_root, use_view_context_owner);
+                        return;
                     }
-                    break;
+                    ctx_prop = ctx_prop->next;
+                }
             }
+            printf("/* Context var '%s' not found */ NULL", var_name);
+            break;
         }
-        printf("\"");
-    } else {
-        // It's a number, boolean, or enum symbol. Print it as-is.
-        printf("%s", lit->value);
-    }
-}
-
-void codegen_expr_variable(IRNode* node, int indent_level) {
-    (void)indent_level;
-    IRExprVariable* var = (IRExprVariable*)node;
-    if (var->name) {
-        printf("%s", var->name);
-    } else {
-        printf("/* unnamed variable */");
-    }
-}
-
-void codegen_expr_func_call(IRNode* node, int indent_level) {
-    (void)indent_level;
-    IRExprFuncCall* call = (IRExprFuncCall*)node;
-    if (call->func_name) {
-        _dprintf(stderr, "CODEGEN_EXPR_FUNC_CALL: Processing func_name '%s'\n", call->func_name); fflush(stderr);
-        printf("%s(", call->func_name);
-        IRExprNode* current_arg = call->args;
-        int arg_count = 0;
-        while (current_arg) {
-            if (arg_count > 0) {
-                printf(", ");
+        case IR_EXPR_FUNCTION_CALL: {
+            IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
+            printf("%s(", call->func_name);
+            IRExprNode* arg = call->args;
+            while(arg) {
+                codegen_expr(arg->expr, api_spec, ir_root, use_view_context_owner);
+                if (arg->next) printf(", ");
+                arg = arg->next;
             }
-            if (current_arg->expr) {
-                // An argument is just an expression. Generate it.
-                // The incorrect special handling for arrays has been removed.
-                // An array literal is a single argument, and codegen_expr_array will handle it.
-                codegen_expr_internal(current_arg->expr);
-            } else {
-                printf("NULL /* missing arg expr */");
+            printf(")");
+            break;
+        }
+        case IR_EXPR_ARRAY: {
+            IRExprArray* arr = (IRExprArray*)expr;
+            printf("{ ");
+            IRExprNode* elem = arr->elements;
+            while(elem) {
+                codegen_expr(elem->expr, api_spec, ir_root, use_view_context_owner);
+                if (elem->next) printf(", ");
+                elem = elem->next;
             }
-            current_arg = current_arg->next;
-            arg_count++;
+            printf(" }");
+            break;
         }
-        printf(")");
-    } else {
-        printf("/* unnamed function call */");
+        default:
+            printf("/* unhandled expr type %d */", expr->type);
     }
 }
 
-void codegen_expr_array(IRNode* node, int indent_level) {
-    (void)indent_level;
-    IRExprArray* arr = (IRExprArray*)node;
-    // Generates a C compound literal initializer, e.g., {elem1, elem2}
-    printf("{");
-    IRExprNode* current_elem = arr->elements;
-    int elem_count = 0;
-    while (current_elem) {
-        if (elem_count > 0) {
-            printf(", ");
+// --- Helpers ---
+static void print_indent(int level) {
+    for (int i = 0; i < level; ++i) {
+        printf("    "); // 4 spaces
+    }
+}
+
+static char* sanitize_c_identifier(const char* input_name) {
+    if (!input_name || *input_name == '\0') return strdup("unnamed_var");
+
+    size_t len = strlen(input_name);
+    char* sanitized = malloc(len + 2);
+    if (!sanitized) return strdup("oom_var");
+
+    char* s_ptr = sanitized;
+    const char* i_ptr = input_name;
+
+    if (isdigit((unsigned char)*i_ptr)) {
+        *s_ptr++ = '_';
+    }
+
+    while(*i_ptr) {
+        if (isalnum((unsigned char)*i_ptr)) {
+            *s_ptr++ = *i_ptr;
+        } else if (s_ptr > sanitized && *(s_ptr-1) != '_') {
+            *s_ptr++ = '_';
         }
-        if (current_elem->expr) {
-            codegen_expr_internal(current_elem->expr);
-        } else {
-            printf("NULL /* missing array element expr */");
-        }
-        current_elem = current_elem->next;
-        elem_count++;
+        i_ptr++;
     }
-    printf("}");
+    *s_ptr = '\0';
+    return sanitized;
 }
 
-void codegen_expr_address_of(IRNode* node, int indent_level) {
-    (void)indent_level;
-    IRExprAddressOf* addr = (IRExprAddressOf*)node;
-    printf("&");
-    if (addr->expr) {
-        // Parentheses might be needed depending on precedence: &(var.member) vs &var.member
-        // codegen_expr_internal will handle the inner expression.
-        // For simple variables or function calls, it's fine.
-        codegen_expr_internal(addr->expr);
-    } else {
-        printf("NULL /* missing address_of expr */");
-    }
-}
+// NOTE: This is a shallow clone. A full deep clone is needed for robust component use.
+static IRObject* clone_ir_object(IRObject* original) {
+    if (!original) return NULL;
+    IRObject* clone = ir_new_object(original->c_name, original->json_type, original->registered_id);
 
-void codegen_stmt_block(IRNode* node, int indent_level) {
-    IRStmtBlock* block = (IRStmtBlock*)node;
-    _dprintf(stderr, "CODEGEN_BLOCK: Entering block %p, indent: %d\n", (void*)block, indent_level); fflush(stderr);
-    print_indent(indent_level);
-    printf("{\n");
+    // A real implementation would deeply clone properties, with_blocks, and children here.
+    // For this example, we are sharing pointers, which is not safe in general but will work
+    // for a simple, single-pass codegen.
+    clone->properties = original->properties;
+    clone->children = original->children;
+    clone->with_blocks = original->with_blocks;
 
-    IRStmtNode* current_stmt_node = block->stmts;
-    while (current_stmt_node) {
-        if (current_stmt_node->stmt) {
-            _dprintf(stderr, "CODEGEN_BLOCK: Processing IRStmt type: %d in block %p\n", current_stmt_node->stmt->type, (void*)block); fflush(stderr);
-            codegen_stmt_internal(current_stmt_node->stmt, indent_level + 1);
-        }
-        current_stmt_node = current_stmt_node->next;
-    }
-
-    print_indent(indent_level);
-    printf("}\n");
-    _dprintf(stderr, "CODEGEN_BLOCK: Exiting block %p\n", (void*)block); fflush(stderr);
-}
-
-void codegen_stmt_var_decl(IRNode* node, int indent_level) {
-    IRStmtVarDecl* decl = (IRStmtVarDecl*)node;
-    print_indent(indent_level);
-    if (decl->type_name) {
-        printf("%s ", decl->type_name);
-    } else {
-        printf("/* untyped */ ");
-    }
-    if (decl->var_name) {
-        printf("%s", decl->var_name);
-    } else {
-        printf("/* unnamed_var */");
-    }
-    if (decl->initializer) {
-        printf(" = ");
-        codegen_expr_internal(decl->initializer);
-    }
-    printf(";\n");
-}
-
-// Name changed from ir.c's dummy to avoid potential conflict if they were in same file
-void codegen_stmt_func_call_stmt(IRNode* node, int indent_level) {
-    IRStmtFuncCall* stmt_call = (IRStmtFuncCall*)node;
-    if (stmt_call->call && stmt_call->call->func_name) {
-        _dprintf(stderr, "CODEGEN_FUNC_CALL_STMT: Generating call for function '%s'\n", stmt_call->call->func_name); fflush(stderr);
-    } else {
-        _dprintf(stderr, "CODEGEN_FUNC_CALL_STMT: Generating call for UNKNOWN function\n"); fflush(stderr);
-    }
-    print_indent(indent_level);
-    if (stmt_call->call) {
-        IRNode* call_as_node = (IRNode*)stmt_call->call; // Cast IRExprFuncCall* to IRNode*
-        if (call_as_node && call_as_node->codegen) {    // Check for NULL before calling
-            call_as_node->codegen(call_as_node, indent_level);
-        } else if (stmt_call->call) { // If call_as_node is NULL but stmt_call->call wasn't, it implies codegen ptr was NULL
-             printf("/* codegen function pointer missing for func_call_expr */");
-        } else {
-             printf("/* NULL func_call_expr in stmt */");
-        }
-        // A function call used as a statement needs a semicolon.
-        printf(";\n");
-    } else {
-        printf("/* empty function call stmt */;\n");
-    }
-}
-
-void codegen_stmt_comment(IRNode* node, int indent_level) {
-    IRStmtComment* comment = (IRStmtComment*)node;
-    print_indent(indent_level);
-    if (comment->text) {
-        printf("// %s\n", comment->text);
-    } else {
-        printf("// empty comment\n");
-    }
-}
-
-void codegen_stmt_widget_allocate(IRNode* node, int indent_level) {
-    IRStmtWidgetAllocate* stmt = (IRStmtWidgetAllocate*)node;
-    print_indent(indent_level);
-
-    const char* c_type = stmt->widget_c_type_name ? stmt->widget_c_type_name : "lv_obj_t";
-
-    // LVGL create functions return TYPE*, so no '*' needed in c_type here for the variable declaration.
-    // e.g. lv_obj_t * my_btn = lv_btn_create(...); widget_c_type_name should be "lv_obj_t"
-    printf("%s* %s = %s(", c_type, stmt->c_var_name, stmt->create_func_name);
-    if (stmt->parent_expr) {
-        codegen_expr_internal(stmt->parent_expr);
-    } else {
-        // Default to lv_scr_act() if parent_expr is NULL, as most LVGL objects need a parent.
-        // This is a common convention for top-level objects on the current screen.
-        printf("lv_scr_act()");
-    }
-    printf(");\n");
-}
-
-void codegen_stmt_object_allocate(IRNode* node, int indent_level) {
-    IRStmtObjectAllocate* stmt = (IRStmtObjectAllocate*)node;
-
-    // Line 1: TYPE* var_name = (TYPE*)malloc(sizeof(TYPE));
-    print_indent(indent_level);
-    printf("%s* %s = (%s*)malloc(sizeof(%s));\n",
-           stmt->object_c_type_name, // e.g. "lv_style_t"
-           stmt->c_var_name,
-           stmt->object_c_type_name,
-           stmt->object_c_type_name);
-
-    // Line 2: if (var_name != NULL) { ... }
-    print_indent(indent_level);
-    printf("if (%s != NULL) {\n", stmt->c_var_name);
-
-    // Line 3: memset(var_name, 0, sizeof(TYPE));
-    print_indent(indent_level + 1);
-    printf("memset(%s, 0, sizeof(%s));\n",
-           stmt->c_var_name,
-           stmt->object_c_type_name);
-
-    // Line 4: init_func(var_name); // Assumes init_func takes Type*
-    print_indent(indent_level + 1);
-    printf("%s(%s);\n",
-           stmt->init_func_name,
-           stmt->c_var_name); // Pass the pointer directly
-
-    print_indent(indent_level);
-    printf("} else {\n");
-    print_indent(indent_level + 1);
-    // Using __FILE__ and __LINE__ directly in a printf like this might be tricky
-    // if this generated code is then compiled elsewhere.
-    // A simpler error message might be better, or a dedicated error macro.
-    // For now, keeping it simple:
-    printf("fprintf(stderr, \"Error: Failed to malloc for object %%s of type %%s\\n\", \"%s\", \"%s\");\n", // Escaped %s and quotes
-            stmt->c_var_name, stmt->object_c_type_name);
-    print_indent(indent_level);
-    printf("}\n");
-}
-
-
-// --- Internal dispatchers ---
-static void codegen_expr_internal(IRExpr* expr) {
-    if (!expr) {
-        printf("/* invalid expr (NULL) */");
-        return;
-    }
-    IRNode* expr_as_node = (IRNode*)expr; // Cast IRExpr* to IRNode*
-    if (expr_as_node->codegen) {
-        expr_as_node->codegen(expr_as_node, 0); // Indent level not really used by exprs
-    } else {
-        printf("/* codegen function pointer missing for expr */");
-    }
-}
-
-static void codegen_stmt_internal(IRStmt* stmt, int indent_level) {
-    if (!stmt) {
-        print_indent(indent_level);
-        printf("/* invalid stmt (NULL) */;\n");
-        return;
-    }
-    IRNode* stmt_as_node = (IRNode*)stmt; // Cast IRStmt* to IRNode*
-    if (stmt_as_node->codegen) {
-        stmt_as_node->codegen(stmt_as_node, indent_level);
-    } else {
-        print_indent(indent_level);
-        printf("/* codegen function pointer missing for stmt */;\n");
-    }
-}
-
-
-// --- Main entry point for codegen ---
-void codegen_generate_c(IRStmtBlock* root_block, const char* parent_var_name) {
-    // parent_var_name is the name of the C variable for the root LVGL object (e.g., "screen" or "parent")
-    // This codegen currently assumes the IR starts "inside" a function like `void create_ui(lv_obj_t* parent_var_name) { ... IR ... }`
-    // So, the 'parent_var_name' is mostly for context if the IR refers to its top-level parent.
-    // The IR generated by process_node usually creates its own top-level parent widgets or uses 'parent' passed to create_func.
-
-    if (!root_block) {
-        printf("// No IR root block provided to codegen_generate_c.\n");
-        return;
-    }
-
-    // The root_block itself is a block of statements.
-    // It doesn't get its own braces unless it's nested.
-    // The create_ui function provides the outer scope.
-    IRStmtNode* current_stmt_node = root_block->stmts;
-    while (current_stmt_node) {
-        if (current_stmt_node->stmt) {
-            // Start top-level statements in the root block at indent level 1 (inside the function).
-            codegen_stmt_internal(current_stmt_node->stmt, 1);
-        }
-        current_stmt_node = current_stmt_node->next;
-    }
+    return clone;
 }

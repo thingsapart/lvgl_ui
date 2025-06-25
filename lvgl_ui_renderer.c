@@ -4,194 +4,271 @@
 #include "utils.h"
 #include "api_spec.h"
 #include "debug_log.h"
+#include <cJSON.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 #define MAX_RENDER_ARGS 16
-#define CONTEXT_PARENT_ID "__context_parent"
 
-// Forward declaration for the recursive helper
-static void render_ir_block_recursive(IRStmtBlock* ir_block, lv_obj_t* current_parent, struct ApiSpec* api_spec);
+// --- Render Context ---
+// Manages state during rendering, like the object registry and context stack for components.
+typedef struct {
+    ApiSpec* api_spec;
+    IRRoot* ir_root;
+    cJSON* context_stack; // An array of context objects for nested use-views
+} RenderContext;
 
-void render_lvgl_ui_from_ir(IRStmtBlock* ir_block, lv_obj_t* parent_screen, struct ApiSpec* api_spec) {
-    if (!ir_block || !parent_screen || !api_spec) {
+
+// --- Forward Declarations ---
+static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj);
+static IRExpr* resolve_expr(RenderContext* ctx, IRExpr* expr);
+static void free_resolved_expr_list(IRExprNode* head);
+
+// --- Main Entry Point ---
+void render_lvgl_ui_from_ir(IRRoot* ir_root, lv_obj_t* parent_screen, ApiSpec* api_spec, cJSON* initial_context) {
+    if (!ir_root || !parent_screen || !api_spec) {
         DEBUG_LOG(LOG_MODULE_RENDERER, "Error: render_lvgl_ui_from_ir called with NULL arguments.");
         return;
     }
-    if (ir_block->base.type != IR_STMT_BLOCK) {
-        DEBUG_LOG(LOG_MODULE_RENDERER, "Error: Root IR node is not a block.");
-        return;
-    }
 
-    DEBUG_LOG(LOG_MODULE_RENDERER, "Starting LVGL UI rendering from IR.");
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Starting LVGL UI rendering from new IR.");
     obj_registry_init();
-
-    // The name "parent" is a convention from the generator for the root object.
     obj_registry_add("parent", parent_screen);
     DEBUG_LOG(LOG_MODULE_RENDERER, "Registered initial screen %p as 'parent'.", (void*)parent_screen);
 
-    render_ir_block_recursive(ir_block, parent_screen, api_spec);
+    RenderContext ctx = {
+        .api_spec = api_spec,
+        .ir_root = ir_root,
+        .context_stack = cJSON_CreateArray()
+    };
+    if (initial_context) {
+        cJSON_AddItemToArray(ctx.context_stack, cJSON_Duplicate(initial_context, true));
+    } else {
+        cJSON_AddItemToArray(ctx.context_stack, cJSON_CreateObject());
+    }
 
+    IRObject* current_obj = ir_root->root_objects;
+    while (current_obj) {
+        render_object(&ctx, current_obj, parent_screen);
+        current_obj = current_obj->next;
+    }
+
+    cJSON_Delete(ctx.context_stack);
     DEBUG_LOG(LOG_MODULE_RENDERER, "Finished LVGL UI rendering.");
-    // Note: obj_registry_deinit() is not called here, as the created objects are live
-    // on the screen. It should be called during application shutdown.
 }
 
-static void render_ir_block_recursive(IRStmtBlock* ir_block, lv_obj_t* current_parent, struct ApiSpec* api_spec) {
-    IRStmtNode* current_stmt_node = ir_block->stmts;
-    lv_obj_t* last_created_widget_in_scope = NULL; // Tracks the last widget created in this block
-    int stmt_idx = 0;
-
-    // Set the contextual parent for this scope using a special, temporary ID.
-    // This allows widget creation to use this parent if no explicit parent is given.
-    obj_registry_add(CONTEXT_PARENT_ID, current_parent);
-
-    while (current_stmt_node) {
-        IRNode* stmt_base = (IRNode*)current_stmt_node->stmt;
-        stmt_idx++;
-        if (!stmt_base) {
-            current_stmt_node = current_stmt_node->next;
+static void render_properties(RenderContext* ctx, IRObject* ir_obj, void* native_obj) {
+    IRProperty* prop = ir_obj->properties;
+    while (prop) {
+        const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, ir_obj->json_type, prop->name);
+        if (!prop_def || !prop_def->setter) {
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Setter for property '%s' on type '%s' not found. Skipping.", prop->name, ir_obj->json_type);
+            prop = prop->next;
             continue;
         }
 
-        DEBUG_LOG(LOG_MODULE_RENDERER, "Block (%p), ParentCtx (%p): Stmt %d, Type %d", (void*)ir_block, (void*)current_parent, stmt_idx, stmt_base->type);
-
-        lv_obj_t* new_obj_this_iter = NULL;
-
-        switch (stmt_base->type) {
-            case IR_STMT_WIDGET_ALLOCATE: {
-                IRStmtWidgetAllocate* stmt = (IRStmtWidgetAllocate*)stmt_base;
-                DEBUG_LOG(LOG_MODULE_RENDERER, "  WIDGET_ALLOC: var='%s', func='%s'", stmt->c_var_name, stmt->create_func_name);
-
-                lv_obj_t* parent_obj = NULL;
-
-                if (stmt->parent_expr) {
-                    if (stmt->parent_expr->type == IR_EXPR_VARIABLE) {
-                        const char* parent_id = ir_node_get_string((IRNode*)stmt->parent_expr);
-                        parent_obj = obj_registry_get(parent_id);
-                        DEBUG_LOG(LOG_MODULE_RENDERER, "  Resolving explicit parent '%s' to %p", parent_id, (void*)parent_obj);
-                    } else {
-                        DEBUG_LOG(LOG_MODULE_RENDERER, "  Warning: Unhandled parent expression type %d for widget '%s'", stmt->parent_expr->type, stmt->c_var_name);
-                    }
-                } else {
-                    DEBUG_LOG(LOG_MODULE_RENDERER, "  No explicit parent for '%s'. Using contextual parent %p.", stmt->c_var_name, (void*)current_parent);
-                    parent_obj = current_parent;
-                }
-
-                if (!parent_obj) {
-                    DEBUG_LOG(LOG_MODULE_RENDERER, "  Error: Could not resolve parent for widget '%s'. Aborting creation.", stmt->c_var_name);
-                    break;
-                }
-
-                // Call the create function. The parent is passed as the `target_obj`.
-                // Create functions typically have no other arguments, so args are NULL and count is 0.
-                new_obj_this_iter = dynamic_lvgl_call_ir(stmt->create_func_name, parent_obj, NULL, 0);
-
-                if (new_obj_this_iter) {
-                    obj_registry_add(stmt->c_var_name, new_obj_this_iter);
-                    DEBUG_LOG(LOG_MODULE_RENDERER, "  Created and registered widget '%s' at %p.", stmt->c_var_name, new_obj_this_iter);
-                } else {
-                    DEBUG_LOG(LOG_MODULE_RENDERER, "  Error: Widget creation for '%s' returned NULL.", stmt->c_var_name);
-                }
-                break;
+        IRExprNode* resolved_args = NULL;
+        if (prop->value->type == IR_EXPR_ARRAY) {
+            IRExprArray* arr = (IRExprArray*)prop->value;
+            IRExprNode* elem = arr->elements;
+            while(elem) {
+                ir_expr_list_add(&resolved_args, resolve_expr(ctx, elem->expr));
+                elem = elem->next;
             }
-
-            case IR_STMT_OBJECT_ALLOCATE: {
-                IRStmtObjectAllocate* stmt = (IRStmtObjectAllocate*)stmt_base;
-                DEBUG_LOG(LOG_MODULE_RENDERER, "  OBJECT_ALLOC: var='%s', type='%s', init='%s'", stmt->c_var_name, stmt->object_c_type_name, stmt->init_func_name);
-
-                void* new_obj = NULL;
-                if (strcmp(stmt->object_c_type_name, "lv_style_t") == 0) {
-                    new_obj = malloc(sizeof(lv_style_t));
-                    if (new_obj) lv_style_init(new_obj);
-                } else if (strcmp(stmt->object_c_type_name, "lv_anim_t") == 0) {
-                    new_obj = malloc(sizeof(lv_anim_t));
-                    if (new_obj) lv_anim_init(new_obj);
-                }
-
-                if (new_obj) {
-                    obj_registry_add(stmt->c_var_name, new_obj);
-                    DEBUG_LOG(LOG_MODULE_RENDERER, "  Allocated and registered object '%s' at %p.", stmt->c_var_name, new_obj);
-                } else {
-                    DEBUG_LOG(LOG_MODULE_RENDERER, "  Error: Failed to allocate/handle object type '%s'.", stmt->object_c_type_name);
-                }
-                break;
-            }
-
-            case IR_STMT_FUNC_CALL:
-            case IR_STMT_VAR_DECL: {
-                IRExprFuncCall* call = NULL;
-                const char* var_to_assign = NULL;
-
-                if (stmt_base->type == IR_STMT_FUNC_CALL) {
-                    call = ((IRStmtFuncCall*)stmt_base)->call;
-                } else { // IR_STMT_VAR_DECL
-                    IRStmtVarDecl* decl_stmt = (IRStmtVarDecl*)stmt_base;
-                    if (decl_stmt->initializer && decl_stmt->initializer->type == IR_EXPR_FUNC_CALL) {
-                        call = (IRExprFuncCall*)decl_stmt->initializer;
-                        var_to_assign = decl_stmt->var_name;
-                    }
-                }
-                if (!call || !call->func_name) break;
-
-                const char* func_name = call->func_name;
-                DEBUG_LOG(LOG_MODULE_RENDERER, "  FUNC_CALL: func='%s'%s%s", func_name, var_to_assign ? ", assign_to='" : "", var_to_assign ? var_to_assign : "");
-
-                void* target_obj = NULL;
-                IRNode* ir_args[MAX_RENDER_ARGS];
-                int arg_count = 0;
-
-                IRExprNode* current_arg_node = call->args;
-                while(current_arg_node && arg_count < MAX_RENDER_ARGS) {
-                    ir_args[arg_count++] = (IRNode*)current_arg_node->expr;
-                    current_arg_node = current_arg_node->next;
-                }
-
-                if (arg_count > 0 && ir_args[0]->type == IR_EXPR_VARIABLE) {
-                    const char* target_id = ((IRExprVariable*)ir_args[0])->name;
-                    void* potential_target = obj_registry_get(target_id);
-                    if (potential_target) {
-                        DEBUG_LOG(LOG_MODULE_RENDERER, "  Identified target object '%s' (%p).", target_id, potential_target);
-                        target_obj = potential_target;
-                        for(int i = 0; i < arg_count - 1; i++) ir_args[i] = ir_args[i+1];
-                        arg_count--;
-                    }
-                }
-
-                void* result = dynamic_lvgl_call_ir(func_name, target_obj, ir_args, arg_count);
-                if (var_to_assign) {
-                    if (result) {
-                        obj_registry_add(var_to_assign, result);
-                        new_obj_this_iter = result; // Track if it created a widget
-                        DEBUG_LOG(LOG_MODULE_RENDERER, "  Assigned and registered '%s' at %p", var_to_assign, result);
-                    } else {
-                        DEBUG_LOG(LOG_MODULE_RENDERER, "  Warning: Func call for var '%s' returned NULL.", var_to_assign);
-                    }
-                }
-                break;
-            }
-
-            case IR_STMT_BLOCK: {
-                IRStmtBlock* nested_block = (IRStmtBlock*)stmt_base;
-                lv_obj_t* parent_for_nested_block = last_created_widget_in_scope ? last_created_widget_in_scope : current_parent;
-                DEBUG_LOG(LOG_MODULE_RENDERER, "  NESTED_BLOCK: Recursing with new parent context %p.", (void*)parent_for_nested_block);
-                render_ir_block_recursive(nested_block, parent_for_nested_block, api_spec);
-                break;
-            }
-
-            case IR_STMT_COMMENT: break; // Ignore
-            default:
-                DEBUG_LOG(LOG_MODULE_RENDERER, "  Warning: Unhandled IR statement type: %d", stmt_base->type);
-                break;
+        } else {
+            ir_expr_list_add(&resolved_args, resolve_expr(ctx, prop->value));
         }
 
-        // If a widget was created by this statement, it becomes the context for the next statement (e.g., a child block)
-        if (new_obj_this_iter) {
-            last_created_widget_in_scope = new_obj_this_iter;
+        IRNode* arg_array[MAX_RENDER_ARGS];
+        int arg_count = 0;
+        IRExprNode* current_arg_node = resolved_args;
+        while(current_arg_node && arg_count < MAX_RENDER_ARGS) {
+            arg_array[arg_count++] = (IRNode*)current_arg_node->expr;
+            current_arg_node = current_arg_node->next;
         }
 
-        current_stmt_node = current_stmt_node->next;
+        dynamic_lvgl_call_ir(prop_def->setter, native_obj, arg_array, arg_count);
+        free_resolved_expr_list(resolved_args);
+
+        prop = prop->next;
+    }
+}
+
+static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
+    if (!obj) return;
+
+    // --- Handle 'use-view' ---
+    if (obj->json_type && strcmp(obj->json_type, "use-view") == 0) {
+        IRComponent* comp_def = ctx->ir_root->components;
+        while(comp_def && strcmp(comp_def->id, obj->use_view_component_id) != 0) {
+            comp_def = comp_def->next;
+        }
+        if (!comp_def) {
+            fprintf(stderr, "Renderer Error: Component '%s' not found.\n", obj->use_view_component_id);
+            return;
+        }
+
+        cJSON* new_context = cJSON_CreateObject();
+        IRProperty* ctx_prop = obj->use_view_context;
+        while(ctx_prop) {
+            IRExpr* resolved_ctx_val = resolve_expr(ctx, ctx_prop->value);
+            if (resolved_ctx_val && resolved_ctx_val->type == IR_EXPR_LITERAL) {
+                IRExprLiteral* lit = (IRExprLiteral*)resolved_ctx_val;
+                if (lit->is_string) cJSON_AddStringToObject(new_context, ctx_prop->name, lit->value);
+                else cJSON_AddNumberToObject(new_context, ctx_prop->name, strtod(lit->value, NULL));
+            }
+            ir_free((IRNode*)resolved_ctx_val);
+            ctx_prop = ctx_prop->next;
+        }
+        cJSON_AddItemToArray(ctx->context_stack, new_context);
+
+        // This is a simplification; a proper implementation would clone and merge IR
+        // before rendering. For now, we render the component's root directly and apply
+        // overrides from the 'use-view' node's properties.
+        render_object(ctx, comp_def->root_widget, parent_obj);
+
+        cJSON_DeleteItemFromArray(ctx->context_stack, cJSON_GetArraySize(ctx->context_stack) - 1);
+        return;
+    }
+
+    // --- Normal Object Creation ---
+    void* created_native_obj = NULL;
+    const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, obj->json_type);
+
+    if (widget_def && widget_def->create) {
+        created_native_obj = dynamic_lvgl_call_ir(widget_def->create, parent_obj, NULL, 0);
+    } else if (widget_def && widget_def->init_func) {
+        if (strcmp(widget_def->c_type, "lv_style_t") == 0) {
+            lv_style_t* style = malloc(sizeof(lv_style_t));
+            if (style) {
+                dynamic_lvgl_call_ir(widget_def->init_func, style, NULL, 0);
+                created_native_obj = style;
+            }
+        }
+    } else {
+        created_native_obj = dynamic_lvgl_call_ir("lv_obj_create", parent_obj, NULL, 0);
+    }
+
+    if (!created_native_obj) {
+        fprintf(stderr, "Renderer Error: Failed to create object of type '%s'.\n", obj->json_type);
+        return;
+    }
+
+    obj_registry_add(obj->c_name, created_native_obj);
+    if (obj->registered_id) {
+        obj_registry_add(obj->registered_id, created_native_obj);
+    }
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Created object '%s' (%s) at %p", obj->c_name, obj->json_type, created_native_obj);
+
+    render_properties(ctx, obj, created_native_obj);
+
+    IRWithBlock* wb = obj->with_blocks;
+    while(wb) {
+        IRExpr* resolved_target = resolve_expr(ctx, wb->target_expr);
+        void* with_target_obj = obj_registry_get(ir_node_get_string((IRNode*)resolved_target));
+        ir_free((IRNode*)resolved_target);
+        if (with_target_obj) {
+            // This is a simplification; we'd need to know the type of the 'with' target.
+            // Assume obj for now.
+            IRObject fake_ir_obj = {.json_type = "obj", .properties = wb->properties};
+            render_properties(ctx, &fake_ir_obj, with_target_obj);
+            if(wb->children_root) {
+                IRObject* child = wb->children_root->children;
+                while(child) {
+                    render_object(ctx, child, with_target_obj);
+                    child = child->next;
+                }
+            }
+        }
+        wb = wb->next;
+    }
+
+    IRObject* child = obj->children;
+    while (child) {
+        render_object(ctx, child, created_native_obj);
+        child = child->next;
+    }
+}
+
+
+static IRExpr* resolve_expr(RenderContext* ctx, IRExpr* expr) {
+    if (!expr) return NULL;
+
+    switch (expr->type) {
+        case IR_EXPR_CONTEXT_VAR: {
+            cJSON* stack = ctx->context_stack;
+            for (int i = cJSON_GetArraySize(stack) - 1; i >= 0; i--) {
+                cJSON* current_context = cJSON_GetArrayItem(stack, i);
+                cJSON* val_json = cJSON_GetObjectItem(current_context, ((IRExprContextVar*)expr)->name);
+                if (val_json) {
+                    if (cJSON_IsString(val_json)) return ir_new_expr_literal_string(val_json->valuestring);
+                    if (cJSON_IsNumber(val_json)) {
+                        char buf[32];
+                        snprintf(buf, sizeof(buf), "%g", val_json->valuedouble);
+                        return ir_new_expr_literal(buf);
+                    }
+                }
+            }
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Context var '%s' not found.", ((IRExprContextVar*)expr)->name);
+            return ir_new_expr_literal("NULL");
+        }
+
+        case IR_EXPR_FUNCTION_CALL: {
+            IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
+            IRExprNode* resolved_args = NULL;
+            int arg_count = 0;
+            for (IRExprNode* n = call->args; n != NULL; n = n->next) {
+                ir_expr_list_add(&resolved_args, resolve_expr(ctx, n->expr));
+                arg_count++;
+            }
+
+            IRNode* arg_array[MAX_RENDER_ARGS];
+            IRExprNode* current_arg_node = resolved_args;
+            for(int i = 0; i < arg_count; ++i) {
+                arg_array[i] = (IRNode*)current_arg_node->expr;
+                current_arg_node = current_arg_node->next;
+            }
+
+            void* result_ptr = dynamic_lvgl_call_ir(call->func_name, NULL, arg_array, arg_count);
+            free_resolved_expr_list(resolved_args);
+
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%ld", (intptr_t)result_ptr);
+            return ir_new_expr_literal(buf);
+        }
+
+        case IR_EXPR_LITERAL: {
+            IRExprLiteral* lit = (IRExprLiteral*)expr;
+            return lit->is_string ? ir_new_expr_literal_string(lit->value) : ir_new_expr_literal(lit->value);
+        }
+        case IR_EXPR_ENUM:
+            return ir_new_expr_enum(((IRExprEnum*)expr)->symbol, ((IRExprEnum*)expr)->value);
+        case IR_EXPR_REGISTRY_REF:
+            return ir_new_expr_registry_ref(((IRExprRegistryRef*)expr)->name);
+        case IR_EXPR_STATIC_STRING:
+            return ir_new_expr_static_string(((IRExprStaticString*)expr)->value);
+        case IR_EXPR_ARRAY: {
+            IRExprArray* arr = (IRExprArray*)expr;
+            IRExprNode* resolved_elements = NULL;
+            for(IRExprNode* n = arr->elements; n != NULL; n = n->next) {
+                ir_expr_list_add(&resolved_elements, resolve_expr(ctx, n->expr));
+            }
+            return ir_new_expr_array(resolved_elements);
+        }
+        default:
+             DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: cannot resolve unhandled expr type %d", expr->type);
+            return NULL;
+    }
+}
+
+static void free_resolved_expr_list(IRExprNode* head) {
+    IRExprNode* current = head;
+    while (current) {
+        IRExprNode* next = current->next;
+        ir_free((IRNode*)current->expr);
+        free(current);
+        current = next;
     }
 }

@@ -13,13 +13,16 @@ LVGL_DIR = $(PWD)/lvgl
 LVGL_BUILD_DIR = $(LVGL_DIR)/build
 LV_CONF_PATH = $(LVGL_DIR)/../viewer/lv_conf.h
 
+# Define the path to the LVGL static library
+LVGL_LIB = $(LVGL_BUILD_DIR)/lib/liblvgl.a
+
 SDL_LIBS = `pkg-config sdl2 -libs`
 SDL_CFLAGS = `pkg-config sdl2 -cflags`
 
 LVGL_INC = -I./lvgl/src
 
 CFLAGS = -Wall -g -std=c11 -I. $(INC_CJSON) -I./cJSON -D_GNU_SOURCE -I./lvgl -DLV_CONF_PATH='"$(LV_CONF_PATH)"' -DLV_BUILD_CONF_PATH='"$(LV_CONF_PATH)"' $(SDL_CFLAGS) $(LVGL_INC)
-LIBS = $(LIB_CJSON) -lm $(LVGL_BUILD_DIR)/lib/liblvgl.a $(SDL_LIBS)
+LIBS = $(LIB_CJSON) -lm $(LVGL_LIB) $(SDL_LIBS)
 
 TARGET = lvgl_ui_generator
 
@@ -43,17 +46,24 @@ CFLAGS += $(DYNAMIC_LVGL_CFLAGS)
 SOURCES = main.c api_spec.c ir.c registry.c generator.c codegen.c utils.c debug_log.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c lvgl_ui_renderer.c
 OBJECTS = $(SOURCES:.c=.o)
 
-$(TARGET): $(OBJECTS)
+# Main target rule now depends on the LVGL library
+$(TARGET): $(OBJECTS) $(LVGL_LIB)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
+
+# Rule to build the LVGL static library if it doesn't exist.
+# This rule is triggered because $(LVGL_LIB) is a prerequisite for $(TARGET).
+$(LVGL_LIB):
+	@echo "LVGL library not found or out of date. Building it..."
+	./build_lvgl.sh
 
 # Rule to generate dynamic_lvgl.h and dynamic_lvgl.c
 # These files depend on the Python script and the api_spec.json
 $(DYNAMIC_LVGL_H) $(DYNAMIC_LVGL_C): $(API_SPEC_GENERATOR_PY) $(API_SPEC_JSON)
 	@echo "Generating $(DYNAMIC_LVGL_H) and $(DYNAMIC_LVGL_C) with consolidation mode: $(CONSOLIDATION_MODE)"
 	python3 $(API_SPEC_GENERATOR_PY) $(API_SPEC_JSON) \
-		--consolidation-mode $(CONSOLIDATION_MODE) \
 		--header-out $(DYNAMIC_LVGL_H) \
 		--source-out $(DYNAMIC_LVGL_C)
+		#--consolidation-mode $(CONSOLIDATION_MODE) \
 
 # Ensure generated files are created before objects that depend on them are compiled.
 # Specifically, main.o or any other .o that might include dynamic_lvgl.h
@@ -72,5 +82,7 @@ run: $(TARGET)
 	@echo "Compiling $< with CFLAGS=$(CFLAGS)"
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Updated clean rule to also remove the LVGL build directory
 clean:
 	rm -f $(OBJECTS) $(TARGET) $(TEST_REGISTRY_BIN) $(TEST_GENERATOR_REGISTRY_STRINGS_BIN) $(TEST_GENERATOR_REGISTRY_POINTERS_BIN) $(DYNAMIC_LVGL_H) $(DYNAMIC_LVGL_C) $(DYNAMIC_LVGL_O)
+	# rm -rf $(LVGL_BUILD_DIR)

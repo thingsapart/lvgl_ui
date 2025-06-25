@@ -5,10 +5,14 @@ import argparse # For command-line arguments
 from collections import defaultdict
 
 # Global lists for ignoring functions
-IGNORE_FUNC_ARG_TYPE_SUFFIXES = ["_cb", "_cb_t", "_xcb_t"]
-IGNORE_FUNC_PREFIXES = []
+IGNORE_FUNC_ARG_TYPE_SUFFIXES = ["_cb", "_cb_t", "_xcb_t", "void*",
+                                 "_lv_display_t*"]
+IGNORE_FUNC_PREFIXES = ["lv_line_set_points"]
 IGNORE_FUNC_SUFFIXES = []
-IGNORE_ARG_TYPES = ["lv_cache_ops_t", "lv_draw_buf_handlers_t", "callback", "cmp_t", "cmp", "va_list"]
+IGNORE_ARG_TYPES = ["lv_cache_ops_t", "lv_draw_buf_handlers_t", "callback",
+                    "cmp_t", "cmp", "va_list", "lv_calendar_date_t", "void*",
+                    "void", "lv_color16_t", "lv_obj_point_transform_flag_t",
+                    "lv_style_value_t", "lv_ll_t*", "lv_indev_t*"]
 
 class LVGLApiParser:
     """
@@ -30,13 +34,13 @@ class LVGLApiParser:
         }
         # Pre-populate with known types
         self.widget_types = {'obj'}
-        self.object_types = {'style'}
+        self.object_types = {'style', 'anim', 'timer'}
         self.enum_type_names = set()
 
     def _get_type_str(self, type_info):
         """Recursively builds a string representation of a C type."""
         if not type_info:
-            return "unknown"
+            return "void*" # Default to void* if type info is missing
         if type_info.get('json_type') == 'ret_type':
             return self._get_type_str(type_info.get('type'))
         if type_info.get('name') == 'void' and 'pointer' not in type_info.get('json_type', ''):
@@ -48,7 +52,10 @@ class LVGLApiParser:
             suffix += '*'
             current = current.get('type', {})
 
-        base_name = current.get('name') or current.get('type', {}).get('name') or "anonymous"
+        base_name = current.get('name') or current.get('type', {}).get('name') or "void" # Default to void
+        if base_name == "anonymous": # Replace anonymous with a usable type
+            base_name = "void"
+
         base_name = base_name.replace(" const", "").strip()
         if "const " in base_name and suffix:
              base_name = base_name.replace("const ", "")
@@ -172,9 +179,8 @@ class LVGLApiParser:
 class CCodeGenerator:
     """Generates C header and source files for a dynamic LVGL function dispatcher."""
 
-    def __init__(self, translated_spec, consolidation_mode="typesafe"):
+    def __init__(self, translated_spec):
         self.spec = translated_spec
-        self.consolidation_mode = consolidation_mode
         self.functions = []
         self.archetypes = defaultdict(list)
         self.enum_types = set(self.spec['enums'].keys())
@@ -188,200 +194,77 @@ class CCodeGenerator:
             self.functions.append(info)
         self.functions.sort(key=lambda f: f['name'])
 
-    def _is_obj_ptr(self, type_str):
-        # Helper for typesafe mode
-        return type_str.startswith('lv_') and type_str.endswith('_t*') and type_str != 'lv_event_t*'
-
     def _is_wrappable(self, func_info):
         """Determines if a function can be automatically wrapped."""
         func_name = func_info.get('name', '')
         if not func_name: return False
 
-        # Check against global ignore lists for function names
-        for prefix in IGNORE_FUNC_PREFIXES:
-            if func_name.startswith(prefix):
-                return False
-        for suffix in IGNORE_FUNC_SUFFIXES:
-            if func_name.endswith(suffix):
-                return False
-
-        if '...' in str(func_info.get('args', [])): return False # Variadic functions
+        if func_name.startswith('lv_theme_'): return False
+        if any(func_name.startswith(p) for p in IGNORE_FUNC_PREFIXES): return False
+        if any(func_name.endswith(s) for s in IGNORE_FUNC_SUFFIXES): return False
+        if '...' in str(func_info.get('args', [])): return False # Variadic
 
         for arg in func_info.get('args', []):
             arg_type = arg.get('type', '')
-            if not arg_type: continue # Should not happen with valid spec
+            if not arg_type: continue
+            if arg_type in IGNORE_ARG_TYPES: return False
+            if any(arg_type.endswith(s) for s in IGNORE_FUNC_ARG_TYPE_SUFFIXES): return False
+            if '(*' in arg_type: return False
+            if arg_type == 'void*' or arg_type == 'const void*': return False
 
-            # Check against global ignore list for exact argument types
-            if arg_type in IGNORE_ARG_TYPES:
-                return False
-
-            # Check against global ignore list for argument type suffixes
-            for suffix in IGNORE_FUNC_ARG_TYPE_SUFFIXES:
-                if arg_type.endswith(suffix):
-                    return False
-
-            # Improved check for function pointers or types that might be function pointers
-            # LVGL typedefs for function pointers sometimes don't include '(*' directly in their name
-            # but are problematic. Suffix check handles many, but this is a fallback.
-            # Also, any type that is not a pointer and ends with _t but is not an enum or known simple type
-            # could be a struct passed by value, which we also want to avoid for now.
-            if '(*' in arg_type: return False # Explicit function pointers
-
-            # Filter out types that look like function pointer typedefs not caught by suffix,
-            # or structs passed by value that are not common/simple types.
-            # This is heuristic. A more robust way would be to have full typedef resolution.
-            if arg_type.endswith("_t") and not arg_type.startswith("lv_") and "*" not in arg_type:
-                # This could catch `callback_t`, `cmp_t` if they were named like that.
-                # The existing `callback` and `cmp` errors suggest these are direct names, not suffixed with _t.
-                # For now, rely on IGNORE_ARG_TYPES for non-suffixed problematic typedefs
-                pass # Revisit if needed, for now rely on IGNORE_ARG_TYPES for non-suffixed problematic typedefs
-
-            # Existing void* check for typesafe mode
-            if (arg_type == 'void*' or arg_type == 'const void*') and self.consolidation_mode == "typesafe":
-                return False
         return True
 
-    def _get_generalized_type_typesafe(self, c_type):
-        c_type_no_const = c_type.replace('const ', '').strip()
-
-        # Specific types for NULL checks
-        if c_type_no_const == 'lv_obj_t*': return 'LV_OBJ_T_PTR'
-        if c_type_no_const == 'lv_style_t*': return 'LV_STYLE_T_PTR'
-
-        if c_type_no_const in self.enum_types: return 'INT_LIKE'
-        if c_type_no_const.endswith('_t') and 'int' in c_type_no_const: return 'INT_LIKE'
-        if c_type_no_const in ['bool', 'char', 'short', 'int', 'long']: return 'INT_LIKE'
-        if c_type == 'const char*': return 'STRING'
-        if self._is_obj_ptr(c_type): return 'OBJ_PTR'
-        if c_type == 'lv_color_t': return 'COLOR'
-        if c_type.endswith('*'): return 'OTHER_PTR'
-        return 'INT_LIKE'
-
-    def _get_generalized_type_aggressive(self, c_type):
-        if c_type == "void": return "VOID"
-        c_type_no_const = c_type.replace('const ', '').strip()
-
-        # Specific types for NULL checks
-        if c_type_no_const == 'lv_obj_t*': return 'LV_OBJ_T_PTR'
-        if c_type_no_const == 'lv_style_t*': return 'LV_STYLE_T_PTR'
-
-        # 1. String pointers are special and directly represented in JSON/IR.
-        if c_type == 'const char*' or c_type == 'char*':
-            return 'STRING'
-
-        # 2. Other pointers refer to objects in the registry.
-        if c_type.endswith('*'):
-            return 'REGISTRY_PTR'
-
-        # 3. Non-pointer types
-        # c_type_no_const is already defined above
-        if c_type_no_const in self.enum_types: return 'INT_LIKE'
-        if c_type_no_const.endswith('_t') and 'int' in c_type_no_const: return 'INT_LIKE'
-        if c_type_no_const in ['bool', 'char', 'short', 'int', 'long']: return 'INT_LIKE'
-        if c_type == 'lv_color_t': return 'COLOR'
-
-        return 'INT_LIKE' # Default for primitives
-
-    def _get_generalized_type(self, c_type):
-        if self.consolidation_mode == "aggressive":
-            return self._get_generalized_type_aggressive(c_type)
-        else: # typesafe
-            return self._get_generalized_type_typesafe(c_type)
-
-    def _get_archetype_key_typesafe(self, func_info):
-        ret_type = func_info['return_type']
-        args = func_info['args']
-        has_target_obj = args and self._is_obj_ptr(args[0]['type'])
-        target_c_type = args[0]['type'] if has_target_obj else 'void'
-        arg_list = args[1:] if has_target_obj else args
-        generalized_arg_types = [self._get_generalized_type(arg['type']) for arg in arg_list]
-        return (ret_type, target_c_type, *generalized_arg_types)
-
-    def _get_archetype_key_aggressive(self, func_info):
-        generalized_ret_type = self._get_generalized_type(func_info['return_type'])
-        args = func_info['args']
-
-        # A function has a "target" if its first argument is a pointer to a registry object.
-        has_target = bool(args and self._get_generalized_type(args[0]['type']) in ['REGISTRY_PTR', 'LV_OBJ_T_PTR', 'LV_STYLE_T_PTR'])
-
-        arg_list = args[1:] if has_target else args
-        generalized_arg_types = [self._get_generalized_type(arg['type']) for arg in arg_list]
-
-        # Key: (return_type, has_target_object, ...arg_types)
-        return (generalized_ret_type, has_target, *generalized_arg_types)
-
     def _get_archetype_key(self, func_info):
-        if self.consolidation_mode == "aggressive":
-            return self._get_archetype_key_aggressive(func_info)
-        else: # typesafe
-            return self._get_archetype_key_typesafe(func_info)
+        """Generates a key representing the function's signature archetype."""
+        ret_type = func_info['return_type']
+        args = func_info.get('args', [])
+        # Treat any lv_..._t* as a potential target object.
+        has_target_obj = args and args[0]['type'].startswith('lv_') and args[0]['type'].endswith('_t*')
+
+        target_c_type = args[0]['type'] if has_target_obj else 'void*'
+        arg_list = args[1:] if has_target_obj else args
+
+        # Key: (return_type, target_obj_type, arg1_type, arg2_type, ...)
+        return (ret_type, target_c_type, *(arg['type'] for arg in arg_list))
 
     def analyze_archetypes(self):
+        """Groups all wrappable functions by their archetype key."""
         self.archetypes.clear()
         for func in self.functions:
             if self._is_wrappable(func):
                 key = self._get_archetype_key(func)
                 self.archetypes[key].append(func)
 
-    def _get_generalized_c_type(self, generalized_type):
-        if self.consolidation_mode == "aggressive":
-            return {
-                'VOID': 'void', 'INT_LIKE': 'intptr_t', 'STRING': 'const char*',
-                'REGISTRY_PTR': 'void*', 'COLOR': 'lv_color_t',
-                'LV_OBJ_T_PTR': 'lv_obj_t*', 'LV_STYLE_T_PTR': 'lv_style_t*',
-            }.get(generalized_type, 'intptr_t')
-        else: # typesafe
-            return {
-                'INT_LIKE': 'intptr_t', 'STRING': 'const char*', 'OBJ_PTR': 'lv_obj_t*',
-                'COLOR': 'lv_color_t', 'OTHER_PTR': 'void*',
-                'LV_OBJ_T_PTR': 'lv_obj_t*', 'LV_STYLE_T_PTR': 'lv_style_t*',
-            }.get(generalized_type, 'intptr_t')
-
-    def _get_parser_for_type(self, c_type, json_var, arg_index):
-        c_type_no_const = c_type.replace('const ', '').strip()
-        json_item = f'cJSON_GetArrayItem({json_var}, {arg_index})'
-
-        if c_type_no_const in self.enum_types:
-            return f'unmarshal_value({json_item}, "{c_type_no_const}")'
-
-        gen_type = self._get_generalized_type(c_type)
-        if gen_type == 'INT_LIKE':
-             c_cast = c_type_no_const if c_type_no_const != "bool" else "int"
-             return f'({c_cast})cJSON_GetNumberValue({json_item})'
-        if gen_type == 'STRING':
-            return f'({c_type})cJSON_GetStringValue({json_item})'
-        if gen_type == 'COLOR':
-             return f'lv_color_hex((uint32_t)cJSON_GetNumberValue({json_item}))'
-
-        if c_type.endswith('*'):
-             return f'({c_type})obj_registry_get(cJSON_GetStringValue({json_item}))'
-
-        return f'({c_type})cJSON_GetNumberValue({json_item})'
-
     def _get_parser_for_ir_node_type(self, c_type, ir_args_var, arg_index):
-        """Gets the C code snippet to parse an IRNode* into a C type."""
+        """Gets the C code snippet to parse an IRNode* into a C type, improving type safety."""
         c_type_no_const = c_type.replace('const ', '').strip()
         ir_node_accessor = f"{ir_args_var}[{arg_index}]"
 
         if c_type_no_const in self.enum_types:
-            return f"({c_type_no_const})ir_node_get_int_robust({ir_node_accessor}, \"{c_type_no_const}\")"
+            return f"({c_type_no_const})ir_node_get_int({ir_node_accessor})"
 
-        gen_type = self._get_generalized_type(c_type)
+        if c_type_no_const == 'bool':
+            return f"ir_node_get_bool({ir_node_accessor})"
 
-        if gen_type == 'INT_LIKE':
-            if c_type_no_const == "bool":
-                return f"(bool)ir_node_get_int({ir_node_accessor})"
-            else:
-                return f"({c_type_no_const})ir_node_get_int({ir_node_accessor})"
-        if gen_type == 'STRING':
-            return f"({c_type})ir_node_get_string({ir_node_accessor})"
-        if gen_type == 'COLOR':
+        if c_type == 'const char*':
+            return f"ir_node_get_string({ir_node_accessor})"
+
+        # Handle color structs. Assumes IR provides a number (e.g., from #RRGGBB being converted to 0xRRGGBB).
+        # if c_type_no_const in ['lv_color_t', 'lv_color16_t', 'lv_color32_t']:
+        # Need to break up lv_color_t, lv_color32_t - no conversion found for
+        # lv_color16_t, skipping for now.
+        if c_type_no_const in ['lv_color_t']:
             return f"lv_color_hex((uint32_t)ir_node_get_int({ir_node_accessor}))"
+        if c_type_no_const in ['lv_color32_t']:
+            return f"lv_color_to_32(lv_color_hex((uint32_t)ir_node_get_int({ir_node_accessor})), LV_OPA_COVER)"
 
         if c_type.endswith('*'):
-             return f"({c_type})obj_registry_get(ir_node_get_string({ir_node_accessor}))"
+            # Any other pointer type is assumed to be in the object registry.
+            return f"({c_type})obj_registry_get(ir_node_get_string({ir_node_accessor}))"
 
-        return f"({c_type})ir_node_get_int({ir_node_accessor})"
+        # Default for int, lv_coord_t, uint32_t, etc.
+        return f"({c_type_no_const})ir_node_get_int({ir_node_accessor})"
+
 
     def generate_files(self, header_path, source_path):
         self._write_header_file(header_path)
@@ -392,49 +275,34 @@ class CCodeGenerator:
             f.write(
 """/*
  * AUTO-GENERATED by generate_dynamic_lvgl_dispatch.py.
- * Consolidation: {mode}
  * DO NOT EDIT MANUALLY.
  */
 #ifndef DYNAMIC_LVGL_H
 #define DYNAMIC_LVGL_H
 
 #ifdef __cplusplus
-extern "C" {{
+extern "C" {
 #endif
 
+#include "lvgl.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "lvgl.h"
-#include "cJSON.h"
-
-#include "utils.h"
-
-#if defined(ENABLE_IR_INPUTS)
 typedef struct IRNode IRNode;
-#endif
 
+// --- Object Registry ---
+// A simple dynamic registry to map string IDs to created LVGL objects (widgets, styles, etc.).
 void obj_registry_init(void);
-""".format(mode=self.consolidation_mode))
-            obj_ptr_type = "lv_obj_t*" if self.consolidation_mode == "typesafe" else "void*"
-            f.write(f"void obj_registry_add(const char* id, {obj_ptr_type} obj);\n")
-            f.write(f"{obj_ptr_type} obj_registry_get(const char* id);\n")
-            f.write("void obj_registry_deinit(void);\n\n")
-            f.write("#if defined(ENABLE_CJSON_INPUTS)\n")
-            f.write(
-"""
-lv_obj_t* dynamic_lvgl_call_json(const char* func_name, {target_obj_type} target_obj, cJSON* args);
-int unmarshal_value(cJSON* value, const char* expected_enum_type_for_arg);
-""".format(target_obj_type=obj_ptr_type))
-            f.write("#endif // ENABLE_CJSON_INPUTS\n\n")
-            f.write("#if defined(ENABLE_IR_INPUTS)\n")
-            f.write(
-"""
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, {target_obj_type} target_obj, IRNode** ir_args, int arg_count);
-""".format(target_obj_type=obj_ptr_type))
-            f.write("#endif // ENABLE_IR_INPUTS\n\n")
-            f.write(
-"""
+void obj_registry_add(const char* id, void* obj);
+void* obj_registry_get(const char* id);
+void obj_registry_deinit(void);
+
+// --- Dynamic Dispatcher ---
+// Calls an LVGL function by name, with arguments provided as an array of IR nodes.
+// The renderer is responsible for resolving complex IR expressions (like context vars)
+// into simpler, self-contained IR nodes (literals, registry refs) before calling.
+lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count);
+
 #ifdef __cplusplus
 }
 #endif
@@ -447,366 +315,172 @@ lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, {target_obj_type} target_o
             f.write(
 """/*
  * AUTO-GENERATED by generate_dynamic_lvgl_dispatch.py.
- * Consolidation: {mode}
  * DO NOT EDIT MANUALLY.
  */
 #include "lvgl_dispatch.h"
+#include "ir.h"
+#include "utils.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 
-#if defined(ENABLE_IR_INPUTS)
-#include "ir.h"
-#endif
-
+typedef struct _lv_obj_t _lv_obj_t;
 typedef void (*generic_lvgl_func_t)(void);
-
-#if defined(ENABLE_CJSON_INPUTS)
-typedef lv_obj_t* (*lvgl_json_dispatcher_t)(generic_lvgl_func_t fn, {target_obj_type} target, cJSON* args);
-#endif
-#if defined(ENABLE_IR_INPUTS)
-typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, {target_obj_type} target, IRNode** ir_args, int arg_count);
-#endif
-
-""".format(mode=self.consolidation_mode,
-           target_obj_type="lv_obj_t*" if self.consolidation_mode == "typesafe" else "void*"))
+typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count);
+""")
 
             self.archetype_map = {}
+            # Generate forward declarations for all archetype dispatchers
             for i, key in enumerate(self.archetypes.keys()):
-                dispatcher_name_json = f"dispatch_json_archetype_{i}"
                 dispatcher_name_ir = f"dispatch_ir_archetype_{i}"
-                self.archetype_map[key] = (dispatcher_name_json, dispatcher_name_ir)
-                f.write(f"#if defined(ENABLE_CJSON_INPUTS)\n")
-                f.write(f"static lv_obj_t* {dispatcher_name_json}(generic_lvgl_func_t fn, {'lv_obj_t*' if self.consolidation_mode == 'typesafe' else 'void*'} target, cJSON* args);\n")
-                f.write(f"#endif\n")
-                f.write(f"#if defined(ENABLE_IR_INPUTS)\n")
-                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, {'lv_obj_t*' if self.consolidation_mode == 'typesafe' else 'void*'} target, IRNode** ir_args, int arg_count);\n")
-                f.write(f"#endif\n\n")
+                self.archetype_map[key] = dispatcher_name_ir
+                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count);\n")
 
             f.write("\n// --- Archetype Dispatcher Implementations ---\n")
 
+            # Generate implementation for each archetype dispatcher
             for i, (key, func_list) in enumerate(self.archetypes.items()):
-                dispatcher_name_json, dispatcher_name_ir = self.archetype_map[key]
+                dispatcher_name_ir = self.archetype_map[key]
+                ret_type, target_c_type, *arg_types = key
                 first_func = func_list[0]
 
-                # Determine target type and original arguments for comment generation
-                # This logic mirrors what's used later for the actual C code generation
-                # to ensure consistency in how the signature is derived.
-                original_args_for_comment = []
-                target_c_type_for_comment = "void*" # Default for aggressive or no target
+                f.write(f"// Archetype for {len(func_list)} functions like: {first_func['name']}\n")
+                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count) {{\n")
 
-                if self.consolidation_mode == "typesafe":
-                    _, target_c_type_key_comment, *_ = key
-                    target_c_type_for_comment = target_c_type_key_comment
-                    if target_c_type_key_comment != 'void' and first_func['args']:
-                        original_args_for_comment = first_func['args'][1:]
-                    else:
-                        original_args_for_comment = first_func['args']
-                else: # aggressive
-                    _, has_target_key_comment, *_ = key
-                    if has_target_key_comment and first_func['args']:
-                        target_c_type_for_comment = first_func['args'][0]['type'] # Use actual type of first arg
-                        original_args_for_comment = first_func['args'][1:]
-                    else:
-                        target_c_type_for_comment = "void*" # No distinct target, or void target
-                        original_args_for_comment = first_func['args']
-
-                # Construct C-like signature for comment
-                comment_ret_type = first_func['return_type']
-                comment_arg_parts = []
-                if target_c_type_for_comment != "void*": # If there's a specific target type for the first param
-                    comment_arg_parts.append(f"{target_c_type_for_comment} target")
-                elif self.consolidation_mode == "aggressive" and key[1]: # has_target for aggressive uses generic void* target
-                     comment_arg_parts.append(f"void* target_voidp")
-
-
-                for k_idx, arg_detail in enumerate(original_args_for_comment):
-                    # Handle case where arg_detail might be just a type string if 'args' was minimal
-                    arg_type_str = arg_detail.get('type', 'unknown_type') if isinstance(arg_detail, dict) else str(arg_detail)
-                    arg_name_str = arg_detail.get('name', f'arg{k_idx}') if isinstance(arg_detail, dict) else f'arg{k_idx}'
-                    comment_arg_parts.append(f"{arg_type_str} {arg_name_str}")
-
-                param_list_for_comment = ", ".join(comment_arg_parts) if comment_arg_parts else "void"
-                archetype_c_signature_comment = f"{comment_ret_type} archetype_func({param_list_for_comment})"
-
-                f.write(f"// Archetype C Signature Example: {archetype_c_signature_comment}\n")
-                f.write(f"// Dispatcher for {len(func_list)} LVGL function(s) including: {first_func['name']}\n")
-                if len(func_list) > 1:
-                    f.write(f"// Consolidated functions ({len(func_list)} total):\n")
-                    for func_info_item in sorted(func_list, key=lambda x: x['name']): # Sort for consistent output
-                        f.write(f"//   - {func_info_item['name']}\n")
-                f.write("\n")
-
-
-                # Original logic for determining target_param_type_c and original_args for C code generation
-                if self.consolidation_mode == "typesafe":
-                    ret_type, target_c_type_key, *generalized_arg_types_key = key
-                    original_args = (first_func['args'][1:] if target_c_type_key != 'void' else first_func['args'])
-                    target_param_type_c = target_c_type_key
-                    target_param_name = "target"
-                else: # aggressive
-                    generalized_ret_type_key, has_target_key, *generalized_arg_types_key = key
-                    ret_type = first_func['return_type']
-                    original_args = (first_func['args'][1:] if has_target_key else first_func['args'])
-                    target_param_type_c = "void*"
-                    target_param_name = "target_voidp"
-
-                f.write(f"#if defined(ENABLE_CJSON_INPUTS)\n")
-                f.write(f"static lv_obj_t* {dispatcher_name_json}(generic_lvgl_func_t fn, {target_param_type_c} {target_param_name}, cJSON* args) {{\n")
-                for j, arg_info in enumerate(original_args):
-                    actual_c_type = arg_info['type']
-                    generalized_type = generalized_arg_types_key[j]
-                    var_c_type = self._get_generalized_c_type(generalized_type)
-                    parser_code = self._get_parser_for_type(actual_c_type, 'args', j)
-                    f.write(f"    {var_c_type} arg{j} = {parser_code};\n")
-
-                    if generalized_type in ['LV_OBJ_T_PTR', 'LV_STYLE_T_PTR']:
-                        f.write(f'    if(!arg{j}) {{\n')
-                        f.write(f'        LV_LOG_ERROR("Argument {j} ({actual_c_type}) is NULL for function like {first_func["name"]}.");\n')
-                        f.write(f'        return NULL;\n')
-                        f.write(f'    }}\n')
-
-                c_call_arg_types = [first_func['args'][0]['type']] if (original_args != first_func['args'] and first_func['args']) else []
-                c_call_arg_types.extend([arg['type'] for arg in original_args])
-                f.write(f"    typedef {ret_type} (*specific_func_t)({', '.join(c_call_arg_types) if c_call_arg_types else 'void'});\n")
-                call_params = [target_param_name] if (original_args != first_func['args'] and first_func['args']) else []
-                for j, arg_info in enumerate(original_args):
-                    call_params.append(f"({arg_info['type']})arg{j}")
-                call_str = f"((specific_func_t)fn)({', '.join(call_params)})"
-                if ret_type == "void":
-                    f.write(f"    {call_str};\n    return NULL;\n")
-                elif self._is_obj_ptr(ret_type) or (self.consolidation_mode == "aggressive" and self._get_generalized_type(ret_type) == "REGISTRY_PTR"):
-                    f.write(f"    return (lv_obj_t*){call_str};\n")
-                else:
-                    f.write(f"    (void){call_str};\n    return NULL;\n")
-                f.write("}\n")
-                f.write(f"#endif // ENABLE_CJSON_INPUTS\n\n")
-
-                f.write(f"#if defined(ENABLE_IR_INPUTS)\n")
-                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, {target_param_type_c} {target_param_name}, IRNode** ir_args, int arg_count) {{\n")
-                num_expected_ir_args = len(original_args)
-                f.write(f"    if (arg_count != {num_expected_ir_args}) {{\n")
-                f.write(f"        LV_LOG_WARN(\"IR call to {first_func['name']}: expected {num_expected_ir_args} args, got %d\", arg_count);\n")
+                num_expected_args = len(arg_types)
+                f.write(f"    if (arg_count != {num_expected_args}) {{\n")
+                f.write(f"        LV_LOG_WARN(\"IR call to {first_func['name']}-like function: expected {num_expected_args} args, got %d\", arg_count);\n")
                 f.write(f"        return NULL;\n")
                 f.write(f"    }}\n\n")
-                for j, arg_info in enumerate(original_args):
-                    actual_c_type = arg_info['type']
-                    generalized_type = generalized_arg_types_key[j]
-                    var_c_type = self._get_generalized_c_type(generalized_type)
-                    parser_code = self._get_parser_for_ir_node_type(actual_c_type, 'ir_args', j)
-                    f.write(f"    {var_c_type} arg{j};\n")
-                    f.write(f"    IRNode* current_ir_arg{j} = ir_args[{j}];\n")
-                    f.write(f"    if (!current_ir_arg{j}) {{\n")
-                    f.write(f"        LV_LOG_ERROR(\"IR call to {first_func['name']}: arg {j} is NULL\");\n")
-                    f.write(f"        return NULL;\n")
-                    f.write(f"    }}\n")
-                    f.write(f"    arg{j} = {parser_code};\n")
 
-                    if generalized_type in ['LV_OBJ_T_PTR', 'LV_STYLE_T_PTR']:
-                        f.write(f'    if(!arg{j}) {{\n')
-                        f.write(f'        LV_LOG_ERROR("Argument {j} ({actual_c_type}) is NULL for function like {first_func["name"]}.");\n')
-                        f.write(f'        return NULL;\n')
-                        f.write(f'    }}\n')
-                    f.write(f"\n")
+                # Argument parsing
+                for j, c_type in enumerate(arg_types):
+                    parser_code = self._get_parser_for_ir_node_type(c_type, 'ir_args', j)
+                    f.write(f"    {c_type} arg{j} = {parser_code};\n")
 
-                c_call_arg_types_ir = [first_func['args'][0]['type']] if (original_args != first_func['args'] and first_func['args']) else []
-                c_call_arg_types_ir.extend([arg['type'] for arg in original_args])
-                f.write(f"    typedef {ret_type} (*specific_func_t)({', '.join(c_call_arg_types_ir) if c_call_arg_types_ir else 'void'});\n")
-                call_params_ir = [target_param_name] if (original_args != first_func['args'] and first_func['args']) else []
-                for j, arg_info in enumerate(original_args):
-                    call_params_ir.append(f"({arg_info['type']})arg{j}")
-                call_str_ir = f"((specific_func_t)fn)({', '.join(call_params_ir)})"
+                # Typedef for the specific function pointer
+                c_call_arg_types = [target_c_type] if target_c_type != 'void*' else []
+                c_call_arg_types.extend(arg_types)
+                f.write(f"    typedef {ret_type} (*specific_func_t)({', '.join(c_call_arg_types) if c_call_arg_types else 'void'});\n")
+
+                # Function call
+                call_params = [f"({target_c_type})target"] if target_c_type != 'void*' else []
+                call_params.extend(f"arg{j}" for j in range(len(arg_types)))
+                call_str = f"((specific_func_t)fn)({', '.join(call_params)})"
+
                 if ret_type == "void":
-                    f.write(f"    {call_str_ir};\n    return NULL;\n")
-                elif self._is_obj_ptr(ret_type) or \
-                     (self.consolidation_mode == "aggressive" and self._get_generalized_type(ret_type) in ["REGISTRY_PTR", "LV_OBJ_T_PTR"]):
-                    f.write(f"    return (lv_obj_t*){call_str_ir};\n")
-                else:
-                    f.write(f"    (void){call_str_ir};\n")
-                    f.write(f"    return NULL;\n")
-                f.write("}\n")
-                f.write(f"#endif // ENABLE_IR_INPUTS\n\n")
-            # End of the for loop 'for i, (key, func_list) in enumerate(self.archetypes.items()):'
+                    f.write(f"    {call_str};\n    return NULL;\n")
+                elif ret_type.endswith('*'): # Assume any pointer return can be a lv_obj_t* for chaining
+                    f.write(f"    return (lv_obj_t*){call_str};\n")
+                else: # Non-pointer return, not chainable
+                    f.write(f"    (void){call_str};\n    return NULL;\n")
 
-            # The following code (Function Registry, Dispatch Logic, Object Registry)
-            # is now correctly placed within _write_source_file, but after the archetype generation loop.
-            obj_ptr_type_c = "lv_obj_t*" if self.consolidation_mode == "typesafe" else "void*"
+                f.write("}\n\n")
 
-            # Define the C code block as a separate variable first for clarity
-            # and to make it easier to manage braces.
-            # All { and } characters that are part of the C code must be doubled (e.g. {{ or }})
-            # if this were an f-string. However, since we are using .format() and only
-            # substituting target_obj_type, literal C braces should be fine as long as they
-            # don't accidentally form a placeholder name that .format() tries to find.
-            # The error indicates a multi-line C string part is being seen as a key.
-            # This often happens with .format if there's an unmatched brace *or* if a line
-            # in the string *starts* with a brace in a way that confuses the parser,
-            # especially with complex multi-line strings.
-            # A safer way is to ensure NO C-code braces are at the very start of a new line
-            # within the triple-quoted string, or to use f-string and {{ }} for all C braces.
-            # For now, let's try to make the current .format() call more robust.
-            # The issue might be that the string itself contains what .format thinks is a placeholder.
-
-            c_code_後半 = """
-// --- Function Registry ---
-typedef struct {{
+            # --- Function Registry and Main Dispatcher ---
+            f.write(
+"""
+typedef struct {
     const char* name;
-#if defined(ENABLE_CJSON_INPUTS)
-    lvgl_json_dispatcher_t json_dispatcher;
-#endif
-#if defined(ENABLE_IR_INPUTS)
     lvgl_ir_dispatcher_t ir_dispatcher;
-#endif
     generic_lvgl_func_t func_ptr;
-}} FunctionMapping;
+} FunctionMapping;
 
-static const FunctionMapping function_registry[] = {{
-    {registry_entries_str}
-}};
+// This array is sorted by name for bsearch
+static const FunctionMapping function_registry[] = {
+""")
+            # Generate registry entries
+            registry_entries = []
+            for key, funcs in self.archetypes.items():
+                dispatcher_name = self.archetype_map[key]
+                for func in funcs:
+                    registry_entries.append(
+                        f'    {{"{func["name"]}", {dispatcher_name}, (generic_lvgl_func_t){func["name"]}}}'
+                    )
 
-// --- Dispatch Logic ---
-static int compare_func_mappings(const void* a, const void* b) {{
+            registry_entries.sort()
+            f.write(",\n".join(registry_entries))
+            f.write("\n};\n\n")
+
+            f.write(
+"""
+static int compare_func_mappings(const void* a, const void* b) {
     return strcmp((const char*)a, ((const FunctionMapping*)b)->name);
-}}
+}
 
-#if defined(ENABLE_CJSON_INPUTS)
-lv_obj_t* dynamic_lvgl_call_json(const char* func_name, {target_obj_type} target_obj, cJSON* args) {{
+lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count) {
     if (!func_name) return NULL;
     const FunctionMapping* mapping = (const FunctionMapping*)bsearch(
         func_name, function_registry,
         sizeof(function_registry) / sizeof(FunctionMapping),
         sizeof(FunctionMapping), compare_func_mappings
     );
-    if (mapping && mapping->json_dispatcher) {{
-        return mapping->json_dispatcher(mapping->func_ptr, target_obj, args);
-    }}
-    LV_LOG_WARN("Dynamic LVGL JSON call failed: function '%s' not found or dispatcher missing.", func_name);
-    return NULL;
-}}
-#endif // ENABLE_CJSON_INPUTS
-
-#if defined(ENABLE_IR_INPUTS)
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, {target_obj_type} target_obj, IRNode** ir_args, int arg_count) {{
-    if (!func_name) return NULL;
-    const FunctionMapping* mapping = (const FunctionMapping*)bsearch(
-        func_name, function_registry,
-        sizeof(function_registry) / sizeof(FunctionMapping),
-        sizeof(FunctionMapping), compare_func_mappings
-    );
-    if (mapping && mapping->ir_dispatcher) {{
+    if (mapping && mapping->ir_dispatcher) {
         return mapping->ir_dispatcher(mapping->func_ptr, target_obj, ir_args, arg_count);
-    }}
+    }
     LV_LOG_WARN("Dynamic LVGL IR call failed: function '%s' not found or dispatcher missing.", func_name);
     return NULL;
-}}
-#endif // ENABLE_IR_INPUTS
+}
 
 // --- Simple Object Registry Implementation ---
 #ifndef DYNAMIC_LVGL_MAX_OBJECTS
 #define DYNAMIC_LVGL_MAX_OBJECTS 256
 #endif
 
-typedef struct {{
+typedef struct {
     char* id;
-    {target_obj_type} obj;
-}} ObjectEntry;
+    void* obj;
+} ObjectEntry;
 
 static ObjectEntry obj_registry[DYNAMIC_LVGL_MAX_OBJECTS];
 static int obj_registry_count = 0;
 
-void obj_registry_init(void) {{
+void obj_registry_init(void) {
     obj_registry_count = 0;
     memset(obj_registry, 0, sizeof(obj_registry));
-}}
+}
 
-void obj_registry_add(const char* id, {target_obj_type} obj) {{
-    if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS || !id) {{
+void obj_registry_add(const char* id, void* obj) {
+    if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS || !id) {
         LV_LOG_WARN("Cannot add object to registry: full or null ID");
         return;
-    }}
-    for (int i = 0; i < obj_registry_count; i++) {{
-        if (strcmp(obj_registry[i].id, id) == 0) {{
-            obj_registry[i].obj = obj;
+    }
+    for (int i = 0; i < obj_registry_count; i++) {
+        if (strcmp(obj_registry[i].id, id) == 0) {
+            obj_registry[i].obj = obj; // Update existing entry
             return;
-        }}
-    }}
+        }
+    }
     obj_registry[obj_registry_count].id = strdup(id);
     obj_registry[obj_registry_count].obj = obj;
     obj_registry_count++;
-}}
+}
 
-{target_obj_type} obj_registry_get(const char* id) {{
+void* obj_registry_get(const char* id) {
     if (!id) return NULL;
-    if (strcmp(id, "SCREEN_ACTIVE") == 0) return ({target_obj_type})lv_screen_active();
+    if (strcmp(id, "SCREEN_ACTIVE") == 0) return (void*)lv_screen_active();
     if (strcmp(id, "NULL") == 0) return NULL;
 
-    for (int i = 0; i < obj_registry_count; i++) {{
-        if (strcmp(obj_registry[i].id, id) == 0) {{
+    for (int i = 0; i < obj_registry_count; i++) {
+        if (strcmp(obj_registry[i].id, id) == 0) {
             return obj_registry[i].obj;
-        }}
-    }}
-    LV_LOG_WARN("Object with ID '%s' not found.", id);
+        }
+    }
+    LV_LOG_WARN("Object with ID '%s' not found in registry.", id);
     return NULL;
-}}
+}
 
-void obj_registry_deinit(void) {{
-    for (int i = 0; i < obj_registry_count; i++) {{
+void obj_registry_deinit(void) {
+    for (int i = 0; i < obj_registry_count; i++) {
         if(obj_registry[i].id) free(obj_registry[i].id);
-    }}
+    }
     obj_registry_init();
-}}
-
-#if defined(ENABLE_IR_INPUTS)
-// Helper functions for IRNode access (ir_node_get_int, ir_node_get_string, ir_node_get_int_robust)
-// are now defined in ir.c and declared in ir.h.
-// The #include "ir.h" is added near the top of the generated C file.
-#endif // ENABLE_IR_INPUTS
-"""
-            registry_entries = []
-            for key, func_list_val in self.archetypes.items():
-                dispatcher_name_json_val, dispatcher_name_ir_val = self.archetype_map[key]
-                for func_info_val in func_list_val:
-                    # Start with the function name
-                    lines = [f'        /* name */ "{func_info_val["name"]}"']
-
-                    # Conditionally add json_dispatcher
-                    lines.append("#if defined(ENABLE_CJSON_INPUTS)")
-                    lines.append(f'        , /* json_dispatcher */ {dispatcher_name_json_val}')
-                    lines.append("#endif /* ENABLE_CJSON_INPUTS */")
-
-                    # Conditionally add ir_dispatcher
-                    lines.append("#if defined(ENABLE_IR_INPUTS)")
-                    lines.append(f'        , /* ir_dispatcher */ {dispatcher_name_ir_val}')
-                    lines.append("#endif /* ENABLE_IR_INPUTS */")
-
-                    # Add the actual function pointer
-                    lines.append(f'        , /* func_ptr */ (generic_lvgl_func_t){func_info_val["name"]}')
-
-                    entry_str = "    {\n" + "\n".join(lines) + "\n    }"
-                    registry_entries.append(entry_str)
-
-            # Sort entries alphabetically by function name for consistent output and efficient bsearch.
-            # We need to extract the function name from the generated string for sorting.
-            def get_func_name_from_entry(entry_c_code):
-                match = re.search(r'"(lv_[^"]+)"', entry_c_code)
-                return match.group(1) if match else ""
-
-            registry_entries.sort(key=get_func_name_from_entry)
-            registry_entries_str = ",\n    ".join(registry_entries)
-            if not registry_entries_str:
-                registry_entries_str = "// No functions in registry"
-
-            f.write(c_code_後半.format(
-                registry_entries_str=registry_entries_str,
-                target_obj_type=obj_ptr_type_c
-            ))
+}
+""")
 
 def main():
     arg_parser = argparse.ArgumentParser(description="Generate dynamic LVGL dispatcher C code.")
     arg_parser.add_argument("api_spec_path", help="Path to the LVGL API spec JSON file (e.g., api_spec.json)")
-    arg_parser.add_argument("--consolidation-mode", choices=["typesafe", "aggressive"],
-                            default="typesafe", help="Function consolidation strategy.")
-    arg_parser.add_argument("--output-json", action="store_true", help="Output the parsed API spec as JSON to stdout instead of generating C code.")
     arg_parser.add_argument("--header-out", default="lvgl_dispatch.h", help="Output path for the generated C header file.")
     arg_parser.add_argument("--source-out", default="lvgl_dispatch.c", help="Output path for the generated C source file.")
 
@@ -825,14 +499,10 @@ def main():
     parser = LVGLApiParser(api_spec_json)
     translated_spec = parser.parse()
 
-    if args.output_json:
-        json.dump(translated_spec, sys.stdout, indent=2)
-        sys.exit(0)
+    print(f"--- C Code Generation ---", file=sys.stderr)
+    generator = CCodeGenerator(translated_spec)
 
-    print(f"--- C Code Generation (Mode: {args.consolidation_mode}) ---", file=sys.stderr)
-    generator = CCodeGenerator(translated_spec, consolidation_mode=args.consolidation_mode)
-
-    print(f"Analyzing function archetypes with {args.consolidation_mode} grouping...", file=sys.stderr)
+    print(f"Analyzing function archetypes...", file=sys.stderr)
     generator.analyze_archetypes()
     print(f"Found {len(generator.archetypes)} unique function archetypes.", file=sys.stderr)
 

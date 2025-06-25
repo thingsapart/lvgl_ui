@@ -31,6 +31,7 @@
     "type": "obj",
     "id": "main_view",
     "named": "v_main_view",
+    "size": ["100%", "100%"],
     "children": [
       {
         "type": "label",
