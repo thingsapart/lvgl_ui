@@ -21,8 +21,8 @@ typedef struct {
 // --- Forward Declarations ---
 static IRObject* process_ui_node(GenContext* ctx, cJSON* node_json, const char* default_obj_type, cJSON* ui_context);
 static IRProperty* process_properties(GenContext* ctx, cJSON* props_json, cJSON* ui_context, const char* obj_type_for_api_lookup);
-static IRWithBlock* process_with_blocks(GenContext* ctx, cJSON* with_json, cJSON* ui_context);
-static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* prop_name);
+static IRWithBlock* process_with_blocks(GenContext* ctx, cJSON* with_json, cJSON* ui_context); // Reverted: obj_type_for_with_target_prop_lookup not needed
+static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* obj_type, const char* prop_name); // Added obj_type
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
 static bool parse_enum_value_from_json(const cJSON* enum_member_json, intptr_t* out_value);
@@ -189,6 +189,9 @@ static IRObject* process_ui_node(GenContext* ctx, cJSON* node_json, const char* 
     ir_obj->properties = process_properties(ctx, node_json, effective_context, json_type);
 
     // Process 'with' blocks
+    // Pass json_type (type of the current object obj) to process_with_blocks,
+    // so it can pass it to unmarshal_value if context vars are resolved there.
+    // However, for the direct target of 'with obj:', that obj_type is not json_type.
     ir_obj->with_blocks = process_with_blocks(ctx, cJSON_GetObjectItem(node_json, "with"), effective_context);
 
     // Process children
@@ -221,12 +224,12 @@ static IRProperty* process_properties(GenContext* ctx, cJSON* props_json, cJSON*
         if (strcmp(prop_name, "type") == 0 || strcmp(prop_name, "id") == 0 ||
             strcmp(prop_name, "named") == 0 || strcmp(prop_name, "children") == 0 ||
             strcmp(prop_name, "with") == 0 || strcmp(prop_name, "context") == 0 ||
-            strcmp(prop_name, "root") == 0) {
+            strcmp(prop_name, "root") == 0 || strcmp(prop_name, "//") == 0) { // Added "//"
             prop_json = prop_json->next;
             continue;
         }
 
-        IRExpr* value_expr = unmarshal_value(ctx, prop_json, ui_context, prop_name);
+        IRExpr* value_expr = unmarshal_value(ctx, prop_json, ui_context, obj_type_for_api_lookup, prop_name); // Pass obj_type_for_api_lookup
         if (value_expr) {
             IRProperty* new_prop = ir_new_property(prop_name, value_expr);
             ir_property_list_add(&head, new_prop);
@@ -236,7 +239,7 @@ static IRProperty* process_properties(GenContext* ctx, cJSON* props_json, cJSON*
     return head;
 }
 
-static IRWithBlock* process_with_blocks(GenContext* ctx, cJSON* with_json, cJSON* ui_context) {
+static IRWithBlock* process_with_blocks(GenContext* ctx, cJSON* with_json, cJSON* ui_context) { // Signature reverted
     if (!with_json) return NULL;
 
     IRWithBlock* head = NULL;
@@ -249,8 +252,9 @@ static IRWithBlock* process_with_blocks(GenContext* ctx, cJSON* with_json, cJSON
             cJSON* do_block_json = cJSON_GetObjectItem(current_with_object, "do");
 
             if (obj_expr_json && do_block_json) {
-                IRExpr* target_expr = unmarshal_value(ctx, obj_expr_json, ui_context, "with.obj");
-                IRProperty* props = process_properties(ctx, do_block_json, ui_context, "obj");
+                // For "with.obj", the obj_type is not the containing widget's type. Use "obj" as generic.
+                IRExpr* target_expr = unmarshal_value(ctx, obj_expr_json, ui_context, "obj", "with.obj");
+                IRProperty* props = process_properties(ctx, do_block_json, ui_context, "obj"); // Properties in "do" apply to an "obj"
 
                 IRObject* with_children_root = NULL;
                 cJSON* children_json = cJSON_GetObjectItem(do_block_json, "children");
@@ -279,25 +283,29 @@ static IRWithBlock* process_with_blocks(GenContext* ctx, cJSON* with_json, cJSON
     return head;
 }
 
-
-static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* prop_name) {
+// Added obj_type parameter
+static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context, const char* obj_type, const char* prop_name) {
     if (!value) return ir_new_expr_literal("NULL");
 
     if (cJSON_IsString(value)) {
         const char* s = value->valuestring;
         size_t len = strlen(s);
 
+        // Handle special prefixes first, as they override type checking for the property
         if (s[0] == '$' && s[1] != '\0') {
             cJSON* ctx_val = ui_context ? cJSON_GetObjectItem(ui_context, s + 1) : NULL;
             if (ctx_val) {
-                return unmarshal_value(ctx, ctx_val, ui_context, prop_name);
+                // When resolving a context variable, the obj_type and prop_name context might change.
+                // However, for now, we pass the original obj_type and a generic "context_resolved_value" as prop_name.
+                // This is a simplification; a more robust system might need to track the type of the context var.
+                return unmarshal_value(ctx, ctx_val, ui_context, obj_type, "context_resolved_value");
             }
             return ir_new_expr_context_var(s + 1);
         }
-        if (s[0] == '@') return ir_new_expr_registry_ref(s + 1);
+        if (s[0] == '@') return ir_new_expr_registry_ref(s); // Keep the '@'
         if (s[0] == '!') return ir_new_expr_static_string(s + 1);
 
-        if (s[0] == '#') {
+        if (s[0] == '#') { // Hex color
             long hex_val = strtol(s + 1, NULL, 16);
             char hex_str_arg[32];
             snprintf(hex_str_arg, sizeof(hex_str_arg), "0x%06lX", hex_val);
@@ -305,7 +313,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
             ir_expr_list_add(&args, ir_new_expr_literal(hex_str_arg));
             return ir_new_expr_func_call("lv_color_hex", args);
         }
-        if (len > 0 && s[len - 1] == '%') {
+        if (len > 0 && s[len - 1] == '%') { // Percentage
             char* temp_s = strdup(s);
             if (!temp_s) return NULL;
             temp_s[len - 1] = '\0';
@@ -317,9 +325,29 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
             return ir_new_expr_func_call("lv_pct", args);
         }
 
-        if (api_spec_is_global_enum_member(ctx->api_spec, s) || api_spec_is_constant(ctx->api_spec, s)) {
+        // If no prefix matched, attempt to interpret as enum or constant
+        const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, obj_type, prop_name);
+        if (!prop_def && obj_type && strcmp(obj_type, "obj") != 0) {
+            // If prop_def not found for the specific obj_type (e.g., "base_widget"),
+            // try finding it for the generic "obj" type. This helps resolve common properties.
+            prop_def = api_spec_find_property(ctx->api_spec, "obj", prop_name);
+        }
+
+        if (prop_def && prop_def->expected_enum_type) {
+            // Property expects a specific enum type
+            if (api_spec_is_enum_member(ctx->api_spec, prop_def->expected_enum_type, s)) {
+                return ir_new_expr_enum(s, 0); // Value 0 is placeholder, symbol 's' is used by codegen
+            } else {
+                // Invalid member for the expected enum type. Default to 0.
+                fprintf(stderr, "Warning: Invalid enum member '%s' for property '%s' (expected type '%s'). Defaulting to 0 for object type '%s'.\n", s, prop_name, prop_def->expected_enum_type, obj_type);
+                return ir_new_expr_literal("0");
+            }
+        } else if (api_spec_is_global_enum_member(ctx->api_spec, s) || api_spec_is_constant(ctx->api_spec, s)) {
+            // It's a known global enum/constant, not specifically expected by this property, or prop_def is still NULL.
             return ir_new_expr_enum(s, 0);
         }
+
+        // Default: treat as a literal string if no other interpretation fits
         return ir_new_expr_literal_string(s);
     }
     if (cJSON_IsNumber(value)) {
@@ -337,7 +365,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
         IRExprNode* elements = NULL;
         cJSON* elem_json;
         cJSON_ArrayForEach(elem_json, value) {
-            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, prop_name));
+            // For array elements, the relevant obj_type is the one owning the array property.
+            // The prop_name also remains the same (name of the array property).
+            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, obj_type, prop_name));
         }
         return ir_new_expr_array(elements);
     }
@@ -350,10 +380,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, cJSON* ui_context,
                 if(cJSON_IsArray(args_item)) {
                     cJSON* arg_json;
                     cJSON_ArrayForEach(arg_json, args_item) {
-                        ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context, "call.args"));
+                        // For function arguments, obj_type is not directly applicable for prop_def lookup.
+                        // Pass NULL for obj_type, and "call.args[]" as prop_name.
+                        ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context, NULL, "call.args[]"));
                     }
                 } else {
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, args_item, ui_context, "call.args"));
+                     // Pass NULL for obj_type, and "call.args" as prop_name.
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, args_item, ui_context, NULL, "call.args"));
                 }
             }
             return ir_new_expr_func_call(call_item->valuestring, args_list);

@@ -2,8 +2,6 @@
     {
         "type": "base_widget",
         "named": "widget2",
-        "properties": {
-            "align": "OTHER_ENUM_VAL1"
-        }
+        "align": "LV_ALIGN_GARBAGE"
     }
 ]

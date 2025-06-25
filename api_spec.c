@@ -412,8 +412,11 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                     }
                     method_prop_def.c_type = method_arg_type;
                     method_prop_def.widget_type_hint = (char*)current_type_to_check;
-                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL; // Set func_args
-                    method_prop_def.expected_enum_type = NULL; // Initialize for static instance
+                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL;
+                    method_prop_def.expected_enum_type = NULL;
+                    if (method_prop_def.func_args && method_prop_def.func_args->next) {
+                        method_prop_def.expected_enum_type = method_prop_def.func_args->next->expected_enum_type;
+                    }
                     return &method_prop_def;
                 }
                 m_node = m_node->next;
@@ -424,14 +427,13 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
             m_node = widget_def->methods;
             while(m_node) {
                 if (m_node->name && strcmp(m_node->name, constructed_name) == 0) {
-                    // Found as lv_obj_method. Construct PropertyDefinition.
                     memset(&method_prop_def, 0, sizeof(PropertyDefinition));
                     strncpy(method_setter_name, m_node->name, sizeof(method_setter_name) - 1);
                     method_setter_name[sizeof(method_setter_name) -1] = '\0';
 
                     method_prop_def.name = (char*)prop_name;
                     method_prop_def.setter = method_setter_name;
-                    if (m_node->func_def && m_node->func_def->args_head && m_node->func_def->args_head->next) { // Assuming first arg is obj instance
+                    if (m_node->func_def && m_node->func_def->args_head && m_node->func_def->args_head->next) {
                          strncpy(method_arg_type, m_node->func_def->args_head->next->type, sizeof(method_arg_type) - 1);
                          method_arg_type[sizeof(method_arg_type) -1] = '\0';
                     } else {
@@ -439,8 +441,11 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                     }
                     method_prop_def.c_type = method_arg_type;
                     method_prop_def.widget_type_hint = (char*)current_type_to_check;
-                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL; // Set func_args
-                    method_prop_def.expected_enum_type = NULL; // Initialize for static instance
+                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL;
+                    method_prop_def.expected_enum_type = NULL;
+                    if (method_prop_def.func_args && method_prop_def.func_args->next) {
+                        method_prop_def.expected_enum_type = method_prop_def.func_args->next->expected_enum_type;
+                    }
                     return &method_prop_def;
                 }
                 m_node = m_node->next;
@@ -479,8 +484,12 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                }
                global_func_prop_def.c_type = global_func_arg_type;
                global_func_prop_def.widget_type_hint = (char*)type_name;
-               global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL; // Set func_args
-                global_func_prop_def.expected_enum_type = NULL; // Initialize for static instance
+               global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL;
+               global_func_prop_def.expected_enum_type = NULL;
+               FunctionArg* relevant_arg_for_enum_val = (global_func_prop_def.func_args && global_func_prop_def.func_args->type && (strcmp(global_func_prop_def.func_args->type, "lv_obj_t*") == 0 || strcmp(global_func_prop_def.func_args->type, "lv_style_t*") == 0) && global_func_prop_def.func_args->next) ? global_func_prop_def.func_args->next : global_func_prop_def.func_args;
+               if(relevant_arg_for_enum_val) {
+                    global_func_prop_def.expected_enum_type = relevant_arg_for_enum_val->expected_enum_type;
+               }
                return &global_func_prop_def;
            }
            func_node = func_node->next;
@@ -500,7 +509,7 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                global_func_prop_def.name = (char*)prop_name;
                global_func_prop_def.setter = global_func_setter_name;
                 if (func_node->func_def && func_node->func_def->args_head) {
-                   bool first_arg_is_obj = (func_node->func_def->args_head->type && (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0));
+                   bool first_arg_is_obj = (func_node->func_def->args_head->type && (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0 || strcmp(func_node->func_def->args_head->type, "lv_style_t*") == 0 ));
                    FunctionArg* relevant_arg = first_arg_is_obj ? func_node->func_def->args_head->next : func_node->func_def->args_head;
                    if (relevant_arg && relevant_arg->type) {
                        strncpy(global_func_arg_type, relevant_arg->type, sizeof(global_func_arg_type) - 1);
@@ -513,8 +522,12 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
                }
                global_func_prop_def.c_type = global_func_arg_type;
                global_func_prop_def.widget_type_hint = (char*)type_name;
-               global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL; // Set func_args
-                global_func_prop_def.expected_enum_type = NULL; // Initialize for static instance
+               global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL;
+               global_func_prop_def.expected_enum_type = NULL;
+               FunctionArg* relevant_arg_for_enum_val2 = (global_func_prop_def.func_args && global_func_prop_def.func_args->type && (strcmp(global_func_prop_def.func_args->type, "lv_obj_t*") == 0 || strcmp(global_func_prop_def.func_args->type, "lv_style_t*") == 0) && global_func_prop_def.func_args->next) ? global_func_prop_def.func_args->next : global_func_prop_def.func_args;
+               if(relevant_arg_for_enum_val2) {
+                    global_func_prop_def.expected_enum_type = relevant_arg_for_enum_val2->expected_enum_type;
+               }
                return &global_func_prop_def;
            }
            func_node = func_node->next;
@@ -689,4 +702,18 @@ bool api_spec_is_constant(const ApiSpec* spec, const char* const_name) {
         return false;
     }
     return cJSON_GetObjectItem(spec->constants, const_name) != NULL;
+}
+
+bool api_spec_has_function(const ApiSpec* spec, const char* func_name) {
+    if (!spec || !spec->functions || !func_name) {
+        return false;
+    }
+    FunctionMapNode* current_fnode = spec->functions;
+    while (current_fnode) {
+        if (current_fnode->name && strcmp(current_fnode->name, func_name) == 0) {
+            return true; // Function found
+        }
+        current_fnode = current_fnode->next;
+    }
+    return false; // Function not found
 }

@@ -3,14 +3,12 @@
     "type": "component",
     "id": "@my_reusable_component",
     "named": "c_my_reusable_component",
-    "content": {
+    "root": {
       "type": "obj",
       "children": [
         {
           "type": "label",
-          "properties": {
-            "text": "Hello from component"
-          }
+          "text": "Hello from component"
         },
         {
           "type": "button",
@@ -18,9 +16,7 @@
           "children": [
             {
               "type": "label",
-              "properties": {
-                "text": "Click Me"
-              }
+              "text": "Click Me"
             }
           ]
         }
@@ -35,12 +31,11 @@
     "children": [
       {
         "type": "label",
-        "properties": {
-          "text": "Main view label"
-        }
+        "text": "Main view label"
       },
       {
-        "use-view": "@my_reusable_component",
+        "type": "use-view",
+        "id": "@my_reusable_component",
         "id": "instance_of_component",
         "named": "uv_instance_1"
       }

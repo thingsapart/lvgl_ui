@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Preamble
 GREEN="\033[0;32m"

@@ -124,4 +124,7 @@ bool api_spec_is_global_enum_member(const ApiSpec* spec, const char* member_name
 // Checks if a string is a defined constant in the spec.
 bool api_spec_is_constant(const ApiSpec* spec, const char* const_name);
 
+// Checks if a function name exists in the API spec's global functions.
+bool api_spec_has_function(const ApiSpec* spec, const char* func_name);
+
 #endif // API_SPEC_H

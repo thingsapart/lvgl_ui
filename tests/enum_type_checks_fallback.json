@@ -2,8 +2,6 @@
     {
         "type": "base_widget",
         "named": "widget3",
-        "properties": {
-            "another_align": "LV_ALIGN_TOP_LEFT"
-        }
+        "align": "LV_ALIGN_TOP_LEFT"
     }
 ]

@@ -194,18 +194,26 @@ class LVGLApiParser:
 
                 if prop_name:
                     prop_type = self._get_property_type(func)
-                    self.result['widgets'][target_name]['properties'][prop_name] = {
+                    property_entry = {
                         "setter": func_name,
                         "type": prop_type
                     }
+                    if prop_type in self.enum_type_names:
+                        property_entry["expected_enum_type"] = prop_type
+
+                    self.result['widgets'][target_name]['properties'][prop_name] = property_entry
+
                     # Alias "style_xyz" to just "xyz".
                     if prop_name.startswith('style_'):
-                        prop_name = prop_name[6:]
-                        self.result['widgets'][target_name]['properties'][prop_name] = {
+                        aliased_prop_name = prop_name[6:]
+                        # Create a new dict for aliased property to avoid modifying shared dict
+                        aliased_property_entry = {
                             "setter": func_name,
                             "type": prop_type
                         }
-
+                        if prop_type in self.enum_type_names:
+                            aliased_property_entry["expected_enum_type"] = prop_type
+                        self.result['widgets'][target_name]['properties'][aliased_prop_name] = aliased_property_entry
 
             elif target_name in self.object_types:
                 # All functions starting with lv_<object>_* are methods
@@ -221,10 +229,13 @@ class LVGLApiParser:
 
                 if prop_name:
                     prop_type = self._get_property_type(func)
-                    self.result['objects'][target_name]['properties'][prop_name] = {
+                    property_entry = {
                         "setter": func_name,
                         "type": prop_type
                     }
+                    if prop_type in self.enum_type_names:
+                        property_entry["expected_enum_type"] = prop_type
+                    self.result['objects'][target_name]['properties'][prop_name] = property_entry
 
     def _finalize_and_sort(self):
         """Converts defaultdicts and sorts all keys for consistent output."""
