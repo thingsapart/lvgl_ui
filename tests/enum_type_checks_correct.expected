@@ -10,5 +10,5 @@ void create_ui(lv_obj_t* parent) {
     lv_obj_t* widget1 = lv_obj_create(parent);
     obj_registry_add("widget1", (void*)widget1);
     lv_obj_align(widget1, LV_ALIGN_CENTER);
-    lv_obj_set_flex_flow(widget1, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_flow(widget1);
 }

@@ -329,6 +329,8 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "api_spec.h"
+
 typedef struct IRNode IRNode;
 struct ApiSpec; /* Forward declaration for ApiSpec pointer usage */
 
