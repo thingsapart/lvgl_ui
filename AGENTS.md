@@ -30,7 +30,7 @@ So currently, the .expected file is C-Code that corresponds to what the codegen 
 
 ## Running a single test
 
-`export TESTNAME=any_test_name_here; cd ./tests; sh run_tests.sh #{TEXTNAME}
+`export TESTNAME=any_test_name_here; cd ./tests; sh run_tests.sh #{TESTNAME}
 
 
 ## Test "debug" mode
