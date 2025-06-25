@@ -26,7 +26,8 @@ void obj_registry_deinit(void);
 // Calls an LVGL function by name, with arguments provided as an array of IR nodes.
 // The renderer is responsible for resolving complex IR expressions (like context vars)
 // into simpler, self-contained IR nodes (literals, registry refs) before calling.
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count);
+// Added ApiSpec* spec argument for context-aware parsing (e.g. enums by string name)
+lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
 
 #ifdef __cplusplus
 }

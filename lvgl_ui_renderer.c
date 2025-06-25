@@ -89,7 +89,7 @@ static void render_properties(RenderContext* ctx, IRObject* ir_obj, void* native
             current_arg_node = current_arg_node->next;
         }
 
-        dynamic_lvgl_call_ir(prop_def->setter, native_obj, arg_array, arg_count);
+        dynamic_lvgl_call_ir(prop_def->setter, native_obj, arg_array, arg_count, ctx->api_spec);
         free_resolved_expr_list(resolved_args);
 
         prop = prop->next;
@@ -138,17 +138,17 @@ static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
     const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, obj->json_type);
 
     if (widget_def && widget_def->create) {
-        created_native_obj = dynamic_lvgl_call_ir(widget_def->create, parent_obj, NULL, 0);
+        created_native_obj = dynamic_lvgl_call_ir(widget_def->create, parent_obj, NULL, 0, ctx->api_spec);
     } else if (widget_def && widget_def->init_func) {
         if (strcmp(widget_def->c_type, "lv_style_t") == 0) {
             lv_style_t* style = malloc(sizeof(lv_style_t));
             if (style) {
-                dynamic_lvgl_call_ir(widget_def->init_func, style, NULL, 0);
+                dynamic_lvgl_call_ir(widget_def->init_func, style, NULL, 0, ctx->api_spec);
                 created_native_obj = style;
             }
         }
     } else {
-        created_native_obj = dynamic_lvgl_call_ir("lv_obj_create", parent_obj, NULL, 0);
+        created_native_obj = dynamic_lvgl_call_ir("lv_obj_create", parent_obj, NULL, 0, ctx->api_spec);
     }
 
     if (!created_native_obj) {
@@ -166,21 +166,83 @@ static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
 
     IRWithBlock* wb = obj->with_blocks;
     while(wb) {
-        IRExpr* resolved_target = resolve_expr(ctx, wb->target_expr);
-        void* with_target_obj = obj_registry_get(ir_node_get_string((IRNode*)resolved_target));
-        ir_free((IRNode*)resolved_target);
-        if (with_target_obj) {
-            // This is a simplification; we'd need to know the type of the 'with' target.
-            // Assume obj for now.
-            IRObject fake_ir_obj = {.json_type = "obj", .properties = wb->properties};
-            render_properties(ctx, &fake_ir_obj, with_target_obj);
-            if(wb->children_root) {
-                IRObject* child = wb->children_root->children;
-                while(child) {
-                    render_object(ctx, child, with_target_obj);
-                    child = child->next;
+        void* with_block_target_for_do = NULL; // This will be the target for 'do' properties/children
+
+        // Check if this 'with' block uses the "with.obj.call" structure.
+        // We assume if target_expr is a function call, it's this new structure.
+        if (wb->target_expr && wb->target_expr->type == IR_EXPR_FUNCTION_CALL) {
+            IRExprFunctionCall* call_details = (IRExprFunctionCall*)wb->target_expr;
+
+            IRExprNode* resolved_call_args_list = NULL;
+            int call_arg_count = 0;
+            IRExprNode* current_arg_expr_node = call_details->args;
+            while(current_arg_expr_node) {
+                ir_expr_list_add(&resolved_call_args_list, resolve_expr(ctx, current_arg_expr_node->expr));
+                call_arg_count++;
+                current_arg_expr_node = current_arg_expr_node->next;
+            }
+
+            IRNode* call_arg_array[MAX_RENDER_ARGS];
+            IRExprNode* current_resolved_arg_node = resolved_call_args_list;
+            for(int i = 0; i < call_arg_count && i < MAX_RENDER_ARGS; ++i) {
+                call_arg_array[i] = (IRNode*)current_resolved_arg_node->expr;
+                current_resolved_arg_node = current_resolved_arg_node->next;
+            }
+
+            // The target for THIS call is `created_native_obj` (the object this 'with' block is attached to)
+            with_block_target_for_do = dynamic_lvgl_call_ir(call_details->func_name,
+                                                            created_native_obj,
+                                                            call_arg_array,
+                                                            call_arg_count,
+                                                            ctx->api_spec);
+            free_resolved_expr_list(resolved_call_args_list);
+
+        } else if (wb->target_expr) {
+            // Old style "with": "target_id" (target_expr is likely IR_EXPR_REGISTRY_REF or literal string)
+            IRExpr* resolved_target_ref = resolve_expr(ctx, wb->target_expr);
+            if (resolved_target_ref) {
+                const char* target_id_str = ir_node_get_string((IRNode*)resolved_target_ref);
+                if (target_id_str) {
+                    with_block_target_for_do = obj_registry_get(target_id_str);
+                }
+                ir_free((IRNode*)resolved_target_ref);
+            }
+        } else {
+            // No "with.obj.call" and no "with.target_expr".
+            // This implies the "do" block (if any) should apply to the current `created_native_obj`.
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Info: 'with' block for obj '%s' has no 'obj.call' or 'target_expr'. 'do' block will target current object.", obj->c_name);
+            with_block_target_for_do = created_native_obj;
+        }
+
+        if (with_block_target_for_do) {
+            // Process the "do" part: properties and/or children, using with_block_target_for_do as their target/parent.
+            if (wb->properties) { // Properties from the "do" block
+                // TODO: Determine the json_type of with_block_target_for_do more accurately if possible.
+                // For now, using "obj" as a generic type for applying properties.
+                // If wb->target_expr was a call, could try to get json_type from function's return type in api_spec.
+                const char* json_type_for_do_properties = "obj";
+                if (wb->target_expr && wb->target_expr->type == IR_EXPR_FUNCTION_CALL) {
+                    const FunctionDefinition* func_def = api_spec_find_function(ctx->api_spec, ((IRExprFunctionCall*)wb->target_expr)->func_name);
+                    // Assuming func_def might have a hint for json_type of return, e.g. func_def->return_type_json_hint
+                    // This is a placeholder for future enhancement.
+                    if (func_def && func_def->return_type && strstr(func_def->return_type, "style_t") != NULL) {
+                         json_type_for_do_properties = "style"; // Basic heuristic
+                    }
+                }
+
+                IRObject fake_do_scope_obj = {.json_type = (char*)json_type_for_do_properties, .properties = wb->properties};
+                render_properties(ctx, &fake_do_scope_obj, with_block_target_for_do);
+            }
+
+            if (wb->children_root) { // Children from the "do" block
+                IRObject* child_item = wb->children_root->children; // children_root is an IRObject wrapper for the list
+                while(child_item) {
+                    render_object(ctx, child_item, with_block_target_for_do);
+                    child_item = child_item->next;
                 }
             }
+        } else {
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Target for 'with' block associated with '%s' could not be determined or was NULL. 'do' block skipped.", obj->c_name);
         }
         wb = wb->next;
     }
@@ -231,7 +293,8 @@ static IRExpr* resolve_expr(RenderContext* ctx, IRExpr* expr) {
                 current_arg_node = current_arg_node->next;
             }
 
-            void* result_ptr = dynamic_lvgl_call_ir(call->func_name, NULL, arg_array, arg_count);
+            // Pass ApiSpec for context-aware parsing if needed by the call
+            void* result_ptr = dynamic_lvgl_call_ir(call->func_name, NULL, arg_array, arg_count, ctx->api_spec);
             free_resolved_expr_list(resolved_args);
 
             char buf[32];

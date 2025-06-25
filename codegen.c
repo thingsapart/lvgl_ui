@@ -159,13 +159,36 @@ static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_ro
 
         const FunctionArg* first_value_arg_details = NULL;
         if (prop_def && prop_def->func_args) {
-            if (prop_def->func_args->next) {
+            if (prop_def->func_args->next) { // func_args->next is the first actual value argument
                  first_value_arg_details = prop_def->func_args->next;
             }
         }
 
-        bool called_with_args = false;
+        // Determine if this is a "true no-value-arg" setter scenario (e.g. a toggle like `enabled: true`)
+        // or if api_spec might be missing arg details for a setter that actually takes one (e.g. `pad_all: 0`).
+        bool is_true_no_arg_setter_scenario = false;
+        if (prop_def && !first_value_arg_details) {
+            // This path is taken if api_spec indicates the setter takes no value arguments.
+            // We further check if the property value itself is a boolean literal ("true" or "false").
+            // If so, we treat it as a true no-arg toggle. Otherwise, we suspect api_spec might be
+            // incomplete and will attempt to pass the property's value as an argument.
+            is_true_no_arg_setter_scenario = false; // Default assumption for this path
+            if (prop->value->type == IR_EXPR_LITERAL) {
+                IRExprLiteral* lit = (IRExprLiteral*)prop->value;
+                // Only consider it a true no-arg toggle if the value is literally "true" or "false".
+                if (!lit->is_string && (strcmp(lit->value, "true") == 0 || strcmp(lit->value, "false") == 0)) {
+                    is_true_no_arg_setter_scenario = true;
+                }
+            }
+            // If prop->value is a number (e.g., "0" for pad_all), an enum, a string, or function call,
+            // and we are in this `!first_value_arg_details` path, `is_true_no_arg_setter_scenario`
+            // will remain false. This signals that we should try to print the value as an argument.
+        }
+
+        // Argument printing logic
+        // bool arguments_were_printed = false; // This variable is unused with the refactored logic.
         if (first_value_arg_details) {
+            // Case 1: api_spec clearly defines arguments for the setter.
             printf(", ");
             if (prop->value->type == IR_EXPR_ARRAY) {
                 IRExprArray* arr = (IRExprArray*)prop->value;
@@ -179,45 +202,70 @@ static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_ro
                     if (current_arg_details_iter) current_arg_details_iter = current_arg_details_iter->next;
                     elem = elem->next;
                 }
-            } else {
+            } else { // Property value is a single expression, for the first argument.
                 codegen_expr(prop->value, api_spec, ir_root, obj, first_value_arg_details->type);
             }
-            called_with_args = true;
-        } else if (prop_def && !first_value_arg_details) {
-            // No value args as per prop_def (e.g. lv_obj_move_foreground)
-            // This path is taken, call_setter will determine if a call is made.
-        } else {
-            // No prop_def, or prop_def indicates no value args, but value is not simple true/false.
-            // Fallback to trying to print the value as an argument if it's not literally NULL.
-            if (prop->value->type != IR_EXPR_LITERAL || strcmp(((IRExprLiteral*)prop->value)->value, "NULL") != 0 ||
-                (prop->value->type == IR_EXPR_LITERAL && ((IRExprLiteral*)prop->value)->is_string)) {
+            // arguments_were_printed = true;
+        } else if (prop_def && !is_true_no_arg_setter_scenario) {
+            // Case 2: api_spec says no value args, but the property's value is NOT "true" or "false".
+            // This suggests api_spec might be incomplete for this setter (e.g. pad_all: 0).
+            // We attempt to print the property's value as an argument.
+            // We avoid printing ", NULL" if the value itself is a NULL literal, as that would be redundant
+            // or incorrect for setters not expecting an explicit NULL.
+            if (!(prop->value->type == IR_EXPR_LITERAL && strcmp(((IRExprLiteral*)prop->value)->value, "NULL") == 0 && !((IRExprLiteral*)prop->value)->is_string)) {
                  printf(", ");
-                 codegen_expr(prop->value, api_spec, ir_root, obj, NULL);
-                 called_with_args = true;
+                 codegen_expr(prop->value, api_spec, ir_root, obj, NULL); // No known C type for this inferred arg
+                 // arguments_were_printed = true;
             }
         }
+        // Case 3: `is_true_no_arg_setter_scenario` is true.
+        // This means api_spec says no value args, AND the property value is "true" or "false".
+        // This is treated as a toggle; no arguments are printed here. The decision to call is made below.
 
-        if (prop_def && !first_value_arg_details) { // This is the no-arg setter path
-            bool call_the_setter_no_args = false;
-            if (prop->value->type == IR_EXPR_LITERAL) {
+        // Case 4: No `prop_def`. (Original code had a fallback for this, which is now implicitly handled by the final `else` block below)
+        // If `prop_def` is NULL, `is_true_no_arg_setter_scenario` will be false (by its initialization).
+        // This will lead to the final `else { printf(");\n"); }` block, attempting a call.
+        // The arguments might have been printed by the original code's fallback path if `!prop_def`.
+        // The original fallback logic for printing args when no prop_def:
+        // else { /* referring to the if (first_value_arg_details) {} else if (prop_def && !first_value_arg_details) {} block */
+        //    if (prop->value->type != IR_EXPR_LITERAL || strcmp(((IRExprLiteral*)prop->value)->value, "NULL") != 0 ||
+        //        (prop->value->type == IR_EXPR_LITERAL && ((IRExprLiteral*)prop->value)->is_string)) {
+        //         printf(", ");
+        //         codegen_expr(prop->value, api_spec, ir_root, obj, NULL);
+        //    }
+        // }
+        // This specific fallback argument printing for `!prop_def` is not explicitly replicated here,
+        // but if `setter_found` was true due to guessing, it will proceed to try and call.
+        // The new structure prioritizes `prop_def` cases. If `prop_def` is NULL, `is_true_no_arg_setter_scenario` is false,
+        // so it goes to the `else { printf(");\n"); }` below. Argument printing for `!prop_def` is implicitly
+        // reliant on the earlier generic setter name construction if `prop_def` was initially missing.
+
+        // Decision to finalize the call or comment it out (for true toggles)
+        if (is_true_no_arg_setter_scenario) {
+            // This is a true toggle (e.g., `enabled: true` or `enabled: false`).
+            // Call the setter only if the value is "true".
+            bool call_the_setter_for_toggle = false;
+            if (prop->value->type == IR_EXPR_LITERAL) { // Should be true given is_true_no_arg_setter_scenario logic
                 IRExprLiteral* lit = (IRExprLiteral*)prop->value;
-                if (!lit->is_string && ((strcmp(lit->value, "true") == 0) || (strcmp(lit->value, "0") != 0 && atoi(lit->value) != 0))) {
-                    call_the_setter_no_args = true;
+                if (strcmp(lit->value, "true") == 0) { // Only call if "true"
+                    call_the_setter_for_toggle = true;
                 }
-            } else if (prop->value->type == IR_EXPR_ENUM) {
-                 if (strcmp(((IRExprEnum*)prop->value)->symbol, "false") != 0 && strcmp(((IRExprEnum*)prop->value)->symbol, "0") != 0 ) {
-                    call_the_setter_no_args = true;
-                 }
             }
-            if(call_the_setter_no_args) {
-                 printf(");\n"); // Close the parenthesis from printf("%s(%s", setter_func, obj_ref_for_setter);
+
+            if (call_the_setter_for_toggle) {
+                 printf(");\n");
             } else {
-                 // Effectively comment out the call by not closing the parenthesis and adding a comment.
+                 // Comment out for "false" toggles.
                  printf(" /* Property '%s' (value: ", prop->name);
                  codegen_expr(prop->value, api_spec, ir_root, obj, NULL);
-                 printf(") not called for %s (setter expects no value args, and value was false-ish) */\n", obj->c_name);
+                 printf(") not called for %s (setter expects no value args, and value was not 'true') */\n", obj->c_name);
             }
-        } else { // Has args, or ambiguous case that printed args
+        } else {
+             // All other cases:
+             // - Args were defined by api_spec and printed.
+             // - Args were inferred (due to !first_value_arg_details but value not being true/false) and printed.
+             // - No prop_def was found initially (setter name might be a guess).
+             // In these cases, always complete the call.
              printf(");\n");
         }
         prop = prop->next;

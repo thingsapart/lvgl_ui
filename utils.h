@@ -16,4 +16,13 @@ char* read_file(const char* filename);
 // (e.g., "label", "button"). Defaults to "obj".
 const char* get_obj_type_from_c_type(const char* c_type_str);
 
+// Forward declare IRNode and ApiSpec to avoid pulling in full headers here if not needed,
+// or include them if their definitions are small / commonly used with utils.
+// For now, let's assume forward declaration is okay for the .h
+struct IRNode;
+struct ApiSpec;
+
+// Helper to get enum value from IRNode, potentially looking up string symbols
+long ir_node_get_enum_value(struct IRNode* node, const char* expected_enum_c_type, struct ApiSpec* spec);
+
 #endif // UTILS_H

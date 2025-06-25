@@ -66,36 +66,56 @@ class LVGLApiParser:
     def _get_property_type(self, func_info):
         """Determines a simplified property type from a setter function's signature."""
         args = func_info.get('args', [])
-        if len(args) < 2:
-            return 'unknown'
-        val_arg = args[1]
-        return self._get_type_str(val_arg.get('type'))
+        if len(args) < 2: # For a setter, expects at least object pointer and value. If less, it's not a typical value setter.
+            return 'bool' # Assume it's a toggle or similar if only one arg (the object itself) or no args.
+        val_arg = args[1] # This is a dict like {'name': None, 'type': 'int32_t'}
+        # The 'type' here is already the processed C type string.
+        return val_arg.get('type')
 
     def _discover_types(self):
         """First pass to identify all enum, widget, and object types."""
-        for enum in self.spec.get('enums', []):
-            if enum.get('name'):
-                self.enum_type_names.add(enum['name'])
+        # Assuming self.spec.get('enums') provides a list of enum objects,
+        # each being a dictionary with 'name' and 'members'.
+        for enum_obj in self.spec.get('enums', []):
+            if isinstance(enum_obj, dict) and enum_obj.get('name'):
+                self.enum_type_names.add(enum_obj['name'])
 
-        for func in self.spec.get('functions', []):
-            name = func.get('name', '')
-            if name.endswith('_create'):
-                match = re.match(r"lv_(\w+)_create", name)
+        # self.spec.get('functions', {}) returns a dictionary like:
+        # { "lv_some_func": { "return_type": "...", "args": [...] }, ... }
+        # The input spec (from data/lv_def.json) has 'functions' as a LIST of function objects (dicts).
+        for func_obj in self.spec.get('functions', []):
+            if not isinstance(func_obj, dict): continue
+            func_name_str = func_obj.get('name', '')
+            if not func_name_str: continue
+
+            if func_name_str.endswith('_create'):
+                match = re.match(r"lv_(\w+)_create", func_name_str)
                 if match:
                     self.widget_types.add(match.group(1))
-            elif name.endswith('_init'):
-                match = re.match(r"lv_(\w+)_init", name)
+            elif func_name_str.endswith('_init'):
+                match = re.match(r"lv_(\w+)_init", func_name_str)
                 if match and match.group(1) and match.group(1) not in ['mem']:
                     self.object_types.add(match.group(1))
 
     def _translate_primitives(self):
         """Translate enums, constants, and raw function signatures."""
-        for enum in self.spec.get('enums', []):
-            members = {member['name']: member['value'] for member in enum.get('members', [])}
-            if enum.get('name'):
-                self.result['enums'][enum['name']] = members
-            else:
-                self.result['constants'].update(members)
+        # Assuming self.spec.get('enums') provides a list of enum objects (dictionaries)
+        for enum_obj in self.spec.get('enums', []):
+            if isinstance(enum_obj, dict):
+                enum_name = enum_obj.get('name')
+                members_list = enum_obj.get('members', [])
+                # Ensure members_list contains dicts with 'name' and 'value'
+                members_dict = {
+                    member['name']: member['value']
+                    for member in members_list
+                    if isinstance(member, dict) and 'name' in member and 'value' in member
+                }
+
+                if enum_name:
+                    self.result['enums'][enum_name] = members_dict
+                else:
+                    # For unnamed enums (if any in lv_def.json format), their members go to constants
+                    self.result['constants'].update(members_dict)
 
         for macro in self.spec.get('macros', []):
             if macro.get('params') is None and macro.get('initializer'):
@@ -103,17 +123,24 @@ class LVGLApiParser:
                 initializer = initializer.replace("L", "").replace("LL", "")
                 self.result['constants'][macro['name']] = initializer
 
-        for func in self.spec.get('functions', []):
-            func_name = func.get('name', '')
+        # The input spec (from data/lv_def.json) has 'functions' as a LIST of function objects (dicts).
+        for func_obj in self.spec.get('functions', []):
+            if not isinstance(func_obj, dict): continue
+
+            func_name = func_obj.get('name', '')
             if not func_name: continue
-            ret_type_str = self._get_type_str(func.get('type'))
+
+            ret_type_str = self._get_type_str(func_obj.get('type'))
             args_list = []
-            if func.get('args'):
-                is_void_arg = len(func['args']) == 1 and self._get_type_str(func['args'][0].get('type')) == 'void'
+            current_func_args_spec = func_obj.get('args') # This is a list of arg dicts from lv_def.json
+            if current_func_args_spec:
+                # Example arg_data in current_func_args_spec: {"name": "p1", "type": {"name": "lv_obj_t", "json_type": "pointer", "type": {"name": "lv_obj_t"}}}
+                is_void_arg = len(current_func_args_spec) == 1 and \
+                              self._get_type_str(current_func_args_spec[0].get('type')) == 'void'
                 if not is_void_arg:
                     args_list = [
-                        {"name": arg.get("name"), "type": self._get_type_str(arg.get('type'))}
-                        for arg in func['args']
+                        {"name": arg_data.get("name"), "type": self._get_type_str(arg_data.get('type'))}
+                        for arg_data in current_func_args_spec if isinstance(arg_data, dict)
                     ]
             self.result['functions'][func_name] = {"return_type": ret_type_str, "args": args_list}
 
@@ -129,8 +156,14 @@ class LVGLApiParser:
             self.result['objects'][o_name]['c_type'] = f'lv_{o_name}_t'
             self.result['objects'][o_name]['init'] = f'lv_{o_name}_init'
 
-        for func in self.spec.get('functions', []):
-            func_name = func.get('name', '')
+        # Iterate over the functions previously processed and stored in self.result['functions'] (which is a dict)
+        # OR iterate self.spec.get('functions', []) if direct access to original func_obj is needed.
+        # Sticking to self.spec.get('functions', []) for consistency with other loops for initial spec parsing.
+        for func_obj in self.spec.get('functions', []):
+            if not isinstance(func_obj, dict): continue
+            func_name = func_obj.get('name', '')
+            if not func_name: continue
+
             match = re.match(r"lv_([a-zA-Z0-9]+)_(.*)", func_name)
             if not match: continue
             target_name, action = match.groups()
@@ -140,12 +173,19 @@ class LVGLApiParser:
             elif target_name in self.object_types: target_collection = self.result['objects']
 
             if target_collection:
-                target_collection[target_name]['methods'][func_name] = self.result['functions'][func_name]
+                # self.result['functions'][func_name] was populated in _translate_primitives
+                # and holds the processed function signature.
+                processed_func_info = self.result['functions'].get(func_name)
+                if not processed_func_info: continue # Should exist if func_name is from spec
+
+                target_collection[target_name]['methods'][func_name] = processed_func_info
+
                 prop_name = None
                 if action.startswith('set_'): prop_name = action[4:]
-                elif action.startswith(('add_', 'clear_')): prop_name = action
+                elif action.startswith(('add_', 'clear_')): prop_name = action # e.g. add_flag, clear_flag
+
                 if prop_name:
-                    prop_type = self._get_property_type(func)
+                    prop_type = self._get_property_type(processed_func_info)
                     target_collection[target_name]['properties'][prop_name] = {"setter": func_name, "type": prop_type}
 
     def _finalize_and_sort(self):
@@ -241,7 +281,8 @@ class CCodeGenerator:
         ir_node_accessor = f"{ir_args_var}[{arg_index}]"
 
         if c_type_no_const in self.enum_types:
-            return f"({c_type_no_const})ir_node_get_int({ir_node_accessor})"
+            # Use a specific helper for enums that can handle string lookups via ApiSpec
+            return f"({c_type_no_const})ir_node_get_enum_value({ir_node_accessor}, \"{c_type_no_const}\", spec)"
 
         if c_type_no_const == 'bool':
             return f"ir_node_get_bool({ir_node_accessor})"
@@ -301,7 +342,8 @@ void obj_registry_deinit(void);
 // Calls an LVGL function by name, with arguments provided as an array of IR nodes.
 // The renderer is responsible for resolving complex IR expressions (like context vars)
 // into simpler, self-contained IR nodes (literals, registry refs) before calling.
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count);
+// Added ApiSpec* spec argument for context-aware parsing (e.g. enums by string name)
+lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
 
 #ifdef __cplusplus
 }
@@ -320,13 +362,18 @@ lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode**
 #include "lvgl_dispatch.h"
 #include "ir.h"
 #include "utils.h"
+#include "api_spec.h" // Added for ApiSpec*
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 
+// Forward declare ApiSpec if not fully included by api_spec.h
+struct ApiSpec;
+
 typedef struct _lv_obj_t _lv_obj_t;
 typedef void (*generic_lvgl_func_t)(void);
-typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count);
+// Updated dispatcher typedef to include ApiSpec*
+typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
 """)
 
             self.archetype_map = {}
@@ -334,7 +381,8 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, 
             for i, key in enumerate(self.archetypes.keys()):
                 dispatcher_name_ir = f"dispatch_ir_archetype_{i}"
                 self.archetype_map[key] = dispatcher_name_ir
-                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count);\n")
+                # Updated signature for forward declaration
+                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);\n")
 
             f.write("\n// --- Archetype Dispatcher Implementations ---\n")
 
@@ -345,7 +393,8 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, 
                 first_func = func_list[0]
 
                 f.write(f"// Archetype for {len(func_list)} functions like: {first_func['name']}\n")
-                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count) {{\n")
+                # Updated signature for implementation
+                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {{\n")
 
                 num_expected_args = len(arg_types)
                 f.write(f"    if (arg_count != {num_expected_args}) {{\n")
@@ -408,7 +457,8 @@ static int compare_func_mappings(const void* a, const void* b) {
     return strcmp((const char*)a, ((const FunctionMapping*)b)->name);
 }
 
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count) {
+// Updated signature to include ApiSpec* spec
+lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     if (!func_name) return NULL;
     const FunctionMapping* mapping = (const FunctionMapping*)bsearch(
         func_name, function_registry,
@@ -416,7 +466,8 @@ lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode**
         sizeof(FunctionMapping), compare_func_mappings
     );
     if (mapping && mapping->ir_dispatcher) {
-        return mapping->ir_dispatcher(mapping->func_ptr, target_obj, ir_args, arg_count);
+        // Pass spec to the archetype dispatcher
+        return mapping->ir_dispatcher(mapping->func_ptr, target_obj, ir_args, arg_count, spec);
     }
     LV_LOG_WARN("Dynamic LVGL IR call failed: function '%s' not found or dispatcher missing.", func_name);
     return NULL;
