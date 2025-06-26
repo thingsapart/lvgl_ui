@@ -2,40 +2,43 @@
 #define IR_H
 
 #include <stdint.h>
-#include <stdbool.h> // For bool type in IRExprLiteral
+#include <stdbool.h>
 
-// Forward declaration for IRNode to resolve circular dependency for function pointers
+// Forward declarations
 struct IRNode;
-
-// --- Function pointer types for polymorphism ---
-typedef void (*IRFreeFunc)(struct IRNode* node);
-typedef void (*IRCodegenFunc)(struct IRNode* node, int indent_level);
+struct IRExpr;
+struct IRProperty;
+struct IRObject;
+struct IRWithBlock;
+struct IRComponent;
 
 // --- Base IR Node ---
-// This will be the first member of all IR expression and statement structs
-// to allow safe casting.
 typedef struct IRNode {
     enum {
+        // High-level nodes
+        IR_NODE_ROOT,
+        IR_NODE_OBJECT, // Represents a widget or a style object
+        IR_NODE_COMPONENT_DEF,
+
+        // Property-related nodes
+        IR_NODE_PROPERTY,
+        IR_NODE_WITH_BLOCK,
+
+        // Expression nodes
         IR_EXPR_LITERAL,
-        IR_EXPR_VARIABLE,
-        IR_EXPR_FUNC_CALL,
+        IR_EXPR_ENUM,
+        IR_EXPR_FUNCTION_CALL,
         IR_EXPR_ARRAY,
-        IR_EXPR_ADDRESS_OF,
-        IR_STMT_BLOCK,
-        IR_STMT_VAR_DECL,
-        IR_STMT_FUNC_CALL,
-        IR_STMT_COMMENT,
-        IR_STMT_WIDGET_ALLOCATE,
-        IR_STMT_OBJECT_ALLOCATE,
-        // Add other statement types here
+        IR_EXPR_REGISTRY_REF, // @name
+        IR_EXPR_CONTEXT_VAR,  // $name
+        IR_EXPR_STATIC_STRING // !string
     } type;
-    IRFreeFunc free;
-    IRCodegenFunc codegen;
 } IRNode;
+
 
 // --- Expressions ---
 
-// Base struct for all expressions (all start with IRNode base)
+// Base struct for all expressions
 typedef IRNode IRExpr;
 
 // Linked list node for expressions (e.g., function arguments, array elements)
@@ -44,130 +47,136 @@ typedef struct IRExprNode {
     struct IRExprNode* next;
 } IRExprNode;
 
-// Literal (e.g., "hello", 123, true, LV_ALIGN_CENTER)
+// Generic literal (number, bool, NULL, string)
 typedef struct {
     IRNode base;
-    char* value;     // Stored as a raw string (e.g., "hello", "123", "LV_ALIGN_CENTER")
-    bool is_string;  // true if this is a string literal, false for numbers, enums, bools
-    bool is_enum;      // true if 'value' is an enum symbol and enum_value holds its integer value
-    intptr_t enum_value; // The integer value of the enum, if is_enum is true
+    char* value;
+    bool is_string;
 } IRExprLiteral;
 
-// Variable reference
+// Static string: a heap-allocated, persistent string.
 typedef struct {
     IRNode base;
-    char* name;
-} IRExprVariable;
+    char* value;
+} IRExprStaticString;
+
+// Enum literal (e.g., LV_ALIGN_CENTER)
+typedef struct {
+    IRNode base;
+    char* symbol;
+    intptr_t value;
+} IRExprEnum;
 
 // Function call expression
 typedef struct {
     IRNode base;
     char* func_name;
     IRExprNode* args; // Linked list of argument expressions
-} IRExprFuncCall;
+} IRExprFunctionCall;
 
-// Array expression (e.g., {1, 2, 3} or new int[]{1, 2, 3})
+// Array expression
 typedef struct {
     IRNode base;
     IRExprNode* elements; // Linked list of element expressions
 } IRExprArray;
 
-// Address-of expression (e.g. &myVar)
+// Reference to a registered object: @name
 typedef struct {
     IRNode base;
-    IRExpr* expr; // The expression whose address is taken
-} IRExprAddressOf;
+    char* name;
+} IRExprRegistryRef;
 
-// --- Statements ---
-
-// Base struct for all statements (all start with IRNode base)
-typedef IRNode IRStmt;
-
-// Linked list node for statements (e.g., in a block)
-typedef struct IRStmtNode {
-    IRStmt* stmt;
-    struct IRStmtNode* next;
-} IRStmtNode;
-
-// Block of statements (e.g., { stmt1; stmt2; })
+// Reference to a context variable: $name
 typedef struct {
     IRNode base;
-    IRStmtNode* stmts; // Linked list of statements
-} IRStmtBlock;
+    char* name;
+} IRExprContextVar;
 
-// Variable declaration (e.g., string myVar = "value";)
+
+// --- High-Level UI Constructs ---
+
+// A property on an object (e.g., width: 100)
+typedef struct IRProperty {
+    IRNode base;
+    char* name;
+    IRExpr* value;
+    struct IRProperty* next;
+} IRProperty;
+
+// A 'with-do' block
+typedef struct IRWithBlock {
+    IRNode base;
+    IRExpr* target_expr;
+    IRProperty* properties;
+    struct IRObject* children_root; // For `with { do: { children: [...] } }`
+    struct IRWithBlock* next;
+} IRWithBlock;
+
+// Represents a widget, style, or other UI object from the spec
+typedef struct IRObject {
+    IRNode base;
+    char* c_name;           // Generated C variable name for this object.
+    char* json_type;        // The "type" from the UI spec ("button", "label", "style", "use-view").
+    char* registered_id;    // If "named" or "id" is present, this is the string key.
+
+    // Fields specific to 'use-view' type
+    char* use_view_component_id; // from "id" field of a use-view
+    IRProperty* use_view_context; // from "context" field of a use-view
+
+    IRProperty* properties;   // All other properties, including overrides for use-view
+    IRWithBlock* with_blocks;
+    struct IRObject* children; // Linked list of child objects
+    struct IRObject* next;     // Sibling in the list
+} IRObject;
+
+// A component definition
+typedef struct IRComponent {
+    IRNode base;
+    char* id; // The component's name (e.g., "@my_component")
+    IRObject* root_widget;
+    struct IRComponent* next;
+} IRComponent;
+
+// The top-level container for the entire UI spec IR
 typedef struct {
     IRNode base;
-    char* type_name;
-    char* var_name;
-    IRExpr* initializer; // Optional initializer expression
-} IRStmtVarDecl;
-
-// Function call statement (a function call that doesn't return a value used in an expression)
-// e.g. print("hello");
-typedef struct {
-    IRNode base;
-    IRExprFuncCall* call; // Embeds/points to a function call expression structure
-} IRStmtFuncCall;
-
-// Comment statement
-typedef struct {
-    IRNode base;
-    char* text; // The comment text (without // or /* */ markers)
-} IRStmtComment;
-
-// For declaring and creating a standard widget, e.g., lv_obj_t* btn1 = lv_btn_create(parent);
-typedef struct {
-    IRStmt base;
-    char* c_var_name;           // e.g., "btn1"
-    char* widget_c_type_name;   // e.g., "lv_obj_t" (usually this for LVGL post-creation)
-    char* create_func_name;     // e.g., "lv_btn_create"
-    IRExpr* parent_expr;        // Expression for the parent object (e.g., ir_new_variable("parent_ui_obj")). Can be NULL for screen.
-} IRStmtWidgetAllocate;
-
-// For declaring, malloc-ing, and initializing an object, e.g., lv_style_t* style1 = (lv_style_t*)malloc(sizeof(lv_style_t)); if (style1) { lv_style_init(style1); }
-typedef struct {
-    IRStmt base;
-    char* c_var_name;           // e.g., "style1"
-    char* object_c_type_name;   // e.g., "lv_style_t" (the actual type, not pointer)
-    char* init_func_name;       // e.g., "lv_style_init" (assumes it takes Type*)
-} IRStmtObjectAllocate;
+    IRComponent* components;
+    IRObject* root_objects; // Top-level widgets/styles
+} IRRoot;
 
 
 // --- Factory functions for Expressions ---
-IRExpr* ir_new_literal(const char* value);
-IRExpr* ir_new_literal_string(const char* value);
-IRExpr* ir_new_literal_enum(const char* symbol, intptr_t val);
-IRExpr* ir_new_variable(const char* name);
-IRExpr* ir_new_func_call_expr(const char* func_name, IRExprNode* args);
-IRExpr* ir_new_array(IRExprNode* elements);
-IRExpr* ir_new_address_of(IRExpr* expr);
-// REMOVED: IRExpr* ir_new_cast_expr(const char* target_type_name, IRExpr* expr_to_cast);
+IRExpr* ir_new_expr_literal(const char* value);
+IRExpr* ir_new_expr_literal_string(const char* value);
+IRExpr* ir_new_expr_static_string(const char* value);
+IRExpr* ir_new_expr_enum(const char* symbol, intptr_t val);
+IRExpr* ir_new_expr_func_call(const char* func_name, IRExprNode* args);
+IRExpr* ir_new_expr_array(IRExprNode* elements);
+IRExpr* ir_new_expr_registry_ref(const char* name);
+IRExpr* ir_new_expr_context_var(const char* name);
 
+// --- Factory functions for High-Level Constructs ---
+IRRoot* ir_new_root();
+IRObject* ir_new_object(const char* c_name, const char* json_type, const char* registered_id);
+IRComponent* ir_new_component_def(const char* id, IRObject* root_widget);
+IRProperty* ir_new_property(const char* name, IRExpr* value);
+IRWithBlock* ir_new_with_block(IRExpr* target, IRProperty* props, IRObject* children);
 
-// --- Factory functions for Statements ---
-IRStmtBlock* ir_new_block();
-void ir_block_add_stmt(IRStmtBlock* block, IRStmt* stmt); // Helper to add to a block
-
-IRStmt* ir_new_var_decl(const char* type_name, const char* var_name, IRExpr* initializer);
-IRStmt* ir_new_func_call_stmt(const char* func_name, IRExprNode* args);
-IRStmt* ir_new_comment(const char* text);
-// REMOVED: IRStmt* ir_new_assignment_stmt(IRExpr* lvalue, IRExpr* rvalue);
-// REMOVED: IRStmt* ir_new_if_stmt(IRExpr* condition, IRStmtBlock* if_body, IRStmtBlock* else_body);
-IRStmt* ir_new_widget_allocate_stmt(const char* c_var_name, const char* widget_c_type_name, const char* create_func_name, IRExpr* parent_expr);
-IRStmt* ir_new_object_allocate_stmt(const char* c_var_name, const char* object_c_type_name, const char* init_func_name);
-
-// --- Factory functions for Linked List Nodes ---
-IRExprNode* ir_new_expr_node(IRExpr* expr);
-void ir_expr_list_add(IRExprNode** head, IRExpr* expr); // Helper to add to an expr list
-
+// --- List management helpers ---
+void ir_expr_list_add(IRExprNode** head, IRExpr* expr);
+void ir_object_list_add(IRObject** head, IRObject* object);
+void ir_property_list_add(IRProperty** head, IRProperty* prop);
+void ir_with_block_list_add(IRWithBlock** head, IRWithBlock* block);
+void ir_component_def_list_add(IRComponent** head, IRComponent* comp);
 
 // --- Memory Management ---
-void ir_free(IRNode* node); // Master free function, dispatches based on type
+void ir_free(IRNode* node);
 
-// --- Node Value Accessors ---
+// --- Node Value Accessors (for dynamic dispatcher) ---
+// These functions are designed to be called on "simple" IR expression nodes
+// that have been resolved by the renderer (Literal, Enum, RegistryRef, StaticString).
 const char* ir_node_get_string(IRNode* node);
 intptr_t ir_node_get_int(IRNode* node);
-intptr_t ir_node_get_int_robust(IRNode* node, const char* enum_type_name);
+bool ir_node_get_bool(IRNode* node);
 
 #endif // IR_H

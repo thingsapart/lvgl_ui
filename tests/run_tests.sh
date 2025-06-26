@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Preamble
 GREEN="\033[0;32m"
@@ -7,6 +7,7 @@ NC="\033[0m" # No Color
 
 # Default debug mode to off
 DEBUG_MODE=0
+SINGLE_TEST_NAME=""
 
 # Parse command-line arguments
 while [ "$#" -gt 0 ]; do
@@ -16,11 +17,23 @@ while [ "$#" -gt 0 ]; do
             shift # past argument
             ;;
         *)
-            # unknown option
+            # If it's not a flag, assume it's the test name
+            if [ -z "$SINGLE_TEST_NAME" ]; then
+                SINGLE_TEST_NAME=$1
+            else
+                echo "Error: Only one test name can be specified."
+                exit 1
+            fi
             shift # past argument
             ;;
     esac
 done
+
+# Change directory if running from root
+if [ -f "./api_spec.json" ] && [ -d "./tests" ]; then
+    echo "Changing directory to ./tests"
+    cd ./tests
+fi
 
 # API Spec Generation
 # PYTHON_PATH=${PYTHON_PATH:-python3}
@@ -42,7 +55,19 @@ if [ ! -x ${GEN} ]; then
   GEN=../lvgl_ui_generator
 fi
 
-for test_file in *.json; do
+# Determine test files to run
+if [ -n "$SINGLE_TEST_NAME" ]; then
+    if [ ! -f "${SINGLE_TEST_NAME}.json" ]; then
+        echo "Error: Test file ${SINGLE_TEST_NAME}.json not found."
+        exit 1
+    fi
+    test_files=("${SINGLE_TEST_NAME}.json")
+    echo "Running single test: ${SINGLE_TEST_NAME}"
+else
+    test_files=(*.json)
+fi
+
+for test_file in "${test_files[@]}"; do
     test_count=$((test_count + 1))
     test_name=$(basename "${test_file}" .json)
     expected_file="${test_name}.expected"
@@ -100,3 +125,4 @@ else
     echo "${GREEN}All tests passed!${NC}"
     exit 0
 fi
+

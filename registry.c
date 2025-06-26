@@ -2,6 +2,7 @@
 #include <stdlib.h> // For malloc, calloc, free, NULL
 #include <string.h> // For strdup, strcmp
 #include <stdio.h> // For perror, fprintf, stderr
+#include "utils.h" // For render_abort
 
 // --- Internal Data Structures ---
 // The definitions for ComponentRegistryNode, VarRegistryNode, and Registry struct

@@ -8,9 +8,7 @@
     "type": "label",
     "id": "@test_label_for_nulls",
     "named": "l_test_label_for_nulls",
-    "properties": {
-       "text": "Initial Text"
-    }
+    "text": "Initial Text"
   },
   {
     "type": "label",

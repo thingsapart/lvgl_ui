@@ -1,0 +1,61 @@
+[
+  {
+    "type": "style",
+    "id": "@container",
+    "pad_all": 0,
+    "margin_all": 0,
+    "border_width": 0,
+    "pad_row": 3,
+    "pad_column": 5
+  },
+
+  {
+    "type": "tileview",
+    "add_style": [
+      "@container",
+      0
+    ],
+    "size": [
+      "100%",
+      "100%"
+    ],
+    "pad_row": 0,
+    "pad_column": 0,
+    "with": {
+      "obj": {
+        "call": "lv_tileview_add_tile",
+        "args": [
+          0,
+          0,
+          "LV_DIR_RIGHT"
+        ]
+      },
+      "do": null
+    },
+    "with": {
+      "obj": {
+        "call": "lv_tileview_add_tile",
+        "args": [
+          0,
+          0,
+          "LV_DIR_RIGHT"
+        ]
+      },
+      "do": {
+        "add_style": [
+          "@container",
+          0
+        ],
+        "bg_color": "#ff0000",
+        "bg_opa": "LV_OPA_COVER",
+        "children": [
+          {
+            "type": "label",
+            "center": [],
+            "text": "Scroll right"
+          }
+        ]
+      }
+    }
+  }
+]

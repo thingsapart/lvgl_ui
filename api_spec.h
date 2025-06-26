@@ -118,10 +118,25 @@ bool api_spec_is_valid_enum_int_value(const ApiSpec* spec, const char* enum_type
 // Checks if a string is a member of a specific enum type.
 bool api_spec_is_enum_member(const ApiSpec* spec, const char* enum_name, const char* member_name);
 
+// Finds the integer value of a named enum member.
+bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_name, const char* member_name, long* out_value);
+
+
 // Checks if a string is a member of any enum type defined in the spec.
 bool api_spec_is_global_enum_member(const ApiSpec* spec, const char* member_name);
 
 // Checks if a string is a defined constant in the spec.
 bool api_spec_is_constant(const ApiSpec* spec, const char* const_name);
+
+// Checks if a function name exists in the API spec's global functions.
+bool api_spec_has_function(const ApiSpec* spec, const char* func_name);
+
+// Finds the integer value of a specific enum member within a given enum type.
+// Returns true if found and out_value is set, false otherwise.
+bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_type_name, const char* member_name, long* out_value);
+//
+// Finds a function definition in the API spec.
+const FunctionDefinition* api_spec_find_function(const ApiSpec* spec, const char* func_name);
+
 
 #endif // API_SPEC_H

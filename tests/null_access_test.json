@@ -1,0 +1,23 @@
+[
+  {
+    "type": "label",
+    "named": "label_test_valid_setup",
+    "text": "This label is valid."
+  },
+  {
+    "type": "obj",
+    "named": "obj_to_style_badly",
+    "add_style": ["@non_existent_style", 0]
+  },
+  {
+    "type": "label",
+    "named": "label_reparent_target_bad",
+    "text": "This label will attempt reparent to non-existent.",
+    "set_parent": "@non_existent_object_arg"
+  },
+  {
+    "type": "label",
+    "named": "label_after_errors",
+    "text": "This label should not be reached if aborts work."
+  }
+]

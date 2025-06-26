@@ -1,11 +1,12 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 
-#include "ir.h" // For IRStmtBlock type
+#include "ir.h"
+#include "api_spec.h"
 
 // Generates C code from the IR tree.
-// root_block: The root of the IR statement tree.
-// parent_var_name: Name of the parent lv_obj_t* for the UI (e.g. "parent" or "screen").
-void codegen_generate_c(IRStmtBlock* root_block, const char* parent_var_name);
+// root: The root of the IR tree.
+// api_spec: The API specification for resolving properties to functions.
+void codegen_generate_c(IRRoot* root, const ApiSpec* api_spec);
 
 #endif // CODEGEN_H
