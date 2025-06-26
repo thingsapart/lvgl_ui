@@ -18,14 +18,10 @@ void create_ui(lv_obj_t* parent) {
     lv_obj_t* tileview_3 = lv_tileview_create(parent);
     if (tileview_3 == NULL) render_abort("Error: Failed to create widget 'tileview_3' (type: tileview).");
     obj_registry_add("@main_tileview", (void*)tileview_3);
-    void* _arg_val_0 = { obj_registry_get("container"), 0 };
-    lv_obj_add_style(tileview_3, _arg_val_0);
-    void* _arg_val_1 = { lv_pct(100), lv_pct(100) };
-    lv_obj_set_style_size(tileview_3, _arg_val_1);
-    void* _arg_val_2 = 0;
-    lv_obj_set_style_pad_row(tileview_3, _arg_val_2);
-    void* _arg_val_3 = 0;
-    lv_obj_set_style_pad_column(tileview_3, _arg_val_3);
+    lv_obj_add_style(tileview_3, (lv_style_t*)obj_registry_get("container"), 0);
+    lv_obj_set_size(tileview_3, lv_pct(100), lv_pct(100));
+    lv_obj_set_style_pad_row(tileview_3);
+    lv_obj_set_style_pad_column(tileview_3);
     {
         void* with_target_tileview_3 = lv_tileview_add_tile(0, 0, LV_DIR_RIGHT);
     }

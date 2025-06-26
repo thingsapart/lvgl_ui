@@ -17,25 +17,12 @@ void create_ui(lv_obj_t* parent) {
     obj_registry_add("@action_button", (void*)style_0);
     lv_obj_t* dropdown_1 = lv_dropdown_create(parent);
     if (dropdown_1 == NULL) render_abort("Error: Failed to create widget 'dropdown_1' (type: dropdown).");
-    void* _arg_val_0 = "Home
-Zero
-G54
-G55
-G56
-G57
-G58";
-    lv_dropdown_set_options(dropdown_1, _arg_val_0);
-    void* _arg_val_1 = { obj_registry_get("action_button"), 0 };
-    lv_obj_add_style(dropdown_1, _arg_val_1);
-    lv_align_t _arg_val_2 = LV_ALIGN_BOTTOM_LEFT;
-    int32_t _arg_val_3 = 90;
-    int32_t _arg_val_4 = -10;
-    lv_obj_align(dropdown_1, _arg_val_2, _arg_val_3, _arg_val_4);
-    void* _arg_val_5 = LV_OBJ_FLAG_FLOATING;
-    lv_obj_add_flag(dropdown_1, _arg_val_5);
-    char* _arg_val_6 = "test-text";
-    lv_dropdown_set_text(dropdown_1, _arg_val_6);
+    lv_dropdown_set_options(dropdown_1);
+    lv_obj_add_style(dropdown_1, (lv_style_t*)obj_registry_get("action_button"), 0);
+    lv_obj_align(dropdown_1, LV_ALIGN_BOTTOM_LEFT, 90, -10);
+    lv_obj_add_flag(dropdown_1);
+    char* _arg_val_0 = "test-text";
+    lv_dropdown_set_text(dropdown_1, _arg_val_0);
     lv_dropdown_set_symbol(dropdown_1);
-    void* _arg_val_7 = {  };
-    lv_obj_move_foreground(dropdown_1, _arg_val_7);
+    lv_obj_move_foreground(dropdown_1);
 }
