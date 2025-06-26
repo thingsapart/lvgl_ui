@@ -22,6 +22,7 @@ struct ApiSpec; /* Forward declaration for ApiSpec pointer usage */
 // A simple dynamic registry to map string IDs to created LVGL objects (widgets, styles, etc.).
 void obj_registry_init(void);
 void obj_registry_add(const char* id, void* obj);
+char *obj_registry_add_str(const char *);
 void* obj_registry_get(const char* id);
 void obj_registry_deinit(void);
 

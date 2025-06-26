@@ -290,6 +290,9 @@ class CCodeGenerator:
         if c_type == 'const char*':
             return f"ir_node_get_string({ir_node_accessor})"
 
+        if c_type == 'char*':
+            return f"obj_registry_add_str(ir_node_get_string({ir_node_accessor}))"
+
         # Handle color structs. Assumes IR provides a number (e.g., from #RRGGBB being converted to 0xRRGGBB).
         # if c_type_no_const in ['lv_color_t', 'lv_color16_t', 'lv_color32_t']:
         # Need to break up lv_color_t, lv_color32_t - no conversion found for
@@ -338,6 +341,7 @@ struct ApiSpec; /* Forward declaration for ApiSpec pointer usage */
 // A simple dynamic registry to map string IDs to created LVGL objects (widgets, styles, etc.).
 void obj_registry_init(void);
 void obj_registry_add(const char* id, void* obj);
+char *obj_registry_add_str(const char *);
 void* obj_registry_get(const char* id);
 void obj_registry_deinit(void);
 
@@ -492,6 +496,25 @@ static int obj_registry_count = 0;
 void obj_registry_init(void) {
     obj_registry_count = 0;
     memset(obj_registry, 0, sizeof(obj_registry));
+}
+
+char *obj_registry_add_str(const char *s) {
+    if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS || !s) {
+        LV_LOG_WARN("Cannot add object to registry: full or null string");
+        return NULL;
+    }
+    const size_t sl = strlen(s) + 5;
+    char name[sl + 1];
+    snprintf(name, sl, "str::%s", s);
+    for (int i = 0; i < obj_registry_count; i++) {
+        if (strcmp(obj_registry[i].id, name) == 0) {
+            obj_registry[i].obj = strdup(s);
+            return (char *)obj_registry[i].obj;
+        }
+    }
+    obj_registry[obj_registry_count].id = strdup(name);
+    obj_registry[obj_registry_count].obj = strdup(s);
+    return (char *)obj_registry[obj_registry_count++].obj;
 }
 
 void obj_registry_add(const char* id, void* obj) {

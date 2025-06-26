@@ -1277,29 +1277,9 @@ static lv_obj_t* dispatch_ir_archetype_47(generic_lvgl_func_t fn, void* target, 
         return NULL;
     }
 
-    const char* arg0_str = NULL;
-    if (ir_args[0]) {
-        if (ir_args[0]->type == IR_EXPR_LITERAL && ((IRExprLiteral*)ir_args[0])->is_string) {
-            arg0_str = ((IRExprLiteral*)ir_args[0])->value;
-        } else if (ir_args[0]->type == IR_EXPR_STATIC_STRING) {
-            arg0_str = ((IRExprStaticString*)ir_args[0])->value;
-        } else if (ir_args[0]->type == IR_EXPR_REGISTRY_REF) {
-            // This case is less common for set_text, but included for completeness.
-            // obj_registry_get will abort if ID not found and not "NULL".
-            arg0_str = (const char*)obj_registry_get(ir_node_get_string(ir_args[0]));
-        } else if (ir_args[0]->type == IR_EXPR_LITERAL && strcmp(((IRExprLiteral*)ir_args[0])->value, "NULL") == 0 && !((IRExprLiteral*)ir_args[0])->is_string) {
-            arg0_str = NULL; // Explicit NULL literal passed as argument
-        } else {
-            char err_buf[256];
-            snprintf(err_buf, sizeof(err_buf), "dispatch_ir_archetype_47: Invalid IRNode type (%d) for string argument.", (int)ir_args[0]->type);
-            render_abort(err_buf);
-            return NULL;
-        }
-    }
-    // LVGL functions like lv_label_set_text can accept NULL to clear text.
-
-    typedef void (*specific_func_t)(lv_obj_t*, const char*);
-    ((specific_func_t)fn)((lv_obj_t*)target, arg0_str);
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    typedef void (*specific_func_t)(lv_obj_t*, char*);
+    ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
@@ -1654,7 +1634,7 @@ static lv_obj_t* dispatch_ir_archetype_74(generic_lvgl_func_t fn, void* target, 
     }
 
     lv_base_dir_t* arg0 = (lv_base_dir_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     typedef void (*specific_func_t)(lv_text_align_t*, lv_base_dir_t*, char*);
     ((specific_func_t)fn)((lv_text_align_t*)target, arg0, arg1);
     return NULL;
@@ -1722,7 +1702,7 @@ static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target, 
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef lv_font_t* (*specific_func_t)(char*);
     return (lv_obj_t*)((specific_func_t)fn)(arg0);
 }
@@ -1955,7 +1935,7 @@ static lv_obj_t* dispatch_ir_archetype_98(generic_lvgl_func_t fn, void* target, 
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef void (*specific_func_t)(lv_cache_t*, char*);
     ((specific_func_t)fn)((lv_cache_t*)target, arg0);
     return NULL;
@@ -3736,7 +3716,7 @@ static lv_obj_t* dispatch_ir_archetype_233(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef lv_result_t (*specific_func_t)(lv_draw_buf_t*, char*);
     (void)((specific_func_t)fn)((lv_draw_buf_t*)target, arg0);
     return NULL;
@@ -4262,7 +4242,7 @@ static lv_obj_t* dispatch_ir_archetype_275(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, char*, uint32_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -4288,7 +4268,7 @@ static lv_obj_t* dispatch_ir_archetype_277(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef int32_t (*specific_func_t)(lv_obj_t*, char*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
@@ -4747,7 +4727,7 @@ static lv_obj_t* dispatch_ir_archetype_315(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef lv_fs_res_t (*specific_func_t)(lv_fs_dir_t*, char*);
     (void)((specific_func_t)fn)((lv_fs_dir_t*)target, arg0);
     return NULL;
@@ -4760,7 +4740,7 @@ static lv_obj_t* dispatch_ir_archetype_316(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     typedef lv_fs_res_t (*specific_func_t)(lv_fs_dir_t*, char*, uint32_t);
     (void)((specific_func_t)fn)((lv_fs_dir_t*)target, arg0, arg1);
@@ -4798,7 +4778,7 @@ static lv_obj_t* dispatch_ir_archetype_319(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef char* (*specific_func_t)(char*);
     return (lv_obj_t*)((specific_func_t)fn)(arg0);
 }
@@ -4823,7 +4803,7 @@ static lv_obj_t* dispatch_ir_archetype_321(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     lv_fs_mode_t arg1 = (lv_fs_mode_t)ir_node_get_enum_value(ir_args[1], "lv_fs_mode_t", spec);
     typedef lv_fs_res_t (*specific_func_t)(lv_fs_file_t*, char*, lv_fs_mode_t);
     (void)((specific_func_t)fn)((lv_fs_file_t*)target, arg0, arg1);
@@ -5472,7 +5452,7 @@ static lv_obj_t* dispatch_ir_archetype_373(generic_lvgl_func_t fn, void* target,
     }
 
     lv_subject_t* arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     typedef lv_observer_t* (*specific_func_t)(lv_obj_t*, lv_subject_t*, char*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
 }
@@ -5525,7 +5505,7 @@ static lv_obj_t* dispatch_ir_archetype_377(generic_lvgl_func_t fn, void* target,
     }
 
     uint32_t arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     typedef void (*specific_func_t)(lv_obj_t*, uint32_t, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
@@ -5613,7 +5593,7 @@ static lv_obj_t* dispatch_ir_archetype_384(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef lv_obj_t* (*specific_func_t)(lv_obj_t*, char*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0);
 }
@@ -5638,7 +5618,7 @@ static lv_obj_t* dispatch_ir_archetype_386(generic_lvgl_func_t fn, void* target,
     }
 
     lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     typedef void (*specific_func_t)(lv_obj_t*, lv_obj_t*, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
@@ -5844,7 +5824,7 @@ static lv_obj_t* dispatch_ir_archetype_401(generic_lvgl_func_t fn, void* target,
 
     lv_subject_t* arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
     lv_event_code_t arg1 = (lv_event_code_t)ir_node_get_enum_value(ir_args[1], "lv_event_code_t", spec);
-    char* arg2 = (char*)obj_registry_get(ir_node_get_string(ir_args[2]));
+    char* arg2 = obj_registry_add_str(ir_node_get_string(ir_args[2]));
     typedef void (*specific_func_t)(lv_obj_t*, lv_subject_t*, lv_event_code_t, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1, arg2);
     return NULL;
@@ -5958,7 +5938,7 @@ static lv_obj_t* dispatch_ir_archetype_409(generic_lvgl_func_t fn, void* target,
     }
 
     lv_part_t arg0 = (lv_part_t)ir_node_get_int(ir_args[0]);
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     typedef lv_text_align_t (*specific_func_t)(lv_obj_t*, lv_part_t, char*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
@@ -7634,7 +7614,7 @@ static lv_obj_t* dispatch_ir_archetype_535(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     lv_roller_mode_t arg1 = (lv_roller_mode_t)ir_node_get_enum_value(ir_args[1], "lv_roller_mode_t", spec);
     typedef void (*specific_func_t)(lv_obj_t*, char*, lv_roller_mode_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7662,7 +7642,7 @@ static lv_obj_t* dispatch_ir_archetype_537(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     lv_anim_enable_t arg1 = (lv_anim_enable_t)ir_node_get_int(ir_args[1]);
     typedef bool (*specific_func_t)(lv_obj_t*, char*, lv_anim_enable_t);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7839,7 +7819,7 @@ static lv_obj_t* dispatch_ir_archetype_550(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef void (*specific_func_t)(lv_display_t*, char*);
     ((specific_func_t)fn)((lv_display_t*)target, arg0);
     return NULL;
@@ -7937,7 +7917,7 @@ static lv_obj_t* dispatch_ir_archetype_558(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef void (*specific_func_t)(lv_span_t*, char*);
     ((specific_func_t)fn)((lv_span_t*)target, arg0);
     return NULL;
@@ -8127,7 +8107,7 @@ static lv_obj_t* dispatch_ir_archetype_573(generic_lvgl_func_t fn, void* target,
     }
 
     lv_span_t* arg0 = (lv_span_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     typedef void (*specific_func_t)(lv_obj_t*, lv_span_t*, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
@@ -8168,8 +8148,8 @@ static lv_obj_t* dispatch_ir_archetype_576(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     typedef char* (*specific_func_t)(char*, char*);
     return (lv_obj_t*)((specific_func_t)fn)(arg0, arg1);
 }
@@ -8181,7 +8161,7 @@ static lv_obj_t* dispatch_ir_archetype_577(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     int arg1 = (int)ir_node_get_int(ir_args[1]);
     typedef char* (*specific_func_t)(char*, int);
     return (lv_obj_t*)((specific_func_t)fn)(arg0, arg1);
@@ -8194,8 +8174,8 @@ static lv_obj_t* dispatch_ir_archetype_578(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     typedef int (*specific_func_t)(char*, char*);
     (void)((specific_func_t)fn)(arg0, arg1);
     return NULL;
@@ -8208,8 +8188,8 @@ static lv_obj_t* dispatch_ir_archetype_579(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     typedef bool (*specific_func_t)(char*, char*);
     (void)((specific_func_t)fn)(arg0, arg1);
     return NULL;
@@ -8222,8 +8202,8 @@ static lv_obj_t* dispatch_ir_archetype_580(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     size_t arg2 = (size_t)ir_node_get_int(ir_args[2]);
     typedef size_t (*specific_func_t)(char*, char*, size_t);
     (void)((specific_func_t)fn)(arg0, arg1, arg2);
@@ -8237,7 +8217,7 @@ static lv_obj_t* dispatch_ir_archetype_581(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef size_t (*specific_func_t)(char*);
     (void)((specific_func_t)fn)(arg0);
     return NULL;
@@ -8250,8 +8230,8 @@ static lv_obj_t* dispatch_ir_archetype_582(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     size_t arg2 = (size_t)ir_node_get_int(ir_args[2]);
     typedef char* (*specific_func_t)(char*, char*, size_t);
     return (lv_obj_t*)((specific_func_t)fn)(arg0, arg1, arg2);
@@ -8264,8 +8244,8 @@ static lv_obj_t* dispatch_ir_archetype_583(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     size_t arg2 = (size_t)ir_node_get_int(ir_args[2]);
     typedef int (*specific_func_t)(char*, char*, size_t);
     (void)((specific_func_t)fn)(arg0, arg1, arg2);
@@ -8279,7 +8259,7 @@ static lv_obj_t* dispatch_ir_archetype_584(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     size_t arg1 = (size_t)ir_node_get_int(ir_args[1]);
     typedef char* (*specific_func_t)(char*, size_t);
     return (lv_obj_t*)((specific_func_t)fn)(arg0, arg1);
@@ -8292,7 +8272,7 @@ static lv_obj_t* dispatch_ir_archetype_585(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     size_t arg1 = (size_t)ir_node_get_int(ir_args[1]);
     typedef size_t (*specific_func_t)(char*, size_t);
     (void)((specific_func_t)fn)(arg0, arg1);
@@ -8749,7 +8729,7 @@ static lv_obj_t* dispatch_ir_archetype_620(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     typedef void (*specific_func_t)(lv_subject_t*, char*);
     ((specific_func_t)fn)((lv_subject_t*)target, arg0);
     return NULL;
@@ -8858,10 +8838,10 @@ static lv_obj_t* dispatch_ir_archetype_629(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = (char*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
     size_t arg2 = (size_t)ir_node_get_int(ir_args[2]);
-    char* arg3 = (char*)obj_registry_get(ir_node_get_string(ir_args[3]));
+    char* arg3 = obj_registry_add_str(ir_node_get_string(ir_args[3]));
     typedef void (*specific_func_t)(lv_subject_t*, char*, char*, size_t, char*);
     ((specific_func_t)fn)((lv_subject_t*)target, arg0, arg1, arg2, arg3);
     return NULL;
@@ -8984,7 +8964,7 @@ static lv_obj_t* dispatch_ir_archetype_638(generic_lvgl_func_t fn, void* target,
 
     uint32_t arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
-    char* arg2 = (char*)obj_registry_get(ir_node_get_string(ir_args[2]));
+    char* arg2 = obj_registry_add_str(ir_node_get_string(ir_args[2]));
     typedef void (*specific_func_t)(lv_obj_t*, uint32_t, uint32_t, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1, arg2);
     return NULL;
@@ -9025,7 +9005,7 @@ static lv_obj_t* dispatch_ir_archetype_641(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     lv_font_t* arg1 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -9043,7 +9023,7 @@ static lv_obj_t* dispatch_ir_archetype_642(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     lv_font_t* arg2 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -9059,7 +9039,7 @@ static lv_obj_t* dispatch_ir_archetype_643(generic_lvgl_func_t fn, void* target,
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     lv_font_t* arg2 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -10958,6 +10938,25 @@ void obj_registry_init(void) {
     memset(obj_registry, 0, sizeof(obj_registry));
 }
 
+char *obj_registry_add_str(const char *s) {
+    if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS || !s) {
+        LV_LOG_WARN("Cannot add object to registry: full or null string");
+        return NULL;
+    }
+    const size_t sl = strlen(s) + 5;
+    char name[sl + 1];
+    snprintf(name, sl, "str::%s", s);
+    for (int i = 0; i < obj_registry_count; i++) {
+        if (strcmp(obj_registry[i].id, name) == 0) {
+            obj_registry[i].obj = strdup(s);
+            return (char *)obj_registry[i].obj;
+        }
+    }
+    obj_registry[obj_registry_count].id = strdup(name);
+    obj_registry[obj_registry_count].obj = strdup(s);
+    return (char *)obj_registry[obj_registry_count++].obj;
+}
+
 void obj_registry_add(const char* id, void* obj) {
     if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS || !id) {
         LV_LOG_WARN("Cannot add object to registry: full or null ID");
@@ -10980,15 +10979,12 @@ void* obj_registry_get(const char* id) {
     if (strcmp(id, "NULL") == 0) return NULL;
 
     for (int i = 0; i < obj_registry_count; i++) {
-        if (obj_registry[i].id && strcmp(obj_registry[i].id, id) == 0) {
+        if (strcmp(obj_registry[i].id, id) == 0) {
             return obj_registry[i].obj;
         }
     }
-
-    char err_msg[256];
-    snprintf(err_msg, sizeof(err_msg), "C Runtime Registry error: Object with ID '%s' not found.", id ? id : "<NULL_ID_PASSED>");
-    render_abort(err_msg);
-    return NULL; // Should not be reached
+    LV_LOG_WARN("Object with ID '%s' not found in registry.", id);
+    return NULL;
 }
 
 void obj_registry_deinit(void) {
