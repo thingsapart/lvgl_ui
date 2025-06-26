@@ -682,40 +682,6 @@ bool api_spec_is_enum_member(const ApiSpec* spec, const char* enum_name, const c
     return cJSON_GetObjectItem(enum_type_json, member_name) != NULL;
 }
 
-bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_name, const char* member_name, long* out_value) {
-    if (!spec || !spec->enums || !enum_name || !member_name || !out_value) {
-        return false;
-    }
-
-    const cJSON* enum_type_json = cJSON_GetObjectItem(spec->enums, enum_name);
-    if (!enum_type_json || !cJSON_IsObject(enum_type_json)) {
-        return false; // Enum type not found
-    }
-
-    const cJSON* enum_member_json = cJSON_GetObjectItem(enum_type_json, member_name);
-    if (!enum_member_json) {
-        return false; // Enum member not found
-    }
-
-    // The value in the JSON is a string, which needs to be parsed.
-    // It can be a decimal or hexadecimal string.
-    if (cJSON_IsString(enum_member_json) && enum_member_json->valuestring != NULL) {
-        char* endptr;
-        *out_value = strtol(enum_member_json->valuestring, &endptr, 0); // Base 0 auto-detects hex (0x)
-        if (*endptr == '\0') { // Conversion was successful
-            return true;
-        }
-    }
-
-    if (cJSON_IsNumber(enum_member_json)) {
-        *out_value = (long)enum_member_json->valueint;
-        return true;
-    }
-
-    return false; // Member found but value is not in a recognized format
-}
-
-
 bool api_spec_is_global_enum_member(const ApiSpec* spec, const char* member_name) {
     if (!spec || !spec->enums || !member_name) {
         return false;
