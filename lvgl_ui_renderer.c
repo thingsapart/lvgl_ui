@@ -1,7 +1,7 @@
 #include "lvgl_ui_renderer.h"
 #include "lvgl_dispatch.h"
 #include "ir.h"
-#include "utils.h"
+#include "utils.h" // For render_abort and other utils
 #include "api_spec.h"
 #include "debug_log.h"
 #include <cJSON.h>
@@ -89,6 +89,66 @@ static void render_properties(RenderContext* ctx, IRObject* ir_obj, void* native
             current_arg_node = current_arg_node->next;
         }
 
+        // Check for NULL lv_obj_t* or lv_style_t* arguments before calling
+        if (prop_def->func_args && prop_def->func_args->next) { // func_args->next is the first actual value argument
+            const FunctionArg* current_arg_spec = prop_def->func_args->next;
+            for (int i = 0; i < arg_count; ++i) {
+                if (current_arg_spec) {
+                    const char* arg_type_str = current_arg_spec->type;
+                    if (arg_type_str && (strcmp(arg_type_str, "lv_obj_t*") == 0 || strcmp(arg_type_str, "lv_style_t*") == 0)) {
+                        const char* arg_name_str = current_arg_spec->name ? current_arg_spec->name : "unnamed_arg";
+                        if (arg_array[i] == NULL) { // Case 1: resolve_expr returned NULL (e.g. malloc failure)
+                             char err_msg[512];
+                             snprintf(err_msg, sizeof(err_msg), "Renderer Error: IRNode for argument '%s' (property '%s' of object '%s') is NULL. Resolution failed.", arg_name_str, prop->name, ir_obj->c_name);
+                             render_abort(err_msg);
+                        }
+
+                        void* ptr_val = NULL;
+                        bool needs_runtime_null_check = true; // Assume we need to check, unless it's an unresolved registry ref
+
+                        if (arg_array[i]->type == IR_EXPR_LITERAL) {
+                            IRExprLiteral* lit = (IRExprLiteral*)arg_array[i];
+                            // Check for "NULL" string or "0" string for pointers
+                            if ((strcmp(lit->value, "NULL") == 0 && !lit->is_string) || strcmp(lit->value, "0") == 0) {
+                                ptr_val = NULL;
+                            } else {
+                                // Attempt to parse if it's a hex address string (e.g. from a function call that returns a pointer)
+                                if (lit->value[0] == '0' && (lit->value[1] == 'x' || lit->value[1] == 'X')) {
+                                   sscanf(lit->value, "%p", &ptr_val);
+                                } else {
+                                    // Not "NULL", "0", or "0x...", so it's some other literal.
+                                    // It's not a pointer we can directly check for NULL here.
+                                    // It might be an integer that LVGL interprets, or an error.
+                                    // For lv_obj_t* / lv_style_t*, this state is ambiguous without more context.
+                                    // We rely on the dynamic_lvgl_call_ir to correctly cast/use or fail.
+                                    // The key is that if it *was* supposed to be a pointer and is some other string,
+                                    // it's not an explicit NULL we can catch here easily.
+                                    needs_runtime_null_check = false; // Don't check this specific ptr_val for NULL as it's not a clear pointer representation
+                                }
+                            }
+                        } else if (arg_array[i]->type == IR_EXPR_REGISTRY_REF) {
+                            // For registry references, the actual obj_registry_get() call (which aborts on failure)
+                            // happens inside dynamic_lvgl_call_ir's archetypes.
+                            // So, we don't perform a NULL check on ptr_val here for this type.
+                            needs_runtime_null_check = false;
+                        }
+                        // Other IR_EXPR types are not expected to directly represent lv_obj_t* or lv_style_t*
+                        // that would be resolvable to NULL here. They would typically be part of a function call
+                        // that itself returns a pointer, which would then be in an IR_EXPR_LITERAL.
+
+                        if (needs_runtime_null_check && ptr_val == NULL) {
+                            char err_msg[512];
+                            snprintf(err_msg, sizeof(err_msg), "Renderer Error: Argument '%s' for function '%s' (property '%s' of object '%s') is NULL.", arg_name_str, prop_def->setter, prop->name, ir_obj->c_name);
+                            render_abort(err_msg);
+                        }
+                    }
+                    current_arg_spec = current_arg_spec->next;
+                } else {
+                    DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Missing arg spec for arg %d of %s. Cannot perform type-specific NULL check.", i, prop_def->setter);
+                }
+            }
+        }
+
         dynamic_lvgl_call_ir(prop_def->setter, native_obj, arg_array, arg_count, ctx->api_spec);
         free_resolved_expr_list(resolved_args);
 
@@ -152,8 +212,10 @@ static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
     }
 
     if (!created_native_obj) {
-        fprintf(stderr, "Renderer Error: Failed to create object of type '%s'.\n", obj->json_type);
-        return;
+        char err_msg[256];
+        snprintf(err_msg, sizeof(err_msg), "Renderer Error: Failed to create object '%s' (type: %s). dynamic_lvgl_call_ir returned NULL.", obj->c_name, obj->json_type);
+        render_abort(err_msg); // This will exit
+        return; // Should not be reached
     }
 
     obj_registry_add(obj->c_name, created_native_obj);
@@ -234,8 +296,86 @@ static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
                     }
                 }
 
-                IRObject fake_do_scope_obj = {.json_type = (char*)json_type_for_do_properties, .properties = wb->properties};
-                render_properties(ctx, &fake_do_scope_obj, with_block_target_for_do);
+                // IRObject fake_do_scope_obj = {.json_type = (char*)json_type_for_do_properties, .properties = wb->properties};
+                // render_properties(ctx, &fake_do_scope_obj, with_block_target_for_do);
+                // Instead of calling render_properties, inline similar logic here to handle args correctly for 'with'
+                IRProperty* with_prop = wb->properties;
+                while(with_prop) {
+                    const PropertyDefinition* current_with_prop_def = api_spec_find_property(ctx->api_spec, json_type_for_do_properties, with_prop->name);
+                    if (!current_with_prop_def || !current_with_prop_def->setter) {
+                        DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Setter for property '%s' on type '%s' in 'with' block not found. Skipping.", with_prop->name, json_type_for_do_properties);
+                        with_prop = with_prop->next;
+                        continue;
+                    }
+
+                    IRExprNode* with_resolved_args = NULL;
+                    if (with_prop->value->type == IR_EXPR_ARRAY) {
+                        IRExprArray* arr = (IRExprArray*)with_prop->value;
+                        IRExprNode* elem = arr->elements;
+                        while(elem) {
+                            ir_expr_list_add(&with_resolved_args, resolve_expr(ctx, elem->expr));
+                            elem = elem->next;
+                        }
+                    } else {
+                        ir_expr_list_add(&with_resolved_args, resolve_expr(ctx, with_prop->value));
+                    }
+
+                    IRNode* with_arg_array[MAX_RENDER_ARGS];
+                    int with_arg_count = 0;
+                    IRExprNode* current_with_arg_node = with_resolved_args;
+                    while(current_with_arg_node && with_arg_count < MAX_RENDER_ARGS) {
+                        with_arg_array[with_arg_count++] = (IRNode*)current_with_arg_node->expr;
+                        current_with_arg_node = current_with_arg_node->next;
+                    }
+
+                    // Check for NULL lv_obj_t* or lv_style_t* arguments
+                    if (current_with_prop_def->func_args && current_with_prop_def->func_args->next) {
+                        const FunctionArg* current_with_arg_spec = current_with_prop_def->func_args->next;
+                        for (int i = 0; i < with_arg_count; ++i) {
+                            if (current_with_arg_spec) {
+                                const char* arg_type_str = current_with_arg_spec->type;
+                                const char* arg_name_str = current_with_arg_spec->name ? current_with_arg_spec->name : "unnamed_arg";
+                                // const char* arg_name_str = current_with_arg_spec ? (current_with_arg_spec->name ? current_with_arg_spec->name : "unnamed_arg") : "unknown_arg_ λόγω_missing_spec"; // Redundant definition removed
+                                if (arg_type_str && (strcmp(arg_type_str, "lv_obj_t*") == 0 || strcmp(arg_type_str, "lv_style_t*") == 0)) {
+                                    if (with_arg_array[i] == NULL) { // Case 1: resolve_expr returned NULL
+                                        char err_msg[512];
+                                        snprintf(err_msg, sizeof(err_msg), "Renderer Error (with block): IRNode for argument '%s' (property '%s') is NULL. Resolution failed.", arg_name_str, with_prop->name);
+                                        render_abort(err_msg);
+                                    }
+                                    void* ptr_val = NULL;
+                                    bool needs_runtime_null_check_with = true;
+
+                                    if (with_arg_array[i]->type == IR_EXPR_LITERAL) {
+                                        IRExprLiteral* lit = (IRExprLiteral*)with_arg_array[i];
+                                        if ((strcmp(lit->value, "NULL") == 0 && !lit->is_string) || strcmp(lit->value, "0") == 0) {
+                                            ptr_val = NULL;
+                                        } else {
+                                           if (lit->value[0] == '0' && (lit->value[1] == 'x' || lit->value[1] == 'X')) {
+                                               sscanf(lit->value, "%p", &ptr_val);
+                                           } else {
+                                               needs_runtime_null_check_with = false;
+                                           }
+                                        }
+                                    } else if (with_arg_array[i]->type == IR_EXPR_REGISTRY_REF) {
+                                        needs_runtime_null_check_with = false; // Resolved by obj_registry_get in archetype
+                                    }
+
+                                    if (needs_runtime_null_check_with && ptr_val == NULL) {
+                                        char err_msg[512];
+                                        snprintf(err_msg, sizeof(err_msg), "Renderer Error (with block): Argument '%s' for function '%s' (property '%s') is NULL.", arg_name_str, current_with_prop_def->setter, with_prop->name);
+                                        render_abort(err_msg);
+                                    }
+                                }
+                                if(current_with_arg_spec) current_with_arg_spec = current_with_arg_spec->next;
+                            } else {
+                                DEBUG_LOG(LOG_MODULE_RENDERER, "Warning (with_block): Missing arg spec for arg %d of %s. Cannot perform type-specific NULL check.", i, current_with_prop_def ? current_with_prop_def->setter : "unknown_setter");
+                            }
+                        }
+                    }
+                    dynamic_lvgl_call_ir(current_with_prop_def->setter, with_block_target_for_do, with_arg_array, with_arg_count, ctx->api_spec);
+                    free_resolved_expr_list(with_resolved_args);
+                    with_prop = with_prop->next;
+                }
             }
 
             if (wb->children_root) { // Children from the "do" block

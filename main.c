@@ -26,6 +26,13 @@ void print_usage(const char* prog_name) {
     fprintf(stderr, "Modes: c_code, lvgl_ui, c_code_and_lvgl_ui (default)\n");
 }
 
+// Implementation of render_abort
+void render_abort(const char *msg) {
+    fprintf(stderr, "RENDER ABORT: %s\n", msg);
+    fflush(stderr); // Ensure this message is written before exit
+    exit(1);
+}
+
 int main(int argc, char* argv[]) {
     debug_log_init(); // Initialize the logging system
 

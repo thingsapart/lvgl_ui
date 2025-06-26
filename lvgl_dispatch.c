@@ -1277,9 +1277,29 @@ static lv_obj_t* dispatch_ir_archetype_47(generic_lvgl_func_t fn, void* target, 
         return NULL;
     }
 
-    char* arg0 = (char*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    typedef void (*specific_func_t)(lv_obj_t*, char*);
-    ((specific_func_t)fn)((lv_obj_t*)target, arg0);
+    const char* arg0_str = NULL;
+    if (ir_args[0]) {
+        if (ir_args[0]->type == IR_EXPR_LITERAL && ((IRExprLiteral*)ir_args[0])->is_string) {
+            arg0_str = ((IRExprLiteral*)ir_args[0])->value;
+        } else if (ir_args[0]->type == IR_EXPR_STATIC_STRING) {
+            arg0_str = ((IRExprStaticString*)ir_args[0])->value;
+        } else if (ir_args[0]->type == IR_EXPR_REGISTRY_REF) {
+            // This case is less common for set_text, but included for completeness.
+            // obj_registry_get will abort if ID not found and not "NULL".
+            arg0_str = (const char*)obj_registry_get(ir_node_get_string(ir_args[0]));
+        } else if (ir_args[0]->type == IR_EXPR_LITERAL && strcmp(((IRExprLiteral*)ir_args[0])->value, "NULL") == 0 && !((IRExprLiteral*)ir_args[0])->is_string) {
+            arg0_str = NULL; // Explicit NULL literal passed as argument
+        } else {
+            char err_buf[256];
+            snprintf(err_buf, sizeof(err_buf), "dispatch_ir_archetype_47: Invalid IRNode type (%d) for string argument.", (int)ir_args[0]->type);
+            render_abort(err_buf);
+            return NULL;
+        }
+    }
+    // LVGL functions like lv_label_set_text can accept NULL to clear text.
+
+    typedef void (*specific_func_t)(lv_obj_t*, const char*);
+    ((specific_func_t)fn)((lv_obj_t*)target, arg0_str);
     return NULL;
 }
 
@@ -10960,12 +10980,15 @@ void* obj_registry_get(const char* id) {
     if (strcmp(id, "NULL") == 0) return NULL;
 
     for (int i = 0; i < obj_registry_count; i++) {
-        if (strcmp(obj_registry[i].id, id) == 0) {
+        if (obj_registry[i].id && strcmp(obj_registry[i].id, id) == 0) {
             return obj_registry[i].obj;
         }
     }
-    LV_LOG_WARN("Object with ID '%s' not found in registry.", id);
-    return NULL;
+
+    char err_msg[256];
+    snprintf(err_msg, sizeof(err_msg), "C Runtime Registry error: Object with ID '%s' not found.", id ? id : "<NULL_ID_PASSED>");
+    render_abort(err_msg);
+    return NULL; // Should not be reached
 }
 
 void obj_registry_deinit(void) {

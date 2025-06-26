@@ -90,15 +90,24 @@ static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_ro
 
     // --- Object Creation ---
     const WidgetDefinition* widget_def = api_spec_find_widget(api_spec, obj->json_type);
+    bool is_widget_allocation = false; // Flag to indicate if this is a heap-allocated lv_obj_t* like widget
     print_indent(indent);
     if (widget_def && widget_def->create) { // It's a standard widget
         printf("lv_obj_t* %s = %s(%s);\n", obj->c_name, widget_def->create, parent_c_name ? parent_c_name : "lv_screen_active()");
-    } else if (widget_def && widget_def->c_type && widget_def->init_func) { // It's an object like a style
+        is_widget_allocation = true;
+    } else if (widget_def && widget_def->c_type && widget_def->init_func) { // It's an object like a style (usually stack allocated or global)
         printf("%s %s;\n", widget_def->c_type, obj->c_name);
         print_indent(indent);
         printf("%s(&%s);\n", widget_def->init_func, obj->c_name);
+        // Styles initialized this way are not heap allocated pointers that can be NULL from creation.
     } else { // Fallback to generic object
         printf("lv_obj_t* %s = lv_obj_create(%s);\n", obj->c_name, parent_c_name ? parent_c_name : "lv_screen_active()");
+        is_widget_allocation = true;
+    }
+
+    if (is_widget_allocation) {
+        print_indent(indent);
+        printf("if (%s == NULL) render_abort(\"Error: Failed to create widget '%s' (type: %s).\");\n", obj->c_name, obj->c_name, obj->json_type);
     }
 
     // If the object has a registered ID, add it to the C-side registry
@@ -110,6 +119,8 @@ static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_ro
 
     // --- Properties ---
     IRProperty* prop = obj->properties;
+    int temp_arg_counter = 0; // Counter for unique temporary variable names
+
     while (prop) {
         const PropertyDefinition* prop_def = api_spec_find_property(api_spec, obj->json_type, prop->name);
 
@@ -122,14 +133,12 @@ static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_ro
             setter_func[sizeof(setter_func) - 1] = '\0';
             setter_found = true;
         } else {
-            // Try lv_<type>_set_<prop>
             snprintf(temp_setter_name, sizeof(temp_setter_name), "lv_%s_set_%s", obj->json_type, prop->name);
             if (api_spec_has_function(api_spec, temp_setter_name)) {
                 strncpy(setter_func, temp_setter_name, sizeof(setter_func) -1);
                 setter_func[sizeof(setter_func) -1] = '\0';
                 setter_found = true;
             } else {
-                // Fallback: if not an "obj" type already, try lv_obj_set_<prop>
                 if (strcmp(obj->json_type, "obj") != 0) {
                     snprintf(temp_setter_name, sizeof(temp_setter_name), "lv_obj_set_%s", prop->name);
                     if (api_spec_has_function(api_spec, temp_setter_name)) {
@@ -139,134 +148,164 @@ static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_ro
                     }
                 }
             }
-
-            // If still not found, use the original constructed name as a last resort
             if (!setter_found) {
                 snprintf(setter_func, sizeof(setter_func), "lv_%s_set_%s", obj->json_type, prop->name);
             }
         }
 
-        print_indent(indent);
-
         char obj_ref_for_setter[128];
-        if (widget_def && widget_def->init_func) {
+        if (widget_def && widget_def->init_func) { // e.g. for lv_style_set_...(&style, ...)
             snprintf(obj_ref_for_setter, sizeof(obj_ref_for_setter), "&%s", obj->c_name);
         } else {
             snprintf(obj_ref_for_setter, sizeof(obj_ref_for_setter), "%s", obj->c_name);
         }
 
-        printf("%s(%s", setter_func, obj_ref_for_setter);
-
         const FunctionArg* first_value_arg_details = NULL;
-        if (prop_def && prop_def->func_args) {
-            if (prop_def->func_args->next) { // func_args->next is the first actual value argument
-                 first_value_arg_details = prop_def->func_args->next;
-            }
+        if (prop_def && prop_def->func_args && prop_def->func_args->next) {
+            first_value_arg_details = prop_def->func_args->next;
         }
 
-        // Determine if this is a "true no-value-arg" setter scenario (e.g. a toggle like `enabled: true`)
-        // or if api_spec might be missing arg details for a setter that actually takes one (e.g. `pad_all: 0`).
         bool is_true_no_arg_setter_scenario = false;
         if (prop_def && !first_value_arg_details) {
-            // This path is taken if api_spec indicates the setter takes no value arguments.
-            // We further check if the property value itself is a boolean literal ("true" or "false").
-            // If so, we treat it as a true no-arg toggle. Otherwise, we suspect api_spec might be
-            // incomplete and will attempt to pass the property's value as an argument.
-            is_true_no_arg_setter_scenario = false; // Default assumption for this path
             if (prop->value->type == IR_EXPR_LITERAL) {
                 IRExprLiteral* lit = (IRExprLiteral*)prop->value;
-                // Only consider it a true no-arg toggle if the value is literally "true" or "false".
                 if (!lit->is_string && (strcmp(lit->value, "true") == 0 || strcmp(lit->value, "false") == 0)) {
                     is_true_no_arg_setter_scenario = true;
                 }
             }
-            // If prop->value is a number (e.g., "0" for pad_all), an enum, a string, or function call,
-            // and we are in this `!first_value_arg_details` path, `is_true_no_arg_setter_scenario`
-            // will remain false. This signals that we should try to print the value as an argument.
         }
 
-        // Argument printing logic
-        // bool arguments_were_printed = false; // This variable is unused with the refactored logic.
+        // Prepare arguments and generate pre-call checks
+        char args_c_code[1024] = ""; // Buffer to store C code for arguments
+        // char temp_var_declarations[1024] = ""; // Buffer for temporary variable declarations and checks - Unused after refactor
+
+        bool has_args_to_print = false;
+
         if (first_value_arg_details) {
-            // Case 1: api_spec clearly defines arguments for the setter.
-            printf(", ");
+            strcat(args_c_code, ", ");
+            has_args_to_print = true;
             if (prop->value->type == IR_EXPR_ARRAY) {
                 IRExprArray* arr = (IRExprArray*)prop->value;
                 IRExprNode* elem = arr->elements;
                 const FunctionArg* current_arg_details_iter = first_value_arg_details;
                 bool first_array_elem = true;
                 while(elem) {
-                    if (!first_array_elem) printf(", ");
-                    codegen_expr(elem->expr, api_spec, ir_root, obj, current_arg_details_iter ? current_arg_details_iter->type : NULL);
+                    if (!first_array_elem) strcat(args_c_code, ", ");
+
+                    const char* arg_c_type = current_arg_details_iter ? current_arg_details_iter->type : NULL;
+                    bool needs_null_check = arg_c_type && (strcmp(arg_c_type, "lv_obj_t*") == 0 || strcmp(arg_c_type, "lv_style_t*") == 0);
+
+                    char temp_arg_var_name[64];
+                    snprintf(temp_arg_var_name, sizeof(temp_arg_var_name), "_arg_val_%d", temp_arg_counter++);
+
+                    if (needs_null_check) {
+                        // char decl_buf[256]; // Unused after refactor
+                        // Declare temp var
+                        print_indent(indent); // Indent for declaration
+                        printf("%s %s = ", arg_c_type, temp_arg_var_name);
+                        codegen_expr(elem->expr, api_spec, ir_root, obj, arg_c_type);
+                        printf(";\n");
+
+                        // Add NULL check for this temp var
+                        print_indent(indent); // Indent for check
+                        printf("if (%s == NULL) render_abort(\"Error: Argument for '%s' in '%s(%s, ...)' is NULL (property: %s, object: %s).\");\n",
+                               temp_arg_var_name, current_arg_details_iter->name, setter_func, obj_ref_for_setter, prop->name, obj->c_name);
+                        strcat(args_c_code, temp_arg_var_name);
+                    } else {
+                        // Directly generate expression for non-checked types
+                        // This part is tricky as codegen_expr prints. We need to capture its output.
+                        // For simplicity, assume codegen_expr can be called if not needing a check.
+                        // This will require codegen_expr to not print for this path, or a new helper.
+                        // Let's make codegen_expr print directly into args_c_code for now if no check.
+                        // THIS IS A HACK. A better way is a sprintf-like variant of codegen_expr.
+                        // For now, I'll print directly and the main printf will just print args_c_code.
+                        // This means print_indent(indent) for the main call needs to be careful.
+
+                        // Re-simplification: If no null check, print expression directly in the final call.
+                        // The args_c_code will build up the string of arguments.
+                        // This part will be tricky. Let's assume for now that if it's not null_checked,
+                        // it's generated directly into the final printf.
+                        // So, for array elements, if not null_checked, we append to args_c_code by calling codegen_expr
+                        // which will print. This means args_c_code doesn't store the C code but is a placeholder.
+                        // This entire argument generation section needs a rethink for cleanliness.
+
+                        // Let's stick to the temporary variable approach for *all* arguments for consistency in generation.
+                        // This simplifies the final printf call.
+                        print_indent(indent);
+                        printf("%s %s = ", arg_c_type ? arg_c_type : "void*", temp_arg_var_name); // Use void* if type unknown
+                        codegen_expr(elem->expr, api_spec, ir_root, obj, arg_c_type);
+                        printf(";\n");
+                        strcat(args_c_code, temp_arg_var_name);
+                    }
+
                     first_array_elem = false;
                     if (current_arg_details_iter) current_arg_details_iter = current_arg_details_iter->next;
                     elem = elem->next;
                 }
-            } else { // Property value is a single expression, for the first argument.
-                codegen_expr(prop->value, api_spec, ir_root, obj, first_value_arg_details->type);
+            } else { // Property value is a single expression
+                const char* arg_c_type = first_value_arg_details->type;
+                bool needs_null_check = arg_c_type && (strcmp(arg_c_type, "lv_obj_t*") == 0 || strcmp(arg_c_type, "lv_style_t*") == 0);
+
+                char temp_arg_var_name[64];
+                snprintf(temp_arg_var_name, sizeof(temp_arg_var_name), "_arg_val_%d", temp_arg_counter++);
+
+                print_indent(indent);
+                printf("%s %s = ", arg_c_type, temp_arg_var_name);
+                codegen_expr(prop->value, api_spec, ir_root, obj, arg_c_type);
+                printf(";\n");
+
+                if (needs_null_check) {
+                    print_indent(indent);
+                    printf("if (%s == NULL) render_abort(\"Error: Argument '%s' for '%s(%s, ...)' is NULL (property: %s, object: %s).\");\n",
+                           temp_arg_var_name, first_value_arg_details->name, setter_func, obj_ref_for_setter, prop->name, obj->c_name);
+                }
+                strcat(args_c_code, temp_arg_var_name);
             }
-            // arguments_were_printed = true;
-        } else if (prop_def && !is_true_no_arg_setter_scenario) {
-            // Case 2: api_spec says no value args, but the property's value is NOT "true" or "false".
-            // This suggests api_spec might be incomplete for this setter (e.g. pad_all: 0).
-            // We attempt to print the property's value as an argument.
-            // We avoid printing ", NULL" if the value itself is a NULL literal, as that would be redundant
-            // or incorrect for setters not expecting an explicit NULL.
+        } else if (prop_def && !is_true_no_arg_setter_scenario) { // Inferred single argument
             if (!(prop->value->type == IR_EXPR_LITERAL && strcmp(((IRExprLiteral*)prop->value)->value, "NULL") == 0 && !((IRExprLiteral*)prop->value)->is_string)) {
-                 printf(", ");
-                 codegen_expr(prop->value, api_spec, ir_root, obj, NULL); // No known C type for this inferred arg
-                 // arguments_were_printed = true;
+                strcat(args_c_code, ", ");
+                has_args_to_print = true;
+                // For inferred args, we don't know the type, so no NULL check unless we make assumptions.
+                // Let's assume it's not a pointer type needing a check for now.
+                char temp_arg_var_name[64];
+                snprintf(temp_arg_var_name, sizeof(temp_arg_var_name), "_arg_val_%d", temp_arg_counter++);
+                print_indent(indent);
+                printf("void* %s = ", temp_arg_var_name); // Use void* as type is unknown
+                codegen_expr(prop->value, api_spec, ir_root, obj, NULL);
+                printf(";\n");
+                strcat(args_c_code, temp_arg_var_name);
             }
         }
-        // Case 3: `is_true_no_arg_setter_scenario` is true.
-        // This means api_spec says no value args, AND the property value is "true" or "false".
-        // This is treated as a toggle; no arguments are printed here. The decision to call is made below.
+        // If is_true_no_arg_setter_scenario, args_c_code remains empty, has_args_to_print is false.
 
-        // Case 4: No `prop_def`. (Original code had a fallback for this, which is now implicitly handled by the final `else` block below)
-        // If `prop_def` is NULL, `is_true_no_arg_setter_scenario` will be false (by its initialization).
-        // This will lead to the final `else { printf(");\n"); }` block, attempting a call.
-        // The arguments might have been printed by the original code's fallback path if `!prop_def`.
-        // The original fallback logic for printing args when no prop_def:
-        // else { /* referring to the if (first_value_arg_details) {} else if (prop_def && !first_value_arg_details) {} block */
-        //    if (prop->value->type != IR_EXPR_LITERAL || strcmp(((IRExprLiteral*)prop->value)->value, "NULL") != 0 ||
-        //        (prop->value->type == IR_EXPR_LITERAL && ((IRExprLiteral*)prop->value)->is_string)) {
-        //         printf(", ");
-        //         codegen_expr(prop->value, api_spec, ir_root, obj, NULL);
-        //    }
-        // }
-        // This specific fallback argument printing for `!prop_def` is not explicitly replicated here,
-        // but if `setter_found` was true due to guessing, it will proceed to try and call.
-        // The new structure prioritizes `prop_def` cases. If `prop_def` is NULL, `is_true_no_arg_setter_scenario` is false,
-        // so it goes to the `else { printf(");\n"); }` below. Argument printing for `!prop_def` is implicitly
-        // reliant on the earlier generic setter name construction if `prop_def` was initially missing.
-
-        // Decision to finalize the call or comment it out (for true toggles)
+        // Perform the call
         if (is_true_no_arg_setter_scenario) {
-            // This is a true toggle (e.g., `enabled: true` or `enabled: false`).
-            // Call the setter only if the value is "true".
             bool call_the_setter_for_toggle = false;
-            if (prop->value->type == IR_EXPR_LITERAL) { // Should be true given is_true_no_arg_setter_scenario logic
+            if (prop->value->type == IR_EXPR_LITERAL) {
                 IRExprLiteral* lit = (IRExprLiteral*)prop->value;
-                if (strcmp(lit->value, "true") == 0) { // Only call if "true"
+                if (strcmp(lit->value, "true") == 0) {
                     call_the_setter_for_toggle = true;
                 }
             }
-
             if (call_the_setter_for_toggle) {
-                 printf(");\n");
+                print_indent(indent);
+                printf("%s(%s);\n", setter_func, obj_ref_for_setter);
             } else {
-                 // Comment out for "false" toggles.
-                 printf(" /* Property '%s' (value: ", prop->name);
-                 codegen_expr(prop->value, api_spec, ir_root, obj, NULL);
-                 printf(") not called for %s (setter expects no value args, and value was not 'true') */\n", obj->c_name);
+                print_indent(indent);
+                printf("/* Property '%s' (value: ", prop->name);
+                codegen_expr(prop->value, api_spec, ir_root, obj, NULL); // For comment
+                printf(") not called for %s (setter expects no value args, and value was not 'true') */\n", obj->c_name);
             }
         } else {
-             // All other cases:
-             // - Args were defined by api_spec and printed.
-             // - Args were inferred (due to !first_value_arg_details but value not being true/false) and printed.
-             // - No prop_def was found initially (setter name might be a guess).
-             // In these cases, always complete the call.
-             printf(");\n");
+            print_indent(indent);
+            if (has_args_to_print) {
+                printf("%s(%s%s);\n", setter_func, obj_ref_for_setter, args_c_code);
+            } else {
+                 // This case should ideally not be hit if !is_true_no_arg_setter_scenario,
+                 // as it implies there should be args or it's an error in logic.
+                 // However, if setter_found was true due to a guess and no args were processed.
+                printf("%s(%s);\n", setter_func, obj_ref_for_setter);
+            }
         }
         prop = prop->next;
     }
@@ -286,16 +325,77 @@ static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_ro
 
         IRProperty* with_prop = wb->properties;
         while(with_prop) {
+            // Determine setter function for the 'with' block property
+            // For 'with' blocks, we generally assume the target is an 'lv_obj_t*' for properties.
+            // A more sophisticated approach might try to infer type from 'wb->target_expr' if it's a function call.
+            const char* target_obj_type_for_with = "obj"; // Default assumption for 'with' target
+            const PropertyDefinition* with_prop_def = api_spec_find_property(api_spec, target_obj_type_for_with, with_prop->name);
+
             char setter_func[128];
-            // This assumes all 'with' targets are lv_obj_t for property setting.
-            // TODO: This could be more robust by checking actual type of with_target_dummy_with_1 if known
-            snprintf(setter_func, sizeof(setter_func), "lv_obj_set_%s", with_prop->name);
+            if (with_prop_def && with_prop_def->setter) {
+                strncpy(setter_func, with_prop_def->setter, sizeof(setter_func) - 1);
+                setter_func[sizeof(setter_func) - 1] = '\0';
+            } else {
+                // Fallback setter name construction (common for lv_obj_set_...)
+                snprintf(setter_func, sizeof(setter_func), "lv_%s_set_%s", target_obj_type_for_with, with_prop->name);
+            }
+
+            // Argument handling (similar to main properties loop)
+            const FunctionArg* with_first_value_arg_details = NULL;
+            if (with_prop_def && with_prop_def->func_args && with_prop_def->func_args->next) {
+                with_first_value_arg_details = with_prop_def->func_args->next;
+            }
+
+            char with_args_c_code[512] = "";
+            bool with_has_args_to_print = false;
+
+            if (with_first_value_arg_details) {
+                strcat(with_args_c_code, ", ");
+                with_has_args_to_print = true;
+                // Simplified: assuming single argument for 'with' properties for now. Array values not fully handled here.
+                // A full implementation would mirror the complexity of the main property loop.
+                const char* with_arg_c_type = with_first_value_arg_details->type;
+                bool with_needs_null_check = with_arg_c_type && (strcmp(with_arg_c_type, "lv_obj_t*") == 0 || strcmp(with_arg_c_type, "lv_style_t*") == 0);
+
+                char temp_with_arg_var_name[64];
+                snprintf(temp_with_arg_var_name, sizeof(temp_with_arg_var_name), "_with_arg_val_%d", temp_arg_counter++);
+
+                print_indent(indent + 1);
+                printf("%s %s = ", with_arg_c_type, temp_with_arg_var_name);
+                codegen_expr(with_prop->value, api_spec, ir_root, obj, with_arg_c_type); // obj is context for $vars
+                printf(";\n");
+
+                if (with_needs_null_check) {
+                    print_indent(indent + 1);
+                    printf("if (%s == NULL) render_abort(\"Error: Argument for '%s' in 'with' block call '%s(%s, ...)' is NULL (property: %s, object: %s).\");\n",
+                           temp_with_arg_var_name, with_first_value_arg_details->name, setter_func, temp_var_name, with_prop->name, obj->c_name);
+                }
+                strcat(with_args_c_code, temp_with_arg_var_name);
+            } else {
+                 // No explicit args from prop_def, but value might be an implicit arg (e.g. color for bg_color)
+                 // This path is simplified; a full solution would check for boolean toggles etc.
+                if (!(with_prop->value->type == IR_EXPR_LITERAL && strcmp(((IRExprLiteral*)with_prop->value)->value, "NULL") == 0 && !((IRExprLiteral*)with_prop->value)->is_string)) {
+                    strcat(with_args_c_code, ", ");
+                    with_has_args_to_print = true;
+                    char temp_with_arg_var_name[64];
+                    snprintf(temp_with_arg_var_name, sizeof(temp_with_arg_var_name), "_with_arg_val_%d", temp_arg_counter++);
+                    print_indent(indent+1);
+                    printf("void* %s = ", temp_with_arg_var_name); // Use void* as type is unknown
+                    codegen_expr(with_prop->value, api_spec, ir_root, obj, NULL);
+                    printf(";\n");
+                    strcat(with_args_c_code, temp_with_arg_var_name);
+                }
+            }
+
             print_indent(indent + 1);
-            printf("%s(%s, ", setter_func, temp_var_name);
-            // For properties inside 'with', we'd ideally get expected_c_type from the setter_func.
-            // For now, passing NULL as this is complex to look up for dynamically constructed setters.
-            codegen_expr(with_prop->value, api_spec, ir_root, obj, NULL);
-            printf(");\n");
+            if (with_has_args_to_print) {
+                printf("%s(%s%s);\n", setter_func, temp_var_name, with_args_c_code);
+            } else {
+                // Assumed to be a no-arg setter (e.g. a flag) or a boolean toggle that resolved to false.
+                // For simplicity, if no args processed, assume direct call or already handled toggle.
+                // This part might need more refinement for boolean toggles in 'with' blocks.
+                printf("%s(%s);\n", setter_func, temp_var_name);
+            }
             with_prop = with_prop->next;
         }
 
@@ -344,12 +444,57 @@ static void codegen_expr(IRExpr* expr, const ApiSpec* api_spec, IRRoot* ir_root,
             break;
         case IR_EXPR_REGISTRY_REF:
         {
-            const char* ref_name = ((IRExprRegistryRef*)expr)->name;
+            IRExprRegistryRef* reg_ref_expr = (IRExprRegistryRef*)expr;
+            const char* ref_name = reg_ref_expr->name;
             if (ref_name && ref_name[0] == '@') {
-                if (expected_c_type && strchr(expected_c_type, '*')) {
-                    printf("(%s)", expected_c_type); // Print cast, e.g. (lv_style_t*)
+                const char* id_to_lookup = ref_name + 1;
+                // Check if the expected type is lv_obj_t* or lv_style_t* for NULL checking
+                bool needs_null_check = false;
+                if (expected_c_type &&
+                    (strcmp(expected_c_type, "lv_obj_t*") == 0 || strcmp(expected_c_type, "lv_style_t*") == 0)) {
+                    needs_null_check = true;
                 }
-                printf("obj_registry_get(\"%s\")", ref_name + 1); // Skip the '@'
+
+                if (needs_null_check) {
+                    // Generate:
+                    // type* temp_val = (type*)obj_registry_get("id");
+                    // if (temp_val == NULL) render_abort("...");
+                    // temp_val /* this will be used by the caller */
+                    char temp_var_name[128];
+                    // Create a unique enough temp var name, less critical in C as it's scoped if done right.
+                    // For simplicity, using a fixed name here, assuming it's used immediately and doesn't clash.
+                    // A real robust solution might involve a counter or passing down a unique ID generator.
+                    snprintf(temp_var_name, sizeof(temp_var_name), "_tmp_reg_%s", sanitize_c_identifier(id_to_lookup));
+
+                    // This output is tricky because codegen_expr is supposed to print an expression.
+                    // So, we print the assignment and check here IF it's part of a larger statement generated by codegen_object.
+                    // This direct print within codegen_expr for assignments and checks is a simplification.
+                    // Ideally, codegen_expr would return a structure that codegen_object uses.
+                    // For now, we assume this is directly usable in the function call argument list.
+                    // The caller (codegen_object) will need to handle emitting the temp var declaration and check *before* the call.
+                    // This means codegen_expr will just output the temp_var_name.
+                    // The actual declaration and check needs to be hoisted.
+                    // THIS IS A MAJOR REFACTORING POINT if we want it clean.
+                    // Given current structure, the easiest (but less clean) is to have codegen_expr print the var name,
+                    // and have codegen_object handle the pre-call setup.
+                    // Let's try to make codegen_expr itself output the lookup and then the variable.
+                    // This means codegen_expr can't just be used for simple values anymore if it has side effects.
+
+                    // Revised approach: codegen_expr will output the expression to get the value,
+                    // and the NULL check will be handled by codegen_object's property handling.
+                    // So, just print the cast and the registry get.
+                    if (expected_c_type && strchr(expected_c_type, '*')) {
+                         printf("(%s)", expected_c_type);
+                    }
+                    printf("obj_registry_get(\"%s\")", id_to_lookup);
+
+                } else {
+                    // No NULL check needed, or type is not obj/style pointer
+                    if (expected_c_type && strchr(expected_c_type, '*')) {
+                        printf("(%s)", expected_c_type); // Print cast, e.g. (lv_style_t*)
+                    }
+                    printf("obj_registry_get(\"%s\")", id_to_lookup); // Skip the '@'
+                }
             } else {
                 fprintf(stderr, "Warning: Registry reference '%s' does not start with '@'. Generating as raw name.\n", ref_name ? ref_name : "NULL");
                 printf("%s", ref_name ? ref_name : "NULL"); // Might lead to compile error if var undefined
