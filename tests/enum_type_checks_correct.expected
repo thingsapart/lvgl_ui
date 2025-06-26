@@ -8,7 +8,9 @@
 
 void create_ui(lv_obj_t* parent) {
     lv_obj_t* widget1 = lv_obj_create(parent);
+    if (widget1 == NULL) render_abort("Error: Failed to create widget 'widget1' (type: base_widget).");
     obj_registry_add("widget1", (void*)widget1);
-    lv_obj_align(widget1, LV_ALIGN_CENTER);
+    lv_align_t _arg_val_0 = LV_ALIGN_CENTER;
+    lv_obj_align(widget1, _arg_val_0);
     lv_obj_set_flex_flow(widget1);
 }

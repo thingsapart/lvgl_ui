@@ -8,7 +8,10 @@
 
 void create_ui(lv_obj_t* parent) {
     lv_obj_t* obj_0 = lv_obj_create(parent);
+    if (obj_0 == NULL) render_abort("Error: Failed to create widget 'obj_0' (type: obj).");
     
     lv_obj_t* label_1 = lv_label_create(obj_0);
-    lv_label_set_text(label_1, "TEST");
+    if (label_1 == NULL) render_abort("Error: Failed to create widget 'label_1' (type: label).");
+    void* _arg_val_0 = "TEST";
+    lv_label_set_text(label_1, _arg_val_0);
 }

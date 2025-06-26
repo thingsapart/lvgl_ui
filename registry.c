@@ -142,7 +142,7 @@ const char* registry_get_json_type_for_id(const Registry* reg, const char* id) {
 
 // --- String Registration ---
 
-const char* registry_add_str(Registry* reg, const char* value) {
+char* registry_add_str(Registry* reg, const char* value) { // Changed return type to char*
     if (!reg || !value) {
          fprintf(stderr, "Error: registry_add_str: reg and value must not be NULL\n");
         return NULL; // Or consider returning a static error string

@@ -6,683 +6,686 @@
 #include "ir.h"
 #include "utils.h"
 #include "api_spec.h" // Added for ApiSpec*
+#include "registry.h" // Added for Registry*
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 
 // Forward declare ApiSpec if not fully included by api_spec.h
 struct ApiSpec;
+struct Registry; // Forward declaration for Registry
 
 typedef struct _lv_obj_t _lv_obj_t;
 typedef void (*generic_lvgl_func_t)(void);
-// Updated dispatcher typedef to include ApiSpec*
-typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_0(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_1(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_2(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_3(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_4(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_5(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_6(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_7(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_9(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_10(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_11(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_12(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_13(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_14(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_15(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_16(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_17(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_18(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_19(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_20(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_21(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_22(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_24(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_25(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_26(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_27(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_28(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_29(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_30(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_31(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_32(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_33(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_34(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_35(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_36(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_37(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_38(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_39(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_40(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_41(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_42(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_43(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_44(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_45(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_46(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_47(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_48(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_49(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_50(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_52(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_54(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_55(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_57(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_58(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_61(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_62(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_63(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_64(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_65(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_66(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_67(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_68(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_69(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_72(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_73(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_74(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_75(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_76(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_78(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_81(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_82(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_83(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_84(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_85(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_87(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_88(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_89(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_90(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_91(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_92(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_93(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_94(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_95(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_96(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_97(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_98(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_99(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_100(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_101(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_102(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_103(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_104(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_105(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_106(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_107(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_108(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_109(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_110(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_111(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_112(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_113(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_114(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_115(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_116(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_117(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_118(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_119(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_120(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_121(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_122(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_123(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_124(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_125(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_126(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_127(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_128(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_129(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_130(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_131(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_132(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_133(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_134(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_135(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_136(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_137(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_138(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_139(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_140(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_141(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_142(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_143(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_144(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_145(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_146(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_147(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_148(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_149(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_150(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_151(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_152(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_153(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_154(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_155(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_156(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_157(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_158(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_159(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_160(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_161(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_162(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_163(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_164(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_165(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_166(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_167(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_168(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_169(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_170(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_171(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_172(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_173(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_174(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_175(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_176(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_177(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_178(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_179(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_180(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_181(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_182(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_183(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_184(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_185(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_186(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_187(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_188(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_189(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_190(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_191(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_192(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_193(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_194(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_195(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_196(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_197(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_198(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_199(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_200(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_201(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_202(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_203(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_204(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_205(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_206(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_207(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_208(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_209(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_210(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_211(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_212(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_213(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_214(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_215(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_216(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_217(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_218(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_219(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_220(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_221(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_222(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_223(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_224(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_225(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_226(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_227(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_228(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_229(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_230(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_231(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_232(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_233(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_234(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_235(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_236(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_237(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_238(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_239(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_240(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_241(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_242(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_243(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_244(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_245(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_246(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_247(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_248(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_249(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_250(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_251(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_252(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_253(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_254(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_255(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_256(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_257(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_258(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_259(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_260(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_261(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_262(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_263(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_264(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_265(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_266(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_267(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_268(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_269(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_270(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_271(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_272(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_273(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_274(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_275(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_276(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_277(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_278(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_279(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_280(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_281(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_282(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_283(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_284(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_285(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_286(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_287(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_288(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_289(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_290(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_291(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_292(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_293(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_294(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_295(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_296(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_297(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_298(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_299(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_300(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_301(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_302(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_303(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_304(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_305(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_306(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_307(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_308(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_309(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_310(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_311(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_312(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_313(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_314(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_315(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_316(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_317(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_318(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_319(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_320(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_321(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_322(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_323(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_324(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_325(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_326(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_327(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_328(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_329(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_330(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_331(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_332(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_333(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_334(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_335(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_336(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_337(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_338(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_339(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_340(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_341(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_342(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_343(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_344(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_345(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_346(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_347(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_348(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_349(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_350(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_351(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_352(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_353(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_354(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_355(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_356(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_357(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_358(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_359(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_360(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_361(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_362(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_363(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_364(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_365(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_366(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_367(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_368(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_369(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_370(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_371(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_372(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_373(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_374(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_375(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_376(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_377(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_378(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_379(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_380(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_381(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_382(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_383(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_384(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_385(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_386(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_387(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_388(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_389(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_390(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_391(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_392(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_393(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_394(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_395(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_396(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_397(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_398(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_399(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_400(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_401(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_402(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_403(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_404(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_405(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_406(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_407(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_408(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_409(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_410(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_411(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_412(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_413(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_414(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_415(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_416(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_417(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_418(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_419(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_420(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_421(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_422(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_423(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_424(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_425(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_426(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_427(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_428(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_429(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_430(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_431(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_432(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_433(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_434(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_435(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_436(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_437(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_438(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_439(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_440(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_441(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_442(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_443(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_444(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_445(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_446(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_447(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_448(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_449(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_450(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_451(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_452(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_453(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_454(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_455(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_456(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_457(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_458(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_459(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_460(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_461(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_462(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_463(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_464(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_465(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_466(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_467(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_468(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_469(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_470(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_471(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_472(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_473(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_474(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_475(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_476(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_477(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_478(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_479(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_480(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_481(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_482(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_483(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_484(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_485(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_486(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_487(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_488(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_489(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_490(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_491(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_492(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_493(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_494(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_495(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_496(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_497(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_498(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_499(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_500(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_501(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_502(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_503(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_504(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_505(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_506(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_507(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_508(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_509(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_510(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_511(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_512(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_513(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_514(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_515(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_516(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_517(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_518(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_519(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_520(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_521(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_522(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_523(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_524(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_525(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_526(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_527(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_528(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_529(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_530(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_531(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_532(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_533(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_534(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_535(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_536(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_537(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_538(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_539(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_540(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_541(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_542(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_543(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_544(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_545(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_546(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_547(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_548(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_549(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_550(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_551(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_552(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_553(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_554(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_555(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_556(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_557(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_558(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_559(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_560(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_561(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_562(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_563(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_564(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_565(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_566(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_567(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_568(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_569(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_570(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_571(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_572(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_573(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_574(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_575(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_576(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_577(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_578(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_579(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_580(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_581(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_582(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_583(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_584(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_585(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_586(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_587(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_588(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_589(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_590(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_591(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_592(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_593(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_594(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_595(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_596(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_597(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_598(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_599(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_600(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_601(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_602(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_603(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_604(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_605(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_606(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_607(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_608(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_609(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_610(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_611(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_612(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_613(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_614(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_615(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_616(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_617(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_618(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_619(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_620(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_621(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_622(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_623(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_624(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_625(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_626(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_627(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_628(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_629(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_630(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_631(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_632(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_633(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_634(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_635(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_636(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_637(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_638(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_639(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_640(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_641(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_642(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_643(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_644(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_645(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_646(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_647(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_648(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_649(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_650(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_651(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_652(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_653(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_654(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_655(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_656(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_657(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_658(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_659(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_660(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static lv_obj_t* dispatch_ir_archetype_661(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
+// Updated dispatcher typedef to include ApiSpec* and Registry*
+typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_0(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_1(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_2(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_3(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_4(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_5(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_6(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_7(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_9(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_10(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_11(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_12(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_13(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_14(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_15(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_16(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_17(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_18(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_19(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_20(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_21(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_22(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_24(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_25(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_26(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_27(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_28(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_29(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_30(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_31(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_32(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_33(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_34(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_35(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_36(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_37(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_38(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_39(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_40(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_41(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_42(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_43(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_44(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_45(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_46(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_47(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_48(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_49(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_50(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_52(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_54(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_55(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_57(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_58(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_61(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_62(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_63(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_64(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_65(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_66(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_67(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_68(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_69(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_72(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_73(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_74(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_75(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_76(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_78(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_81(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_82(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_83(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_84(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_85(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_87(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_88(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_89(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_90(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_91(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_92(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_93(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_94(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_95(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_96(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_97(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_98(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_99(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_100(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_101(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_102(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_103(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_104(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_105(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_106(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_107(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_108(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_109(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_110(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_111(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_112(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_113(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_114(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_115(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_116(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_117(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_118(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_119(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_120(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_121(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_122(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_123(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_124(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_125(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_126(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_127(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_128(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_129(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_130(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_131(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_132(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_133(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_134(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_135(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_136(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_137(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_138(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_139(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_140(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_141(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_142(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_143(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_144(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_145(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_146(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_147(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_148(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_149(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_150(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_151(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_152(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_153(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_154(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_155(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_156(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_157(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_158(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_159(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_160(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_161(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_162(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_163(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_164(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_165(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_166(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_167(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_168(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_169(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_170(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_171(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_172(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_173(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_174(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_175(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_176(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_177(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_178(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_179(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_180(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_181(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_182(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_183(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_184(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_185(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_186(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_187(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_188(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_189(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_190(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_191(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_192(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_193(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_194(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_195(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_196(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_197(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_198(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_199(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_200(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_201(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_202(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_203(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_204(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_205(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_206(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_207(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_208(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_209(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_210(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_211(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_212(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_213(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_214(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_215(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_216(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_217(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_218(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_219(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_220(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_221(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_222(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_223(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_224(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_225(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_226(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_227(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_228(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_229(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_230(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_231(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_232(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_233(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_234(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_235(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_236(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_237(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_238(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_239(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_240(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_241(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_242(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_243(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_244(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_245(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_246(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_247(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_248(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_249(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_250(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_251(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_252(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_253(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_254(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_255(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_256(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_257(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_258(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_259(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_260(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_261(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_262(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_263(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_264(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_265(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_266(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_267(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_268(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_269(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_270(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_271(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_272(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_273(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_274(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_275(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_276(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_277(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_278(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_279(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_280(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_281(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_282(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_283(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_284(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_285(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_286(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_287(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_288(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_289(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_290(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_291(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_292(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_293(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_294(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_295(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_296(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_297(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_298(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_299(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_300(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_301(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_302(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_303(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_304(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_305(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_306(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_307(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_308(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_309(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_310(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_311(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_312(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_313(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_314(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_315(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_316(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_317(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_318(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_319(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_320(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_321(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_322(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_323(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_324(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_325(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_326(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_327(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_328(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_329(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_330(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_331(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_332(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_333(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_334(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_335(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_336(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_337(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_338(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_339(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_340(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_341(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_342(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_343(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_344(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_345(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_346(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_347(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_348(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_349(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_350(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_351(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_352(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_353(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_354(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_355(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_356(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_357(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_358(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_359(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_360(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_361(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_362(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_363(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_364(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_365(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_366(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_367(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_368(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_369(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_370(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_371(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_372(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_373(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_374(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_375(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_376(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_377(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_378(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_379(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_380(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_381(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_382(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_383(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_384(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_385(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_386(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_387(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_388(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_389(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_390(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_391(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_392(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_393(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_394(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_395(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_396(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_397(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_398(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_399(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_400(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_401(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_402(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_403(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_404(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_405(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_406(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_407(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_408(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_409(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_410(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_411(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_412(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_413(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_414(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_415(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_416(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_417(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_418(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_419(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_420(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_421(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_422(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_423(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_424(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_425(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_426(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_427(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_428(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_429(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_430(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_431(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_432(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_433(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_434(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_435(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_436(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_437(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_438(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_439(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_440(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_441(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_442(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_443(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_444(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_445(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_446(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_447(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_448(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_449(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_450(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_451(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_452(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_453(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_454(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_455(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_456(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_457(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_458(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_459(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_460(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_461(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_462(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_463(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_464(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_465(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_466(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_467(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_468(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_469(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_470(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_471(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_472(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_473(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_474(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_475(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_476(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_477(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_478(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_479(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_480(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_481(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_482(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_483(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_484(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_485(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_486(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_487(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_488(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_489(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_490(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_491(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_492(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_493(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_494(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_495(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_496(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_497(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_498(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_499(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_500(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_501(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_502(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_503(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_504(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_505(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_506(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_507(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_508(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_509(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_510(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_511(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_512(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_513(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_514(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_515(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_516(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_517(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_518(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_519(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_520(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_521(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_522(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_523(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_524(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_525(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_526(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_527(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_528(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_529(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_530(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_531(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_532(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_533(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_534(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_535(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_536(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_537(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_538(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_539(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_540(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_541(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_542(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_543(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_544(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_545(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_546(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_547(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_548(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_549(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_550(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_551(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_552(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_553(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_554(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_555(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_556(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_557(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_558(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_559(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_560(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_561(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_562(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_563(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_564(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_565(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_566(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_567(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_568(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_569(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_570(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_571(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_572(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_573(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_574(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_575(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_576(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_577(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_578(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_579(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_580(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_581(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_582(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_583(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_584(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_585(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_586(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_587(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_588(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_589(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_590(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_591(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_592(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_593(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_594(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_595(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_596(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_597(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_598(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_599(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_600(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_601(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_602(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_603(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_604(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_605(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_606(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_607(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_608(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_609(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_610(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_611(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_612(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_613(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_614(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_615(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_616(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_617(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_618(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_619(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_620(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_621(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_622(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_623(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_624(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_625(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_626(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_627(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_628(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_629(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_630(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_631(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_632(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_633(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_634(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_635(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_636(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_637(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_638(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_639(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_640(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_641(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_642(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_643(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_644(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_645(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_646(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_647(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_648(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_649(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_650(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_651(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_652(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_653(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_654(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_655(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_656(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_657(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_658(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_659(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_660(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
+static lv_obj_t* dispatch_ir_archetype_661(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
 
 // --- Archetype Dispatcher Implementations ---
 // Archetype for 1 functions like: lv_anim_count_running
-static lv_obj_t* dispatch_ir_archetype_0(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_0(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_count_running-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -694,7 +697,8 @@ static lv_obj_t* dispatch_ir_archetype_0(generic_lvgl_func_t fn, void* target, I
 }
 
 // Archetype for 24 functions like: lv_anim_delete_all
-static lv_obj_t* dispatch_ir_archetype_1(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_1(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_delete_all-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -706,7 +710,8 @@ static lv_obj_t* dispatch_ir_archetype_1(generic_lvgl_func_t fn, void* target, I
 }
 
 // Archetype for 4 functions like: lv_anim_get_delay
-static lv_obj_t* dispatch_ir_archetype_2(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_2(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_get_delay-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -718,7 +723,8 @@ static lv_obj_t* dispatch_ir_archetype_2(generic_lvgl_func_t fn, void* target, I
 }
 
 // Archetype for 2 functions like: lv_anim_get_timer
-static lv_obj_t* dispatch_ir_archetype_3(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_3(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_get_timer-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -729,7 +735,8 @@ static lv_obj_t* dispatch_ir_archetype_3(generic_lvgl_func_t fn, void* target, I
 }
 
 // Archetype for 1 functions like: lv_anim_get_user_data
-static lv_obj_t* dispatch_ir_archetype_4(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_4(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_get_user_data-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -740,7 +747,8 @@ static lv_obj_t* dispatch_ir_archetype_4(generic_lvgl_func_t fn, void* target, I
 }
 
 // Archetype for 4 functions like: lv_anim_init
-static lv_obj_t* dispatch_ir_archetype_5(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_5(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -752,7 +760,8 @@ static lv_obj_t* dispatch_ir_archetype_5(generic_lvgl_func_t fn, void* target, I
 }
 
 // Archetype for 1 functions like: lv_anim_is_paused
-static lv_obj_t* dispatch_ir_archetype_6(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_6(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_is_paused-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -764,7 +773,8 @@ static lv_obj_t* dispatch_ir_archetype_6(generic_lvgl_func_t fn, void* target, I
 }
 
 // Archetype for 8 functions like: lv_anim_path_bounce
-static lv_obj_t* dispatch_ir_archetype_7(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_7(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_path_bounce-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -776,7 +786,8 @@ static lv_obj_t* dispatch_ir_archetype_7(generic_lvgl_func_t fn, void* target, I
 }
 
 // Archetype for 8 functions like: lv_anim_pause_for
-static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_anim_pause_for-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -789,7 +800,8 @@ static lv_obj_t* dispatch_ir_archetype_8(generic_lvgl_func_t fn, void* target, I
 }
 
 // Archetype for 2 functions like: lv_anim_resolve_speed
-static lv_obj_t* dispatch_ir_archetype_9(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_9(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_anim_resolve_speed-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -804,7 +816,8 @@ static lv_obj_t* dispatch_ir_archetype_9(generic_lvgl_func_t fn, void* target, I
 }
 
 // Archetype for 1 functions like: lv_anim_set_bezier3_param
-static lv_obj_t* dispatch_ir_archetype_10(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_10(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_anim_set_bezier3_param-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -820,7 +833,8 @@ static lv_obj_t* dispatch_ir_archetype_10(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_anim_set_early_apply
-static lv_obj_t* dispatch_ir_archetype_11(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_11(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_anim_set_early_apply-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -833,7 +847,8 @@ static lv_obj_t* dispatch_ir_archetype_11(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_anim_set_values
-static lv_obj_t* dispatch_ir_archetype_12(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_12(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_anim_set_values-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -847,7 +862,8 @@ static lv_obj_t* dispatch_ir_archetype_12(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 5 functions like: lv_anim_speed
-static lv_obj_t* dispatch_ir_archetype_13(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_13(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_anim_speed-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -860,7 +876,8 @@ static lv_obj_t* dispatch_ir_archetype_13(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_anim_speed_clamped
-static lv_obj_t* dispatch_ir_archetype_14(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_14(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_anim_speed_clamped-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -875,7 +892,8 @@ static lv_obj_t* dispatch_ir_archetype_14(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_anim_start
-static lv_obj_t* dispatch_ir_archetype_15(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_15(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_start-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -886,21 +904,23 @@ static lv_obj_t* dispatch_ir_archetype_15(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_anim_timeline_add
-static lv_obj_t* dispatch_ir_archetype_16(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_16(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_anim_timeline_add-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     uint32_t arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
-    lv_anim_t* arg1 = (lv_anim_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_anim_t* arg1 = (lv_anim_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_anim_timeline_t*, uint32_t, lv_anim_t*);
     ((specific_func_t)fn)((lv_anim_timeline_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_anim_timeline_create
-static lv_obj_t* dispatch_ir_archetype_17(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_17(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_timeline_create-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -911,7 +931,8 @@ static lv_obj_t* dispatch_ir_archetype_17(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_anim_timeline_delete
-static lv_obj_t* dispatch_ir_archetype_18(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_18(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_timeline_delete-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -923,7 +944,8 @@ static lv_obj_t* dispatch_ir_archetype_18(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 4 functions like: lv_anim_timeline_get_playtime
-static lv_obj_t* dispatch_ir_archetype_19(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_19(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_timeline_get_playtime-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -935,7 +957,8 @@ static lv_obj_t* dispatch_ir_archetype_19(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_anim_timeline_get_progress
-static lv_obj_t* dispatch_ir_archetype_20(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_20(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_timeline_get_progress-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -947,7 +970,8 @@ static lv_obj_t* dispatch_ir_archetype_20(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_anim_timeline_get_reverse
-static lv_obj_t* dispatch_ir_archetype_21(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_21(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_anim_timeline_get_reverse-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -959,7 +983,8 @@ static lv_obj_t* dispatch_ir_archetype_21(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_anim_timeline_set_progress
-static lv_obj_t* dispatch_ir_archetype_22(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_22(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_anim_timeline_set_progress-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -972,7 +997,8 @@ static lv_obj_t* dispatch_ir_archetype_22(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_anim_timeline_set_repeat_count
-static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_anim_timeline_set_repeat_count-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -985,7 +1011,8 @@ static lv_obj_t* dispatch_ir_archetype_23(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_anim_timeline_set_reverse
-static lv_obj_t* dispatch_ir_archetype_24(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_24(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_anim_timeline_set_reverse-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -998,7 +1025,8 @@ static lv_obj_t* dispatch_ir_archetype_24(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 60 functions like: lv_animimg_create
-static lv_obj_t* dispatch_ir_archetype_25(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_25(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_animimg_create-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1009,7 +1037,8 @@ static lv_obj_t* dispatch_ir_archetype_25(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 28 functions like: lv_animimg_delete
-static lv_obj_t* dispatch_ir_archetype_26(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_26(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_animimg_delete-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1021,7 +1050,8 @@ static lv_obj_t* dispatch_ir_archetype_26(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_animimg_get_anim
-static lv_obj_t* dispatch_ir_archetype_27(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_27(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_animimg_get_anim-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1032,7 +1062,8 @@ static lv_obj_t* dispatch_ir_archetype_27(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 28 functions like: lv_animimg_get_duration
-static lv_obj_t* dispatch_ir_archetype_28(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_28(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_animimg_get_duration-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1044,7 +1075,8 @@ static lv_obj_t* dispatch_ir_archetype_28(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_animimg_get_src
-static lv_obj_t* dispatch_ir_archetype_29(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_29(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_animimg_get_src-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1055,7 +1087,8 @@ static lv_obj_t* dispatch_ir_archetype_29(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_animimg_get_src_count
-static lv_obj_t* dispatch_ir_archetype_30(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_30(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_animimg_get_src_count-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1067,7 +1100,8 @@ static lv_obj_t* dispatch_ir_archetype_30(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 36 functions like: lv_animimg_set_duration
-static lv_obj_t* dispatch_ir_archetype_31(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_31(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_animimg_set_duration-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1080,7 +1114,8 @@ static lv_obj_t* dispatch_ir_archetype_31(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 43 functions like: lv_animimg_start
-static lv_obj_t* dispatch_ir_archetype_32(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_32(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_animimg_start-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1092,13 +1127,14 @@ static lv_obj_t* dispatch_ir_archetype_32(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 3 functions like: lv_arc_align_obj_to_angle
-static lv_obj_t* dispatch_ir_archetype_33(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_33(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_arc_align_obj_to_angle-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_obj_t*, int32_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -1106,19 +1142,21 @@ static lv_obj_t* dispatch_ir_archetype_33(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 5 functions like: lv_arc_bind_value
-static lv_obj_t* dispatch_ir_archetype_34(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_34(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_arc_bind_value-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_subject_t* arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_subject_t* arg0 = (lv_subject_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_observer_t* (*specific_func_t)(lv_obj_t*, lv_subject_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0);
 }
 
 // Archetype for 6 functions like: lv_arc_get_angle_end
-static lv_obj_t* dispatch_ir_archetype_35(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_35(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_arc_get_angle_end-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1130,7 +1168,8 @@ static lv_obj_t* dispatch_ir_archetype_35(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 53 functions like: lv_arc_get_knob_offset
-static lv_obj_t* dispatch_ir_archetype_36(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_36(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_arc_get_knob_offset-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1142,7 +1181,8 @@ static lv_obj_t* dispatch_ir_archetype_36(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_arc_get_mode
-static lv_obj_t* dispatch_ir_archetype_37(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_37(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_arc_get_mode-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1154,7 +1194,8 @@ static lv_obj_t* dispatch_ir_archetype_37(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_arc_set_angles
-static lv_obj_t* dispatch_ir_archetype_38(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_38(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_arc_set_angles-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -1168,7 +1209,8 @@ static lv_obj_t* dispatch_ir_archetype_38(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 6 functions like: lv_arc_set_bg_end_angle
-static lv_obj_t* dispatch_ir_archetype_39(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_39(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_arc_set_bg_end_angle-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1181,7 +1223,8 @@ static lv_obj_t* dispatch_ir_archetype_39(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 31 functions like: lv_arc_set_knob_offset
-static lv_obj_t* dispatch_ir_archetype_40(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_40(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_arc_set_knob_offset-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1194,7 +1237,8 @@ static lv_obj_t* dispatch_ir_archetype_40(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_arc_set_mode
-static lv_obj_t* dispatch_ir_archetype_41(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_41(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_arc_set_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1207,7 +1251,8 @@ static lv_obj_t* dispatch_ir_archetype_41(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 10 functions like: lv_arc_set_range
-static lv_obj_t* dispatch_ir_archetype_42(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_42(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_arc_set_range-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -1221,7 +1266,8 @@ static lv_obj_t* dispatch_ir_archetype_42(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_arclabel_get_dir
-static lv_obj_t* dispatch_ir_archetype_43(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_43(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_arclabel_get_dir-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1233,7 +1279,8 @@ static lv_obj_t* dispatch_ir_archetype_43(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_arclabel_get_text_horizontal_align
-static lv_obj_t* dispatch_ir_archetype_44(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_44(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_arclabel_get_text_horizontal_align-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1245,7 +1292,8 @@ static lv_obj_t* dispatch_ir_archetype_44(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_arclabel_set_dir
-static lv_obj_t* dispatch_ir_archetype_45(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_45(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_arclabel_set_dir-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1258,7 +1306,8 @@ static lv_obj_t* dispatch_ir_archetype_45(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 15 functions like: lv_arclabel_set_recolor
-static lv_obj_t* dispatch_ir_archetype_46(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_46(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_arclabel_set_recolor-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1271,20 +1320,22 @@ static lv_obj_t* dispatch_ir_archetype_46(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 18 functions like: lv_arclabel_set_text
-static lv_obj_t* dispatch_ir_archetype_47(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_47(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_arclabel_set_text-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef void (*specific_func_t)(lv_obj_t*, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_arclabel_set_text_horizontal_align
-static lv_obj_t* dispatch_ir_archetype_48(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_48(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_arclabel_set_text_horizontal_align-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1297,13 +1348,14 @@ static lv_obj_t* dispatch_ir_archetype_48(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_area_align
-static lv_obj_t* dispatch_ir_archetype_49(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_49(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_area_align-like function: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_align_t arg1 = (lv_align_t)ir_node_get_enum_value(ir_args[1], "lv_align_t", spec);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -1313,20 +1365,22 @@ static lv_obj_t* dispatch_ir_archetype_49(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_area_copy
-static lv_obj_t* dispatch_ir_archetype_50(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_50(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_area_copy-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_area_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_area_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_area_get_height
-static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_area_get_height-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1338,7 +1392,8 @@ static lv_obj_t* dispatch_ir_archetype_51(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_area_get_size
-static lv_obj_t* dispatch_ir_archetype_52(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_52(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_area_get_size-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1350,7 +1405,8 @@ static lv_obj_t* dispatch_ir_archetype_52(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_area_increase
-static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_area_increase-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -1364,7 +1420,8 @@ static lv_obj_t* dispatch_ir_archetype_53(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_area_set
-static lv_obj_t* dispatch_ir_archetype_54(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_54(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_area_set-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -1380,7 +1437,8 @@ static lv_obj_t* dispatch_ir_archetype_54(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_area_set_height
-static lv_obj_t* dispatch_ir_archetype_55(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_55(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_area_set_height-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1393,7 +1451,8 @@ static lv_obj_t* dispatch_ir_archetype_55(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_array_at
-static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_array_at-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1405,7 +1464,8 @@ static lv_obj_t* dispatch_ir_archetype_56(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_array_back
-static lv_obj_t* dispatch_ir_archetype_57(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_57(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_array_back-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1416,7 +1476,8 @@ static lv_obj_t* dispatch_ir_archetype_57(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_array_capacity
-static lv_obj_t* dispatch_ir_archetype_58(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_58(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_array_capacity-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1428,7 +1489,8 @@ static lv_obj_t* dispatch_ir_archetype_58(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 3 functions like: lv_array_clear
-static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_array_clear-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1440,33 +1502,36 @@ static lv_obj_t* dispatch_ir_archetype_59(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_array_concat
-static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_60(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_array_concat-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_array_t* arg0 = (lv_array_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_array_t* arg0 = (lv_array_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_result_t (*specific_func_t)(lv_array_t*, lv_array_t*);
     (void)((specific_func_t)fn)((lv_array_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_array_copy
-static lv_obj_t* dispatch_ir_archetype_61(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_61(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_array_copy-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_array_t* arg0 = (lv_array_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_array_t* arg0 = (lv_array_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_array_t*, lv_array_t*);
     ((specific_func_t)fn)((lv_array_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_array_erase
-static lv_obj_t* dispatch_ir_archetype_62(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_62(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_array_erase-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -1480,7 +1545,8 @@ static lv_obj_t* dispatch_ir_archetype_62(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_array_init
-static lv_obj_t* dispatch_ir_archetype_63(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_63(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_array_init-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -1494,7 +1560,8 @@ static lv_obj_t* dispatch_ir_archetype_63(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_array_is_empty
-static lv_obj_t* dispatch_ir_archetype_64(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_64(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_array_is_empty-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1506,7 +1573,8 @@ static lv_obj_t* dispatch_ir_archetype_64(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_array_remove
-static lv_obj_t* dispatch_ir_archetype_65(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_65(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_array_remove-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1519,7 +1587,8 @@ static lv_obj_t* dispatch_ir_archetype_65(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_array_resize
-static lv_obj_t* dispatch_ir_archetype_66(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_66(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_array_resize-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1532,7 +1601,8 @@ static lv_obj_t* dispatch_ir_archetype_66(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_atan2
-static lv_obj_t* dispatch_ir_archetype_67(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_67(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_atan2-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -1546,7 +1616,8 @@ static lv_obj_t* dispatch_ir_archetype_67(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_bar_get_mode
-static lv_obj_t* dispatch_ir_archetype_68(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_68(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_bar_get_mode-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1558,7 +1629,8 @@ static lv_obj_t* dispatch_ir_archetype_68(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_bar_get_orientation
-static lv_obj_t* dispatch_ir_archetype_69(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_69(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_bar_get_orientation-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1570,7 +1642,8 @@ static lv_obj_t* dispatch_ir_archetype_69(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_bar_set_mode
-static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_bar_set_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1583,7 +1656,8 @@ static lv_obj_t* dispatch_ir_archetype_70(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_bar_set_orientation
-static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_bar_set_orientation-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1596,7 +1670,8 @@ static lv_obj_t* dispatch_ir_archetype_71(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 6 functions like: lv_bar_set_start_value
-static lv_obj_t* dispatch_ir_archetype_72(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_72(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_bar_set_start_value-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -1610,7 +1685,8 @@ static lv_obj_t* dispatch_ir_archetype_72(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_bezier3
-static lv_obj_t* dispatch_ir_archetype_73(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_73(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 5) {
         LV_LOG_WARN("IR call to lv_bezier3-like function: expected 5 args, got %d", arg_count);
         return NULL;
@@ -1627,88 +1703,95 @@ static lv_obj_t* dispatch_ir_archetype_73(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_bidi_calculate_align
-static lv_obj_t* dispatch_ir_archetype_74(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_74(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_bidi_calculate_align-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_base_dir_t* arg0 = (lv_base_dir_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    lv_base_dir_t* arg0 = (lv_base_dir_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     typedef void (*specific_func_t)(lv_text_align_t*, lv_base_dir_t*, char*);
     ((specific_func_t)fn)((lv_text_align_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_bin_decoder_close
-static lv_obj_t* dispatch_ir_archetype_75(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_75(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_bin_decoder_close-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_image_decoder_dsc_t* arg0 = (lv_image_decoder_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_image_decoder_dsc_t* arg0 = (lv_image_decoder_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_image_decoder_t*, lv_image_decoder_dsc_t*);
     ((specific_func_t)fn)((lv_image_decoder_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_bin_decoder_get_area
-static lv_obj_t* dispatch_ir_archetype_76(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_76(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_bin_decoder_get_area-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_image_decoder_dsc_t* arg0 = (lv_image_decoder_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_area_t* arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
-    lv_area_t* arg2 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
+    lv_image_decoder_dsc_t* arg0 = (lv_image_decoder_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_area_t* arg1 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
+    lv_area_t* arg2 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[2]), NULL);
     typedef lv_result_t (*specific_func_t)(lv_image_decoder_t*, lv_image_decoder_dsc_t*, lv_area_t*, lv_area_t*);
     (void)((specific_func_t)fn)((lv_image_decoder_t*)target, arg0, arg1, arg2);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_bin_decoder_info
-static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_77(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_bin_decoder_info-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_image_decoder_dsc_t* arg0 = (lv_image_decoder_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_image_header_t* arg1 = (lv_image_header_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_image_decoder_dsc_t* arg0 = (lv_image_decoder_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_image_header_t* arg1 = (lv_image_header_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef lv_result_t (*specific_func_t)(lv_image_decoder_t*, lv_image_decoder_dsc_t*, lv_image_header_t*);
     (void)((specific_func_t)fn)((lv_image_decoder_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_bin_decoder_open
-static lv_obj_t* dispatch_ir_archetype_78(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_78(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_bin_decoder_open-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_image_decoder_dsc_t* arg0 = (lv_image_decoder_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_image_decoder_dsc_t* arg0 = (lv_image_decoder_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_result_t (*specific_func_t)(lv_image_decoder_t*, lv_image_decoder_dsc_t*);
     (void)((specific_func_t)fn)((lv_image_decoder_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_binfont_create
-static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_79(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_binfont_create-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef lv_font_t* (*specific_func_t)(char*);
     return (lv_obj_t*)((specific_func_t)fn)(arg0);
 }
 
 // Archetype for 1 functions like: lv_binfont_destroy
-static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_binfont_destroy-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1720,7 +1803,8 @@ static lv_obj_t* dispatch_ir_archetype_80(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_buttonmatrix_clear_button_ctrl
-static lv_obj_t* dispatch_ir_archetype_81(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_81(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_buttonmatrix_clear_button_ctrl-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -1734,7 +1818,8 @@ static lv_obj_t* dispatch_ir_archetype_81(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 3 functions like: lv_buttonmatrix_clear_button_ctrl_all
-static lv_obj_t* dispatch_ir_archetype_82(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_82(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_buttonmatrix_clear_button_ctrl_all-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1747,7 +1832,8 @@ static lv_obj_t* dispatch_ir_archetype_82(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_buttonmatrix_get_button_text
-static lv_obj_t* dispatch_ir_archetype_83(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_83(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_buttonmatrix_get_button_text-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -1759,7 +1845,8 @@ static lv_obj_t* dispatch_ir_archetype_83(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 2 functions like: lv_buttonmatrix_get_map
-static lv_obj_t* dispatch_ir_archetype_84(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_84(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_buttonmatrix_get_map-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1770,7 +1857,8 @@ static lv_obj_t* dispatch_ir_archetype_84(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_buttonmatrix_has_button_ctrl
-static lv_obj_t* dispatch_ir_archetype_85(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_85(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_buttonmatrix_has_button_ctrl-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -1784,7 +1872,8 @@ static lv_obj_t* dispatch_ir_archetype_85(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 8 functions like: lv_buttonmatrix_set_button_width
-static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_buttonmatrix_set_button_width-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -1798,20 +1887,22 @@ static lv_obj_t* dispatch_ir_archetype_86(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_entry_alloc
-static lv_obj_t* dispatch_ir_archetype_87(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_87(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_cache_entry_alloc-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     uint32_t arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
-    lv_cache_t* arg1 = (lv_cache_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_cache_t* arg1 = (lv_cache_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef lv_cache_entry_t* (*specific_func_t)(uint32_t, lv_cache_t*);
     return (lv_obj_t*)((specific_func_t)fn)(arg0, arg1);
 }
 
 // Archetype for 1 functions like: lv_cache_entry_delete
-static lv_obj_t* dispatch_ir_archetype_88(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_88(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_cache_entry_delete-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1823,7 +1914,8 @@ static lv_obj_t* dispatch_ir_archetype_88(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_entry_get_cache
-static lv_obj_t* dispatch_ir_archetype_89(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_89(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_cache_entry_get_cache-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1834,7 +1926,8 @@ static lv_obj_t* dispatch_ir_archetype_89(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_entry_get_data
-static lv_obj_t* dispatch_ir_archetype_90(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_90(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_cache_entry_get_data-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1845,7 +1938,8 @@ static lv_obj_t* dispatch_ir_archetype_90(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_entry_get_node_size
-static lv_obj_t* dispatch_ir_archetype_91(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_91(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_cache_entry_get_node_size-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1857,7 +1951,8 @@ static lv_obj_t* dispatch_ir_archetype_91(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_entry_get_ref
-static lv_obj_t* dispatch_ir_archetype_92(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_92(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_cache_entry_get_ref-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1869,13 +1964,14 @@ static lv_obj_t* dispatch_ir_archetype_92(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_entry_init
-static lv_obj_t* dispatch_ir_archetype_93(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_93(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_cache_entry_init-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_cache_t* arg0 = (lv_cache_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_cache_t* arg0 = (lv_cache_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_cache_entry_t*, lv_cache_t*, uint32_t);
     ((specific_func_t)fn)((lv_cache_entry_t*)target, arg0, arg1);
@@ -1883,7 +1979,8 @@ static lv_obj_t* dispatch_ir_archetype_93(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_entry_is_invalid
-static lv_obj_t* dispatch_ir_archetype_94(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_94(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_cache_entry_is_invalid-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1895,7 +1992,8 @@ static lv_obj_t* dispatch_ir_archetype_94(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_get_name
-static lv_obj_t* dispatch_ir_archetype_95(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_95(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_cache_get_name-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1906,7 +2004,8 @@ static lv_obj_t* dispatch_ir_archetype_95(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_is_enabled
-static lv_obj_t* dispatch_ir_archetype_96(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_96(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_cache_is_enabled-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1918,7 +2017,8 @@ static lv_obj_t* dispatch_ir_archetype_96(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_iter_create
-static lv_obj_t* dispatch_ir_archetype_97(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_97(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_cache_iter_create-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1929,20 +2029,22 @@ static lv_obj_t* dispatch_ir_archetype_97(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_cache_set_name
-static lv_obj_t* dispatch_ir_archetype_98(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_98(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_cache_set_name-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef void (*specific_func_t)(lv_cache_t*, char*);
     ((specific_func_t)fn)((lv_cache_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 3 functions like: lv_calendar_get_highlighted_dates
-static lv_obj_t* dispatch_ir_archetype_99(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_99(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_calendar_get_highlighted_dates-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1953,7 +2055,8 @@ static lv_obj_t* dispatch_ir_archetype_99(generic_lvgl_func_t fn, void* target, 
 }
 
 // Archetype for 1 functions like: lv_calendar_get_highlighted_dates_num
-static lv_obj_t* dispatch_ir_archetype_100(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_100(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_calendar_get_highlighted_dates_num-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -1965,33 +2068,36 @@ static lv_obj_t* dispatch_ir_archetype_100(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_calendar_get_pressed_date
-static lv_obj_t* dispatch_ir_archetype_101(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_101(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_calendar_get_pressed_date-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_calendar_date_t* arg0 = (lv_calendar_date_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_calendar_date_t* arg0 = (lv_calendar_date_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_result_t (*specific_func_t)(lv_obj_t*, lv_calendar_date_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_calendar_set_day_names
-static lv_obj_t* dispatch_ir_archetype_102(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_102(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_calendar_set_day_names-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char** arg0 = (char**)obj_registry_get(ir_node_get_string(ir_args[0]));
+    char** arg0 = (char**)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, char**);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_calendar_set_today_date
-static lv_obj_t* dispatch_ir_archetype_103(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_103(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_calendar_set_today_date-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -2006,7 +2112,8 @@ static lv_obj_t* dispatch_ir_archetype_103(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_calloc
-static lv_obj_t* dispatch_ir_archetype_104(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_104(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_calloc-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2019,7 +2126,8 @@ static lv_obj_t* dispatch_ir_archetype_104(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_canvas_buf_size
-static lv_obj_t* dispatch_ir_archetype_105(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_105(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_canvas_buf_size-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -2035,22 +2143,24 @@ static lv_obj_t* dispatch_ir_archetype_105(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_canvas_copy_buf
-static lv_obj_t* dispatch_ir_archetype_106(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_106(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_canvas_copy_buf-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_draw_buf_t* arg1 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
-    lv_area_t* arg2 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_draw_buf_t* arg1 = (lv_draw_buf_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
+    lv_area_t* arg2 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[2]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_area_t*, lv_draw_buf_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1, arg2);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_canvas_fill_bg
-static lv_obj_t* dispatch_ir_archetype_107(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_107(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_canvas_fill_bg-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2064,20 +2174,22 @@ static lv_obj_t* dispatch_ir_archetype_107(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_canvas_finish_layer
-static lv_obj_t* dispatch_ir_archetype_108(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_108(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_canvas_finish_layer-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_layer_t* arg0 = (lv_layer_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_layer_t* arg0 = (lv_layer_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_layer_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 3 functions like: lv_canvas_get_buf
-static lv_obj_t* dispatch_ir_archetype_109(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_109(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_canvas_get_buf-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2088,7 +2200,8 @@ static lv_obj_t* dispatch_ir_archetype_109(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_canvas_get_draw_buf
-static lv_obj_t* dispatch_ir_archetype_110(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_110(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_canvas_get_draw_buf-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2099,7 +2212,8 @@ static lv_obj_t* dispatch_ir_archetype_110(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_canvas_get_image
-static lv_obj_t* dispatch_ir_archetype_111(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_111(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_canvas_get_image-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2110,7 +2224,8 @@ static lv_obj_t* dispatch_ir_archetype_111(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_canvas_get_px
-static lv_obj_t* dispatch_ir_archetype_112(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_112(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_canvas_get_px-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2124,20 +2239,22 @@ static lv_obj_t* dispatch_ir_archetype_112(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_canvas_set_draw_buf
-static lv_obj_t* dispatch_ir_archetype_113(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_113(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_canvas_set_draw_buf-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_draw_buf_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_canvas_set_palette
-static lv_obj_t* dispatch_ir_archetype_114(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_114(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_canvas_set_palette-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2151,7 +2268,8 @@ static lv_obj_t* dispatch_ir_archetype_114(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_canvas_set_px
-static lv_obj_t* dispatch_ir_archetype_115(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_115(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_canvas_set_px-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -2167,7 +2285,8 @@ static lv_obj_t* dispatch_ir_archetype_115(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_add_cursor
-static lv_obj_t* dispatch_ir_archetype_116(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_116(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_chart_add_cursor-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2180,7 +2299,8 @@ static lv_obj_t* dispatch_ir_archetype_116(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_add_series
-static lv_obj_t* dispatch_ir_archetype_117(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_117(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_chart_add_series-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2193,72 +2313,78 @@ static lv_obj_t* dispatch_ir_archetype_117(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_get_cursor_point
-static lv_obj_t* dispatch_ir_archetype_118(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_118(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_chart_get_cursor_point-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_cursor_t* arg0 = (lv_chart_cursor_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_cursor_t* arg0 = (lv_chart_cursor_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_point_t (*specific_func_t)(lv_obj_t*, lv_chart_cursor_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_chart_get_point_pos_by_id
-static lv_obj_t* dispatch_ir_archetype_119(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_119(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_chart_get_point_pos_by_id-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
-    lv_point_t* arg2 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
+    lv_point_t* arg2 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[2]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_series_t*, uint32_t, lv_point_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1, arg2);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_chart_get_series_color
-static lv_obj_t* dispatch_ir_archetype_120(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_120(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_chart_get_series_color-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_color_t (*specific_func_t)(lv_obj_t*, lv_chart_series_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_chart_get_series_next
-static lv_obj_t* dispatch_ir_archetype_121(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_121(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_chart_get_series_next-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_chart_series_t* (*specific_func_t)(lv_obj_t*, lv_chart_series_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0);
 }
 
 // Archetype for 2 functions like: lv_chart_get_series_x_array
-static lv_obj_t* dispatch_ir_archetype_122(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_122(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_chart_get_series_x_array-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef int32_t* (*specific_func_t)(lv_obj_t*, lv_chart_series_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0);
 }
 
 // Archetype for 1 functions like: lv_chart_get_type
-static lv_obj_t* dispatch_ir_archetype_123(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_123(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_chart_get_type-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2270,26 +2396,28 @@ static lv_obj_t* dispatch_ir_archetype_123(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_get_x_start_point
-static lv_obj_t* dispatch_ir_archetype_124(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_124(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_chart_get_x_start_point-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef uint32_t (*specific_func_t)(lv_obj_t*, lv_chart_series_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_chart_hide_series
-static lv_obj_t* dispatch_ir_archetype_125(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_125(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_chart_hide_series-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     bool arg1 = ir_node_get_bool(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_series_t*, bool);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -2297,26 +2425,28 @@ static lv_obj_t* dispatch_ir_archetype_125(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_remove_series
-static lv_obj_t* dispatch_ir_archetype_126(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_126(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_chart_remove_series-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_series_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 4 functions like: lv_chart_set_all_values
-static lv_obj_t* dispatch_ir_archetype_127(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_127(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_chart_set_all_values-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_series_t*, int32_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -2324,7 +2454,8 @@ static lv_obj_t* dispatch_ir_archetype_127(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_chart_set_axis_max_value
-static lv_obj_t* dispatch_ir_archetype_128(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_128(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_chart_set_axis_max_value-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2338,7 +2469,8 @@ static lv_obj_t* dispatch_ir_archetype_128(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_axis_range
-static lv_obj_t* dispatch_ir_archetype_129(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_129(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_chart_set_axis_range-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -2353,14 +2485,15 @@ static lv_obj_t* dispatch_ir_archetype_129(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_cursor_point
-static lv_obj_t* dispatch_ir_archetype_130(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_130(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_chart_set_cursor_point-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_cursor_t* arg0 = (lv_chart_cursor_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_chart_series_t* arg1 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_chart_cursor_t* arg0 = (lv_chart_cursor_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_chart_series_t* arg1 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     uint32_t arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_cursor_t*, lv_chart_series_t*, uint32_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1, arg2);
@@ -2368,27 +2501,29 @@ static lv_obj_t* dispatch_ir_archetype_130(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_cursor_pos
-static lv_obj_t* dispatch_ir_archetype_131(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_131(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_chart_set_cursor_pos-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_cursor_t* arg0 = (lv_chart_cursor_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_point_t* arg1 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_chart_cursor_t* arg0 = (lv_chart_cursor_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_point_t* arg1 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_cursor_t*, lv_point_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_chart_set_cursor_pos_x
-static lv_obj_t* dispatch_ir_archetype_132(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_132(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_chart_set_cursor_pos_x-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_cursor_t* arg0 = (lv_chart_cursor_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_cursor_t* arg0 = (lv_chart_cursor_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_cursor_t*, int32_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -2396,13 +2531,14 @@ static lv_obj_t* dispatch_ir_archetype_132(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_next_value2
-static lv_obj_t* dispatch_ir_archetype_133(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_133(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_chart_set_next_value2-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_series_t*, int32_t, int32_t);
@@ -2411,13 +2547,14 @@ static lv_obj_t* dispatch_ir_archetype_133(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_series_color
-static lv_obj_t* dispatch_ir_archetype_134(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_134(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_chart_set_series_color-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_color_t arg1 = lv_color_hex((uint32_t)ir_node_get_int(ir_args[1]));
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_series_t*, lv_color_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -2425,13 +2562,14 @@ static lv_obj_t* dispatch_ir_archetype_134(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_series_value_by_id
-static lv_obj_t* dispatch_ir_archetype_135(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_135(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_chart_set_series_value_by_id-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_series_t*, uint32_t, int32_t);
@@ -2440,13 +2578,14 @@ static lv_obj_t* dispatch_ir_archetype_135(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_series_value_by_id2
-static lv_obj_t* dispatch_ir_archetype_136(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_136(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_chart_set_series_value_by_id2-like function: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -2456,13 +2595,14 @@ static lv_obj_t* dispatch_ir_archetype_136(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_series_values
-static lv_obj_t* dispatch_ir_archetype_137(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_137(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_chart_set_series_values-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     size_t arg2 = (size_t)ir_node_get_int(ir_args[2]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_series_t*, int32_t, size_t);
@@ -2471,13 +2611,14 @@ static lv_obj_t* dispatch_ir_archetype_137(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_series_values2
-static lv_obj_t* dispatch_ir_archetype_138(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_138(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_chart_set_series_values2-like function: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     size_t arg3 = (size_t)ir_node_get_int(ir_args[3]);
@@ -2487,7 +2628,8 @@ static lv_obj_t* dispatch_ir_archetype_138(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_type
-static lv_obj_t* dispatch_ir_archetype_139(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_139(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_chart_set_type-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2500,7 +2642,8 @@ static lv_obj_t* dispatch_ir_archetype_139(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_update_mode
-static lv_obj_t* dispatch_ir_archetype_140(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_140(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_chart_set_update_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2513,13 +2656,14 @@ static lv_obj_t* dispatch_ir_archetype_140(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_chart_set_x_start_point
-static lv_obj_t* dispatch_ir_archetype_141(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_141(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_chart_set_x_start_point-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_chart_series_t* arg0 = (lv_chart_series_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_chart_series_t* arg0 = (lv_chart_series_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_chart_series_t*, uint32_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -2527,7 +2671,8 @@ static lv_obj_t* dispatch_ir_archetype_141(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 10 functions like: lv_checkbox_get_text
-static lv_obj_t* dispatch_ir_archetype_142(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_142(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_checkbox_get_text-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2538,7 +2683,8 @@ static lv_obj_t* dispatch_ir_archetype_142(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_circle_buf_capacity
-static lv_obj_t* dispatch_ir_archetype_143(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_143(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_circle_buf_capacity-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2550,7 +2696,8 @@ static lv_obj_t* dispatch_ir_archetype_143(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_circle_buf_create
-static lv_obj_t* dispatch_ir_archetype_144(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_144(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_circle_buf_create-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2563,7 +2710,8 @@ static lv_obj_t* dispatch_ir_archetype_144(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_circle_buf_create_from_array
-static lv_obj_t* dispatch_ir_archetype_145(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_145(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_circle_buf_create_from_array-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2574,7 +2722,8 @@ static lv_obj_t* dispatch_ir_archetype_145(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_circle_buf_destroy
-static lv_obj_t* dispatch_ir_archetype_146(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_146(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_circle_buf_destroy-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2586,7 +2735,8 @@ static lv_obj_t* dispatch_ir_archetype_146(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_circle_buf_head
-static lv_obj_t* dispatch_ir_archetype_147(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_147(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_circle_buf_head-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2597,7 +2747,8 @@ static lv_obj_t* dispatch_ir_archetype_147(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_circle_buf_is_empty
-static lv_obj_t* dispatch_ir_archetype_148(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_148(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_circle_buf_is_empty-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2609,7 +2760,8 @@ static lv_obj_t* dispatch_ir_archetype_148(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_circle_buf_resize
-static lv_obj_t* dispatch_ir_archetype_149(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_149(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_circle_buf_resize-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2622,7 +2774,8 @@ static lv_obj_t* dispatch_ir_archetype_149(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_circle_buf_skip
-static lv_obj_t* dispatch_ir_archetype_150(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_150(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_circle_buf_skip-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2634,7 +2787,8 @@ static lv_obj_t* dispatch_ir_archetype_150(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_clamp_height
-static lv_obj_t* dispatch_ir_archetype_151(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_151(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_clamp_height-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -2650,7 +2804,8 @@ static lv_obj_t* dispatch_ir_archetype_151(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color16_premultiply
-static lv_obj_t* dispatch_ir_archetype_152(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_152(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color16_premultiply-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2663,20 +2818,22 @@ static lv_obj_t* dispatch_ir_archetype_152(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color24_luminance
-static lv_obj_t* dispatch_ir_archetype_153(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_153(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color24_luminance-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    uint8_t* arg0 = (uint8_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    uint8_t* arg0 = (uint8_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef uint8_t (*specific_func_t)(uint8_t*);
     (void)((specific_func_t)fn)(arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_color32_eq
-static lv_obj_t* dispatch_ir_archetype_154(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_154(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_color32_eq-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2690,7 +2847,8 @@ static lv_obj_t* dispatch_ir_archetype_154(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color32_luminance
-static lv_obj_t* dispatch_ir_archetype_155(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_155(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color32_luminance-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2703,7 +2861,8 @@ static lv_obj_t* dispatch_ir_archetype_155(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color32_make
-static lv_obj_t* dispatch_ir_archetype_156(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_156(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_color32_make-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -2719,7 +2878,8 @@ static lv_obj_t* dispatch_ir_archetype_156(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_16_16_mix
-static lv_obj_t* dispatch_ir_archetype_157(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_157(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_color_16_16_mix-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -2734,7 +2894,8 @@ static lv_obj_t* dispatch_ir_archetype_157(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_color_black
-static lv_obj_t* dispatch_ir_archetype_158(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_158(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_color_black-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2746,7 +2907,8 @@ static lv_obj_t* dispatch_ir_archetype_158(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_color_brightness
-static lv_obj_t* dispatch_ir_archetype_159(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_159(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color_brightness-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2759,7 +2921,8 @@ static lv_obj_t* dispatch_ir_archetype_159(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_color_darken
-static lv_obj_t* dispatch_ir_archetype_160(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_160(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_color_darken-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2773,7 +2936,8 @@ static lv_obj_t* dispatch_ir_archetype_160(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_eq
-static lv_obj_t* dispatch_ir_archetype_161(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_161(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_color_eq-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2787,7 +2951,8 @@ static lv_obj_t* dispatch_ir_archetype_161(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_color_format_get_bpp
-static lv_obj_t* dispatch_ir_archetype_162(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_162(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color_format_get_bpp-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2800,7 +2965,8 @@ static lv_obj_t* dispatch_ir_archetype_162(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_format_has_alpha
-static lv_obj_t* dispatch_ir_archetype_163(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_163(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color_format_has_alpha-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2813,7 +2979,8 @@ static lv_obj_t* dispatch_ir_archetype_163(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_color_hex
-static lv_obj_t* dispatch_ir_archetype_164(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_164(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color_hex-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2826,7 +2993,8 @@ static lv_obj_t* dispatch_ir_archetype_164(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_hsv_to_rgb
-static lv_obj_t* dispatch_ir_archetype_165(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_165(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_color_hsv_to_rgb-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -2841,7 +3009,8 @@ static lv_obj_t* dispatch_ir_archetype_165(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_make
-static lv_obj_t* dispatch_ir_archetype_166(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_166(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_color_make-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -2856,7 +3025,8 @@ static lv_obj_t* dispatch_ir_archetype_166(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_mix
-static lv_obj_t* dispatch_ir_archetype_167(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_167(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_color_mix-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -2871,7 +3041,8 @@ static lv_obj_t* dispatch_ir_archetype_167(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_color_mix32
-static lv_obj_t* dispatch_ir_archetype_168(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_168(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_color_mix32-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2885,7 +3056,8 @@ static lv_obj_t* dispatch_ir_archetype_168(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_premultiply
-static lv_obj_t* dispatch_ir_archetype_169(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_169(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_color_premultiply-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -2897,7 +3069,8 @@ static lv_obj_t* dispatch_ir_archetype_169(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_rgb_to_hsv
-static lv_obj_t* dispatch_ir_archetype_170(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_170(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_color_rgb_to_hsv-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -2912,7 +3085,8 @@ static lv_obj_t* dispatch_ir_archetype_170(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_color_swap_16
-static lv_obj_t* dispatch_ir_archetype_171(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_171(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color_swap_16-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2925,7 +3099,8 @@ static lv_obj_t* dispatch_ir_archetype_171(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_to_32
-static lv_obj_t* dispatch_ir_archetype_172(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_172(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_color_to_32-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -2939,7 +3114,8 @@ static lv_obj_t* dispatch_ir_archetype_172(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_to_hsv
-static lv_obj_t* dispatch_ir_archetype_173(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_173(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color_to_hsv-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2952,7 +3128,8 @@ static lv_obj_t* dispatch_ir_archetype_173(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_color_to_int
-static lv_obj_t* dispatch_ir_archetype_174(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_174(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color_to_int-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2965,7 +3142,8 @@ static lv_obj_t* dispatch_ir_archetype_174(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_color_to_u16
-static lv_obj_t* dispatch_ir_archetype_175(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_175(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_color_to_u16-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -2978,7 +3156,8 @@ static lv_obj_t* dispatch_ir_archetype_175(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_cubic_bezier
-static lv_obj_t* dispatch_ir_archetype_176(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_176(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 5) {
         LV_LOG_WARN("IR call to lv_cubic_bezier-like function: expected 5 args, got %d", arg_count);
         return NULL;
@@ -2995,7 +3174,8 @@ static lv_obj_t* dispatch_ir_archetype_176(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_delay_ms
-static lv_obj_t* dispatch_ir_archetype_177(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_177(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_delay_ms-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3008,7 +3188,8 @@ static lv_obj_t* dispatch_ir_archetype_177(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_display_create
-static lv_obj_t* dispatch_ir_archetype_178(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_178(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_display_create-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -3021,7 +3202,8 @@ static lv_obj_t* dispatch_ir_archetype_178(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 6 functions like: lv_display_delete
-static lv_obj_t* dispatch_ir_archetype_179(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_179(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_delete-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3033,7 +3215,8 @@ static lv_obj_t* dispatch_ir_archetype_179(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_delete_event
-static lv_obj_t* dispatch_ir_archetype_180(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_180(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_delete_event-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3046,7 +3229,8 @@ static lv_obj_t* dispatch_ir_archetype_180(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_dpx
-static lv_obj_t* dispatch_ir_archetype_181(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_181(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_dpx-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3059,7 +3243,8 @@ static lv_obj_t* dispatch_ir_archetype_181(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 4 functions like: lv_display_enable_invalidation
-static lv_obj_t* dispatch_ir_archetype_182(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_182(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_enable_invalidation-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3072,7 +3257,8 @@ static lv_obj_t* dispatch_ir_archetype_182(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_display_flush_is_last
-static lv_obj_t* dispatch_ir_archetype_183(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_183(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_flush_is_last-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3084,7 +3270,8 @@ static lv_obj_t* dispatch_ir_archetype_183(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_get_buf_active
-static lv_obj_t* dispatch_ir_archetype_184(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_184(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_buf_active-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3095,7 +3282,8 @@ static lv_obj_t* dispatch_ir_archetype_184(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_get_color_format
-static lv_obj_t* dispatch_ir_archetype_185(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_185(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_color_format-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3107,7 +3295,8 @@ static lv_obj_t* dispatch_ir_archetype_185(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_get_default
-static lv_obj_t* dispatch_ir_archetype_186(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_186(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_default-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3118,7 +3307,8 @@ static lv_obj_t* dispatch_ir_archetype_186(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 9 functions like: lv_display_get_dpi
-static lv_obj_t* dispatch_ir_archetype_187(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_187(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_dpi-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3130,7 +3320,8 @@ static lv_obj_t* dispatch_ir_archetype_187(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 4 functions like: lv_display_get_draw_buf_size
-static lv_obj_t* dispatch_ir_archetype_188(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_188(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_draw_buf_size-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3142,7 +3333,8 @@ static lv_obj_t* dispatch_ir_archetype_188(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_display_get_driver_data
-static lv_obj_t* dispatch_ir_archetype_189(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_189(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_driver_data-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3153,7 +3345,8 @@ static lv_obj_t* dispatch_ir_archetype_189(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_get_event_dsc
-static lv_obj_t* dispatch_ir_archetype_190(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_190(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_get_event_dsc-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3165,7 +3358,8 @@ static lv_obj_t* dispatch_ir_archetype_190(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_get_invalidated_draw_buf_size
-static lv_obj_t* dispatch_ir_archetype_191(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_191(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_display_get_invalidated_draw_buf_size-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -3179,7 +3373,8 @@ static lv_obj_t* dispatch_ir_archetype_191(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_display_get_layer_bottom
-static lv_obj_t* dispatch_ir_archetype_192(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_192(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_layer_bottom-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3190,7 +3385,8 @@ static lv_obj_t* dispatch_ir_archetype_192(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_get_next
-static lv_obj_t* dispatch_ir_archetype_193(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_193(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_next-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3201,7 +3397,8 @@ static lv_obj_t* dispatch_ir_archetype_193(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_get_refr_timer
-static lv_obj_t* dispatch_ir_archetype_194(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_194(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_refr_timer-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3212,7 +3409,8 @@ static lv_obj_t* dispatch_ir_archetype_194(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_get_rotation
-static lv_obj_t* dispatch_ir_archetype_195(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_195(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_rotation-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3224,7 +3422,8 @@ static lv_obj_t* dispatch_ir_archetype_195(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_get_theme
-static lv_obj_t* dispatch_ir_archetype_196(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_196(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_get_theme-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3235,7 +3434,8 @@ static lv_obj_t* dispatch_ir_archetype_196(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 7 functions like: lv_display_refr_timer
-static lv_obj_t* dispatch_ir_archetype_197(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_197(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_display_refr_timer-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3247,33 +3447,36 @@ static lv_obj_t* dispatch_ir_archetype_197(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_rotate_area
-static lv_obj_t* dispatch_ir_archetype_198(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_198(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_rotate_area-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_display_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_display_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_display_set_3rd_draw_buffer
-static lv_obj_t* dispatch_ir_archetype_199(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_199(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_set_3rd_draw_buffer-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_display_t*, lv_draw_buf_t*);
     ((specific_func_t)fn)((lv_display_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_display_set_color_format
-static lv_obj_t* dispatch_ir_archetype_200(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_200(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_set_color_format-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3286,7 +3489,8 @@ static lv_obj_t* dispatch_ir_archetype_200(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_set_dpi
-static lv_obj_t* dispatch_ir_archetype_201(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_201(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_set_dpi-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3299,21 +3503,23 @@ static lv_obj_t* dispatch_ir_archetype_201(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_set_draw_buffers
-static lv_obj_t* dispatch_ir_archetype_202(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_202(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_display_set_draw_buffers-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_draw_buf_t* arg1 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_draw_buf_t* arg1 = (lv_draw_buf_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_display_t*, lv_draw_buf_t*, lv_draw_buf_t*);
     ((specific_func_t)fn)((lv_display_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 3 functions like: lv_display_set_offset
-static lv_obj_t* dispatch_ir_archetype_203(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_203(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_display_set_offset-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -3327,7 +3533,8 @@ static lv_obj_t* dispatch_ir_archetype_203(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_set_render_mode
-static lv_obj_t* dispatch_ir_archetype_204(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_204(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_set_render_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3340,7 +3547,8 @@ static lv_obj_t* dispatch_ir_archetype_204(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_set_rotation
-static lv_obj_t* dispatch_ir_archetype_205(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_205(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_set_rotation-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3353,20 +3561,22 @@ static lv_obj_t* dispatch_ir_archetype_205(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_display_set_theme
-static lv_obj_t* dispatch_ir_archetype_206(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_206(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_set_theme-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_theme_t* arg0 = (lv_theme_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_theme_t* arg0 = (lv_theme_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_display_t*, lv_theme_t*);
     ((specific_func_t)fn)((lv_display_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_display_set_tile_cnt
-static lv_obj_t* dispatch_ir_archetype_207(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_207(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_display_set_tile_cnt-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3379,7 +3589,8 @@ static lv_obj_t* dispatch_ir_archetype_207(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_dpx
-static lv_obj_t* dispatch_ir_archetype_208(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_208(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_dpx-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3392,33 +3603,36 @@ static lv_obj_t* dispatch_ir_archetype_208(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_add_task
-static lv_obj_t* dispatch_ir_archetype_209(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_209(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_add_task-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_draw_task_type_t arg1 = (lv_draw_task_type_t)ir_node_get_enum_value(ir_args[1], "lv_draw_task_type_t", spec);
     typedef lv_draw_task_t* (*specific_func_t)(lv_layer_t*, lv_area_t*, lv_draw_task_type_t);
     return (lv_obj_t*)((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1);
 }
 
 // Archetype for 1 functions like: lv_draw_arc
-static lv_obj_t* dispatch_ir_archetype_210(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_210(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_arc-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_arc_dsc_t* arg0 = (lv_draw_arc_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_draw_arc_dsc_t* arg0 = (lv_draw_arc_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_arc_dsc_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_arc_dsc_init
-static lv_obj_t* dispatch_ir_archetype_211(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_211(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_arc_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3430,7 +3644,8 @@ static lv_obj_t* dispatch_ir_archetype_211(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_arc_get_area
-static lv_obj_t* dispatch_ir_archetype_212(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_212(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 8) {
         LV_LOG_WARN("IR call to lv_draw_arc_get_area-like function: expected 8 args, got %d", arg_count);
         return NULL;
@@ -3443,28 +3658,30 @@ static lv_obj_t* dispatch_ir_archetype_212(generic_lvgl_func_t fn, void* target,
     lv_value_precise_t arg4 = (lv_value_precise_t)ir_node_get_int(ir_args[4]);
     int32_t arg5 = (int32_t)ir_node_get_int(ir_args[5]);
     bool arg6 = ir_node_get_bool(ir_args[6]);
-    lv_area_t* arg7 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[7]));
+    lv_area_t* arg7 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[7]), NULL);
     typedef void (*specific_func_t)(int32_t, int32_t, uint16_t, lv_value_precise_t, lv_value_precise_t, int32_t, bool, lv_area_t*);
     ((specific_func_t)fn)(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_border
-static lv_obj_t* dispatch_ir_archetype_213(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_213(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_border-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_border_dsc_t* arg0 = (lv_draw_border_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_area_t* arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_border_dsc_t* arg0 = (lv_draw_border_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_area_t* arg1 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_border_dsc_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_border_dsc_init
-static lv_obj_t* dispatch_ir_archetype_214(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_214(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_border_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3476,21 +3693,23 @@ static lv_obj_t* dispatch_ir_archetype_214(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_box_shadow
-static lv_obj_t* dispatch_ir_archetype_215(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_215(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_box_shadow-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_box_shadow_dsc_t* arg0 = (lv_draw_box_shadow_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_area_t* arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_box_shadow_dsc_t* arg0 = (lv_draw_box_shadow_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_area_t* arg1 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_box_shadow_dsc_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_box_shadow_dsc_init
-static lv_obj_t* dispatch_ir_archetype_216(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_216(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_box_shadow_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3502,7 +3721,8 @@ static lv_obj_t* dispatch_ir_archetype_216(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_adjust_stride
-static lv_obj_t* dispatch_ir_archetype_217(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_217(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_buf_adjust_stride-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3515,20 +3735,22 @@ static lv_obj_t* dispatch_ir_archetype_217(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_draw_buf_clear
-static lv_obj_t* dispatch_ir_archetype_218(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_218(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_buf_clear-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_draw_buf_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_draw_buf_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_draw_buf_clear_flag
-static lv_obj_t* dispatch_ir_archetype_219(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_219(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_buf_clear_flag-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3541,22 +3763,24 @@ static lv_obj_t* dispatch_ir_archetype_219(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_copy
-static lv_obj_t* dispatch_ir_archetype_220(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_220(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_draw_buf_copy-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_draw_buf_t* arg1 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
-    lv_area_t* arg2 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_draw_buf_t* arg1 = (lv_draw_buf_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
+    lv_area_t* arg2 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[2]), NULL);
     typedef void (*specific_func_t)(lv_draw_buf_t*, lv_area_t*, lv_draw_buf_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_draw_buf_t*)target, arg0, arg1, arg2);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_buf_create
-static lv_obj_t* dispatch_ir_archetype_221(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_221(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_draw_buf_create-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -3571,7 +3795,8 @@ static lv_obj_t* dispatch_ir_archetype_221(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_create_ex
-static lv_obj_t* dispatch_ir_archetype_222(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_222(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_draw_buf_create_ex-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -3586,7 +3811,8 @@ static lv_obj_t* dispatch_ir_archetype_222(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_destroy
-static lv_obj_t* dispatch_ir_archetype_223(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_223(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_buf_destroy-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3598,7 +3824,8 @@ static lv_obj_t* dispatch_ir_archetype_223(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_dup
-static lv_obj_t* dispatch_ir_archetype_224(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_224(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_buf_dup-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3609,32 +3836,35 @@ static lv_obj_t* dispatch_ir_archetype_224(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_dup_ex
-static lv_obj_t* dispatch_ir_archetype_225(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_225(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_buf_dup_ex-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_draw_buf_t* (*specific_func_t)(lv_draw_buf_handlers_t*, lv_draw_buf_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_draw_buf_handlers_t*)target, arg0);
 }
 
 // Archetype for 1 functions like: lv_draw_buf_from_image
-static lv_obj_t* dispatch_ir_archetype_226(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_226(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_buf_from_image-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_image_dsc_t* arg0 = (lv_image_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_image_dsc_t* arg0 = (lv_image_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_result_t (*specific_func_t)(lv_draw_buf_t*, lv_image_dsc_t*);
     (void)((specific_func_t)fn)((lv_draw_buf_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 3 functions like: lv_draw_buf_get_font_handlers
-static lv_obj_t* dispatch_ir_archetype_227(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_227(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_buf_get_font_handlers-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3645,7 +3875,8 @@ static lv_obj_t* dispatch_ir_archetype_227(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_goto_xy
-static lv_obj_t* dispatch_ir_archetype_228(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_228(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_buf_goto_xy-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -3658,7 +3889,8 @@ static lv_obj_t* dispatch_ir_archetype_228(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_has_flag
-static lv_obj_t* dispatch_ir_archetype_229(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_229(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_buf_has_flag-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3671,7 +3903,8 @@ static lv_obj_t* dispatch_ir_archetype_229(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_init_with_default_handlers
-static lv_obj_t* dispatch_ir_archetype_230(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_230(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_buf_init_with_default_handlers-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3683,7 +3916,8 @@ static lv_obj_t* dispatch_ir_archetype_230(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_premultiply
-static lv_obj_t* dispatch_ir_archetype_231(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_231(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_buf_premultiply-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3695,7 +3929,8 @@ static lv_obj_t* dispatch_ir_archetype_231(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_reshape
-static lv_obj_t* dispatch_ir_archetype_232(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_232(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_draw_buf_reshape-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -3710,20 +3945,22 @@ static lv_obj_t* dispatch_ir_archetype_232(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_save_to_file
-static lv_obj_t* dispatch_ir_archetype_233(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_233(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_buf_save_to_file-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef lv_result_t (*specific_func_t)(lv_draw_buf_t*, char*);
     (void)((specific_func_t)fn)((lv_draw_buf_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_buf_set_palette
-static lv_obj_t* dispatch_ir_archetype_234(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_234(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_buf_set_palette-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -3737,20 +3974,22 @@ static lv_obj_t* dispatch_ir_archetype_234(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_to_image
-static lv_obj_t* dispatch_ir_archetype_235(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_235(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_buf_to_image-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_image_dsc_t* arg0 = (lv_image_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_image_dsc_t* arg0 = (lv_image_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_draw_buf_t*, lv_image_dsc_t*);
     ((specific_func_t)fn)((lv_draw_buf_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_buf_width_to_stride
-static lv_obj_t* dispatch_ir_archetype_236(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_236(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_buf_width_to_stride-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -3764,7 +4003,8 @@ static lv_obj_t* dispatch_ir_archetype_236(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_buf_width_to_stride_ex
-static lv_obj_t* dispatch_ir_archetype_237(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_237(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_buf_width_to_stride_ex-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -3778,14 +4018,15 @@ static lv_obj_t* dispatch_ir_archetype_237(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_character
-static lv_obj_t* dispatch_ir_archetype_238(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_238(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_draw_character-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_label_dsc_t* arg0 = (lv_draw_label_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_point_t* arg1 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_label_dsc_t* arg0 = (lv_draw_label_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_point_t* arg1 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     uint32_t arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_label_dsc_t*, lv_point_t*, uint32_t);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1, arg2);
@@ -3793,7 +4034,8 @@ static lv_obj_t* dispatch_ir_archetype_238(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_draw_create_unit
-static lv_obj_t* dispatch_ir_archetype_239(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_239(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_create_unit-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -3805,34 +4047,37 @@ static lv_obj_t* dispatch_ir_archetype_239(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_dispatch_layer
-static lv_obj_t* dispatch_ir_archetype_240(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_240(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_dispatch_layer-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_layer_t* arg0 = (lv_layer_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_layer_t* arg0 = (lv_layer_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef bool (*specific_func_t)(lv_display_t*, lv_layer_t*);
     (void)((specific_func_t)fn)((lv_display_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_fill
-static lv_obj_t* dispatch_ir_archetype_241(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_241(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_fill-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_fill_dsc_t* arg0 = (lv_draw_fill_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_area_t* arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_fill_dsc_t* arg0 = (lv_draw_fill_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_area_t* arg1 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_fill_dsc_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_fill_dsc_init
-static lv_obj_t* dispatch_ir_archetype_242(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_242(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_fill_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3844,33 +4089,36 @@ static lv_obj_t* dispatch_ir_archetype_242(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_finalize_task_creation
-static lv_obj_t* dispatch_ir_archetype_243(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_243(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_finalize_task_creation-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_task_t* arg0 = (lv_draw_task_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_draw_task_t* arg0 = (lv_draw_task_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_task_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_draw_get_available_task
-static lv_obj_t* dispatch_ir_archetype_244(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_244(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_get_available_task-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_task_t* arg0 = (lv_draw_task_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_draw_task_t* arg0 = (lv_draw_task_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     uint8_t arg1 = (uint8_t)ir_node_get_int(ir_args[1]);
     typedef lv_draw_task_t* (*specific_func_t)(lv_layer_t*, lv_draw_task_t*, uint8_t);
     return (lv_obj_t*)((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1);
 }
 
 // Archetype for 1 functions like: lv_draw_get_dependent_count
-static lv_obj_t* dispatch_ir_archetype_245(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_245(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_get_dependent_count-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3882,7 +4130,8 @@ static lv_obj_t* dispatch_ir_archetype_245(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 9 functions like: lv_draw_get_unit_count
-static lv_obj_t* dispatch_ir_archetype_246(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_246(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_get_unit_count-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3894,7 +4143,8 @@ static lv_obj_t* dispatch_ir_archetype_246(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_glyph_dsc_init
-static lv_obj_t* dispatch_ir_archetype_247(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_247(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_glyph_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3906,21 +4156,23 @@ static lv_obj_t* dispatch_ir_archetype_247(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_draw_image
-static lv_obj_t* dispatch_ir_archetype_248(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_248(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_image-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_image_dsc_t* arg0 = (lv_draw_image_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_area_t* arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_image_dsc_t* arg0 = (lv_draw_image_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_area_t* arg1 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_image_dsc_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_image_dsc_init
-static lv_obj_t* dispatch_ir_archetype_249(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_249(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_image_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3932,21 +4184,23 @@ static lv_obj_t* dispatch_ir_archetype_249(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_label
-static lv_obj_t* dispatch_ir_archetype_250(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_250(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_label-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_label_dsc_t* arg0 = (lv_draw_label_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_area_t* arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_label_dsc_t* arg0 = (lv_draw_label_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_area_t* arg1 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_label_dsc_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_label_dsc_init
-static lv_obj_t* dispatch_ir_archetype_251(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_251(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_label_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3958,7 +4212,8 @@ static lv_obj_t* dispatch_ir_archetype_251(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_layer_alloc_buf
-static lv_obj_t* dispatch_ir_archetype_252(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_252(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_layer_alloc_buf-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -3969,20 +4224,22 @@ static lv_obj_t* dispatch_ir_archetype_252(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_layer_create
-static lv_obj_t* dispatch_ir_archetype_253(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_253(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_layer_create-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_color_format_t arg0 = (lv_color_format_t)ir_node_get_enum_value(ir_args[0], "lv_color_format_t", spec);
-    lv_area_t* arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_area_t* arg1 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef lv_layer_t* (*specific_func_t)(lv_layer_t*, lv_color_format_t, lv_area_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1);
 }
 
 // Archetype for 1 functions like: lv_draw_layer_go_to_xy
-static lv_obj_t* dispatch_ir_archetype_254(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_254(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_layer_go_to_xy-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -3995,36 +4252,39 @@ static lv_obj_t* dispatch_ir_archetype_254(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_layer_init
-static lv_obj_t* dispatch_ir_archetype_255(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_255(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_draw_layer_init-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_layer_t* arg0 = (lv_layer_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_layer_t* arg0 = (lv_layer_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_color_format_t arg1 = (lv_color_format_t)ir_node_get_enum_value(ir_args[1], "lv_color_format_t", spec);
-    lv_area_t* arg2 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
+    lv_area_t* arg2 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[2]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_layer_t*, lv_color_format_t, lv_area_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1, arg2);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_letter
-static lv_obj_t* dispatch_ir_archetype_256(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_256(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_letter-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_letter_dsc_t* arg0 = (lv_draw_letter_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_point_t* arg1 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_letter_dsc_t* arg0 = (lv_draw_letter_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_point_t* arg1 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_letter_dsc_t*, lv_point_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_letter_dsc_init
-static lv_obj_t* dispatch_ir_archetype_257(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_257(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_letter_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4036,20 +4296,22 @@ static lv_obj_t* dispatch_ir_archetype_257(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_line
-static lv_obj_t* dispatch_ir_archetype_258(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_258(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_line-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_line_dsc_t* arg0 = (lv_draw_line_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_draw_line_dsc_t* arg0 = (lv_draw_line_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_line_dsc_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_line_dsc_init
-static lv_obj_t* dispatch_ir_archetype_259(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_259(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_line_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4061,21 +4323,23 @@ static lv_obj_t* dispatch_ir_archetype_259(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_rect
-static lv_obj_t* dispatch_ir_archetype_260(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_260(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_draw_rect-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_rect_dsc_t* arg0 = (lv_draw_rect_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_area_t* arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_rect_dsc_t* arg0 = (lv_draw_rect_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_area_t* arg1 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_rect_dsc_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_rect_dsc_init
-static lv_obj_t* dispatch_ir_archetype_261(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_261(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_rect_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4087,7 +4351,8 @@ static lv_obj_t* dispatch_ir_archetype_261(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_arc_dsc
-static lv_obj_t* dispatch_ir_archetype_262(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_262(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_task_get_arc_dsc-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4098,20 +4363,22 @@ static lv_obj_t* dispatch_ir_archetype_262(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_area
-static lv_obj_t* dispatch_ir_archetype_263(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_263(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_task_get_area-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_draw_task_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_draw_task_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_border_dsc
-static lv_obj_t* dispatch_ir_archetype_264(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_264(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_task_get_border_dsc-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4122,7 +4389,8 @@ static lv_obj_t* dispatch_ir_archetype_264(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_box_shadow_dsc
-static lv_obj_t* dispatch_ir_archetype_265(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_265(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_task_get_box_shadow_dsc-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4133,7 +4401,8 @@ static lv_obj_t* dispatch_ir_archetype_265(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_draw_dsc
-static lv_obj_t* dispatch_ir_archetype_266(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_266(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_task_get_draw_dsc-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4144,7 +4413,8 @@ static lv_obj_t* dispatch_ir_archetype_266(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_fill_dsc
-static lv_obj_t* dispatch_ir_archetype_267(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_267(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_task_get_fill_dsc-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4155,7 +4425,8 @@ static lv_obj_t* dispatch_ir_archetype_267(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_image_dsc
-static lv_obj_t* dispatch_ir_archetype_268(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_268(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_task_get_image_dsc-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4166,7 +4437,8 @@ static lv_obj_t* dispatch_ir_archetype_268(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_label_dsc
-static lv_obj_t* dispatch_ir_archetype_269(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_269(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_task_get_label_dsc-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4177,7 +4449,8 @@ static lv_obj_t* dispatch_ir_archetype_269(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_line_dsc
-static lv_obj_t* dispatch_ir_archetype_270(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_270(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_task_get_line_dsc-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4188,7 +4461,8 @@ static lv_obj_t* dispatch_ir_archetype_270(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_triangle_dsc
-static lv_obj_t* dispatch_ir_archetype_271(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_271(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_task_get_triangle_dsc-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4199,7 +4473,8 @@ static lv_obj_t* dispatch_ir_archetype_271(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_task_get_type
-static lv_obj_t* dispatch_ir_archetype_272(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_272(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_task_get_type-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4211,20 +4486,22 @@ static lv_obj_t* dispatch_ir_archetype_272(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_draw_triangle
-static lv_obj_t* dispatch_ir_archetype_273(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_273(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_draw_triangle-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_triangle_dsc_t* arg0 = (lv_draw_triangle_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_draw_triangle_dsc_t* arg0 = (lv_draw_triangle_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_draw_triangle_dsc_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_draw_triangle_dsc_init
-static lv_obj_t* dispatch_ir_archetype_274(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_274(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_draw_triangle_dsc_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4236,13 +4513,14 @@ static lv_obj_t* dispatch_ir_archetype_274(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_dropdown_add_option
-static lv_obj_t* dispatch_ir_archetype_275(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_275(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_dropdown_add_option-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, char*, uint32_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -4250,7 +4528,8 @@ static lv_obj_t* dispatch_ir_archetype_275(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_dropdown_get_dir
-static lv_obj_t* dispatch_ir_archetype_276(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_276(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_dropdown_get_dir-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4262,20 +4541,22 @@ static lv_obj_t* dispatch_ir_archetype_276(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_dropdown_get_option_index
-static lv_obj_t* dispatch_ir_archetype_277(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_277(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_dropdown_get_option_index-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef int32_t (*specific_func_t)(lv_obj_t*, char*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 4 functions like: lv_dropdown_set_dir
-static lv_obj_t* dispatch_ir_archetype_278(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_278(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_dropdown_set_dir-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4288,7 +4569,8 @@ static lv_obj_t* dispatch_ir_archetype_278(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_code_get_name
-static lv_obj_t* dispatch_ir_archetype_279(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_279(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_event_code_get_name-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4300,7 +4582,8 @@ static lv_obj_t* dispatch_ir_archetype_279(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_dsc_get_cb
-static lv_obj_t* dispatch_ir_archetype_280(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_280(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_dsc_get_cb-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4312,7 +4595,8 @@ static lv_obj_t* dispatch_ir_archetype_280(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_dsc_get_user_data
-static lv_obj_t* dispatch_ir_archetype_281(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_281(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_dsc_get_user_data-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4323,7 +4607,8 @@ static lv_obj_t* dispatch_ir_archetype_281(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_code
-static lv_obj_t* dispatch_ir_archetype_282(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_282(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_code-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4335,7 +4620,8 @@ static lv_obj_t* dispatch_ir_archetype_282(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_count
-static lv_obj_t* dispatch_ir_archetype_283(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_283(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_count-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4347,7 +4633,8 @@ static lv_obj_t* dispatch_ir_archetype_283(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_event_get_cover_area
-static lv_obj_t* dispatch_ir_archetype_284(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_284(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_cover_area-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4358,7 +4645,8 @@ static lv_obj_t* dispatch_ir_archetype_284(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 4 functions like: lv_event_get_current_target
-static lv_obj_t* dispatch_ir_archetype_285(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_285(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_current_target-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4369,7 +4657,8 @@ static lv_obj_t* dispatch_ir_archetype_285(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_event_get_current_target_obj
-static lv_obj_t* dispatch_ir_archetype_286(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_286(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_current_target_obj-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4380,7 +4669,8 @@ static lv_obj_t* dispatch_ir_archetype_286(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_draw_task
-static lv_obj_t* dispatch_ir_archetype_287(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_287(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_draw_task-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4391,7 +4681,8 @@ static lv_obj_t* dispatch_ir_archetype_287(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_dsc
-static lv_obj_t* dispatch_ir_archetype_288(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_288(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_event_get_dsc-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4403,7 +4694,8 @@ static lv_obj_t* dispatch_ir_archetype_288(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_hit_test_info
-static lv_obj_t* dispatch_ir_archetype_289(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_289(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_hit_test_info-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4414,7 +4706,8 @@ static lv_obj_t* dispatch_ir_archetype_289(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_indev
-static lv_obj_t* dispatch_ir_archetype_290(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_290(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_indev-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4425,7 +4718,8 @@ static lv_obj_t* dispatch_ir_archetype_290(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_key
-static lv_obj_t* dispatch_ir_archetype_291(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_291(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_key-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4437,7 +4731,8 @@ static lv_obj_t* dispatch_ir_archetype_291(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_layer
-static lv_obj_t* dispatch_ir_archetype_292(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_292(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_layer-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4448,7 +4743,8 @@ static lv_obj_t* dispatch_ir_archetype_292(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_rotary_diff
-static lv_obj_t* dispatch_ir_archetype_293(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_293(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_rotary_diff-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4460,7 +4756,8 @@ static lv_obj_t* dispatch_ir_archetype_293(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_scroll_anim
-static lv_obj_t* dispatch_ir_archetype_294(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_294(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_scroll_anim-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4471,7 +4768,8 @@ static lv_obj_t* dispatch_ir_archetype_294(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_get_self_size_info
-static lv_obj_t* dispatch_ir_archetype_295(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_295(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_get_self_size_info-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4482,7 +4780,8 @@ static lv_obj_t* dispatch_ir_archetype_295(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_remove
-static lv_obj_t* dispatch_ir_archetype_296(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_296(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_event_remove-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4495,7 +4794,8 @@ static lv_obj_t* dispatch_ir_archetype_296(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_remove_all
-static lv_obj_t* dispatch_ir_archetype_297(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_297(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_remove_all-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4507,26 +4807,28 @@ static lv_obj_t* dispatch_ir_archetype_297(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_remove_dsc
-static lv_obj_t* dispatch_ir_archetype_298(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_298(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_event_remove_dsc-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_event_dsc_t* arg0 = (lv_event_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_event_dsc_t* arg0 = (lv_event_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef bool (*specific_func_t)(lv_event_list_t*, lv_event_dsc_t*);
     (void)((specific_func_t)fn)((lv_event_list_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_event_send
-static lv_obj_t* dispatch_ir_archetype_299(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_299(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_event_send-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_event_t* arg0 = (lv_event_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_event_t* arg0 = (lv_event_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     bool arg1 = ir_node_get_bool(ir_args[1]);
     typedef lv_result_t (*specific_func_t)(lv_event_list_t*, lv_event_t*, bool);
     (void)((specific_func_t)fn)((lv_event_list_t*)target, arg0, arg1);
@@ -4534,7 +4836,8 @@ static lv_obj_t* dispatch_ir_archetype_299(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_set_cover_res
-static lv_obj_t* dispatch_ir_archetype_300(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_300(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_event_set_cover_res-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4547,7 +4850,8 @@ static lv_obj_t* dispatch_ir_archetype_300(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_event_set_ext_draw_size
-static lv_obj_t* dispatch_ir_archetype_301(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_301(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_event_set_ext_draw_size-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4560,7 +4864,8 @@ static lv_obj_t* dispatch_ir_archetype_301(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_event_stop_bubbling
-static lv_obj_t* dispatch_ir_archetype_302(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_302(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_event_stop_bubbling-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4572,19 +4877,21 @@ static lv_obj_t* dispatch_ir_archetype_302(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_font_get_bitmap_fmt_txt
-static lv_obj_t* dispatch_ir_archetype_303(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_303(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_font_get_bitmap_fmt_txt-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void* (*specific_func_t)(lv_font_glyph_dsc_t*, lv_draw_buf_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_font_glyph_dsc_t*)target, arg0);
 }
 
 // Archetype for 1 functions like: lv_font_get_default
-static lv_obj_t* dispatch_ir_archetype_304(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_304(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_font_get_default-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4595,13 +4902,14 @@ static lv_obj_t* dispatch_ir_archetype_304(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_font_get_glyph_dsc
-static lv_obj_t* dispatch_ir_archetype_305(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_305(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_font_get_glyph_dsc-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_font_glyph_dsc_t* arg0 = (lv_font_glyph_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_font_glyph_dsc_t* arg0 = (lv_font_glyph_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     uint32_t arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
     typedef bool (*specific_func_t)(lv_font_t*, lv_font_glyph_dsc_t*, uint32_t, uint32_t);
@@ -4610,7 +4918,8 @@ static lv_obj_t* dispatch_ir_archetype_305(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_font_get_glyph_static_bitmap
-static lv_obj_t* dispatch_ir_archetype_306(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_306(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_font_get_glyph_static_bitmap-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4621,7 +4930,8 @@ static lv_obj_t* dispatch_ir_archetype_306(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_font_get_glyph_width
-static lv_obj_t* dispatch_ir_archetype_307(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_307(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_font_get_glyph_width-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -4635,7 +4945,8 @@ static lv_obj_t* dispatch_ir_archetype_307(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_font_get_line_height
-static lv_obj_t* dispatch_ir_archetype_308(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_308(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_font_get_line_height-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4647,7 +4958,8 @@ static lv_obj_t* dispatch_ir_archetype_308(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_font_glyph_release_draw_data
-static lv_obj_t* dispatch_ir_archetype_309(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_309(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_font_glyph_release_draw_data-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4659,7 +4971,8 @@ static lv_obj_t* dispatch_ir_archetype_309(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_font_has_static_bitmap
-static lv_obj_t* dispatch_ir_archetype_310(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_310(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_font_has_static_bitmap-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4671,20 +4984,22 @@ static lv_obj_t* dispatch_ir_archetype_310(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_font_info_is_equal
-static lv_obj_t* dispatch_ir_archetype_311(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_311(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_font_info_is_equal-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_font_info_t* arg0 = (lv_font_info_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_font_info_t* arg0 = (lv_font_info_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef bool (*specific_func_t)(lv_font_info_t*, lv_font_info_t*);
     (void)((specific_func_t)fn)((lv_font_info_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_font_set_kerning
-static lv_obj_t* dispatch_ir_archetype_312(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_312(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_font_set_kerning-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4697,7 +5012,8 @@ static lv_obj_t* dispatch_ir_archetype_312(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_fs_close
-static lv_obj_t* dispatch_ir_archetype_313(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_313(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_fs_close-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4709,7 +5025,8 @@ static lv_obj_t* dispatch_ir_archetype_313(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_fs_dir_close
-static lv_obj_t* dispatch_ir_archetype_314(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_314(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_fs_dir_close-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4721,26 +5038,28 @@ static lv_obj_t* dispatch_ir_archetype_314(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_fs_dir_open
-static lv_obj_t* dispatch_ir_archetype_315(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_315(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_fs_dir_open-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef lv_fs_res_t (*specific_func_t)(lv_fs_dir_t*, char*);
     (void)((specific_func_t)fn)((lv_fs_dir_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_fs_dir_read
-static lv_obj_t* dispatch_ir_archetype_316(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_316(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_fs_dir_read-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
     typedef lv_fs_res_t (*specific_func_t)(lv_fs_dir_t*, char*, uint32_t);
     (void)((specific_func_t)fn)((lv_fs_dir_t*)target, arg0, arg1);
@@ -4748,7 +5067,8 @@ static lv_obj_t* dispatch_ir_archetype_316(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_fs_drv_init
-static lv_obj_t* dispatch_ir_archetype_317(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_317(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_fs_drv_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4760,7 +5080,8 @@ static lv_obj_t* dispatch_ir_archetype_317(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_fs_get_drv
-static lv_obj_t* dispatch_ir_archetype_318(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_318(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_fs_get_drv-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4772,19 +5093,21 @@ static lv_obj_t* dispatch_ir_archetype_318(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_fs_get_ext
-static lv_obj_t* dispatch_ir_archetype_319(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_319(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_fs_get_ext-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef char* (*specific_func_t)(char*);
     return (lv_obj_t*)((specific_func_t)fn)(arg0);
 }
 
 // Archetype for 1 functions like: lv_fs_is_ready
-static lv_obj_t* dispatch_ir_archetype_320(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_320(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_fs_is_ready-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4797,13 +5120,14 @@ static lv_obj_t* dispatch_ir_archetype_320(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_fs_open
-static lv_obj_t* dispatch_ir_archetype_321(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_321(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_fs_open-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     lv_fs_mode_t arg1 = (lv_fs_mode_t)ir_node_get_enum_value(ir_args[1], "lv_fs_mode_t", spec);
     typedef lv_fs_res_t (*specific_func_t)(lv_fs_file_t*, char*, lv_fs_mode_t);
     (void)((specific_func_t)fn)((lv_fs_file_t*)target, arg0, arg1);
@@ -4811,7 +5135,8 @@ static lv_obj_t* dispatch_ir_archetype_321(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_fs_seek
-static lv_obj_t* dispatch_ir_archetype_322(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_322(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_fs_seek-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -4825,20 +5150,22 @@ static lv_obj_t* dispatch_ir_archetype_322(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_fs_tell
-static lv_obj_t* dispatch_ir_archetype_323(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_323(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_fs_tell-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    uint32_t* arg0 = (uint32_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    uint32_t* arg0 = (uint32_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_fs_res_t (*specific_func_t)(lv_fs_file_t*, uint32_t*);
     (void)((specific_func_t)fn)((lv_fs_file_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_grad_horizontal_init
-static lv_obj_t* dispatch_ir_archetype_324(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_324(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_grad_horizontal_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4850,7 +5177,8 @@ static lv_obj_t* dispatch_ir_archetype_324(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_grad_init_stops
-static lv_obj_t* dispatch_ir_archetype_325(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_325(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_grad_init_stops-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -4866,7 +5194,8 @@ static lv_obj_t* dispatch_ir_archetype_325(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_grid_fr
-static lv_obj_t* dispatch_ir_archetype_326(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_326(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_grid_fr-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4879,20 +5208,22 @@ static lv_obj_t* dispatch_ir_archetype_326(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_group_add_obj
-static lv_obj_t* dispatch_ir_archetype_327(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_327(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_group_add_obj-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_group_t*, lv_obj_t*);
     ((specific_func_t)fn)((lv_group_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_group_by_index
-static lv_obj_t* dispatch_ir_archetype_328(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_328(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_group_by_index-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4904,7 +5235,8 @@ static lv_obj_t* dispatch_ir_archetype_328(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_group_create
-static lv_obj_t* dispatch_ir_archetype_329(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_329(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_group_create-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4915,7 +5247,8 @@ static lv_obj_t* dispatch_ir_archetype_329(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_group_delete
-static lv_obj_t* dispatch_ir_archetype_330(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_330(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_group_delete-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4927,7 +5260,8 @@ static lv_obj_t* dispatch_ir_archetype_330(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_group_focus_freeze
-static lv_obj_t* dispatch_ir_archetype_331(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_331(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_group_focus_freeze-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4940,7 +5274,8 @@ static lv_obj_t* dispatch_ir_archetype_331(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_group_get_edge_cb
-static lv_obj_t* dispatch_ir_archetype_332(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_332(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_group_get_edge_cb-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4952,7 +5287,8 @@ static lv_obj_t* dispatch_ir_archetype_332(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_group_get_editing
-static lv_obj_t* dispatch_ir_archetype_333(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_333(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_group_get_editing-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4964,7 +5300,8 @@ static lv_obj_t* dispatch_ir_archetype_333(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_group_get_focus_cb
-static lv_obj_t* dispatch_ir_archetype_334(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_334(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_group_get_focus_cb-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4976,7 +5313,8 @@ static lv_obj_t* dispatch_ir_archetype_334(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_group_get_focused
-static lv_obj_t* dispatch_ir_archetype_335(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_335(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_group_get_focused-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -4987,7 +5325,8 @@ static lv_obj_t* dispatch_ir_archetype_335(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_group_get_obj_by_index
-static lv_obj_t* dispatch_ir_archetype_336(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_336(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_group_get_obj_by_index-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -4999,7 +5338,8 @@ static lv_obj_t* dispatch_ir_archetype_336(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_group_get_obj_count
-static lv_obj_t* dispatch_ir_archetype_337(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_337(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_group_get_obj_count-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5011,7 +5351,8 @@ static lv_obj_t* dispatch_ir_archetype_337(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_group_send_data
-static lv_obj_t* dispatch_ir_archetype_338(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_338(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_group_send_data-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5024,7 +5365,8 @@ static lv_obj_t* dispatch_ir_archetype_338(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_group_set_refocus_policy
-static lv_obj_t* dispatch_ir_archetype_339(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_339(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_group_set_refocus_policy-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5037,20 +5379,22 @@ static lv_obj_t* dispatch_ir_archetype_339(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 6 functions like: lv_group_swap_obj
-static lv_obj_t* dispatch_ir_archetype_340(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_340(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_group_swap_obj-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_obj_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_image_buf_free
-static lv_obj_t* dispatch_ir_archetype_341(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_341(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_image_buf_free-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5062,7 +5406,8 @@ static lv_obj_t* dispatch_ir_archetype_341(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_buf_set_palette
-static lv_obj_t* dispatch_ir_archetype_342(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_342(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_image_buf_set_palette-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -5076,7 +5421,8 @@ static lv_obj_t* dispatch_ir_archetype_342(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_image_cache_init
-static lv_obj_t* dispatch_ir_archetype_343(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_343(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_image_cache_init-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5089,7 +5435,8 @@ static lv_obj_t* dispatch_ir_archetype_343(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_image_cache_is_enabled
-static lv_obj_t* dispatch_ir_archetype_344(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_344(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_image_cache_is_enabled-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5101,7 +5448,8 @@ static lv_obj_t* dispatch_ir_archetype_344(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_image_cache_iter_create
-static lv_obj_t* dispatch_ir_archetype_345(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_345(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_image_cache_iter_create-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5112,7 +5460,8 @@ static lv_obj_t* dispatch_ir_archetype_345(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_image_cache_resize
-static lv_obj_t* dispatch_ir_archetype_346(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_346(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_image_cache_resize-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -5126,7 +5475,8 @@ static lv_obj_t* dispatch_ir_archetype_346(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_decoder_close
-static lv_obj_t* dispatch_ir_archetype_347(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_347(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_image_decoder_close-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5138,7 +5488,8 @@ static lv_obj_t* dispatch_ir_archetype_347(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_decoder_create
-static lv_obj_t* dispatch_ir_archetype_348(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_348(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_image_decoder_create-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5149,7 +5500,8 @@ static lv_obj_t* dispatch_ir_archetype_348(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_decoder_delete
-static lv_obj_t* dispatch_ir_archetype_349(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_349(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_image_decoder_delete-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5161,21 +5513,23 @@ static lv_obj_t* dispatch_ir_archetype_349(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_decoder_get_area
-static lv_obj_t* dispatch_ir_archetype_350(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_350(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_image_decoder_get_area-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_area_t* arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_area_t* arg1 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef lv_result_t (*specific_func_t)(lv_image_decoder_dsc_t*, lv_area_t*, lv_area_t*);
     (void)((specific_func_t)fn)((lv_image_decoder_dsc_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_image_decoder_get_next
-static lv_obj_t* dispatch_ir_archetype_351(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_351(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_image_decoder_get_next-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5186,19 +5540,21 @@ static lv_obj_t* dispatch_ir_archetype_351(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_decoder_post_process
-static lv_obj_t* dispatch_ir_archetype_352(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_352(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_image_decoder_post_process-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_draw_buf_t* arg0 = (lv_draw_buf_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_draw_buf_t* (*specific_func_t)(lv_image_decoder_dsc_t*, lv_draw_buf_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_image_decoder_dsc_t*)target, arg0);
 }
 
 // Archetype for 1 functions like: lv_image_decoder_set_close_cb
-static lv_obj_t* dispatch_ir_archetype_353(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_353(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_image_decoder_set_close_cb-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5211,7 +5567,8 @@ static lv_obj_t* dispatch_ir_archetype_353(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_decoder_set_info_cb
-static lv_obj_t* dispatch_ir_archetype_354(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_354(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_image_decoder_set_info_cb-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5224,7 +5581,8 @@ static lv_obj_t* dispatch_ir_archetype_354(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_decoder_set_open_cb
-static lv_obj_t* dispatch_ir_archetype_355(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_355(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_image_decoder_set_open_cb-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5237,7 +5595,8 @@ static lv_obj_t* dispatch_ir_archetype_355(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_get_blend_mode
-static lv_obj_t* dispatch_ir_archetype_356(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_356(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_image_get_blend_mode-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5249,7 +5608,8 @@ static lv_obj_t* dispatch_ir_archetype_356(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_get_inner_align
-static lv_obj_t* dispatch_ir_archetype_357(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_357(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_image_get_inner_align-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5261,33 +5621,36 @@ static lv_obj_t* dispatch_ir_archetype_357(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_image_get_pivot
-static lv_obj_t* dispatch_ir_archetype_358(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_358(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_image_get_pivot-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_point_t* arg0 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_point_t* arg0 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_point_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_image_set_bitmap_map_src
-static lv_obj_t* dispatch_ir_archetype_359(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_359(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_image_set_bitmap_map_src-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_image_dsc_t* arg0 = (lv_image_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_image_dsc_t* arg0 = (lv_image_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_image_dsc_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_image_set_blend_mode
-static lv_obj_t* dispatch_ir_archetype_360(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_360(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_image_set_blend_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5300,7 +5663,8 @@ static lv_obj_t* dispatch_ir_archetype_360(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_image_set_inner_align
-static lv_obj_t* dispatch_ir_archetype_361(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_361(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_image_set_inner_align-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5313,7 +5677,8 @@ static lv_obj_t* dispatch_ir_archetype_361(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_imagebutton_get_src_left
-static lv_obj_t* dispatch_ir_archetype_362(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_362(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_imagebutton_get_src_left-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5325,7 +5690,8 @@ static lv_obj_t* dispatch_ir_archetype_362(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_imagebutton_set_state
-static lv_obj_t* dispatch_ir_archetype_363(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_363(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_imagebutton_set_state-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5338,7 +5704,8 @@ static lv_obj_t* dispatch_ir_archetype_363(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_indev_active
-static lv_obj_t* dispatch_ir_archetype_364(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_364(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_indev_active-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5349,7 +5716,8 @@ static lv_obj_t* dispatch_ir_archetype_364(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_indev_get_active_obj
-static lv_obj_t* dispatch_ir_archetype_365(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_365(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_indev_get_active_obj-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5360,19 +5728,21 @@ static lv_obj_t* dispatch_ir_archetype_365(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_indev_search_obj
-static lv_obj_t* dispatch_ir_archetype_366(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_366(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_indev_search_obj-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_point_t* arg0 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_point_t* arg0 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_obj_t* (*specific_func_t)(lv_obj_t*, lv_point_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0);
 }
 
 // Archetype for 1 functions like: lv_iter_destroy
-static lv_obj_t* dispatch_ir_archetype_367(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_367(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_iter_destroy-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5384,7 +5754,8 @@ static lv_obj_t* dispatch_ir_archetype_367(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_iter_get_context
-static lv_obj_t* dispatch_ir_archetype_368(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_368(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_iter_get_context-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5395,7 +5766,8 @@ static lv_obj_t* dispatch_ir_archetype_368(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_iter_make_peekable
-static lv_obj_t* dispatch_ir_archetype_369(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_369(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_iter_make_peekable-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5408,7 +5780,8 @@ static lv_obj_t* dispatch_ir_archetype_369(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_iter_peek_advance
-static lv_obj_t* dispatch_ir_archetype_370(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_370(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_iter_peek_advance-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5420,7 +5793,8 @@ static lv_obj_t* dispatch_ir_archetype_370(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_keyboard_get_mode
-static lv_obj_t* dispatch_ir_archetype_371(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_371(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_keyboard_get_mode-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5432,7 +5806,8 @@ static lv_obj_t* dispatch_ir_archetype_371(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_keyboard_set_mode
-static lv_obj_t* dispatch_ir_archetype_372(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_372(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_keyboard_set_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5445,26 +5820,28 @@ static lv_obj_t* dispatch_ir_archetype_372(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_label_bind_text
-static lv_obj_t* dispatch_ir_archetype_373(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_373(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_label_bind_text-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_subject_t* arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    lv_subject_t* arg0 = (lv_subject_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     typedef lv_observer_t* (*specific_func_t)(lv_obj_t*, lv_subject_t*, char*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
 }
 
 // Archetype for 1 functions like: lv_label_get_letter_on
-static lv_obj_t* dispatch_ir_archetype_374(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_374(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_label_get_letter_on-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_point_t* arg0 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_point_t* arg0 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     bool arg1 = ir_node_get_bool(ir_args[1]);
     typedef uint32_t (*specific_func_t)(lv_obj_t*, lv_point_t*, bool);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -5472,21 +5849,23 @@ static lv_obj_t* dispatch_ir_archetype_374(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_label_get_letter_pos
-static lv_obj_t* dispatch_ir_archetype_375(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_375(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_label_get_letter_pos-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     uint32_t arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
-    lv_point_t* arg1 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_point_t* arg1 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, uint32_t, lv_point_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_label_get_long_mode
-static lv_obj_t* dispatch_ir_archetype_376(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_376(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_label_get_long_mode-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5498,34 +5877,37 @@ static lv_obj_t* dispatch_ir_archetype_376(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_label_ins_text
-static lv_obj_t* dispatch_ir_archetype_377(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_377(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_label_ins_text-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     uint32_t arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     typedef void (*specific_func_t)(lv_obj_t*, uint32_t, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_label_is_char_under_pos
-static lv_obj_t* dispatch_ir_archetype_378(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_378(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_label_is_char_under_pos-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_point_t* arg0 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_point_t* arg0 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef bool (*specific_func_t)(lv_obj_t*, lv_point_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_label_set_long_mode
-static lv_obj_t* dispatch_ir_archetype_379(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_379(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_label_set_long_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5538,7 +5920,8 @@ static lv_obj_t* dispatch_ir_archetype_379(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_layer_init
-static lv_obj_t* dispatch_ir_archetype_380(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_380(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_layer_init-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5550,7 +5933,8 @@ static lv_obj_t* dispatch_ir_archetype_380(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_led_set_brightness
-static lv_obj_t* dispatch_ir_archetype_381(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_381(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_led_set_brightness-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5563,7 +5947,8 @@ static lv_obj_t* dispatch_ir_archetype_381(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_led_set_color
-static lv_obj_t* dispatch_ir_archetype_382(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_382(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_led_set_color-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5576,7 +5961,8 @@ static lv_obj_t* dispatch_ir_archetype_382(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_line_get_points
-static lv_obj_t* dispatch_ir_archetype_383(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_383(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_line_get_points-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5587,45 +5973,49 @@ static lv_obj_t* dispatch_ir_archetype_383(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 7 functions like: lv_list_add_text
-static lv_obj_t* dispatch_ir_archetype_384(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_384(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_list_add_text-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef lv_obj_t* (*specific_func_t)(lv_obj_t*, char*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0);
 }
 
 // Archetype for 1 functions like: lv_list_get_button_text
-static lv_obj_t* dispatch_ir_archetype_385(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_385(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_list_get_button_text-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef char* (*specific_func_t)(lv_obj_t*, lv_obj_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0);
 }
 
 // Archetype for 1 functions like: lv_list_set_button_text
-static lv_obj_t* dispatch_ir_archetype_386(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_386(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_list_set_button_text-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     typedef void (*specific_func_t)(lv_obj_t*, lv_obj_t*, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 3 functions like: lv_lock_isr
-static lv_obj_t* dispatch_ir_archetype_387(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_387(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_lock_isr-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5637,7 +6027,8 @@ static lv_obj_t* dispatch_ir_archetype_387(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_mem_monitor
-static lv_obj_t* dispatch_ir_archetype_388(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_388(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_mem_monitor-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5649,7 +6040,8 @@ static lv_obj_t* dispatch_ir_archetype_388(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_mem_remove_pool
-static lv_obj_t* dispatch_ir_archetype_389(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_389(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_mem_remove_pool-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5662,34 +6054,37 @@ static lv_obj_t* dispatch_ir_archetype_389(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_menu_back_button_is_root
-static lv_obj_t* dispatch_ir_archetype_390(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_390(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_menu_back_button_is_root-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef bool (*specific_func_t)(lv_obj_t*, lv_obj_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_menu_set_load_page_event
-static lv_obj_t* dispatch_ir_archetype_391(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_391(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_menu_set_load_page_event-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_obj_t* arg1 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_obj_t* arg1 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_obj_t*, lv_obj_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_menu_set_mode_header
-static lv_obj_t* dispatch_ir_archetype_392(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_392(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_menu_set_mode_header-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5702,7 +6097,8 @@ static lv_obj_t* dispatch_ir_archetype_392(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_menu_set_mode_root_back_button
-static lv_obj_t* dispatch_ir_archetype_393(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_393(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_menu_set_mode_root_back_button-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5715,7 +6111,8 @@ static lv_obj_t* dispatch_ir_archetype_393(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_mutex_delete
-static lv_obj_t* dispatch_ir_archetype_394(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_394(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_mutex_delete-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -5727,7 +6124,8 @@ static lv_obj_t* dispatch_ir_archetype_394(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_add_flag
-static lv_obj_t* dispatch_ir_archetype_395(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_395(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_add_flag-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5740,14 +6138,15 @@ static lv_obj_t* dispatch_ir_archetype_395(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_add_screen_load_event
-static lv_obj_t* dispatch_ir_archetype_396(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_396(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 5) {
         LV_LOG_WARN("IR call to lv_obj_add_screen_load_event-like function: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
     lv_event_code_t arg0 = (lv_event_code_t)ir_node_get_enum_value(ir_args[0], "lv_event_code_t", spec);
-    lv_obj_t* arg1 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_obj_t* arg1 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     lv_screen_load_anim_t arg2 = (lv_screen_load_anim_t)ir_node_get_enum_value(ir_args[2], "lv_screen_load_anim_t", spec);
     uint32_t arg3 = (uint32_t)ir_node_get_int(ir_args[3]);
     uint32_t arg4 = (uint32_t)ir_node_get_int(ir_args[4]);
@@ -5757,7 +6156,8 @@ static lv_obj_t* dispatch_ir_archetype_396(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_add_state
-static lv_obj_t* dispatch_ir_archetype_397(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_397(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_add_state-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5770,13 +6170,14 @@ static lv_obj_t* dispatch_ir_archetype_397(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_add_style
-static lv_obj_t* dispatch_ir_archetype_398(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_398(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_add_style-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_style_t* arg0 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_style_t* arg0 = (lv_style_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_style_selector_t arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_style_t*, lv_style_selector_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -5784,13 +6185,14 @@ static lv_obj_t* dispatch_ir_archetype_398(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_add_subject_increment_event
-static lv_obj_t* dispatch_ir_archetype_399(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_399(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 5) {
         LV_LOG_WARN("IR call to lv_obj_add_subject_increment_event-like function: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_subject_t* arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_subject_t* arg0 = (lv_subject_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_event_code_t arg1 = (lv_event_code_t)ir_node_get_enum_value(ir_args[1], "lv_event_code_t", spec);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -5801,13 +6203,14 @@ static lv_obj_t* dispatch_ir_archetype_399(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_add_subject_set_int_event
-static lv_obj_t* dispatch_ir_archetype_400(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_400(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_add_subject_set_int_event-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_subject_t* arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_subject_t* arg0 = (lv_subject_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_event_code_t arg1 = (lv_event_code_t)ir_node_get_enum_value(ir_args[1], "lv_event_code_t", spec);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_subject_t*, lv_event_code_t, int32_t);
@@ -5816,22 +6219,24 @@ static lv_obj_t* dispatch_ir_archetype_400(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_add_subject_set_string_event
-static lv_obj_t* dispatch_ir_archetype_401(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_401(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_add_subject_set_string_event-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_subject_t* arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_subject_t* arg0 = (lv_subject_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_event_code_t arg1 = (lv_event_code_t)ir_node_get_enum_value(ir_args[1], "lv_event_code_t", spec);
-    char* arg2 = obj_registry_add_str(ir_node_get_string(ir_args[2]));
+    char* arg2 = registry_add_str(reg, ir_node_get_string(ir_args[2]));
     typedef void (*specific_func_t)(lv_obj_t*, lv_subject_t*, lv_event_code_t, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1, arg2);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_align
-static lv_obj_t* dispatch_ir_archetype_402(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_402(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_align-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -5846,13 +6251,14 @@ static lv_obj_t* dispatch_ir_archetype_402(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_align_to
-static lv_obj_t* dispatch_ir_archetype_403(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_403(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_obj_align_to-like function: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_align_t arg1 = (lv_align_t)ir_node_get_enum_value(ir_args[1], "lv_align_t", spec);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
@@ -5862,26 +6268,28 @@ static lv_obj_t* dispatch_ir_archetype_403(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_area_is_visible
-static lv_obj_t* dispatch_ir_archetype_404(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_404(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_area_is_visible-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef bool (*specific_func_t)(lv_obj_t*, lv_area_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 6 functions like: lv_obj_bind_flag_if_eq
-static lv_obj_t* dispatch_ir_archetype_405(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_405(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_bind_flag_if_eq-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_subject_t* arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_subject_t* arg0 = (lv_subject_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_obj_flag_t arg1 = (lv_obj_flag_t)ir_node_get_enum_value(ir_args[1], "lv_obj_flag_t", spec);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     typedef lv_observer_t* (*specific_func_t)(lv_obj_t*, lv_subject_t*, lv_obj_flag_t, int32_t);
@@ -5889,13 +6297,14 @@ static lv_obj_t* dispatch_ir_archetype_405(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 6 functions like: lv_obj_bind_state_if_eq
-static lv_obj_t* dispatch_ir_archetype_406(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_406(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_bind_state_if_eq-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_subject_t* arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_subject_t* arg0 = (lv_subject_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_state_t arg1 = (lv_state_t)ir_node_get_int(ir_args[1]);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     typedef lv_observer_t* (*specific_func_t)(lv_obj_t*, lv_subject_t*, lv_state_t, int32_t);
@@ -5903,22 +6312,24 @@ static lv_obj_t* dispatch_ir_archetype_406(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_bind_style
-static lv_obj_t* dispatch_ir_archetype_407(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_407(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_obj_bind_style-like function: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_style_t* arg0 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_style_t* arg0 = (lv_style_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_style_selector_t arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
-    lv_subject_t* arg2 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
+    lv_subject_t* arg2 = (lv_subject_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[2]), NULL);
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
     typedef lv_observer_t* (*specific_func_t)(lv_obj_t*, lv_style_t*, lv_style_selector_t, lv_subject_t*, int32_t);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1, arg2, arg3);
 }
 
 // Archetype for 61 functions like: lv_obj_calculate_ext_draw_size
-static lv_obj_t* dispatch_ir_archetype_408(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_408(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_calculate_ext_draw_size-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5931,46 +6342,50 @@ static lv_obj_t* dispatch_ir_archetype_408(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_calculate_style_text_align
-static lv_obj_t* dispatch_ir_archetype_409(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_409(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_calculate_style_text_align-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_part_t arg0 = (lv_part_t)ir_node_get_int(ir_args[0]);
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     typedef lv_text_align_t (*specific_func_t)(lv_obj_t*, lv_part_t, char*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_obj_check_type
-static lv_obj_t* dispatch_ir_archetype_410(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_410(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_check_type-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_class_t* arg0 = (lv_obj_class_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_class_t* arg0 = (lv_obj_class_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef bool (*specific_func_t)(lv_obj_t*, lv_obj_class_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_class_create_obj
-static lv_obj_t* dispatch_ir_archetype_411(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_411(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_class_create_obj-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_obj_t* (*specific_func_t)(lv_obj_class_t*, lv_obj_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_class_t*)target, arg0);
 }
 
 // Archetype for 2 functions like: lv_obj_enable_style_refresh
-static lv_obj_t* dispatch_ir_archetype_412(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_412(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_enable_style_refresh-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -5983,20 +6398,22 @@ static lv_obj_t* dispatch_ir_archetype_412(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_event_base
-static lv_obj_t* dispatch_ir_archetype_413(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_413(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_event_base-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_event_t* arg0 = (lv_event_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_event_t* arg0 = (lv_event_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_result_t (*specific_func_t)(lv_obj_class_t*, lv_event_t*);
     (void)((specific_func_t)fn)((lv_obj_class_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_obj_get_child
-static lv_obj_t* dispatch_ir_archetype_414(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_414(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_child-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6008,33 +6425,36 @@ static lv_obj_t* dispatch_ir_archetype_414(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_get_child_by_type
-static lv_obj_t* dispatch_ir_archetype_415(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_415(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_get_child_by_type-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     int32_t arg0 = (int32_t)ir_node_get_int(ir_args[0]);
-    lv_obj_class_t* arg1 = (lv_obj_class_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_obj_class_t* arg1 = (lv_obj_class_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef lv_obj_t* (*specific_func_t)(lv_obj_t*, int32_t, lv_obj_class_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
 }
 
 // Archetype for 1 functions like: lv_obj_get_child_count_by_type
-static lv_obj_t* dispatch_ir_archetype_416(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_416(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_child_count_by_type-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_class_t* arg0 = (lv_obj_class_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_class_t* arg0 = (lv_obj_class_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef uint32_t (*specific_func_t)(lv_obj_t*, lv_obj_class_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_get_class
-static lv_obj_t* dispatch_ir_archetype_417(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_417(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_obj_get_class-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -6045,20 +6465,22 @@ static lv_obj_t* dispatch_ir_archetype_417(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 4 functions like: lv_obj_get_click_area
-static lv_obj_t* dispatch_ir_archetype_418(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_418(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_click_area-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_get_display
-static lv_obj_t* dispatch_ir_archetype_419(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_419(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_obj_get_display-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -6069,7 +6491,8 @@ static lv_obj_t* dispatch_ir_archetype_419(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_event_dsc
-static lv_obj_t* dispatch_ir_archetype_420(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_420(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_event_dsc-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6081,7 +6504,8 @@ static lv_obj_t* dispatch_ir_archetype_420(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_group
-static lv_obj_t* dispatch_ir_archetype_421(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_421(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_obj_get_group-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -6092,27 +6516,29 @@ static lv_obj_t* dispatch_ir_archetype_421(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_index_by_type
-static lv_obj_t* dispatch_ir_archetype_422(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_422(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_index_by_type-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_class_t* arg0 = (lv_obj_class_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_class_t* arg0 = (lv_obj_class_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef int32_t (*specific_func_t)(lv_obj_t*, lv_obj_class_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_get_local_style_prop
-static lv_obj_t* dispatch_ir_archetype_423(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_423(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_get_local_style_prop-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     lv_style_prop_t arg0 = (lv_style_prop_t)ir_node_get_int(ir_args[0]);
-    lv_style_value_t* arg1 = (lv_style_value_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_style_value_t* arg1 = (lv_style_value_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     lv_style_selector_t arg2 = (lv_style_selector_t)ir_node_get_int(ir_args[2]);
     typedef lv_style_res_t (*specific_func_t)(lv_obj_t*, lv_style_prop_t, lv_style_value_t*, lv_style_selector_t);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1, arg2);
@@ -6120,7 +6546,8 @@ static lv_obj_t* dispatch_ir_archetype_423(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_get_scroll_snap_x
-static lv_obj_t* dispatch_ir_archetype_424(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_424(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_obj_get_scroll_snap_x-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -6132,21 +6559,23 @@ static lv_obj_t* dispatch_ir_archetype_424(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_scrollbar_area
-static lv_obj_t* dispatch_ir_archetype_425(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_425(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_get_scrollbar_area-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_area_t* arg0 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_area_t* arg1 = (lv_area_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_area_t* arg0 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_area_t* arg1 = (lv_area_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_area_t*, lv_area_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_get_scrollbar_mode
-static lv_obj_t* dispatch_ir_archetype_426(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_426(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_obj_get_scrollbar_mode-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -6158,7 +6587,8 @@ static lv_obj_t* dispatch_ir_archetype_426(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_state
-static lv_obj_t* dispatch_ir_archetype_427(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_427(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_obj_get_state-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -6170,7 +6600,8 @@ static lv_obj_t* dispatch_ir_archetype_427(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_align
-static lv_obj_t* dispatch_ir_archetype_428(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_428(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_align-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6183,7 +6614,8 @@ static lv_obj_t* dispatch_ir_archetype_428(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_anim
-static lv_obj_t* dispatch_ir_archetype_429(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_429(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_anim-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6195,7 +6627,8 @@ static lv_obj_t* dispatch_ir_archetype_429(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_get_style_anim_duration
-static lv_obj_t* dispatch_ir_archetype_430(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_430(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_anim_duration-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6208,7 +6641,8 @@ static lv_obj_t* dispatch_ir_archetype_430(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 23 functions like: lv_obj_get_style_arc_color
-static lv_obj_t* dispatch_ir_archetype_431(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_431(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_arc_color-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6221,7 +6655,8 @@ static lv_obj_t* dispatch_ir_archetype_431(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_obj_get_style_arc_image_src
-static lv_obj_t* dispatch_ir_archetype_432(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_432(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_arc_image_src-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6233,7 +6668,8 @@ static lv_obj_t* dispatch_ir_archetype_432(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 19 functions like: lv_obj_get_style_arc_opa
-static lv_obj_t* dispatch_ir_archetype_433(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_433(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_arc_opa-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6246,7 +6682,8 @@ static lv_obj_t* dispatch_ir_archetype_433(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_obj_get_style_arc_rounded
-static lv_obj_t* dispatch_ir_archetype_434(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_434(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_arc_rounded-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6259,7 +6696,8 @@ static lv_obj_t* dispatch_ir_archetype_434(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_base_dir
-static lv_obj_t* dispatch_ir_archetype_435(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_435(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_base_dir-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6272,7 +6710,8 @@ static lv_obj_t* dispatch_ir_archetype_435(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_bg_grad
-static lv_obj_t* dispatch_ir_archetype_436(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_436(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_bg_grad-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6284,7 +6723,8 @@ static lv_obj_t* dispatch_ir_archetype_436(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_bg_grad_dir
-static lv_obj_t* dispatch_ir_archetype_437(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_437(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_bg_grad_dir-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6297,7 +6737,8 @@ static lv_obj_t* dispatch_ir_archetype_437(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_blend_mode
-static lv_obj_t* dispatch_ir_archetype_438(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_438(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_blend_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6310,7 +6751,8 @@ static lv_obj_t* dispatch_ir_archetype_438(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_border_side
-static lv_obj_t* dispatch_ir_archetype_439(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_439(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_border_side-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6323,7 +6765,8 @@ static lv_obj_t* dispatch_ir_archetype_439(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_color_filter_dsc
-static lv_obj_t* dispatch_ir_archetype_440(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_440(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_color_filter_dsc-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6335,7 +6778,8 @@ static lv_obj_t* dispatch_ir_archetype_440(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_obj_get_style_flex_cross_place
-static lv_obj_t* dispatch_ir_archetype_441(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_441(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_flex_cross_place-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6348,7 +6792,8 @@ static lv_obj_t* dispatch_ir_archetype_441(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_flex_flow
-static lv_obj_t* dispatch_ir_archetype_442(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_442(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_flex_flow-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6361,7 +6806,8 @@ static lv_obj_t* dispatch_ir_archetype_442(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_flex_grow
-static lv_obj_t* dispatch_ir_archetype_443(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_443(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_flex_grow-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6374,7 +6820,8 @@ static lv_obj_t* dispatch_ir_archetype_443(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 4 functions like: lv_obj_get_style_grid_cell_x_align
-static lv_obj_t* dispatch_ir_archetype_444(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_444(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_grid_cell_x_align-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6387,7 +6834,8 @@ static lv_obj_t* dispatch_ir_archetype_444(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_get_style_grid_column_dsc_array
-static lv_obj_t* dispatch_ir_archetype_445(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_445(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_grid_column_dsc_array-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6399,7 +6847,8 @@ static lv_obj_t* dispatch_ir_archetype_445(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_layout
-static lv_obj_t* dispatch_ir_archetype_446(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_446(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_layout-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6412,7 +6861,8 @@ static lv_obj_t* dispatch_ir_archetype_446(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_prop
-static lv_obj_t* dispatch_ir_archetype_447(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_447(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_get_style_prop-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6426,7 +6876,8 @@ static lv_obj_t* dispatch_ir_archetype_447(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_recolor_recursive
-static lv_obj_t* dispatch_ir_archetype_448(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_448(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_recolor_recursive-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6439,7 +6890,8 @@ static lv_obj_t* dispatch_ir_archetype_448(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_text_align
-static lv_obj_t* dispatch_ir_archetype_449(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_449(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_text_align-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6452,7 +6904,8 @@ static lv_obj_t* dispatch_ir_archetype_449(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_text_decor
-static lv_obj_t* dispatch_ir_archetype_450(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_450(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_text_decor-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6465,7 +6918,8 @@ static lv_obj_t* dispatch_ir_archetype_450(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_text_font
-static lv_obj_t* dispatch_ir_archetype_451(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_451(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_text_font-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6477,7 +6931,8 @@ static lv_obj_t* dispatch_ir_archetype_451(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_transition
-static lv_obj_t* dispatch_ir_archetype_452(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_452(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_get_style_transition-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6489,7 +6944,8 @@ static lv_obj_t* dispatch_ir_archetype_452(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_get_transform
-static lv_obj_t* dispatch_ir_archetype_453(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_453(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_obj_get_transform-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -6500,7 +6956,8 @@ static lv_obj_t* dispatch_ir_archetype_453(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_has_flag
-static lv_obj_t* dispatch_ir_archetype_454(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_454(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_has_flag-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6513,7 +6970,8 @@ static lv_obj_t* dispatch_ir_archetype_454(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_has_state
-static lv_obj_t* dispatch_ir_archetype_455(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_455(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_has_state-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6526,7 +6984,8 @@ static lv_obj_t* dispatch_ir_archetype_455(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_has_style_prop
-static lv_obj_t* dispatch_ir_archetype_456(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_456(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_has_style_prop-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6540,77 +6999,83 @@ static lv_obj_t* dispatch_ir_archetype_456(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_init_draw_arc_dsc
-static lv_obj_t* dispatch_ir_archetype_457(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_457(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_init_draw_arc_dsc-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_part_t arg0 = (lv_part_t)ir_node_get_int(ir_args[0]);
-    lv_draw_arc_dsc_t* arg1 = (lv_draw_arc_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_arc_dsc_t* arg1 = (lv_draw_arc_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_part_t, lv_draw_arc_dsc_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_init_draw_image_dsc
-static lv_obj_t* dispatch_ir_archetype_458(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_458(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_init_draw_image_dsc-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_part_t arg0 = (lv_part_t)ir_node_get_int(ir_args[0]);
-    lv_draw_image_dsc_t* arg1 = (lv_draw_image_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_image_dsc_t* arg1 = (lv_draw_image_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_part_t, lv_draw_image_dsc_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_init_draw_label_dsc
-static lv_obj_t* dispatch_ir_archetype_459(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_459(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_init_draw_label_dsc-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_part_t arg0 = (lv_part_t)ir_node_get_int(ir_args[0]);
-    lv_draw_label_dsc_t* arg1 = (lv_draw_label_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_label_dsc_t* arg1 = (lv_draw_label_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_part_t, lv_draw_label_dsc_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_init_draw_line_dsc
-static lv_obj_t* dispatch_ir_archetype_460(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_460(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_init_draw_line_dsc-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_part_t arg0 = (lv_part_t)ir_node_get_int(ir_args[0]);
-    lv_draw_line_dsc_t* arg1 = (lv_draw_line_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_line_dsc_t* arg1 = (lv_draw_line_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_part_t, lv_draw_line_dsc_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_init_draw_rect_dsc
-static lv_obj_t* dispatch_ir_archetype_461(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_461(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_init_draw_rect_dsc-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_part_t arg0 = (lv_part_t)ir_node_get_int(ir_args[0]);
-    lv_draw_rect_dsc_t* arg1 = (lv_draw_rect_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_draw_rect_dsc_t* arg1 = (lv_draw_rect_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_part_t, lv_draw_rect_dsc_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_move_children_by
-static lv_obj_t* dispatch_ir_archetype_462(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_462(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_move_children_by-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -6625,20 +7090,22 @@ static lv_obj_t* dispatch_ir_archetype_462(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_null_on_delete
-static lv_obj_t* dispatch_ir_archetype_463(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_463(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_null_on_delete-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t** arg0 = (lv_obj_t**)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t** arg0 = (lv_obj_t**)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t**);
     ((specific_func_t)fn)(arg0);
     return NULL;
 }
 
 // Archetype for 4 functions like: lv_obj_readjust_scroll
-static lv_obj_t* dispatch_ir_archetype_464(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_464(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_readjust_scroll-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6651,20 +7118,22 @@ static lv_obj_t* dispatch_ir_archetype_464(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_redraw
-static lv_obj_t* dispatch_ir_archetype_465(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_465(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_redraw-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_layer_t*, lv_obj_t*);
     ((specific_func_t)fn)((lv_layer_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_refresh_style
-static lv_obj_t* dispatch_ir_archetype_466(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_466(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_refresh_style-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6678,7 +7147,8 @@ static lv_obj_t* dispatch_ir_archetype_466(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_remove_event
-static lv_obj_t* dispatch_ir_archetype_467(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_467(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_remove_event-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6691,33 +7161,36 @@ static lv_obj_t* dispatch_ir_archetype_467(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_remove_event_dsc
-static lv_obj_t* dispatch_ir_archetype_468(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_468(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_remove_event_dsc-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_event_dsc_t* arg0 = (lv_event_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_event_dsc_t* arg0 = (lv_event_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef bool (*specific_func_t)(lv_obj_t*, lv_event_dsc_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_remove_from_subject
-static lv_obj_t* dispatch_ir_archetype_469(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_469(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_remove_from_subject-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_subject_t* arg0 = (lv_subject_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_subject_t* arg0 = (lv_subject_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_subject_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_remove_local_style_prop
-static lv_obj_t* dispatch_ir_archetype_470(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_470(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_remove_local_style_prop-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6731,14 +7204,15 @@ static lv_obj_t* dispatch_ir_archetype_470(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_replace_style
-static lv_obj_t* dispatch_ir_archetype_471(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_471(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_replace_style-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_style_t* arg0 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_style_t* arg1 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_style_t* arg0 = (lv_style_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_style_t* arg1 = (lv_style_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     lv_style_selector_t arg2 = (lv_style_selector_t)ir_node_get_int(ir_args[2]);
     typedef bool (*specific_func_t)(lv_obj_t*, lv_style_t*, lv_style_t*, lv_style_selector_t);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1, arg2);
@@ -6746,7 +7220,8 @@ static lv_obj_t* dispatch_ir_archetype_471(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_obj_report_style_change
-static lv_obj_t* dispatch_ir_archetype_472(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_472(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_obj_report_style_change-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -6758,7 +7233,8 @@ static lv_obj_t* dispatch_ir_archetype_472(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_obj_scroll_by
-static lv_obj_t* dispatch_ir_archetype_473(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_473(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_scroll_by-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -6773,7 +7249,8 @@ static lv_obj_t* dispatch_ir_archetype_473(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_align
-static lv_obj_t* dispatch_ir_archetype_474(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_474(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_set_align-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6786,7 +7263,8 @@ static lv_obj_t* dispatch_ir_archetype_474(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_flag
-static lv_obj_t* dispatch_ir_archetype_475(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_475(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_flag-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6800,7 +7278,8 @@ static lv_obj_t* dispatch_ir_archetype_475(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_flex_align
-static lv_obj_t* dispatch_ir_archetype_476(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_476(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_set_flex_align-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -6815,7 +7294,8 @@ static lv_obj_t* dispatch_ir_archetype_476(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_flex_flow
-static lv_obj_t* dispatch_ir_archetype_477(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_477(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_set_flex_flow-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6828,7 +7308,8 @@ static lv_obj_t* dispatch_ir_archetype_477(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_grid_align
-static lv_obj_t* dispatch_ir_archetype_478(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_478(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_grid_align-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6842,7 +7323,8 @@ static lv_obj_t* dispatch_ir_archetype_478(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_grid_cell
-static lv_obj_t* dispatch_ir_archetype_479(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_479(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 6) {
         LV_LOG_WARN("IR call to lv_obj_set_grid_cell-like function: expected 6 args, got %d", arg_count);
         return NULL;
@@ -6860,7 +7342,8 @@ static lv_obj_t* dispatch_ir_archetype_479(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_set_scroll_snap_x
-static lv_obj_t* dispatch_ir_archetype_480(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_480(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_set_scroll_snap_x-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6873,7 +7356,8 @@ static lv_obj_t* dispatch_ir_archetype_480(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_scrollbar_mode
-static lv_obj_t* dispatch_ir_archetype_481(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_481(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_set_scrollbar_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -6886,7 +7370,8 @@ static lv_obj_t* dispatch_ir_archetype_481(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_state
-static lv_obj_t* dispatch_ir_archetype_482(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_482(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_state-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6900,7 +7385,8 @@ static lv_obj_t* dispatch_ir_archetype_482(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_align
-static lv_obj_t* dispatch_ir_archetype_483(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_483(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_align-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6914,13 +7400,14 @@ static lv_obj_t* dispatch_ir_archetype_483(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_anim
-static lv_obj_t* dispatch_ir_archetype_484(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_484(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_anim-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_anim_t* arg0 = (lv_anim_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_anim_t* arg0 = (lv_anim_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_style_selector_t arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_anim_t*, lv_style_selector_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -6928,7 +7415,8 @@ static lv_obj_t* dispatch_ir_archetype_484(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_set_style_anim_duration
-static lv_obj_t* dispatch_ir_archetype_485(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_485(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_anim_duration-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6942,7 +7430,8 @@ static lv_obj_t* dispatch_ir_archetype_485(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 12 functions like: lv_obj_set_style_arc_color
-static lv_obj_t* dispatch_ir_archetype_486(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_486(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_arc_color-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6956,7 +7445,8 @@ static lv_obj_t* dispatch_ir_archetype_486(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 18 functions like: lv_obj_set_style_arc_opa
-static lv_obj_t* dispatch_ir_archetype_487(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_487(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_arc_opa-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6970,7 +7460,8 @@ static lv_obj_t* dispatch_ir_archetype_487(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_obj_set_style_arc_rounded
-static lv_obj_t* dispatch_ir_archetype_488(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_488(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_arc_rounded-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6984,7 +7475,8 @@ static lv_obj_t* dispatch_ir_archetype_488(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 62 functions like: lv_obj_set_style_arc_width
-static lv_obj_t* dispatch_ir_archetype_489(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_489(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_arc_width-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -6998,7 +7490,8 @@ static lv_obj_t* dispatch_ir_archetype_489(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_base_dir
-static lv_obj_t* dispatch_ir_archetype_490(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_490(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_base_dir-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7012,13 +7505,14 @@ static lv_obj_t* dispatch_ir_archetype_490(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_bg_grad
-static lv_obj_t* dispatch_ir_archetype_491(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_491(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_bg_grad-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_grad_dsc_t* arg0 = (lv_grad_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_grad_dsc_t* arg0 = (lv_grad_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_style_selector_t arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_grad_dsc_t*, lv_style_selector_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7026,7 +7520,8 @@ static lv_obj_t* dispatch_ir_archetype_491(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_bg_grad_dir
-static lv_obj_t* dispatch_ir_archetype_492(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_492(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_bg_grad_dir-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7040,7 +7535,8 @@ static lv_obj_t* dispatch_ir_archetype_492(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_blend_mode
-static lv_obj_t* dispatch_ir_archetype_493(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_493(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_blend_mode-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7054,7 +7550,8 @@ static lv_obj_t* dispatch_ir_archetype_493(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_border_side
-static lv_obj_t* dispatch_ir_archetype_494(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_494(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_border_side-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7068,13 +7565,14 @@ static lv_obj_t* dispatch_ir_archetype_494(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_color_filter_dsc
-static lv_obj_t* dispatch_ir_archetype_495(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_495(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_color_filter_dsc-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_color_filter_dsc_t* arg0 = (lv_color_filter_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_color_filter_dsc_t* arg0 = (lv_color_filter_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_style_selector_t arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_color_filter_dsc_t*, lv_style_selector_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7082,7 +7580,8 @@ static lv_obj_t* dispatch_ir_archetype_495(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_obj_set_style_flex_cross_place
-static lv_obj_t* dispatch_ir_archetype_496(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_496(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_flex_cross_place-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7096,7 +7595,8 @@ static lv_obj_t* dispatch_ir_archetype_496(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_flex_flow
-static lv_obj_t* dispatch_ir_archetype_497(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_497(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_flex_flow-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7110,7 +7610,8 @@ static lv_obj_t* dispatch_ir_archetype_497(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_flex_grow
-static lv_obj_t* dispatch_ir_archetype_498(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_498(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_flex_grow-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7124,7 +7625,8 @@ static lv_obj_t* dispatch_ir_archetype_498(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 4 functions like: lv_obj_set_style_grid_cell_x_align
-static lv_obj_t* dispatch_ir_archetype_499(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_499(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_grid_cell_x_align-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7138,13 +7640,14 @@ static lv_obj_t* dispatch_ir_archetype_499(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_obj_set_style_grid_column_dsc_array
-static lv_obj_t* dispatch_ir_archetype_500(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_500(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_grid_column_dsc_array-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    int32_t* arg0 = (int32_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    int32_t* arg0 = (int32_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_style_selector_t arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, int32_t*, lv_style_selector_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7152,7 +7655,8 @@ static lv_obj_t* dispatch_ir_archetype_500(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_layout
-static lv_obj_t* dispatch_ir_archetype_501(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_501(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_layout-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7166,7 +7670,8 @@ static lv_obj_t* dispatch_ir_archetype_501(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_size
-static lv_obj_t* dispatch_ir_archetype_502(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_502(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_set_style_size-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -7181,7 +7686,8 @@ static lv_obj_t* dispatch_ir_archetype_502(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_text_align
-static lv_obj_t* dispatch_ir_archetype_503(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_503(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_text_align-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7195,7 +7701,8 @@ static lv_obj_t* dispatch_ir_archetype_503(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_text_decor
-static lv_obj_t* dispatch_ir_archetype_504(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_504(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_text_decor-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7209,13 +7716,14 @@ static lv_obj_t* dispatch_ir_archetype_504(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_text_font
-static lv_obj_t* dispatch_ir_archetype_505(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_505(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_text_font-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_font_t* arg0 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_font_t* arg0 = (lv_font_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_style_selector_t arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_font_t*, lv_style_selector_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7223,13 +7731,14 @@ static lv_obj_t* dispatch_ir_archetype_505(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_transition
-static lv_obj_t* dispatch_ir_archetype_506(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_506(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_set_style_transition-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_style_transition_dsc_t* arg0 = (lv_style_transition_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_style_transition_dsc_t* arg0 = (lv_style_transition_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_style_selector_t arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_style_transition_dsc_t*, lv_style_selector_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7237,20 +7746,22 @@ static lv_obj_t* dispatch_ir_archetype_506(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_set_transform
-static lv_obj_t* dispatch_ir_archetype_507(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_507(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_set_transform-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_matrix_t* arg0 = (lv_matrix_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_matrix_t* arg0 = (lv_matrix_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_matrix_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_obj_style_apply_recolor
-static lv_obj_t* dispatch_ir_archetype_508(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_508(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_style_apply_recolor-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7264,13 +7775,14 @@ static lv_obj_t* dispatch_ir_archetype_508(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_style_get_disabled
-static lv_obj_t* dispatch_ir_archetype_509(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_509(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_obj_style_get_disabled-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_style_t* arg0 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_style_t* arg0 = (lv_style_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_style_selector_t arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
     typedef bool (*specific_func_t)(lv_obj_t*, lv_style_t*, lv_style_selector_t);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7278,7 +7790,8 @@ static lv_obj_t* dispatch_ir_archetype_509(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_style_get_selector_part
-static lv_obj_t* dispatch_ir_archetype_510(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_510(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_style_get_selector_part-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -7291,7 +7804,8 @@ static lv_obj_t* dispatch_ir_archetype_510(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_style_get_selector_state
-static lv_obj_t* dispatch_ir_archetype_511(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_511(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_obj_style_get_selector_state-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -7304,13 +7818,14 @@ static lv_obj_t* dispatch_ir_archetype_511(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_obj_style_set_disabled
-static lv_obj_t* dispatch_ir_archetype_512(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_512(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_obj_style_set_disabled-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_style_t* arg0 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_style_t* arg0 = (lv_style_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_style_selector_t arg1 = (lv_style_selector_t)ir_node_get_int(ir_args[1]);
     bool arg2 = ir_node_get_bool(ir_args[2]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_style_t*, lv_style_selector_t, bool);
@@ -7319,7 +7834,8 @@ static lv_obj_t* dispatch_ir_archetype_512(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_observer_get_target
-static lv_obj_t* dispatch_ir_archetype_513(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_513(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_observer_get_target-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7330,7 +7846,8 @@ static lv_obj_t* dispatch_ir_archetype_513(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_observer_get_target_obj
-static lv_obj_t* dispatch_ir_archetype_514(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_514(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_observer_get_target_obj-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7341,7 +7858,8 @@ static lv_obj_t* dispatch_ir_archetype_514(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_observer_remove
-static lv_obj_t* dispatch_ir_archetype_515(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_515(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_observer_remove-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7353,7 +7871,8 @@ static lv_obj_t* dispatch_ir_archetype_515(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_palette_darken
-static lv_obj_t* dispatch_ir_archetype_516(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_516(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_palette_darken-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7367,7 +7886,8 @@ static lv_obj_t* dispatch_ir_archetype_516(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_palette_main
-static lv_obj_t* dispatch_ir_archetype_517(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_517(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_palette_main-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -7380,7 +7900,8 @@ static lv_obj_t* dispatch_ir_archetype_517(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_pct_to_px
-static lv_obj_t* dispatch_ir_archetype_518(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_518(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_pct_to_px-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7394,7 +7915,8 @@ static lv_obj_t* dispatch_ir_archetype_518(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_point_array_transform
-static lv_obj_t* dispatch_ir_archetype_519(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_519(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 6) {
         LV_LOG_WARN("IR call to lv_point_array_transform-like function: expected 6 args, got %d", arg_count);
         return NULL;
@@ -7404,7 +7926,7 @@ static lv_obj_t* dispatch_ir_archetype_519(generic_lvgl_func_t fn, void* target,
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
-    lv_point_t* arg4 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[4]));
+    lv_point_t* arg4 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[4]), NULL);
     bool arg5 = ir_node_get_bool(ir_args[5]);
     typedef void (*specific_func_t)(lv_point_t*, size_t, int32_t, int32_t, int32_t, lv_point_t*, bool);
     ((specific_func_t)fn)((lv_point_t*)target, arg0, arg1, arg2, arg3, arg4, arg5);
@@ -7412,7 +7934,8 @@ static lv_obj_t* dispatch_ir_archetype_519(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_point_from_precise
-static lv_obj_t* dispatch_ir_archetype_520(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_520(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_point_from_precise-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7424,7 +7947,8 @@ static lv_obj_t* dispatch_ir_archetype_520(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_point_precise_set
-static lv_obj_t* dispatch_ir_archetype_521(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_521(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_point_precise_set-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7438,20 +7962,22 @@ static lv_obj_t* dispatch_ir_archetype_521(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_point_precise_swap
-static lv_obj_t* dispatch_ir_archetype_522(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_522(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_point_precise_swap-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_point_precise_t* arg0 = (lv_point_precise_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_point_precise_t* arg0 = (lv_point_precise_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_point_precise_t*, lv_point_precise_t*);
     ((specific_func_t)fn)((lv_point_precise_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_point_set
-static lv_obj_t* dispatch_ir_archetype_523(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_523(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_point_set-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7465,20 +7991,22 @@ static lv_obj_t* dispatch_ir_archetype_523(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_point_swap
-static lv_obj_t* dispatch_ir_archetype_524(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_524(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_point_swap-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_point_t* arg0 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_point_t* arg0 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_point_t*, lv_point_t*);
     ((specific_func_t)fn)((lv_point_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_point_to_precise
-static lv_obj_t* dispatch_ir_archetype_525(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_525(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_point_to_precise-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7490,7 +8018,8 @@ static lv_obj_t* dispatch_ir_archetype_525(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_point_transform
-static lv_obj_t* dispatch_ir_archetype_526(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_526(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 5) {
         LV_LOG_WARN("IR call to lv_point_transform-like function: expected 5 args, got %d", arg_count);
         return NULL;
@@ -7499,7 +8028,7 @@ static lv_obj_t* dispatch_ir_archetype_526(generic_lvgl_func_t fn, void* target,
     int32_t arg0 = (int32_t)ir_node_get_int(ir_args[0]);
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
-    lv_point_t* arg3 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[3]));
+    lv_point_t* arg3 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[3]), NULL);
     bool arg4 = ir_node_get_bool(ir_args[4]);
     typedef void (*specific_func_t)(lv_point_t*, int32_t, int32_t, int32_t, lv_point_t*, bool);
     ((specific_func_t)fn)((lv_point_t*)target, arg0, arg1, arg2, arg3, arg4);
@@ -7507,7 +8036,8 @@ static lv_obj_t* dispatch_ir_archetype_526(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_pow
-static lv_obj_t* dispatch_ir_archetype_527(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_527(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_pow-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7521,7 +8051,8 @@ static lv_obj_t* dispatch_ir_archetype_527(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_rand
-static lv_obj_t* dispatch_ir_archetype_528(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_528(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_rand-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7535,7 +8066,8 @@ static lv_obj_t* dispatch_ir_archetype_528(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_rb_destroy
-static lv_obj_t* dispatch_ir_archetype_529(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_529(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_rb_destroy-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7547,20 +8079,22 @@ static lv_obj_t* dispatch_ir_archetype_529(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_rb_drop_node
-static lv_obj_t* dispatch_ir_archetype_530(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_530(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_rb_drop_node-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_rb_node_t* arg0 = (lv_rb_node_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_rb_node_t* arg0 = (lv_rb_node_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef bool (*specific_func_t)(lv_rb_t*, lv_rb_node_t*);
     (void)((specific_func_t)fn)((lv_rb_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_rb_init
-static lv_obj_t* dispatch_ir_archetype_531(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_531(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_rb_init-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7574,7 +8108,8 @@ static lv_obj_t* dispatch_ir_archetype_531(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_rb_maximum
-static lv_obj_t* dispatch_ir_archetype_532(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_532(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_rb_maximum-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7585,7 +8120,8 @@ static lv_obj_t* dispatch_ir_archetype_532(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_rb_maximum_from
-static lv_obj_t* dispatch_ir_archetype_533(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_533(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_rb_maximum_from-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7596,25 +8132,27 @@ static lv_obj_t* dispatch_ir_archetype_533(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_rb_remove_node
-static lv_obj_t* dispatch_ir_archetype_534(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_534(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_rb_remove_node-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_rb_node_t* arg0 = (lv_rb_node_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_rb_node_t* arg0 = (lv_rb_node_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void* (*specific_func_t)(lv_rb_t*, lv_rb_node_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_rb_t*)target, arg0);
 }
 
 // Archetype for 1 functions like: lv_roller_set_options
-static lv_obj_t* dispatch_ir_archetype_535(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_535(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_roller_set_options-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     lv_roller_mode_t arg1 = (lv_roller_mode_t)ir_node_get_enum_value(ir_args[1], "lv_roller_mode_t", spec);
     typedef void (*specific_func_t)(lv_obj_t*, char*, lv_roller_mode_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7622,7 +8160,8 @@ static lv_obj_t* dispatch_ir_archetype_535(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_roller_set_selected
-static lv_obj_t* dispatch_ir_archetype_536(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_536(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_roller_set_selected-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7636,13 +8175,14 @@ static lv_obj_t* dispatch_ir_archetype_536(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_roller_set_selected_str
-static lv_obj_t* dispatch_ir_archetype_537(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_537(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_roller_set_selected_str-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     lv_anim_enable_t arg1 = (lv_anim_enable_t)ir_node_get_int(ir_args[1]);
     typedef bool (*specific_func_t)(lv_obj_t*, char*, lv_anim_enable_t);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7650,7 +8190,8 @@ static lv_obj_t* dispatch_ir_archetype_537(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_scale_add_section
-static lv_obj_t* dispatch_ir_archetype_538(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_538(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_scale_add_section-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7661,7 +8202,8 @@ static lv_obj_t* dispatch_ir_archetype_538(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_scale_get_mode
-static lv_obj_t* dispatch_ir_archetype_539(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_539(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_scale_get_mode-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7673,7 +8215,8 @@ static lv_obj_t* dispatch_ir_archetype_539(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_scale_section_set_range
-static lv_obj_t* dispatch_ir_archetype_540(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_540(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_scale_section_set_range-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -7687,27 +8230,29 @@ static lv_obj_t* dispatch_ir_archetype_540(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_scale_section_set_style
-static lv_obj_t* dispatch_ir_archetype_541(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_541(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_scale_section_set_style-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_part_t arg0 = (lv_part_t)ir_node_get_int(ir_args[0]);
-    lv_style_t* arg1 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_style_t* arg1 = (lv_style_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_scale_section_t*, lv_part_t, lv_style_t*);
     ((specific_func_t)fn)((lv_scale_section_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_scale_set_line_needle_value
-static lv_obj_t* dispatch_ir_archetype_542(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_542(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_scale_set_line_needle_value-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_obj_t*, int32_t, int32_t);
@@ -7716,7 +8261,8 @@ static lv_obj_t* dispatch_ir_archetype_542(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_scale_set_mode
-static lv_obj_t* dispatch_ir_archetype_543(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_543(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_scale_set_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -7729,13 +8275,14 @@ static lv_obj_t* dispatch_ir_archetype_543(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_scale_set_section_max_value
-static lv_obj_t* dispatch_ir_archetype_544(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_544(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_scale_set_section_max_value-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_scale_section_t* arg0 = (lv_scale_section_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_scale_section_t* arg0 = (lv_scale_section_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_scale_section_t*, int32_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -7743,13 +8290,14 @@ static lv_obj_t* dispatch_ir_archetype_544(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_scale_set_section_range
-static lv_obj_t* dispatch_ir_archetype_545(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_545(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_scale_set_section_range-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_scale_section_t* arg0 = (lv_scale_section_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_scale_section_t* arg0 = (lv_scale_section_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     int32_t arg1 = (int32_t)ir_node_get_int(ir_args[1]);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_scale_section_t*, int32_t, int32_t);
@@ -7758,34 +8306,37 @@ static lv_obj_t* dispatch_ir_archetype_545(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_scale_set_section_style_indicator
-static lv_obj_t* dispatch_ir_archetype_546(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_546(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_scale_set_section_style_indicator-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_scale_section_t* arg0 = (lv_scale_section_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_style_t* arg1 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_scale_section_t* arg0 = (lv_scale_section_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_style_t* arg1 = (lv_style_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_scale_section_t*, lv_style_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_screen_load
-static lv_obj_t* dispatch_ir_archetype_547(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_547(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_screen_load-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    _lv_obj_t* arg0 = (_lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    _lv_obj_t* arg0 = (_lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(_lv_obj_t*);
     ((specific_func_t)fn)(arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_screen_load_anim
-static lv_obj_t* dispatch_ir_archetype_548(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_548(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_screen_load_anim-like function: expected 4 args, got %d", arg_count);
         return NULL;
@@ -7801,7 +8352,8 @@ static lv_obj_t* dispatch_ir_archetype_548(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_sdl_window_get_zoom
-static lv_obj_t* dispatch_ir_archetype_549(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_549(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_sdl_window_get_zoom-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7813,20 +8365,22 @@ static lv_obj_t* dispatch_ir_archetype_549(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_sdl_window_set_title
-static lv_obj_t* dispatch_ir_archetype_550(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_550(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_sdl_window_set_title-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef void (*specific_func_t)(lv_display_t*, char*);
     ((specific_func_t)fn)((lv_display_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_sdl_window_set_zoom
-static lv_obj_t* dispatch_ir_archetype_551(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_551(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_sdl_window_set_zoom-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -7839,7 +8393,8 @@ static lv_obj_t* dispatch_ir_archetype_551(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_slider_get_mode
-static lv_obj_t* dispatch_ir_archetype_552(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_552(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_slider_get_mode-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7851,7 +8406,8 @@ static lv_obj_t* dispatch_ir_archetype_552(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_slider_get_orientation
-static lv_obj_t* dispatch_ir_archetype_553(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_553(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_slider_get_orientation-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7863,7 +8419,8 @@ static lv_obj_t* dispatch_ir_archetype_553(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_slider_set_mode
-static lv_obj_t* dispatch_ir_archetype_554(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_554(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_slider_set_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -7876,7 +8433,8 @@ static lv_obj_t* dispatch_ir_archetype_554(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_slider_set_orientation
-static lv_obj_t* dispatch_ir_archetype_555(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_555(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_slider_set_orientation-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -7889,7 +8447,8 @@ static lv_obj_t* dispatch_ir_archetype_555(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_span_get_style
-static lv_obj_t* dispatch_ir_archetype_556(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_556(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_span_get_style-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7900,7 +8459,8 @@ static lv_obj_t* dispatch_ir_archetype_556(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_span_get_text
-static lv_obj_t* dispatch_ir_archetype_557(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_557(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_span_get_text-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7911,20 +8471,22 @@ static lv_obj_t* dispatch_ir_archetype_557(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_span_set_text
-static lv_obj_t* dispatch_ir_archetype_558(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_558(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_span_set_text-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef void (*specific_func_t)(lv_span_t*, char*);
     ((specific_func_t)fn)((lv_span_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_spangroup_add_span
-static lv_obj_t* dispatch_ir_archetype_559(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_559(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_spangroup_add_span-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7935,20 +8497,22 @@ static lv_obj_t* dispatch_ir_archetype_559(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_spangroup_delete_span
-static lv_obj_t* dispatch_ir_archetype_560(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_560(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_spangroup_delete_span-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_span_t* arg0 = (lv_span_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_span_t* arg0 = (lv_span_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_span_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_align
-static lv_obj_t* dispatch_ir_archetype_561(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_561(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_spangroup_get_align-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -7960,7 +8524,8 @@ static lv_obj_t* dispatch_ir_archetype_561(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_child
-static lv_obj_t* dispatch_ir_archetype_562(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_562(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_spangroup_get_child-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -7972,7 +8537,8 @@ static lv_obj_t* dispatch_ir_archetype_562(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_expand_height
-static lv_obj_t* dispatch_ir_archetype_563(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_563(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_spangroup_get_expand_height-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -7985,7 +8551,8 @@ static lv_obj_t* dispatch_ir_archetype_563(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_expand_width
-static lv_obj_t* dispatch_ir_archetype_564(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_564(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_spangroup_get_expand_width-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -7998,7 +8565,8 @@ static lv_obj_t* dispatch_ir_archetype_564(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_mode
-static lv_obj_t* dispatch_ir_archetype_565(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_565(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_spangroup_get_mode-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -8010,7 +8578,8 @@ static lv_obj_t* dispatch_ir_archetype_565(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_overflow
-static lv_obj_t* dispatch_ir_archetype_566(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_566(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_spangroup_get_overflow-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -8022,32 +8591,35 @@ static lv_obj_t* dispatch_ir_archetype_566(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_span_by_point
-static lv_obj_t* dispatch_ir_archetype_567(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_567(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_spangroup_get_span_by_point-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_point_t* arg0 = (lv_point_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_point_t* arg0 = (lv_point_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_span_t* (*specific_func_t)(lv_obj_t*, lv_point_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_obj_t*)target, arg0);
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_span_coords
-static lv_obj_t* dispatch_ir_archetype_568(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_568(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_spangroup_get_span_coords-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_span_t* arg0 = (lv_span_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_span_t* arg0 = (lv_span_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_span_coords_t (*specific_func_t)(lv_obj_t*, lv_span_t*);
     (void)((specific_func_t)fn)((lv_obj_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_spangroup_set_align
-static lv_obj_t* dispatch_ir_archetype_569(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_569(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_spangroup_set_align-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8060,7 +8632,8 @@ static lv_obj_t* dispatch_ir_archetype_569(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_spangroup_set_mode
-static lv_obj_t* dispatch_ir_archetype_570(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_570(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_spangroup_set_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8073,7 +8646,8 @@ static lv_obj_t* dispatch_ir_archetype_570(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_spangroup_set_overflow
-static lv_obj_t* dispatch_ir_archetype_571(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_571(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_spangroup_set_overflow-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8086,42 +8660,45 @@ static lv_obj_t* dispatch_ir_archetype_571(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_spangroup_set_span_style
-static lv_obj_t* dispatch_ir_archetype_572(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_572(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_spangroup_set_span_style-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_span_t* arg0 = (lv_span_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    lv_style_t* arg1 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_span_t* arg0 = (lv_span_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    lv_style_t* arg1 = (lv_style_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, lv_span_t*, lv_style_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_spangroup_set_span_text
-static lv_obj_t* dispatch_ir_archetype_573(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_573(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_spangroup_set_span_text-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_span_t* arg0 = (lv_span_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    lv_span_t* arg0 = (lv_span_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     typedef void (*specific_func_t)(lv_obj_t*, lv_span_t*, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_sqrt
-static lv_obj_t* dispatch_ir_archetype_574(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_574(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_sqrt-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
     uint32_t arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
-    lv_sqrt_res_t* arg1 = (lv_sqrt_res_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_sqrt_res_t* arg1 = (lv_sqrt_res_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     uint32_t arg2 = (uint32_t)ir_node_get_int(ir_args[2]);
     typedef void (*specific_func_t)(uint32_t, lv_sqrt_res_t*, uint32_t);
     ((specific_func_t)fn)(arg0, arg1, arg2);
@@ -8129,7 +8706,8 @@ static lv_obj_t* dispatch_ir_archetype_574(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_sqrt32
-static lv_obj_t* dispatch_ir_archetype_575(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_575(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_sqrt32-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8142,68 +8720,73 @@ static lv_obj_t* dispatch_ir_archetype_575(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_strcat
-static lv_obj_t* dispatch_ir_archetype_576(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_576(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_strcat-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     typedef char* (*specific_func_t)(char*, char*);
     return (lv_obj_t*)((specific_func_t)fn)(arg0, arg1);
 }
 
 // Archetype for 1 functions like: lv_strchr
-static lv_obj_t* dispatch_ir_archetype_577(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_577(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_strchr-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     int arg1 = (int)ir_node_get_int(ir_args[1]);
     typedef char* (*specific_func_t)(char*, int);
     return (lv_obj_t*)((specific_func_t)fn)(arg0, arg1);
 }
 
 // Archetype for 1 functions like: lv_strcmp
-static lv_obj_t* dispatch_ir_archetype_578(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_578(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_strcmp-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     typedef int (*specific_func_t)(char*, char*);
     (void)((specific_func_t)fn)(arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_streq
-static lv_obj_t* dispatch_ir_archetype_579(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_579(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_streq-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     typedef bool (*specific_func_t)(char*, char*);
     (void)((specific_func_t)fn)(arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_strlcpy
-static lv_obj_t* dispatch_ir_archetype_580(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_580(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_strlcpy-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     size_t arg2 = (size_t)ir_node_get_int(ir_args[2]);
     typedef size_t (*specific_func_t)(char*, char*, size_t);
     (void)((specific_func_t)fn)(arg0, arg1, arg2);
@@ -8211,41 +8794,44 @@ static lv_obj_t* dispatch_ir_archetype_580(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_strlen
-static lv_obj_t* dispatch_ir_archetype_581(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_581(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_strlen-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef size_t (*specific_func_t)(char*);
     (void)((specific_func_t)fn)(arg0);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_strncat
-static lv_obj_t* dispatch_ir_archetype_582(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_582(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_strncat-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     size_t arg2 = (size_t)ir_node_get_int(ir_args[2]);
     typedef char* (*specific_func_t)(char*, char*, size_t);
     return (lv_obj_t*)((specific_func_t)fn)(arg0, arg1, arg2);
 }
 
 // Archetype for 1 functions like: lv_strncmp
-static lv_obj_t* dispatch_ir_archetype_583(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_583(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_strncmp-like function: expected 3 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     size_t arg2 = (size_t)ir_node_get_int(ir_args[2]);
     typedef int (*specific_func_t)(char*, char*, size_t);
     (void)((specific_func_t)fn)(arg0, arg1, arg2);
@@ -8253,26 +8839,28 @@ static lv_obj_t* dispatch_ir_archetype_583(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_strndup
-static lv_obj_t* dispatch_ir_archetype_584(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_584(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_strndup-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     size_t arg1 = (size_t)ir_node_get_int(ir_args[1]);
     typedef char* (*specific_func_t)(char*, size_t);
     return (lv_obj_t*)((specific_func_t)fn)(arg0, arg1);
 }
 
 // Archetype for 1 functions like: lv_strnlen
-static lv_obj_t* dispatch_ir_archetype_585(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_585(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_strnlen-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     size_t arg1 = (size_t)ir_node_get_int(ir_args[1]);
     typedef size_t (*specific_func_t)(char*, size_t);
     (void)((specific_func_t)fn)(arg0, arg1);
@@ -8280,20 +8868,22 @@ static lv_obj_t* dispatch_ir_archetype_585(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_copy
-static lv_obj_t* dispatch_ir_archetype_586(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_586(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_copy-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_style_t* arg0 = (lv_style_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_style_t* arg0 = (lv_style_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_style_t*, lv_style_t*);
     ((specific_func_t)fn)((lv_style_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_style_get_num_custom_props
-static lv_obj_t* dispatch_ir_archetype_587(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_587(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_style_get_num_custom_props-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -8305,21 +8895,23 @@ static lv_obj_t* dispatch_ir_archetype_587(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_style_get_prop
-static lv_obj_t* dispatch_ir_archetype_588(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_588(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_style_get_prop-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
     lv_style_prop_t arg0 = (lv_style_prop_t)ir_node_get_int(ir_args[0]);
-    lv_style_value_t* arg1 = (lv_style_value_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    lv_style_value_t* arg1 = (lv_style_value_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef lv_style_res_t (*specific_func_t)(lv_style_t*, lv_style_prop_t, lv_style_value_t*);
     (void)((specific_func_t)fn)((lv_style_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_style_get_prop_group
-static lv_obj_t* dispatch_ir_archetype_589(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_589(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_get_prop_group-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8332,7 +8924,8 @@ static lv_obj_t* dispatch_ir_archetype_589(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_style_is_const
-static lv_obj_t* dispatch_ir_archetype_590(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_590(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_style_is_const-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -8344,7 +8937,8 @@ static lv_obj_t* dispatch_ir_archetype_590(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_prop_get_default
-static lv_obj_t* dispatch_ir_archetype_591(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_591(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_prop_get_default-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8357,7 +8951,8 @@ static lv_obj_t* dispatch_ir_archetype_591(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_prop_has_flag
-static lv_obj_t* dispatch_ir_archetype_592(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_592(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_style_prop_has_flag-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -8371,7 +8966,8 @@ static lv_obj_t* dispatch_ir_archetype_592(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_prop_lookup_flags
-static lv_obj_t* dispatch_ir_archetype_593(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_593(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_prop_lookup_flags-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8384,7 +8980,8 @@ static lv_obj_t* dispatch_ir_archetype_593(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_register_prop
-static lv_obj_t* dispatch_ir_archetype_594(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_594(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_register_prop-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8397,7 +8994,8 @@ static lv_obj_t* dispatch_ir_archetype_594(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_remove_prop
-static lv_obj_t* dispatch_ir_archetype_595(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_595(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_remove_prop-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8410,7 +9008,8 @@ static lv_obj_t* dispatch_ir_archetype_595(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_align
-static lv_obj_t* dispatch_ir_archetype_596(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_596(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_align-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8423,20 +9022,22 @@ static lv_obj_t* dispatch_ir_archetype_596(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_anim
-static lv_obj_t* dispatch_ir_archetype_597(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_597(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_anim-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_anim_t* arg0 = (lv_anim_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_anim_t* arg0 = (lv_anim_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_style_t*, lv_anim_t*);
     ((specific_func_t)fn)((lv_style_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_style_set_anim_duration
-static lv_obj_t* dispatch_ir_archetype_598(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_598(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_anim_duration-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8449,7 +9050,8 @@ static lv_obj_t* dispatch_ir_archetype_598(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 12 functions like: lv_style_set_arc_color
-static lv_obj_t* dispatch_ir_archetype_599(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_599(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_arc_color-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8462,7 +9064,8 @@ static lv_obj_t* dispatch_ir_archetype_599(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 18 functions like: lv_style_set_arc_opa
-static lv_obj_t* dispatch_ir_archetype_600(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_600(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_arc_opa-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8475,7 +9078,8 @@ static lv_obj_t* dispatch_ir_archetype_600(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_style_set_arc_rounded
-static lv_obj_t* dispatch_ir_archetype_601(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_601(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_arc_rounded-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8488,7 +9092,8 @@ static lv_obj_t* dispatch_ir_archetype_601(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 62 functions like: lv_style_set_arc_width
-static lv_obj_t* dispatch_ir_archetype_602(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_602(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_arc_width-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8501,7 +9106,8 @@ static lv_obj_t* dispatch_ir_archetype_602(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_base_dir
-static lv_obj_t* dispatch_ir_archetype_603(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_603(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_base_dir-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8514,20 +9120,22 @@ static lv_obj_t* dispatch_ir_archetype_603(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_bg_grad
-static lv_obj_t* dispatch_ir_archetype_604(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_604(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_bg_grad-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_grad_dsc_t* arg0 = (lv_grad_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_grad_dsc_t* arg0 = (lv_grad_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_style_t*, lv_grad_dsc_t*);
     ((specific_func_t)fn)((lv_style_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_style_set_bg_grad_dir
-static lv_obj_t* dispatch_ir_archetype_605(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_605(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_bg_grad_dir-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8540,7 +9148,8 @@ static lv_obj_t* dispatch_ir_archetype_605(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_blend_mode
-static lv_obj_t* dispatch_ir_archetype_606(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_606(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_blend_mode-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8553,7 +9162,8 @@ static lv_obj_t* dispatch_ir_archetype_606(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_border_side
-static lv_obj_t* dispatch_ir_archetype_607(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_607(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_border_side-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8566,20 +9176,22 @@ static lv_obj_t* dispatch_ir_archetype_607(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_color_filter_dsc
-static lv_obj_t* dispatch_ir_archetype_608(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_608(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_color_filter_dsc-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_color_filter_dsc_t* arg0 = (lv_color_filter_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_color_filter_dsc_t* arg0 = (lv_color_filter_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_style_t*, lv_color_filter_dsc_t*);
     ((specific_func_t)fn)((lv_style_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 3 functions like: lv_style_set_flex_cross_place
-static lv_obj_t* dispatch_ir_archetype_609(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_609(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_flex_cross_place-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8592,7 +9204,8 @@ static lv_obj_t* dispatch_ir_archetype_609(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_flex_flow
-static lv_obj_t* dispatch_ir_archetype_610(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_610(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_flex_flow-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8605,7 +9218,8 @@ static lv_obj_t* dispatch_ir_archetype_610(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_flex_grow
-static lv_obj_t* dispatch_ir_archetype_611(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_611(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_flex_grow-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8618,7 +9232,8 @@ static lv_obj_t* dispatch_ir_archetype_611(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 4 functions like: lv_style_set_grid_cell_x_align
-static lv_obj_t* dispatch_ir_archetype_612(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_612(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_grid_cell_x_align-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8631,20 +9246,22 @@ static lv_obj_t* dispatch_ir_archetype_612(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_style_set_grid_column_dsc_array
-static lv_obj_t* dispatch_ir_archetype_613(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_613(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_grid_column_dsc_array-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    int32_t* arg0 = (int32_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    int32_t* arg0 = (int32_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_style_t*, int32_t*);
     ((specific_func_t)fn)((lv_style_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_style_set_layout
-static lv_obj_t* dispatch_ir_archetype_614(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_614(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_layout-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8657,7 +9274,8 @@ static lv_obj_t* dispatch_ir_archetype_614(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_size
-static lv_obj_t* dispatch_ir_archetype_615(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_615(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_style_set_size-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -8671,7 +9289,8 @@ static lv_obj_t* dispatch_ir_archetype_615(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_text_align
-static lv_obj_t* dispatch_ir_archetype_616(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_616(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_text_align-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8684,7 +9303,8 @@ static lv_obj_t* dispatch_ir_archetype_616(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_text_decor
-static lv_obj_t* dispatch_ir_archetype_617(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_617(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_text_decor-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8697,46 +9317,50 @@ static lv_obj_t* dispatch_ir_archetype_617(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_style_set_text_font
-static lv_obj_t* dispatch_ir_archetype_618(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_618(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_text_font-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_font_t* arg0 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_font_t* arg0 = (lv_font_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_style_t*, lv_font_t*);
     ((specific_func_t)fn)((lv_style_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_style_set_transition
-static lv_obj_t* dispatch_ir_archetype_619(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_619(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_style_set_transition-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_style_transition_dsc_t* arg0 = (lv_style_transition_dsc_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_style_transition_dsc_t* arg0 = (lv_style_transition_dsc_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef void (*specific_func_t)(lv_style_t*, lv_style_transition_dsc_t*);
     ((specific_func_t)fn)((lv_style_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_subject_copy_string
-static lv_obj_t* dispatch_ir_archetype_620(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_620(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_subject_copy_string-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     typedef void (*specific_func_t)(lv_subject_t*, char*);
     ((specific_func_t)fn)((lv_subject_t*)target, arg0);
     return NULL;
 }
 
 // Archetype for 2 functions like: lv_subject_deinit
-static lv_obj_t* dispatch_ir_archetype_621(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_621(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_subject_deinit-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -8748,7 +9372,8 @@ static lv_obj_t* dispatch_ir_archetype_621(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_subject_get_color
-static lv_obj_t* dispatch_ir_archetype_622(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_622(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_subject_get_color-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -8760,7 +9385,8 @@ static lv_obj_t* dispatch_ir_archetype_622(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_subject_get_group_element
-static lv_obj_t* dispatch_ir_archetype_623(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_623(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_subject_get_group_element-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8772,7 +9398,8 @@ static lv_obj_t* dispatch_ir_archetype_623(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_subject_get_int
-static lv_obj_t* dispatch_ir_archetype_624(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_624(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_subject_get_int-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -8784,7 +9411,8 @@ static lv_obj_t* dispatch_ir_archetype_624(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_subject_get_pointer
-static lv_obj_t* dispatch_ir_archetype_625(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_625(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_subject_get_pointer-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -8795,7 +9423,8 @@ static lv_obj_t* dispatch_ir_archetype_625(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_subject_get_previous_string
-static lv_obj_t* dispatch_ir_archetype_626(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_626(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_subject_get_previous_string-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -8806,7 +9435,8 @@ static lv_obj_t* dispatch_ir_archetype_626(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_subject_init_color
-static lv_obj_t* dispatch_ir_archetype_627(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_627(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_subject_init_color-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8819,7 +9449,8 @@ static lv_obj_t* dispatch_ir_archetype_627(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_subject_init_int
-static lv_obj_t* dispatch_ir_archetype_628(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_628(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_subject_init_int-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8832,23 +9463,25 @@ static lv_obj_t* dispatch_ir_archetype_628(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_subject_init_string
-static lv_obj_t* dispatch_ir_archetype_629(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_629(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_subject_init_string-like function: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
+    char* arg1 = registry_add_str(reg, ir_node_get_string(ir_args[1]));
     size_t arg2 = (size_t)ir_node_get_int(ir_args[2]);
-    char* arg3 = obj_registry_add_str(ir_node_get_string(ir_args[3]));
+    char* arg3 = registry_add_str(reg, ir_node_get_string(ir_args[3]));
     typedef void (*specific_func_t)(lv_subject_t*, char*, char*, size_t, char*);
     ((specific_func_t)fn)((lv_subject_t*)target, arg0, arg1, arg2, arg3);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_switch_get_orientation
-static lv_obj_t* dispatch_ir_archetype_630(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_630(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_switch_get_orientation-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -8860,7 +9493,8 @@ static lv_obj_t* dispatch_ir_archetype_630(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_switch_set_orientation
-static lv_obj_t* dispatch_ir_archetype_631(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_631(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_switch_set_orientation-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8873,7 +9507,8 @@ static lv_obj_t* dispatch_ir_archetype_631(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_table_clear_cell_ctrl
-static lv_obj_t* dispatch_ir_archetype_632(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_632(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_table_clear_cell_ctrl-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -8888,7 +9523,8 @@ static lv_obj_t* dispatch_ir_archetype_632(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_table_get_cell_user_data
-static lv_obj_t* dispatch_ir_archetype_633(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_633(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_table_get_cell_user_data-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -8901,7 +9537,8 @@ static lv_obj_t* dispatch_ir_archetype_633(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_table_get_cell_value
-static lv_obj_t* dispatch_ir_archetype_634(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_634(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_table_get_cell_value-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -8914,7 +9551,8 @@ static lv_obj_t* dispatch_ir_archetype_634(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_table_get_column_width
-static lv_obj_t* dispatch_ir_archetype_635(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_635(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_table_get_column_width-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -8927,21 +9565,23 @@ static lv_obj_t* dispatch_ir_archetype_635(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_table_get_selected_cell
-static lv_obj_t* dispatch_ir_archetype_636(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_636(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_table_get_selected_cell-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    uint32_t* arg0 = (uint32_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
-    uint32_t* arg1 = (uint32_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    uint32_t* arg0 = (uint32_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
+    uint32_t* arg1 = (uint32_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     typedef void (*specific_func_t)(lv_obj_t*, uint32_t*, uint32_t*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_table_has_cell_ctrl
-static lv_obj_t* dispatch_ir_archetype_637(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_637(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_table_has_cell_ctrl-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -8956,7 +9596,8 @@ static lv_obj_t* dispatch_ir_archetype_637(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_table_set_cell_value
-static lv_obj_t* dispatch_ir_archetype_638(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_638(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_table_set_cell_value-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -8964,14 +9605,15 @@ static lv_obj_t* dispatch_ir_archetype_638(generic_lvgl_func_t fn, void* target,
 
     uint32_t arg0 = (uint32_t)ir_node_get_int(ir_args[0]);
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
-    char* arg2 = obj_registry_add_str(ir_node_get_string(ir_args[2]));
+    char* arg2 = registry_add_str(reg, ir_node_get_string(ir_args[2]));
     typedef void (*specific_func_t)(lv_obj_t*, uint32_t, uint32_t, char*);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1, arg2);
     return NULL;
 }
 
 // Archetype for 1 functions like: lv_table_set_column_width
-static lv_obj_t* dispatch_ir_archetype_639(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_639(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_table_set_column_width-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -8985,7 +9627,8 @@ static lv_obj_t* dispatch_ir_archetype_639(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_table_set_selected_cell
-static lv_obj_t* dispatch_ir_archetype_640(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_640(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_table_set_selected_cell-like function: expected 2 args, got %d", arg_count);
         return NULL;
@@ -8999,14 +9642,15 @@ static lv_obj_t* dispatch_ir_archetype_640(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_text_get_size
-static lv_obj_t* dispatch_ir_archetype_641(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_641(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 6) {
         LV_LOG_WARN("IR call to lv_text_get_size-like function: expected 6 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
-    lv_font_t* arg1 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[1]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
+    lv_font_t* arg1 = (lv_font_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[1]), NULL);
     int32_t arg2 = (int32_t)ir_node_get_int(ir_args[2]);
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
     int32_t arg4 = (int32_t)ir_node_get_int(ir_args[4]);
@@ -9017,15 +9661,16 @@ static lv_obj_t* dispatch_ir_archetype_641(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_text_get_width
-static lv_obj_t* dispatch_ir_archetype_642(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_642(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 4) {
         LV_LOG_WARN("IR call to lv_text_get_width-like function: expected 4 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
-    lv_font_t* arg2 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
+    lv_font_t* arg2 = (lv_font_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[2]), NULL);
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
     typedef int32_t (*specific_func_t)(char*, uint32_t, lv_font_t*, int32_t);
     (void)((specific_func_t)fn)(arg0, arg1, arg2, arg3);
@@ -9033,15 +9678,16 @@ static lv_obj_t* dispatch_ir_archetype_642(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_text_get_width_with_flags
-static lv_obj_t* dispatch_ir_archetype_643(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_643(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 5) {
         LV_LOG_WARN("IR call to lv_text_get_width_with_flags-like function: expected 5 args, got %d", arg_count);
         return NULL;
     }
 
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
+    char* arg0 = registry_add_str(reg, ir_node_get_string(ir_args[0]));
     uint32_t arg1 = (uint32_t)ir_node_get_int(ir_args[1]);
-    lv_font_t* arg2 = (lv_font_t*)obj_registry_get(ir_node_get_string(ir_args[2]));
+    lv_font_t* arg2 = (lv_font_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[2]), NULL);
     int32_t arg3 = (int32_t)ir_node_get_int(ir_args[3]);
     lv_text_flag_t arg4 = (lv_text_flag_t)ir_node_get_enum_value(ir_args[4], "lv_text_flag_t", spec);
     typedef int32_t (*specific_func_t)(char*, uint32_t, lv_font_t*, int32_t, lv_text_flag_t);
@@ -9050,7 +9696,8 @@ static lv_obj_t* dispatch_ir_archetype_643(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_text_is_cmd
-static lv_obj_t* dispatch_ir_archetype_644(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_644(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_text_is_cmd-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -9063,7 +9710,8 @@ static lv_obj_t* dispatch_ir_archetype_644(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_thread_delete
-static lv_obj_t* dispatch_ir_archetype_645(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_645(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_thread_delete-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -9075,7 +9723,8 @@ static lv_obj_t* dispatch_ir_archetype_645(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 5 functions like: lv_thread_sync_delete
-static lv_obj_t* dispatch_ir_archetype_646(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_646(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_thread_sync_delete-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -9087,7 +9736,8 @@ static lv_obj_t* dispatch_ir_archetype_646(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_tick_get_cb
-static lv_obj_t* dispatch_ir_archetype_647(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_647(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_tick_get_cb-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -9099,7 +9749,8 @@ static lv_obj_t* dispatch_ir_archetype_647(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_tileview_add_tile
-static lv_obj_t* dispatch_ir_archetype_648(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_648(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_tileview_add_tile-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -9113,13 +9764,14 @@ static lv_obj_t* dispatch_ir_archetype_648(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_tileview_set_tile
-static lv_obj_t* dispatch_ir_archetype_649(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_649(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 2) {
         LV_LOG_WARN("IR call to lv_tileview_set_tile-like function: expected 2 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_obj_t* arg0 = (lv_obj_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_obj_t* arg0 = (lv_obj_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     lv_anim_enable_t arg1 = (lv_anim_enable_t)ir_node_get_int(ir_args[1]);
     typedef void (*specific_func_t)(lv_obj_t*, lv_obj_t*, lv_anim_enable_t);
     ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
@@ -9127,7 +9779,8 @@ static lv_obj_t* dispatch_ir_archetype_649(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_tileview_set_tile_by_index
-static lv_obj_t* dispatch_ir_archetype_650(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_650(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 3) {
         LV_LOG_WARN("IR call to lv_tileview_set_tile_by_index-like function: expected 3 args, got %d", arg_count);
         return NULL;
@@ -9142,7 +9795,8 @@ static lv_obj_t* dispatch_ir_archetype_650(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_timer_get_next
-static lv_obj_t* dispatch_ir_archetype_651(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_651(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_timer_get_next-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -9153,7 +9807,8 @@ static lv_obj_t* dispatch_ir_archetype_651(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_timer_get_paused
-static lv_obj_t* dispatch_ir_archetype_652(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_652(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_timer_get_paused-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -9165,7 +9820,8 @@ static lv_obj_t* dispatch_ir_archetype_652(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_timer_get_user_data
-static lv_obj_t* dispatch_ir_archetype_653(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_653(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_timer_get_user_data-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -9176,7 +9832,8 @@ static lv_obj_t* dispatch_ir_archetype_653(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_timer_set_auto_delete
-static lv_obj_t* dispatch_ir_archetype_654(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_654(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_timer_set_auto_delete-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -9189,7 +9846,8 @@ static lv_obj_t* dispatch_ir_archetype_654(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_timer_set_period
-static lv_obj_t* dispatch_ir_archetype_655(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_655(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_timer_set_period-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -9202,7 +9860,8 @@ static lv_obj_t* dispatch_ir_archetype_655(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_timer_set_repeat_count
-static lv_obj_t* dispatch_ir_archetype_656(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_656(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_timer_set_repeat_count-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -9215,19 +9874,21 @@ static lv_obj_t* dispatch_ir_archetype_656(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_tree_node_create
-static lv_obj_t* dispatch_ir_archetype_657(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_657(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_tree_node_create-like function: expected 1 args, got %d", arg_count);
         return NULL;
     }
 
-    lv_tree_node_t* arg0 = (lv_tree_node_t*)obj_registry_get(ir_node_get_string(ir_args[0]));
+    lv_tree_node_t* arg0 = (lv_tree_node_t*)registry_get_pointer(reg, ir_node_get_string(ir_args[0]), NULL);
     typedef lv_tree_node_t* (*specific_func_t)(lv_tree_class_t*, lv_tree_node_t*);
     return (lv_obj_t*)((specific_func_t)fn)((lv_tree_class_t*)target, arg0);
 }
 
 // Archetype for 1 functions like: lv_tree_node_delete
-static lv_obj_t* dispatch_ir_archetype_658(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_658(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_tree_node_delete-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -9239,7 +9900,8 @@ static lv_obj_t* dispatch_ir_archetype_658(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 2 functions like: lv_trigo_cos
-static lv_obj_t* dispatch_ir_archetype_659(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_659(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 1) {
         LV_LOG_WARN("IR call to lv_trigo_cos-like function: expected 1 args, got %d", arg_count);
         return NULL;
@@ -9252,7 +9914,8 @@ static lv_obj_t* dispatch_ir_archetype_659(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 1 functions like: lv_version_info
-static lv_obj_t* dispatch_ir_archetype_660(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_660(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_version_info-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -9263,7 +9926,8 @@ static lv_obj_t* dispatch_ir_archetype_660(generic_lvgl_func_t fn, void* target,
 }
 
 // Archetype for 3 functions like: lv_version_major
-static lv_obj_t* dispatch_ir_archetype_661(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static lv_obj_t* dispatch_ir_archetype_661(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
+    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here
     if (arg_count != 0) {
         LV_LOG_WARN("IR call to lv_version_major-like function: expected 0 args, got %d", arg_count);
         return NULL;
@@ -10904,8 +11568,8 @@ static int compare_func_mappings(const void* a, const void* b) {
     return strcmp((const char*)a, ((const FunctionMapping*)b)->name);
 }
 
-// Updated signature to include ApiSpec* spec
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+// Updated signature to include ApiSpec* spec and Registry* reg
+lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
     if (!func_name) return NULL;
     const FunctionMapping* mapping = (const FunctionMapping*)bsearch(
         func_name, function_registry,
@@ -10913,83 +11577,57 @@ lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode**
         sizeof(FunctionMapping), compare_func_mappings
     );
     if (mapping && mapping->ir_dispatcher) {
-        // Pass spec to the archetype dispatcher
-        return mapping->ir_dispatcher(mapping->func_ptr, target_obj, ir_args, arg_count, spec);
+        // Pass spec and reg to the archetype dispatcher
+        return mapping->ir_dispatcher(mapping->func_ptr, target_obj, ir_args, arg_count, spec, reg);
     }
     LV_LOG_WARN("Dynamic LVGL IR call failed: function '%s' not found or dispatcher missing.", func_name);
     return NULL;
 }
 
-// --- Simple Object Registry Implementation ---
-#ifndef DYNAMIC_LVGL_MAX_OBJECTS
-#define DYNAMIC_LVGL_MAX_OBJECTS 256
-#endif
+// --- Object Registry Wrappers (using the new registry.h system) ---
 
-typedef struct {
-    char* id;
-    void* obj;
-} ObjectEntry;
+// obj_registry_init() and obj_registry_deinit() are no longer needed here,
+// as registry_create() and registry_free() are called by the main application logic.
 
-static ObjectEntry obj_registry[DYNAMIC_LVGL_MAX_OBJECTS];
-static int obj_registry_count = 0;
-
-void obj_registry_init(void) {
-    obj_registry_count = 0;
-    memset(obj_registry, 0, sizeof(obj_registry));
+char* obj_registry_add_str(struct Registry* reg, const char* s) {
+    if (!reg || !s) {
+        LV_LOG_WARN("obj_registry_add_str: reg and s must not be NULL");
+        return NULL; // Or consider a static empty string
+    }
+    // The registry_add_str function from registry.h already handles uniqueness and allocation.
+    // It returns const char*, but our Python generator expects char* for setters that might take char*.
+    // Casting is okay if the underlying string from registry_add_str is indeed mutable or if
+    // the C functions receiving char* don't actually modify it when it comes from this path.
+    // For safety, if LVGL functions truly need to modify, they should get a fresh copy.
+    // However, `registry_add_str` itself is designed to return a stable pointer to a duplicated string.
+    return (char*)registry_add_str(reg, s);
 }
 
-char *obj_registry_add_str(const char *s) {
-    if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS || !s) {
-        LV_LOG_WARN("Cannot add object to registry: full or null string");
-        return NULL;
-    }
-    const size_t sl = strlen(s) + 5;
-    char name[sl + 1];
-    snprintf(name, sl, "str::%s", s);
-    for (int i = 0; i < obj_registry_count; i++) {
-        if (strcmp(obj_registry[i].id, name) == 0) {
-            obj_registry[i].obj = strdup(s);
-            return (char *)obj_registry[i].obj;
-        }
-    }
-    obj_registry[obj_registry_count].id = strdup(name);
-    obj_registry[obj_registry_count].obj = strdup(s);
-    return (char *)obj_registry[obj_registry_count++].obj;
-}
-
-void obj_registry_add(const char* id, void* obj) {
-    if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS || !id) {
-        LV_LOG_WARN("Cannot add object to registry: full or null ID");
+void obj_registry_add(struct Registry* reg, const char* id, void* obj) {
+    if (!reg || !id) {
+        LV_LOG_WARN("obj_registry_add: reg and id must not be NULL");
         return;
     }
-    for (int i = 0; i < obj_registry_count; i++) {
-        if (strcmp(obj_registry[i].id, id) == 0) {
-            obj_registry[i].obj = obj; // Update existing entry
-            return;
-        }
-    }
-    obj_registry[obj_registry_count].id = strdup(id);
-    obj_registry[obj_registry_count].obj = obj;
-    obj_registry_count++;
+    // The type is "UNKNOWN_DYNAMIC" because this simplified wrapper doesn't have type context.
+    // The main registry system can store type if provided.
+    registry_add_pointer(reg, obj, id, "UNKNOWN_TYPE_DYNAMIC");
 }
 
-void* obj_registry_get(const char* id) {
-    if (!id) return NULL;
+void* obj_registry_get(struct Registry* reg, const char* id) {
+    if (!reg || !id) return NULL;
+
+    // Handle special "hardcoded" IDs that don't go through the main registry's string ID lookup
+    // but are resolved by lv_obj_registry_get directly.
+    // Note: The main `registry_get_pointer` in `registry.c` should ideally handle these,
+    // or this logic needs to be consistent. For now, keeping compatibility with previous behavior.
     if (strcmp(id, "SCREEN_ACTIVE") == 0) return (void*)lv_screen_active();
     if (strcmp(id, "NULL") == 0) return NULL;
 
-    for (int i = 0; i < obj_registry_count; i++) {
-        if (strcmp(obj_registry[i].id, id) == 0) {
-            return obj_registry[i].obj;
-        }
+    // For all other IDs, use the main registry.
+    // Pass NULL for type to indicate any type is acceptable for this dynamic lookup.
+    void* found_obj = registry_get_pointer(reg, id, NULL);
+    if(!found_obj) {
+      // LV_LOG_WARN("Object with ID '%s' not found in registry via obj_registry_get.", id);
     }
-    LV_LOG_WARN("Object with ID '%s' not found in registry.", id);
-    return NULL;
-}
-
-void obj_registry_deinit(void) {
-    for (int i = 0; i < obj_registry_count; i++) {
-        if(obj_registry[i].id) free(obj_registry[i].id);
-    }
-    obj_registry_init();
+    return found_obj;
 }

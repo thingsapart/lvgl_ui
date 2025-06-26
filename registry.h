@@ -69,7 +69,8 @@ void *registry_get_pointer(const Registry* reg, const char *id, const char *type
 // it returns a pointer to the existing string. Otherwise, it duplicates
 // the input string, stores it, and returns a pointer to the new copy.
 // The registry owns the memory for these stored strings.
-const char *registry_add_str(Registry* reg, const char *value);
+// Returns a pointer to a duplicated string.
+char *registry_add_str(Registry* reg, const char *value);
 
 // Retrieves the stored JSON type for a given ID.
 const char* registry_get_json_type_for_id(const Registry* reg, const char* id);

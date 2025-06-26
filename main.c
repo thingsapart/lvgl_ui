@@ -105,9 +105,25 @@ int main(int argc, char* argv[]) {
         goto cleanup_json; // ui_json and api_json need cleanup
     }
 
+    // --- Process ---
+    // 1. Parse the API spec into an internal, efficient format
+    // ApiSpec* api_spec = api_spec_parse(api_json); // api_spec.c should provide this // This line is duplicated below
+    // if (!api_spec) {
+    //     fprintf(stderr, "Error: Failed to parse API spec.\n");
+    //     goto cleanup_json; // ui_json and api_json need cleanup
+    // }
+
+    // Create the Registry instance
+    Registry* registry = registry_create();
+    if (!registry) {
+        fprintf(stderr, "Error: Failed to create registry.\n");
+        api_spec_free(api_spec);
+        goto cleanup_json;
+    }
+
     // 2. Generate the Intermediate Representation (IR) from the UI spec
-    // The generator will create and use its own registry internally.
-    IRRoot* ir = generate_ir_from_ui_spec(ui_json, api_spec); // generator.c provides this
+    // Pass the created registry to the generator.
+    IRRoot* ir = generate_ir_from_ui_spec_with_registry(ui_json, api_spec, registry); // generator.c provides this
     DEBUG_LOG(LOG_MODULE_MAIN, "IR generation complete. IR Root: %p", (void*)ir);
     if (ir) {
         DEBUG_LOG(LOG_MODULE_MAIN, "IR Root type: %d", ir->base.type); // Should be IR_NODE_ROOT
@@ -128,6 +144,7 @@ int main(int argc, char* argv[]) {
     }
     if (!ir) {
         fprintf(stderr, "Error: Failed to generate IR from UI spec.\n");
+        registry_free(registry); // Free registry
         api_spec_free(api_spec); // Free api_spec before goto
         goto cleanup_json; // ui_json and api_json need cleanup
     }
@@ -151,6 +168,7 @@ int main(int argc, char* argv[]) {
     if (mode == CODEGEN_MODE_LVGL_UI || mode == CODEGEN_MODE_C_CODE_AND_LVGL_UI) {
         if (sdl_viewer_init() != 0) {
             fprintf(stderr, "Error: Failed to initialize SDL viewer.\n");
+            registry_free(registry);
             ir_free((IRNode*)ir);
             api_spec_free(api_spec);
             cJSON_Delete(ui_json);
@@ -164,6 +182,7 @@ int main(int argc, char* argv[]) {
         if (!main_screen) {
             fprintf(stderr, "Error: Failed to create main LVGL screen.\n");
             sdl_viewer_deinit(); // Clean up SDL parts that were initialized
+            registry_free(registry);
             ir_free((IRNode*)ir);
             api_spec_free(api_spec);
             cJSON_Delete(ui_json);
@@ -173,13 +192,16 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        // Pass the api_spec to the renderer. The last argument is for an initial context, which is NULL here.
-        render_lvgl_ui_from_ir(ir, main_screen, api_spec, NULL);
+        // Pass the api_spec and registry to the renderer. The last argument is for an initial context, which is NULL here.
+        render_lvgl_ui_from_ir(ir, main_screen, api_spec, registry, NULL);
 
         sdl_viewer_loop(); // This is an infinite loop
+        // If sdl_viewer_loop were not infinite, registry_free(registry) would be called after it.
     }
 
     // --- Cleanup ---
+    // Note: If sdl_viewer_loop is running, this cleanup might not be reached for UI mode.
+    registry_free(registry);      // Free the registry
     ir_free((IRNode*)ir);         // Free the entire IR tree
     api_spec_free(api_spec);      // Free the parsed API spec
 cleanup_json:

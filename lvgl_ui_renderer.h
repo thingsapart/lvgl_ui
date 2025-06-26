@@ -4,6 +4,7 @@
 #include "ir.h"
 #include "lvgl.h"
 #include "api_spec.h"
+#include "registry.h" // Added for Registry type
 
 /**
  * @brief Renders an LVGL UI based on a high-level Intermediate Representation (IR).
@@ -15,8 +16,9 @@
  * @param ir_root The root of the IR tree representing the UI.
  * @param parent_screen The parent LVGL object to render the UI onto (usually lv_screen_active()).
  * @param api_spec Parsed API specification, used for method call resolution.
+ * @param reg The pointer registry to use for object lookup and string interning.
  * @param initial_context Optional cJSON object providing initial values for top-level context variables.
  */
-void render_lvgl_ui_from_ir(IRRoot* ir_root, lv_obj_t* parent_screen, ApiSpec* api_spec, cJSON* initial_context);
+void render_lvgl_ui_from_ir(IRRoot* ir_root, lv_obj_t* parent_screen, ApiSpec* api_spec, Registry* reg, cJSON* initial_context);
 
 #endif // LVGL_UI_RENDERER_H

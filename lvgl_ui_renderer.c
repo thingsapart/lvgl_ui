@@ -16,6 +16,7 @@
 // Manages state during rendering, like the object registry and context stack for components.
 typedef struct {
     ApiSpec* api_spec;
+    Registry* registry; // Added registry
     IRRoot* ir_root;
     cJSON* context_stack; // An array of context objects for nested use-views
 } RenderContext;
@@ -27,19 +28,20 @@ static IRExpr* resolve_expr(RenderContext* ctx, IRExpr* expr);
 static void free_resolved_expr_list(IRExprNode* head);
 
 // --- Main Entry Point ---
-void render_lvgl_ui_from_ir(IRRoot* ir_root, lv_obj_t* parent_screen, ApiSpec* api_spec, cJSON* initial_context) {
-    if (!ir_root || !parent_screen || !api_spec) {
-        DEBUG_LOG(LOG_MODULE_RENDERER, "Error: render_lvgl_ui_from_ir called with NULL arguments.");
+void render_lvgl_ui_from_ir(IRRoot* ir_root, lv_obj_t* parent_screen, ApiSpec* api_spec, Registry* reg, cJSON* initial_context) {
+    if (!ir_root || !parent_screen || !api_spec || !reg) {
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Error: render_lvgl_ui_from_ir called with NULL arguments for ir_root, parent_screen, api_spec, or reg.");
         return;
     }
 
     DEBUG_LOG(LOG_MODULE_RENDERER, "Starting LVGL UI rendering from new IR.");
-    obj_registry_init();
-    obj_registry_add("parent", parent_screen);
+    // obj_registry_init(); // Removed, registry is now passed in and managed externally
+    obj_registry_add(reg, "parent", parent_screen); // Pass reg
     DEBUG_LOG(LOG_MODULE_RENDERER, "Registered initial screen %p as 'parent'.", (void*)parent_screen);
 
     RenderContext ctx = {
         .api_spec = api_spec,
+        .registry = reg, // Store passed-in registry
         .ir_root = ir_root,
         .context_stack = cJSON_CreateArray()
     };
@@ -149,7 +151,7 @@ static void render_properties(RenderContext* ctx, IRObject* ir_obj, void* native
             }
         }
 
-        dynamic_lvgl_call_ir(prop_def->setter, native_obj, arg_array, arg_count, ctx->api_spec);
+        dynamic_lvgl_call_ir(prop_def->setter, native_obj, arg_array, arg_count, ctx->api_spec, ctx->registry); // Pass registry
         free_resolved_expr_list(resolved_args);
 
         prop = prop->next;
@@ -198,17 +200,17 @@ static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
     const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, obj->json_type);
 
     if (widget_def && widget_def->create) {
-        created_native_obj = dynamic_lvgl_call_ir(widget_def->create, parent_obj, NULL, 0, ctx->api_spec);
+        created_native_obj = dynamic_lvgl_call_ir(widget_def->create, parent_obj, NULL, 0, ctx->api_spec, ctx->registry); // Pass registry
     } else if (widget_def && widget_def->init_func) {
         if (strcmp(widget_def->c_type, "lv_style_t") == 0) {
             lv_style_t* style = malloc(sizeof(lv_style_t));
             if (style) {
-                dynamic_lvgl_call_ir(widget_def->init_func, style, NULL, 0, ctx->api_spec);
+                dynamic_lvgl_call_ir(widget_def->init_func, style, NULL, 0, ctx->api_spec, ctx->registry); // Pass registry
                 created_native_obj = style;
             }
         }
     } else {
-        created_native_obj = dynamic_lvgl_call_ir("lv_obj_create", parent_obj, NULL, 0, ctx->api_spec);
+        created_native_obj = dynamic_lvgl_call_ir("lv_obj_create", parent_obj, NULL, 0, ctx->api_spec, ctx->registry); // Pass registry
     }
 
     if (!created_native_obj) {
@@ -218,9 +220,9 @@ static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
         return; // Should not be reached
     }
 
-    obj_registry_add(obj->c_name, created_native_obj);
+    obj_registry_add(ctx->registry, obj->c_name, created_native_obj); // Pass registry
     if (obj->registered_id) {
-        obj_registry_add(obj->registered_id, created_native_obj);
+        obj_registry_add(ctx->registry, obj->registered_id, created_native_obj); // Pass registry
     }
     DEBUG_LOG(LOG_MODULE_RENDERER, "Created object '%s' (%s) at %p", obj->c_name, obj->json_type, created_native_obj);
 
@@ -256,7 +258,8 @@ static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
                                                             created_native_obj,
                                                             call_arg_array,
                                                             call_arg_count,
-                                                            ctx->api_spec);
+                                                            ctx->api_spec,
+                                                            ctx->registry); // Pass registry
             free_resolved_expr_list(resolved_call_args_list);
 
         } else if (wb->target_expr) {
@@ -265,7 +268,7 @@ static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
             if (resolved_target_ref) {
                 const char* target_id_str = ir_node_get_string((IRNode*)resolved_target_ref);
                 if (target_id_str) {
-                    with_block_target_for_do = obj_registry_get(target_id_str);
+                    with_block_target_for_do = obj_registry_get(ctx->registry, target_id_str); // Pass registry
                 }
                 ir_free((IRNode*)resolved_target_ref);
             }
@@ -372,7 +375,7 @@ static void render_object(RenderContext* ctx, IRObject* obj, void* parent_obj) {
                             }
                         }
                     }
-                    dynamic_lvgl_call_ir(current_with_prop_def->setter, with_block_target_for_do, with_arg_array, with_arg_count, ctx->api_spec);
+                    dynamic_lvgl_call_ir(current_with_prop_def->setter, with_block_target_for_do, with_arg_array, with_arg_count, ctx->api_spec, ctx->registry); // Pass registry
                     free_resolved_expr_list(with_resolved_args);
                     with_prop = with_prop->next;
                 }
@@ -438,7 +441,7 @@ static IRExpr* resolve_expr(RenderContext* ctx, IRExpr* expr) {
             }
 
             // Pass ApiSpec for context-aware parsing if needed by the call
-            void* result_ptr = dynamic_lvgl_call_ir(call->func_name, NULL, arg_array, arg_count, ctx->api_spec);
+            void* result_ptr = dynamic_lvgl_call_ir(call->func_name, NULL, arg_array, arg_count, ctx->api_spec, ctx->registry); // Pass registry
             free_resolved_expr_list(resolved_args);
 
             char buf[32];

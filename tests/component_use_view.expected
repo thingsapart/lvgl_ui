@@ -8,19 +8,29 @@
 
 void create_ui(lv_obj_t* parent) {
     lv_obj_t* v_main_view = lv_obj_create(parent);
+    if (v_main_view == NULL) render_abort("Error: Failed to create widget 'v_main_view' (type: obj).");
     obj_registry_add("v_main_view", (void*)v_main_view);
-    lv_obj_set_style_size(v_main_view, { lv_pct(100), lv_pct(100) });
+    void* _arg_val_0 = { lv_pct(100), lv_pct(100) };
+    lv_obj_set_style_size(v_main_view, _arg_val_0);
     
     lv_obj_t* label_3 = lv_label_create(v_main_view);
-    lv_label_set_text(label_3, "Main view label");
+    if (label_3 == NULL) render_abort("Error: Failed to create widget 'label_3' (type: label).");
+    void* _arg_val_0 = "Main view label";
+    lv_label_set_text(label_3, _arg_val_0);
     obj_registry_add("uv_instance_1", (void*)uv_instance_1);
     lv_obj_t* uv_instance_1 = lv_obj_create(v_main_view);
+    if (uv_instance_1 == NULL) render_abort("Error: Failed to create widget 'uv_instance_1' (type: obj).");
     
     lv_obj_t* label_1 = lv_label_create(uv_instance_1);
-    lv_label_set_text(label_1, "Hello from component");
+    if (label_1 == NULL) render_abort("Error: Failed to create widget 'label_1' (type: label).");
+    void* _arg_val_0 = "Hello from component";
+    lv_label_set_text(label_1, _arg_val_0);
     lv_obj_t* comp_button = lv_button_create(uv_instance_1);
+    if (comp_button == NULL) render_abort("Error: Failed to create widget 'comp_button' (type: button).");
     obj_registry_add("comp_button", (void*)comp_button);
     
     lv_obj_t* label_2 = lv_label_create(comp_button);
-    lv_label_set_text(label_2, "Click Me");
+    if (label_2 == NULL) render_abort("Error: Failed to create widget 'label_2' (type: label).");
+    void* _arg_val_0 = "Click Me";
+    lv_label_set_text(label_2, _arg_val_0);
 }

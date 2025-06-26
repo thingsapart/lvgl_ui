@@ -288,23 +288,29 @@ class CCodeGenerator:
             return f"ir_node_get_bool({ir_node_accessor})"
 
         if c_type == 'const char*':
+            # For const char*, if it's from a static string in UI spec (e.g. `text: "Hello"`),
+            # it's fine. If it's from `!string`, it's also fine.
+            # If it's from `@string_in_registry`, it's also fine if registry_get_pointer returns const char*.
+            # The key is that const char* doesn't imply new allocation here.
             return f"ir_node_get_string({ir_node_accessor})"
 
         if c_type == 'char*':
-            return f"obj_registry_add_str(ir_node_get_string({ir_node_accessor}))"
+            # This implies the C function might modify it or take ownership,
+            # or simply expects a non-const char*.
+            # We must provide a mutable, heap-allocated string.
+            # The `registry_add_str` function from registry.h handles duplication.
+            return f"registry_add_str(reg, ir_node_get_string({ir_node_accessor}))"
 
         # Handle color structs. Assumes IR provides a number (e.g., from #RRGGBB being converted to 0xRRGGBB).
-        # if c_type_no_const in ['lv_color_t', 'lv_color16_t', 'lv_color32_t']:
-        # Need to break up lv_color_t, lv_color32_t - no conversion found for
-        # lv_color16_t, skipping for now.
         if c_type_no_const in ['lv_color_t']:
             return f"lv_color_hex((uint32_t)ir_node_get_int({ir_node_accessor}))"
         if c_type_no_const in ['lv_color32_t']:
             return f"lv_color_to_32(lv_color_hex((uint32_t)ir_node_get_int({ir_node_accessor})), LV_OPA_COVER)"
 
-        if c_type.endswith('*'):
+        if c_type.endswith('*') and c_type != 'char*' and c_type != 'const char*': # Exclude string types already handled
             # Any other pointer type is assumed to be in the object registry.
-            return f"({c_type})obj_registry_get(ir_node_get_string({ir_node_accessor}))"
+            # `registry_get_pointer` takes care of special cases like "SCREEN_ACTIVE" or "NULL".
+            return f"({c_type})registry_get_pointer(reg, ir_node_get_string({ir_node_accessor}), NULL)" # NULL for type means match any type
 
         # Default for int, lv_coord_t, uint32_t, etc.
         return f"({c_type_no_const})ir_node_get_int({ir_node_accessor})"
@@ -333,24 +339,28 @@ extern "C" {
 #include <stdlib.h>
 
 #include "api_spec.h"
+#include "registry.h" // Include for Registry type
 
 typedef struct IRNode IRNode;
 struct ApiSpec; /* Forward declaration for ApiSpec pointer usage */
+struct Registry; // Forward declaration for Registry pointer usage
 
-// --- Object Registry ---
-// A simple dynamic registry to map string IDs to created LVGL objects (widgets, styles, etc.).
-void obj_registry_init(void);
-void obj_registry_add(const char* id, void* obj);
-char *obj_registry_add_str(const char *);
-void* obj_registry_get(const char* id);
-void obj_registry_deinit(void);
+// --- Object Registry (using the new registry.h system) ---
+// These are now wrappers or direct calls to the main registry.
+// Initialization and deinitialization are handled externally via registry_create/free.
+void obj_registry_add(struct Registry* reg, const char* id, void* obj);
+char* obj_registry_add_str(struct Registry* reg, const char* s);
+void* obj_registry_get(struct Registry* reg, const char* id);
+// obj_registry_init and obj_registry_deinit are effectively replaced by
+// registry_create() and registry_free() called by the main application.
+
 
 // --- Dynamic Dispatcher ---
 // Calls an LVGL function by name, with arguments provided as an array of IR nodes.
 // The renderer is responsible for resolving complex IR expressions (like context vars)
 // into simpler, self-contained IR nodes (literals, registry refs) before calling.
-// Added ApiSpec* spec argument for context-aware parsing (e.g. enums by string name)
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
+// Added ApiSpec* spec and Registry* reg arguments.
+lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
 
 #ifdef __cplusplus
 }
@@ -370,17 +380,19 @@ lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode**
 #include "ir.h"
 #include "utils.h"
 #include "api_spec.h" // Added for ApiSpec*
+#include "registry.h" // Added for Registry*
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 
 // Forward declare ApiSpec if not fully included by api_spec.h
 struct ApiSpec;
+struct Registry; // Forward declaration for Registry
 
 typedef struct _lv_obj_t _lv_obj_t;
 typedef void (*generic_lvgl_func_t)(void);
-// Updated dispatcher typedef to include ApiSpec*
-typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
+// Updated dispatcher typedef to include ApiSpec* and Registry*
+typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
 """)
 
             self.archetype_map = {}
@@ -389,7 +401,7 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, 
                 dispatcher_name_ir = f"dispatch_ir_archetype_{i}"
                 self.archetype_map[key] = dispatcher_name_ir
                 # Updated signature for forward declaration
-                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec);\n")
+                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);\n")
 
             f.write("\n// --- Archetype Dispatcher Implementations ---\n")
 
@@ -401,7 +413,9 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, 
 
                 f.write(f"// Archetype for {len(func_list)} functions like: {first_func['name']}\n")
                 # Updated signature for implementation
-                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {{\n")
+                f.write(f"static lv_obj_t* {dispatcher_name_ir}(generic_lvgl_func_t fn, void* target, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {{\n")
+                f.write(f"    (void)reg; // Parameter 'reg' is captured for use by _get_parser_for_ir_node_type, may not be used directly here\n")
+
 
                 num_expected_args = len(arg_types)
                 f.write(f"    if (arg_count != {num_expected_args}) {{\n")
@@ -464,8 +478,8 @@ static int compare_func_mappings(const void* a, const void* b) {
     return strcmp((const char*)a, ((const FunctionMapping*)b)->name);
 }
 
-// Updated signature to include ApiSpec* spec
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+// Updated signature to include ApiSpec* spec and Registry* reg
+lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg) {
     if (!func_name) return NULL;
     const FunctionMapping* mapping = (const FunctionMapping*)bsearch(
         func_name, function_registry,
@@ -473,85 +487,59 @@ lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode**
         sizeof(FunctionMapping), compare_func_mappings
     );
     if (mapping && mapping->ir_dispatcher) {
-        // Pass spec to the archetype dispatcher
-        return mapping->ir_dispatcher(mapping->func_ptr, target_obj, ir_args, arg_count, spec);
+        // Pass spec and reg to the archetype dispatcher
+        return mapping->ir_dispatcher(mapping->func_ptr, target_obj, ir_args, arg_count, spec, reg);
     }
     LV_LOG_WARN("Dynamic LVGL IR call failed: function '%s' not found or dispatcher missing.", func_name);
     return NULL;
 }
 
-// --- Simple Object Registry Implementation ---
-#ifndef DYNAMIC_LVGL_MAX_OBJECTS
-#define DYNAMIC_LVGL_MAX_OBJECTS 256
-#endif
+// --- Object Registry Wrappers (using the new registry.h system) ---
 
-typedef struct {
-    char* id;
-    void* obj;
-} ObjectEntry;
+// obj_registry_init() and obj_registry_deinit() are no longer needed here,
+// as registry_create() and registry_free() are called by the main application logic.
 
-static ObjectEntry obj_registry[DYNAMIC_LVGL_MAX_OBJECTS];
-static int obj_registry_count = 0;
-
-void obj_registry_init(void) {
-    obj_registry_count = 0;
-    memset(obj_registry, 0, sizeof(obj_registry));
+char* obj_registry_add_str(struct Registry* reg, const char* s) {
+    if (!reg || !s) {
+        LV_LOG_WARN("obj_registry_add_str: reg and s must not be NULL");
+        return NULL; // Or consider a static empty string
+    }
+    // The registry_add_str function from registry.h already handles uniqueness and allocation.
+    // It returns const char*, but our Python generator expects char* for setters that might take char*.
+    // Casting is okay if the underlying string from registry_add_str is indeed mutable or if
+    // the C functions receiving char* don't actually modify it when it comes from this path.
+    // For safety, if LVGL functions truly need to modify, they should get a fresh copy.
+    // However, `registry_add_str` itself is designed to return a stable pointer to a duplicated string.
+    return (char*)registry_add_str(reg, s);
 }
 
-char *obj_registry_add_str(const char *s) {
-    if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS || !s) {
-        LV_LOG_WARN("Cannot add object to registry: full or null string");
-        return NULL;
-    }
-    const size_t sl = strlen(s) + 5;
-    char name[sl + 1];
-    snprintf(name, sl, "str::%s", s);
-    for (int i = 0; i < obj_registry_count; i++) {
-        if (strcmp(obj_registry[i].id, name) == 0) {
-            obj_registry[i].obj = strdup(s);
-            return (char *)obj_registry[i].obj;
-        }
-    }
-    obj_registry[obj_registry_count].id = strdup(name);
-    obj_registry[obj_registry_count].obj = strdup(s);
-    return (char *)obj_registry[obj_registry_count++].obj;
-}
-
-void obj_registry_add(const char* id, void* obj) {
-    if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS || !id) {
-        LV_LOG_WARN("Cannot add object to registry: full or null ID");
+void obj_registry_add(struct Registry* reg, const char* id, void* obj) {
+    if (!reg || !id) {
+        LV_LOG_WARN("obj_registry_add: reg and id must not be NULL");
         return;
     }
-    for (int i = 0; i < obj_registry_count; i++) {
-        if (strcmp(obj_registry[i].id, id) == 0) {
-            obj_registry[i].obj = obj; // Update existing entry
-            return;
-        }
-    }
-    obj_registry[obj_registry_count].id = strdup(id);
-    obj_registry[obj_registry_count].obj = obj;
-    obj_registry_count++;
+    // The type is "UNKNOWN_DYNAMIC" because this simplified wrapper doesn't have type context.
+    // The main registry system can store type if provided.
+    registry_add_pointer(reg, obj, id, "UNKNOWN_TYPE_DYNAMIC");
 }
 
-void* obj_registry_get(const char* id) {
-    if (!id) return NULL;
+void* obj_registry_get(struct Registry* reg, const char* id) {
+    if (!reg || !id) return NULL;
+
+    // Handle special "hardcoded" IDs that don't go through the main registry's string ID lookup
+    // but are resolved by lv_obj_registry_get directly.
+    // Note: The main `registry_get_pointer` in `registry.c` should ideally handle these,
+    // or this logic needs to be consistent. For now, keeping compatibility with previous behavior.
     if (strcmp(id, "SCREEN_ACTIVE") == 0) return (void*)lv_screen_active();
     if (strcmp(id, "NULL") == 0) return NULL;
 
-    for (int i = 0; i < obj_registry_count; i++) {
-        if (strcmp(obj_registry[i].id, id) == 0) {
-            return obj_registry[i].obj;
-        }
+    // For all other IDs, use the main registry.
+    // Pass NULL for type to indicate any type is acceptable for this dynamic lookup.
+    void* found_obj = registry_get_pointer(reg, id, NULL);
+    if(!found_obj) {
+      // LV_LOG_WARN("Object with ID '%s' not found in registry via obj_registry_get.", id);
     }
-    LV_LOG_WARN("Object with ID '%s' not found in registry.", id);
-    return NULL;
-}
-
-void obj_registry_deinit(void) {
-    for (int i = 0; i < obj_registry_count; i++) {
-        if(obj_registry[i].id) free(obj_registry[i].id);
-    }
-    obj_registry_init();
+    return found_obj;
 }
 """)
 

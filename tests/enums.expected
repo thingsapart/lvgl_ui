@@ -8,6 +8,9 @@
 
 void create_ui(lv_obj_t* parent) {
     lv_obj_t* label_0 = lv_label_create(parent);
-    lv_obj_add_flag(label_0, LV_OBJ_FLAG_FLOATING);
-    lv_obj_set_style_bg_opa(label_0, LV_OPA_COVER);
+    if (label_0 == NULL) render_abort("Error: Failed to create widget 'label_0' (type: label).");
+    void* _arg_val_0 = LV_OBJ_FLAG_FLOATING;
+    lv_obj_add_flag(label_0, _arg_val_0);
+    void* _arg_val_1 = LV_OPA_COVER;
+    lv_obj_set_style_bg_opa(label_0, _arg_val_1);
 }

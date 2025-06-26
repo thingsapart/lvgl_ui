@@ -14,24 +14,28 @@ extern "C" {
 #include <stdlib.h>
 
 #include "api_spec.h"
+#include "registry.h" // Include for Registry type
 
 typedef struct IRNode IRNode;
 struct ApiSpec; /* Forward declaration for ApiSpec pointer usage */
+struct Registry; // Forward declaration for Registry pointer usage
 
-// --- Object Registry ---
-// A simple dynamic registry to map string IDs to created LVGL objects (widgets, styles, etc.).
-void obj_registry_init(void);
-void obj_registry_add(const char* id, void* obj);
-char *obj_registry_add_str(const char *);
-void* obj_registry_get(const char* id);
-void obj_registry_deinit(void);
+// --- Object Registry (using the new registry.h system) ---
+// These are now wrappers or direct calls to the main registry.
+// Initialization and deinitialization are handled externally via registry_create/free.
+void obj_registry_add(struct Registry* reg, const char* id, void* obj);
+char* obj_registry_add_str(struct Registry* reg, const char* s);
+void* obj_registry_get(struct Registry* reg, const char* id);
+// obj_registry_init and obj_registry_deinit are effectively replaced by
+// registry_create() and registry_free() called by the main application.
+
 
 // --- Dynamic Dispatcher ---
 // Calls an LVGL function by name, with arguments provided as an array of IR nodes.
 // The renderer is responsible for resolving complex IR expressions (like context vars)
 // into simpler, self-contained IR nodes (literals, registry refs) before calling.
-// Added ApiSpec* spec argument for context-aware parsing (e.g. enums by string name)
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec);
+// Added ApiSpec* spec and Registry* reg arguments.
+lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, IRNode** ir_args, int arg_count, struct ApiSpec* spec, struct Registry* reg);
 
 #ifdef __cplusplus
 }

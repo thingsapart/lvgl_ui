@@ -91,15 +91,32 @@ static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_ro
     // --- Object Creation ---
     const WidgetDefinition* widget_def = api_spec_find_widget(api_spec, obj->json_type);
     bool is_widget_allocation = false; // Flag to indicate if this is a heap-allocated lv_obj_t* like widget
+    // bool is_style_ptr_allocation = false; // Flag for heap-allocated styles - REMOVED as unused
     print_indent(indent);
-    if (widget_def && widget_def->create) { // It's a standard widget
+    if (obj->json_type && strcmp(obj->json_type, "style") == 0 && widget_def && widget_def->c_type && widget_def->init_func) {
+        // Special handling for styles: heap allocate
+        printf("%s* %s = (%s*)malloc(sizeof(%s));\n", widget_def->c_type, obj->c_name, widget_def->c_type, widget_def->c_type);
+        print_indent(indent);
+        printf("if (%s != NULL) {\n", obj->c_name);
+        print_indent(indent + 1);
+        printf("memset(%s, 0, sizeof(%s));\n", obj->c_name, widget_def->c_type);
+        print_indent(indent + 1);
+        printf("%s(%s);\n", widget_def->init_func, obj->c_name); // Call init with the pointer
+        print_indent(indent);
+        printf("} else {\n");
+        print_indent(indent + 1);
+        printf("fprintf(stderr, \"Error: Failed to malloc for object %s of type %s\\n\");\n", obj->c_name, widget_def->c_type);
+        // Potentially render_abort here or let it be caught by NULL check later if used
+        print_indent(indent);
+        printf("}\n");
+        // is_style_ptr_allocation = true; // This variable was removed
+    } else if (widget_def && widget_def->create) { // It's a standard widget
         printf("lv_obj_t* %s = %s(%s);\n", obj->c_name, widget_def->create, parent_c_name ? parent_c_name : "lv_screen_active()");
         is_widget_allocation = true;
-    } else if (widget_def && widget_def->c_type && widget_def->init_func) { // It's an object like a style (usually stack allocated or global)
+    } else if (widget_def && widget_def->c_type && widget_def->init_func) { // Other non-style, non-widget objects (e.g. anim, timer if stack based)
         printf("%s %s;\n", widget_def->c_type, obj->c_name);
         print_indent(indent);
         printf("%s(&%s);\n", widget_def->init_func, obj->c_name);
-        // Styles initialized this way are not heap allocated pointers that can be NULL from creation.
     } else { // Fallback to generic object
         printf("lv_obj_t* %s = lv_obj_create(%s);\n", obj->c_name, parent_c_name ? parent_c_name : "lv_screen_active()");
         is_widget_allocation = true;
@@ -279,7 +296,29 @@ static void codegen_object(IRObject* obj, const ApiSpec* api_spec, IRRoot* ir_ro
         // If is_true_no_arg_setter_scenario, args_c_code remains empty, has_args_to_print is false.
 
         // Perform the call
-        if (is_true_no_arg_setter_scenario) {
+        if (strcmp(prop->name, "style") == 0 && prop->value->type == IR_EXPR_REGISTRY_REF) {
+            // Special handling for "style": "@ref"
+            print_indent(indent);
+            char style_ptr_var[64];
+            snprintf(style_ptr_var, sizeof(style_ptr_var), "_style_ptr_%d", temp_arg_counter++);
+            printf("lv_style_t* %s = (lv_style_t*)", style_ptr_var);
+            codegen_expr(prop->value, api_spec, ir_root, obj, "lv_style_t*"); // Generates obj_registry_get("ref_name_no_at")
+            printf(";\n");
+
+            print_indent(indent);
+            printf("if (%s != NULL) {\n", style_ptr_var);
+            print_indent(indent + 1);
+            // Assuming selector 0 for now. A more complex system might get selector from JSON.
+            printf("lv_obj_add_style(%s, %s, 0);\n", obj->c_name, style_ptr_var);
+            print_indent(indent);
+            printf("} else {\n");
+            print_indent(indent + 1);
+            printf("fprintf(stderr, \"Warning: Style '%s' not found in registry for object '%s'.\\n\");\n",
+                   ((IRExprRegistryRef*)prop->value)->name, obj->c_name);
+            print_indent(indent);
+            printf("}\n");
+
+        } else if (is_true_no_arg_setter_scenario) {
             bool call_the_setter_for_toggle = false;
             if (prop->value->type == IR_EXPR_LITERAL) {
                 IRExprLiteral* lit = (IRExprLiteral*)prop->value;

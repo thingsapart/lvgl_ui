@@ -9,6 +9,8 @@ Warning: Invalid enum member 'LV_ALIGN_GARBAGE' for property 'align' (expected t
 
 void create_ui(lv_obj_t* parent) {
     lv_obj_t* widget2 = lv_obj_create(parent);
+    if (widget2 == NULL) render_abort("Error: Failed to create widget 'widget2' (type: base_widget).");
     obj_registry_add("widget2", (void*)widget2);
-    lv_obj_align(widget2, 0);
+    lv_align_t _arg_val_0 = 0;
+    lv_obj_align(widget2, _arg_val_0);
 }

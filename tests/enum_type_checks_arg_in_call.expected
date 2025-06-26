@@ -8,6 +8,8 @@
 
 void create_ui(lv_obj_t* parent) {
     lv_obj_t* widget5 = lv_obj_create(parent);
+    if (widget5 == NULL) render_abort("Error: Failed to create widget 'widget5' (type: obj).");
     obj_registry_add("widget5", (void*)widget5);
-    lv_obj_set_style_align(widget5, LV_ALIGN_CENTER);
+    void* _arg_val_0 = LV_ALIGN_CENTER;
+    lv_obj_set_style_align(widget5, _arg_val_0);
 }

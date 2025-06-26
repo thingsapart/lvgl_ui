@@ -3,9 +3,7 @@
     "type": "label",
     "id": "@actual_label",
     "named": "l_actual_label",
-    "properties": {
-      "text": "Some text"
-    }
+    "text": "Some text"
   },
   {
     "type": "obj",

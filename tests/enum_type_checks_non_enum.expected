@@ -8,6 +8,8 @@
 
 void create_ui(lv_obj_t* parent) {
     lv_obj_t* widget4 = lv_obj_create(parent);
+    if (widget4 == NULL) render_abort("Error: Failed to create widget 'widget4' (type: obj).");
     obj_registry_add("widget4", (void*)widget4);
-    lv_obj_set_style_width(widget4, 123);
+    void* _arg_val_0 = 123;
+    lv_obj_set_style_width(widget4, _arg_val_0);
 }
