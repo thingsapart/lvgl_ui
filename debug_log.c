@@ -6,7 +6,19 @@
 #include <strings.h> // For strcasecmp
 
 // Array to keep track of enabled modules. Initialized to false.
-static bool enabled_modules[LOG_MODULE_COUNT] = {false};
+static bool enabled_modules[LOG_MODULE_COUNT] = {
+  true,        // LOG_MODULE_NONE
+  false,       // LOG_MODULE_MAIN
+  false,       // LOG_MODULE_API_SPEC
+  true,        // LOG_MODULE_IR
+  false,       // LOG_MODULE_REGISTRY
+  true,        // LOG_MODULE_GENERATOR
+  true,        // LOG_MODULE_CODEGEN
+  true,        // LOG_MODULE_RENDERER
+  true,        // LOG_MODULE_DISPATCH
+  true,        // LOG_MODULE_UTILS
+  true,        // LOG_MODULE_SDL_VIEWER
+};
 
 // String names for modules, corresponding to the DebugLogModule enum
 static const char* module_names[LOG_MODULE_COUNT] = {
@@ -21,7 +33,6 @@ static const char* module_names[LOG_MODULE_COUNT] = {
     "DISPATCH",  // LOG_MODULE_DISPATCH
     "UTILS",     // LOG_MODULE_UTILS
     "SDLVIEWER", // LOG_MODULE_SDL_VIEWER
-    "COUNT"      // LOG_MODULE_COUNT - Placeholder, should not be used as a module name
 };
 
 // Helper function to get the string name of a module

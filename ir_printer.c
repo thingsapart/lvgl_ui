@@ -42,7 +42,7 @@ static void print_expr(IRExpr* expr) {
             break;
         }
         case IR_EXPR_CONTEXT_VAR: {
-            printf("%s", ((IRExprContextVar*)expr)->name);
+            printf("$%s", ((IRExprContextVar*)expr)->name);
             break;
         }
         case IR_EXPR_FUNCTION_CALL: {

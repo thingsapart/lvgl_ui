@@ -3,6 +3,7 @@
 #include <string.h> // For strdup, strcmp
 #include <stdio.h> // For perror, fprintf, stderr
 #include "utils.h" // For render_abort
+#include "debug_log.h"
 
 // --- Implementation ---
 
@@ -22,6 +23,8 @@ void registry_free(Registry* reg) {
     while (current_comp) {
         ComponentRegistryNode* next_comp = current_comp->next;
         free(current_comp->name);
+        // Note: component_root is a pointer to a node in the main cJSON doc,
+        // so we do NOT free it here. It's freed when cJSON_Delete is called on the root.
         free(current_comp);
         current_comp = next_comp;
     }
@@ -108,10 +111,11 @@ const char* registry_add_str(Registry* reg, const char* value) {
 
 void registry_add_component(Registry* reg, const char* name, const cJSON* component_root) {
     if (!reg || !name || !component_root) return;
+    const char* key = (name[0] == '@') ? name + 1 : name;
 
     ComponentRegistryNode* new_node = (ComponentRegistryNode*)malloc(sizeof(ComponentRegistryNode));
     if (!new_node) render_abort("Failed to allocate component registry node");
-    new_node->name = strdup(name);
+    new_node->name = strdup(key);
     new_node->component_root = component_root;
     new_node->next = reg->components;
     reg->components = new_node;
@@ -119,8 +123,10 @@ void registry_add_component(Registry* reg, const char* name, const cJSON* compon
 
 const cJSON* registry_get_component(const Registry* reg, const char* name) {
     if (!reg || !name) return NULL;
+    const char* key = (name[0] == '@') ? name + 1 : name;
+
     for (ComponentRegistryNode* node = reg->components; node; node = node->next) {
-        if (strcmp(node->name, name) == 0) return node->component_root;
+        if (strcmp(node->name, key) == 0) return node->component_root;
     }
     return NULL;
 }

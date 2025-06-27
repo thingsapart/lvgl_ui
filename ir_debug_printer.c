@@ -57,7 +57,7 @@ static void debug_print_expr(IRExpr* expr, int indent_level) {
             printf("name=%s\n", ((IRExprRegistryRef*)expr)->name);
             break;
         case IR_EXPR_CONTEXT_VAR:
-            printf("name=%s\n", ((IRExprContextVar*)expr)->name);
+            printf("name=$%s\n", ((IRExprContextVar*)expr)->name);
             break;
         case IR_EXPR_FUNCTION_CALL: {
             IRExprFunctionCall* call = (IRExprFunctionCall*)expr;

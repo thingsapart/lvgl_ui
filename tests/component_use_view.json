@@ -3,7 +3,7 @@
     "type": "component",
     "id": "@my_reusable_component",
     "named": "c_my_reusable_component",
-    "root": {
+    "content": {
       "type": "obj",
       "children": [
         {

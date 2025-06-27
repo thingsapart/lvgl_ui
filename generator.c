@@ -23,6 +23,7 @@ static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
 static bool types_compatible(const char* expected, const char* actual);
 static void check_function_args(GenContext* ctx, const char* func_name, IRExprNode* args_list);
+static void merge_json_objects(cJSON* dest, const cJSON* source);
 
 // --- Main Entry Point ---
 
@@ -45,6 +46,25 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
         render_abort("Failed to create registry.");
     }
 
+    // Pre-pass to find and register all components
+    cJSON* item_json = NULL;
+    cJSON_ArrayForEach(item_json, ui_spec_root) {
+        if (cJSON_IsObject(item_json)) {
+            cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item_json, "type");
+            if (type_item && cJSON_IsString(type_item) && strcmp(type_item->valuestring, "component") == 0) {
+                cJSON* id_item = cJSON_GetObjectItemCaseSensitive(item_json, "id");
+                cJSON* content_item = cJSON_GetObjectItemCaseSensitive(item_json, "content");
+                if (id_item && cJSON_IsString(id_item) && content_item && cJSON_IsObject(content_item)) {
+                    registry_add_component(ctx.registry, id_item->valuestring, content_item);
+                    DEBUG_LOG(LOG_MODULE_GENERATOR, "Registered component: %s", id_item->valuestring);
+                } else {
+                    DEBUG_LOG(LOG_MODULE_GENERATOR, "Warning: Found 'component' with missing 'id' or 'content'.");
+                }
+            }
+        }
+    }
+
+
     const char* root_parent_name = "parent";
     // Register the implicit parent so its type can be looked up.
     registry_add_generated_var(ctx.registry, root_parent_name, root_parent_name, "lv_obj_t*");
@@ -53,6 +73,12 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
     cJSON* obj_json = NULL;
     cJSON_ArrayForEach(obj_json, ui_spec_root) {
         if (cJSON_IsObject(obj_json)) {
+            // Skip component definitions in the main rendering pass
+            cJSON* type_item = cJSON_GetObjectItemCaseSensitive(obj_json, "type");
+            if (type_item && cJSON_IsString(type_item) && strcmp(type_item->valuestring, "component") == 0) {
+                continue;
+            }
+
             IRObject* new_obj = parse_object(&ctx, obj_json, root_parent_name, NULL);
             if (new_obj) ir_object_list_add(&ir_root->root_objects, new_obj);
         }
@@ -72,18 +98,70 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     const char* registered_id = NULL;
 
     cJSON* type_item = cJSON_GetObjectItem(obj_json, "type");
+    if (type_item && cJSON_IsString(type_item)) json_type_str = type_item->valuestring;
+
+    // Handle 'use-view' by replacing the current JSON node with the component's content
+    if (strcmp(json_type_str, "use-view") == 0) {
+        cJSON* id_item = cJSON_GetObjectItem(obj_json, "id");
+        if (!id_item || !cJSON_IsString(id_item)) {
+            DEBUG_LOG(LOG_MODULE_GENERATOR, "Error: 'use-view' requires a string 'id'.");
+            return NULL;
+        }
+
+        const cJSON* component_content = registry_get_component(ctx->registry, id_item->valuestring);
+        if (!component_content) {
+            DEBUG_LOG(LOG_MODULE_GENERATOR, "Error: Component '%s' not found for 'use-view'.", id_item->valuestring);
+            return NULL;
+        }
+
+        cJSON* merged_json = cJSON_Duplicate(component_content, true);
+        cJSON* prop_item = NULL;
+        cJSON_ArrayForEach(prop_item, obj_json) {
+            const char* key = prop_item->string;
+            if (strcmp(key, "type") == 0 || strcmp(key, "id") == 0 || strcmp(key, "context") == 0) continue;
+            if (cJSON_HasObjectItem(merged_json, key)) {
+                cJSON_ReplaceItemInObject(merged_json, key, cJSON_Duplicate(prop_item, true));
+            } else {
+                cJSON_AddItemToObject(merged_json, key, cJSON_Duplicate(prop_item, true));
+            }
+        }
+
+        cJSON* new_context = NULL;
+        cJSON* local_context = cJSON_GetObjectItem(obj_json, "context");
+        if (ui_context || local_context) {
+            new_context = cJSON_CreateObject();
+            if (ui_context) merge_json_objects(new_context, ui_context);
+            if (local_context) merge_json_objects(new_context, local_context);
+        }
+
+        IRObject* generated_obj = parse_object(ctx, merged_json, parent_c_name, new_context);
+
+        cJSON_Delete(merged_json);
+        if (new_context) cJSON_Delete(new_context);
+
+        return generated_obj;
+    }
+
+    // --- Regular Object Parsing ---
+    cJSON* new_scope_context = NULL;
+    const cJSON* effective_context = ui_context;
+    cJSON* local_context = cJSON_GetObjectItem(obj_json, "context");
+
+    if (local_context && cJSON_IsObject(local_context)) {
+        new_scope_context = cJSON_CreateObject();
+        if (ui_context) merge_json_objects(new_scope_context, ui_context);
+        merge_json_objects(new_scope_context, local_context);
+        effective_context = new_scope_context;
+    }
+
     cJSON* init_item = cJSON_GetObjectItem(obj_json, "init");
     cJSON* id_item = cJSON_GetObjectItem(obj_json, "id");
     if (!id_item) id_item = cJSON_GetObjectItem(obj_json, "name");
 
-    if (type_item && cJSON_IsString(type_item)) json_type_str = type_item->valuestring;
     if (id_item && cJSON_IsString(id_item)) registered_id = id_item->valuestring;
 
     char* c_name = generate_unique_var_name(ctx, registered_id ? registered_id : json_type_str);
 
-    // Determine the C type of the object we are creating.
-    // Every object in the JSON tree corresponds to a new widget/object instance.
-    // The "proxy object" concept is removed; if 'type' is missing, it's 'obj'.
     const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, json_type_str);
     if (init_item && cJSON_IsObject(init_item) && init_item->child) {
         object_c_type = api_spec_get_function_return_type(ctx->api_spec, init_item->child->string);
@@ -99,20 +177,13 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     free(c_name);
     if (registered_id) registry_add_generated_var(ctx->registry, registered_id, ir_obj->c_name, ir_obj->c_type);
 
-    // Since every JSON object creates a new C object, a constructor/initializer is always needed.
     const char* target_c_name_for_calls = ir_obj->c_name;
     if (init_item) {
-        // `init` takes precedence for creating the object.
-        ir_obj->constructor_expr = unmarshal_value(ctx, init_item, ui_context, object_c_type);
+        ir_obj->constructor_expr = unmarshal_value(ctx, init_item, effective_context, object_c_type);
     } else {
-        // `type` or typeless (defaulting to 'obj') case.
         const char* create_func = NULL;
-        if (widget_def && widget_def->create) {
-            create_func = widget_def->create;
-        } else if (strcmp(json_type_str, "obj") == 0) {
-            // FIX: Hardcode the create function for the base 'obj' type if not in spec.
-            create_func = "lv_obj_create";
-        }
+        if (widget_def && widget_def->create) create_func = widget_def->create;
+        else if (strcmp(json_type_str, "obj") == 0) create_func = "lv_obj_create";
 
         if (create_func) {
             IRExprNode* args = NULL;
@@ -121,7 +192,6 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             ir_obj->constructor_expr = ir_new_expr_func_call(create_func, args, ret_type);
             check_function_args(ctx, create_func, args);
         } else if (widget_def && widget_def->init_func) {
-            // For objects like styles that are initialized, not constructed via return value.
             IRExprNode* init_args = NULL;
             ir_expr_list_add(&init_args, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
             ir_expr_list_add(&ir_obj->setup_calls, ir_new_expr_func_call(widget_def->init_func, init_args, "void"));
@@ -129,12 +199,11 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         }
     }
 
-    // Process all other keys as properties or methods.
     cJSON* prop_item = NULL;
     cJSON_ArrayForEach(prop_item, obj_json) {
         const char* key = prop_item->string;
         if (strcmp(key, "type") == 0 || strcmp(key, "init") == 0 || strcmp(key, "id") == 0 ||
-            strcmp(key, "name") == 0 || strcmp(key, "children") == 0) continue;
+            strcmp(key, "name") == 0 || strcmp(key, "children") == 0 || strcmp(key, "context") == 0) continue;
 
         const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, ir_obj->json_type, key);
         const char* func_name = (prop_def && prop_def->setter) ? prop_def->setter : (api_spec_has_function(ctx->api_spec, key) ? key : NULL);
@@ -152,7 +221,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         if (takes_implicit_obj) {
             const char* target_c_type = registry_get_c_type_for_id(ctx->registry, target_c_name_for_calls);
             ir_expr_list_add(&final_args, ir_new_expr_registry_ref(target_c_name_for_calls, target_c_type));
-            if(current_expected_arg) current_expected_arg = current_expected_arg->next; // Advance to next expected arg
+            if(current_expected_arg) current_expected_arg = current_expected_arg->next;
         }
 
         cJSON* prop_val_array = cJSON_IsArray(prop_item) ? prop_item : NULL;
@@ -160,13 +229,13 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             cJSON* val_item = NULL;
             cJSON_ArrayForEach(val_item, prop_val_array) {
                 const char* expected_type = current_expected_arg ? current_expected_arg->type : "unknown";
-                IRExpr* arg_expr = unmarshal_value(ctx, val_item, ui_context, expected_type);
+                IRExpr* arg_expr = unmarshal_value(ctx, val_item, effective_context, expected_type);
                 if (arg_expr) ir_expr_list_add(&final_args, arg_expr);
                 if (current_expected_arg) current_expected_arg = current_expected_arg->next;
             }
         } else {
             const char* expected_type = current_expected_arg ? current_expected_arg->type : "unknown";
-            IRExpr* arg_expr = unmarshal_value(ctx, prop_item, ui_context, expected_type);
+            IRExpr* arg_expr = unmarshal_value(ctx, prop_item, effective_context, expected_type);
             if (arg_expr) ir_expr_list_add(&final_args, arg_expr);
         }
 
@@ -180,9 +249,11 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         const char* child_parent_c_name = ir_obj->c_name;
         cJSON* child_json = NULL;
         cJSON_ArrayForEach(child_json, children_item) {
-            ir_object_list_add(&ir_obj->children, parse_object(ctx, child_json, child_parent_c_name, ui_context));
+            ir_object_list_add(&ir_obj->children, parse_object(ctx, child_json, child_parent_c_name, effective_context));
         }
     }
+
+    if (new_scope_context) cJSON_Delete(new_scope_context);
 
     return ir_obj;
 }
@@ -198,38 +269,40 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         const char* s = value->valuestring;
         size_t len = strlen(s);
 
-        if (s[0] == '$') return ir_new_expr_context_var(s + 1, "unknown");
+        if (s[0] == '$') {
+            const char* var_name = s + 1;
+            if (ui_context && cJSON_IsObject(ui_context)) {
+                const cJSON* context_val = cJSON_GetObjectItem(ui_context, var_name);
+                if (context_val) {
+                    return unmarshal_value(ctx, (cJSON*)context_val, ui_context, expected_c_type);
+                }
+            }
+            DEBUG_LOG(LOG_MODULE_GENERATOR, "Warning: Context variable '%s' not found.", s);
+            return ir_new_expr_context_var(var_name, "unknown");
+        }
         if (s[0] == '@') {
             const char* type = registry_get_c_type_for_id(ctx->registry, s);
             return ir_new_expr_registry_ref(s, type ? type : "unknown");
         }
         if (s[0] == '!') return ir_new_expr_static_string(s + 1);
 
-        // --- BUG FIX STARTS HERE ---
-        if (s[0] == '#') { // Hex color
+        if (s[0] == '#') {
             long hex_val = strtol(s + 1, NULL, 16);
             char hex_str_arg[32];
             snprintf(hex_str_arg, sizeof(hex_str_arg), "0x%06lX", hex_val);
-
-            // Correctly build the argument list for lv_color_hex
             IRExprNode* args = NULL;
             ir_expr_list_add(&args, ir_new_expr_literal(hex_str_arg, "uint32_t"));
-
             return ir_new_expr_func_call("lv_color_hex", args, "lv_color_t");
         }
-        if (len > 0 && s[len - 1] == '%') { // Percentage
+        if (len > 0 && s[len - 1] == '%') {
             char* temp_s = strdup(s);
             if (!temp_s) return NULL;
             temp_s[len - 1] = '\0';
-
-            // Correctly build the argument list for lv_pct
             IRExprNode* args = NULL;
             ir_expr_list_add(&args, ir_new_expr_literal(temp_s, "int32_t"));
             free(temp_s);
-
             return ir_new_expr_func_call("lv_pct", args, "lv_coord_t");
         }
-        // --- BUG FIX ENDS HERE ---
 
         if (api_spec_is_enum_member(ctx->api_spec, expected_c_type, s)) {
             return ir_new_expr_enum(s, 0, expected_c_type);
@@ -243,7 +316,6 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
     if (cJSON_IsNumber(value)) {
         char buf[32];
         snprintf(buf, sizeof(buf), "%g", value->valuedouble);
-        // Coerce to expected type if it's a number-like type, otherwise default to int
         const char* type_str = (expected_c_type && (strstr(expected_c_type, "int") || strstr(expected_c_type, "coord"))) ? expected_c_type : "int";
         return ir_new_expr_literal(buf, type_str);
     }
@@ -280,6 +352,18 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
 }
 
 // --- Type Checking & Helpers ---
+
+static void merge_json_objects(cJSON* dest, const cJSON* source) {
+    if (!cJSON_IsObject(dest) || !cJSON_IsObject(source)) return;
+    cJSON* item = NULL;
+    cJSON_ArrayForEach(item, source) {
+        if (cJSON_HasObjectItem(dest, item->string)) {
+            cJSON_ReplaceItemInObject(dest, item->string, cJSON_Duplicate(item, true));
+        } else {
+            cJSON_AddItemToObject(dest, item->string, cJSON_Duplicate(item, true));
+        }
+    }
+}
 
 static bool types_compatible(const char* expected, const char* actual) {
     if (!expected || !actual) return false;
