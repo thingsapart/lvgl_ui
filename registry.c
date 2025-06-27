@@ -64,11 +64,12 @@ void registry_free(Registry* reg) {
 
 void registry_add_pointer(Registry* reg, void* ptr, const char* id, const char* json_type, const char* c_type) {
     if (!reg || !id || !ptr) return;
+    const char* key = (id[0] == '@') ? id + 1 : id;
 
     PointerRegistryNode* new_node = (PointerRegistryNode*)calloc(1, sizeof(PointerRegistryNode));
     if (!new_node) render_abort("Failed to allocate pointer registry node");
 
-    new_node->id = strdup(id);
+    new_node->id = strdup(key);
     new_node->json_type = strdup(json_type);
     new_node->c_type = strdup(c_type);
     new_node->ptr = ptr;
@@ -78,8 +79,9 @@ void registry_add_pointer(Registry* reg, void* ptr, const char* id, const char* 
 
 void* registry_get_pointer(const Registry* reg, const char* id, const char* type) {
     if (!reg || !id) return NULL;
+    const char* key = (id[0] == '@') ? id + 1 : id;
     for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
-        if (strcmp(node->id, id) == 0) {
+        if (strcmp(node->id, key) == 0) {
             if (type && node->json_type && strcmp(node->json_type, type) == 0) {
                 return node->ptr;
             } else if (!type) {
@@ -124,19 +126,28 @@ void registry_add_component(Registry* reg, const char* name, const cJSON* compon
 const cJSON* registry_get_component(const Registry* reg, const char* name) {
     if (!reg || !name) return NULL;
     const char* key = (name[0] == '@') ? name + 1 : name;
-
     for (ComponentRegistryNode* node = reg->components; node; node = node->next) {
         if (strcmp(node->name, key) == 0) return node->component_root;
     }
     return NULL;
 }
 
+void registry_print_components(const Registry* reg) {
+    if (!reg) return;
+    for (ComponentRegistryNode* node = reg->components; node; node = node->next) {
+      printf("Component %s:\n", node->name);
+      cJSON_Print(node->component_root);
+    }
+
+}
+
 void registry_add_generated_var(Registry* reg, const char* name, const char* c_var_name, const char* c_type) {
-    if (!reg || !name || !c_var_name) return;
+    if (!reg || !name || !c_var_name || !c_type) return;
+    const char* key = (name[0] == '@') ? name + 1 : name;
 
     VarRegistryNode* new_node = (VarRegistryNode*)malloc(sizeof(VarRegistryNode));
     if (!new_node) render_abort("Failed to allocate var registry node");
-    new_node->name = strdup(name);
+    new_node->name = strdup(key);
     new_node->c_var_name = strdup(c_var_name);
     new_node->c_type = strdup(c_type);
 
@@ -146,21 +157,23 @@ void registry_add_generated_var(Registry* reg, const char* name, const char* c_v
 
 const char* registry_get_generated_var(const Registry* reg, const char* name) {
     if (!reg || !name) return NULL;
+    const char* key = (name[0] == '@') ? name + 1 : name;
     for (VarRegistryNode* node = reg->generated_vars; node; node = node->next) {
-        if (strcmp(node->name, name) == 0) return node->c_var_name;
+        if (strcmp(node->name, key) == 0) return node->c_var_name;
     }
     return NULL;
 }
 
 const char* registry_get_c_type_for_id(const Registry* reg, const char* name) {
     if (!reg || !name) return NULL;
+    const char* key = (name[0] == '@') ? name + 1 : name;
     // Check generated variables first
     for (VarRegistryNode* node = reg->generated_vars; node; node = node->next) {
-        if (strcmp(node->name, name) == 0) return node->c_type;
+        if (strcmp(node->name, key) == 0) return node->c_type;
     }
     // Check runtime pointers
     for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
-        if (strcmp(node->id, name) == 0) return node->c_type;
+        if (strcmp(node->id, key) == 0) return node->c_type;
     }
     return NULL; // Not found
 }

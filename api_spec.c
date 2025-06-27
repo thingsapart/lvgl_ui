@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 // Helper to safely strdup, returning NULL if input is NULL
 static char* safe_strdup(const char* s) {
@@ -704,6 +705,43 @@ bool api_spec_is_constant(const ApiSpec* spec, const char* const_name) {
     return cJSON_GetObjectItem(spec->constants, const_name) != NULL;
 }
 
+bool api_spec_find_constant_value(const ApiSpec* spec, const char* const_name, long* out_value) {
+    if (!spec || !spec->constants || !const_name || !out_value) {
+        return false;
+    }
+
+    const cJSON* const_json = cJSON_GetObjectItemCaseSensitive(spec->constants, const_name);
+    if (!const_json) {
+        return false;
+    }
+
+    if (cJSON_IsNumber(const_json)) {
+        *out_value = (long)const_json->valuedouble;
+        return true;
+    }
+
+    if (cJSON_IsString(const_json) && const_json->valuestring) {
+        char* endptr;
+        const char* str_val = const_json->valuestring;
+
+        // Skip leading non-digit/non-minus characters (like parentheses)
+        while (*str_val && !isdigit((unsigned char)*str_val) && *str_val != '-' && *str_val != '+') {
+            str_val++;
+        }
+
+        // strtol with base 0 will automatically handle "0x" prefixes for hex.
+        long val = strtol(str_val, &endptr, 0);
+
+        // Check if a conversion was actually made.
+        if (endptr != str_val) {
+            *out_value = val;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool api_spec_has_function(const ApiSpec* spec, const char* func_name) {
     if (!spec || !spec->functions || !func_name) {
         return false;
@@ -773,4 +811,3 @@ const FunctionDefinition* api_spec_find_function(const ApiSpec* spec, const char
 
     return NULL; // Function not found
 }
-

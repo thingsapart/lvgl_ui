@@ -91,7 +91,7 @@
   {
     "type": "component",
     "id": "@axis_jog_speed_adjust",
-    "root": {
+    "content": {
       "add_style": [
         "@flex_x",
         0
@@ -170,7 +170,7 @@
   {
     "type": "component",
     "id": "@axis_pos_display",
-    "root": {
+    "content": {
       "add_style": [
         "@flex_y",
         0
@@ -284,7 +284,7 @@
   {
     "type": "component",
     "id": "@feed_rate_scale",
-    "root": {
+    "content": {
       "size": [
         "100%",
         "100%"
@@ -457,7 +457,7 @@
   {
     "type": "component",
     "id": "@jog_feed",
-    "root": {
+    "content": {
       "size": [
         "100%",
         "100%"
@@ -637,7 +637,7 @@
   {
     "type": "component",
     "id": "@nav_action_button",
-    "root": {
+    "content": {
       "type": "dropdown",
       "add_style": [
         "@action_button",
@@ -653,21 +653,20 @@
       "lv_dropdown_set_text": "!",
       "symbol": null,
       "move_foreground": [],
-      "with": {
-        "obj": {
-          "call": "lv_dropdown_get_list",
-          "args": []
-        },
-        "do": {
+      "children": [
+        {
+          "init": {
+            "lv_dropdown_get_list": []
+          },
           "min_width": 200
         }
-      }
+      ]
     }
   },
   {
     "type": "component",
     "id": "@jog_action_button",
-    "root": {
+    "content": {
       "type": "dropdown",
       "options": " Home\n Zero\n G54\n G55\n G56\n G57\n G58",
       "add_style": [
@@ -684,21 +683,20 @@
       "symbol": null,
       "move_foreground": [],
       "named": "jog_action_button",
-      "with": {
-        "obj": {
-          "call": "lv_dropdown_get_list",
-          "args": []
-        },
-        "do": {
+      "children": [
+        {
+          "init": {
+            "lv_dropdown_get_list": []
+          },
           "min_width": 200
         }
-      }
+      ]
     }
   },
   {
     "type": "component",
     "id": "@xyz_axis_pos_display",
-    "root": {
+    "content": {
       "layout": "LV_LAYOUT_FLEX",
       "flex_flow": "LV_FLEX_FLOW_COLUMN",
       "add_style": [
@@ -750,7 +748,7 @@
   {
     "type": "component",
     "id": "@jog_view",
-    "root": {
+    "content": {
       "layout": "LV_LAYOUT_FLEX",
       "flex_flow": "LV_FLEX_FLOW_ROW",
       "add_style": [
@@ -851,7 +849,7 @@
   {
     "type": "component",
     "id": "@btn_label",
-    "root": {
+    "content": {
       "type": "button",
       "children": [
         {
@@ -953,27 +951,24 @@
     ],
     "pad_row": 0,
     "pad_column": 0,
-    "with": {
-      "obj": {
-        "call": "lv_tileview_add_tile",
-        "args": [
-          0,
-          0,
-          "LV_DIR_RIGHT"
-        ]
+    "children": [
+      {
+        "init": {
+          "lv_tileview_add_tile": [
+            0,
+            0,
+            "LV_DIR_RIGHT"
+          ]
+        }
       },
-      "do": null
-    },
-    "with": {
-      "obj": {
-        "call": "lv_tileview_add_tile",
-        "args": [
-          0,
-          0,
-          "LV_DIR_RIGHT"
-        ]
-      },
-      "do": {
+      {
+        "init": {
+          "lv_tileview_add_tile": [
+            0,
+            0,
+            "LV_DIR_RIGHT"
+          ]
+        },
         "add_style": [
           "@container",
           0
@@ -987,34 +982,36 @@
             "text": "Scroll right"
           }
         ]
-      }
-    },
-    "with": {
-      "obj": {
-        "call": "lv_tileview_add_tile",
-        "args": [
-          1,
-          0,
-          "LV_DIR_LEFT"
-        ]
       },
-      "do": {
+      {
+        "init": {
+          "lv_tileview_add_tile": [
+            1,
+            0,
+            "LV_DIR_LEFT"
+          ]
+        },
         "add_style": [
           "@container",
           0
         ],
         "children": [
           {
+            "type": "label",
+            "text": "TEST"
+          },
+          {
             "type": "use-view",
             "id": "@jog_view"
           }
         ]
       }
-    }
+    ]
   },
   {
-    "type": "use-view",
-    "id": "@nav_action_button"
+    "type": "label",
+    "id": "@nav_action_button",
+    "name": "s_nav_action_button"
   },
   {
     "type": "use-view",

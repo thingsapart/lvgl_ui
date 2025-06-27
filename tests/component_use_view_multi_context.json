@@ -1,0 +1,82 @@
+[
+  {
+    "type": "style",
+    "id": "@container",
+    "size": ["100%", "100%"]
+  },
+  {
+    "type": "component",
+    "id": "@my_reusable_component",
+    "name": "c_my_reusable_component",
+    "content": {
+      "type": "obj",
+      "children": [
+        {
+          "type": "label",
+          "text": "Hello from component"
+        },
+        {
+          "type": "button",
+          "name": "comp_button",
+          "children": [
+            {
+              "type": "label",
+              "text": "$label"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "type": "component",
+    "id": "@my_reusable_component_2",
+    "name": "c_my_reusable_component_2",
+    "content": {
+      "type": "obj",
+      "children": [
+        {
+          "type": "button",
+          "name": "comp_button",
+          "children": [
+            {
+              "type": "label",
+              "text": "$label_comp_2"
+            }
+          ]
+        },
+        {
+          "type": "label",
+          "text": "This is component 2!"
+        }
+      ]
+    }
+  },
+  {
+    "type": "obj",
+    "id": "main_view",
+    "name": "v_main_view",
+    "size": ["100%", "100%"],
+    "add_style": "@container",
+    "children": [
+      {
+        "type": "label",
+        "text": "Main view label"
+      },
+      {
+        "type": "use-view",
+        "context": { "label": "THIS CAME FROM CONTEXT" },
+        "id": "@my_reusable_component",
+        "id": "instance_of_component",
+        "name": "uv_instance_1"
+      },
+      {
+        "type": "use-view",
+        "context": { "label_comp_2": "CONTEXT:: Component 2" },
+        "id": "@my_reusable_component_2",
+        "id": "instance_of_component_2",
+        "name": "uv_instance_2"
+      }
+    ]
+  }
+]

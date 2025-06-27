@@ -46,6 +46,7 @@ void registry_free(Registry* reg);
 // --- Component Management ---
 void registry_add_component(Registry* reg, const char* name, const cJSON* component_root);
 const cJSON* registry_get_component(const Registry* reg, const char* name);
+void registry_print_components(const Registry* reg);
 
 // --- Generated Variable Name Management ---
 void registry_add_generated_var(Registry* reg, const char* name, const char* c_var_name, const char* c_type);

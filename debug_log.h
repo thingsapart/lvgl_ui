@@ -45,7 +45,7 @@ void _debug_log_print(DebugLogModule module, const char *file, int line, const c
 // Example: DEBUG_LOG(LOG_MODULE_GENERATOR, "Processing item %d", my_item);
 #define DEBUG_LOG(module, format, ...) \
     do { \
-        if (debug_log_is_module_enabled(module)) { \
+        if (true || debug_log_is_module_enabled(module)) { \
             _debug_log_print(module, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__); \
         } \
     } while (0)

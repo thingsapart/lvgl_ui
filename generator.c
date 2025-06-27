@@ -95,7 +95,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
     const char* json_type_str = "obj";
     const char* object_c_type = "lv_obj_t*";
-    const char* registered_id = NULL;
+    const char* registered_id_from_json = NULL;
 
     cJSON* type_item = cJSON_GetObjectItem(obj_json, "type");
     if (type_item && cJSON_IsString(type_item)) json_type_str = type_item->valuestring;
@@ -110,6 +110,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
         const cJSON* component_content = registry_get_component(ctx->registry, id_item->valuestring);
         if (!component_content) {
+            registry_print_components(ctx->registry);
             DEBUG_LOG(LOG_MODULE_GENERATOR, "Error: Component '%s' not found for 'use-view'.", id_item->valuestring);
             return NULL;
         }
@@ -158,9 +159,9 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     cJSON* id_item = cJSON_GetObjectItem(obj_json, "id");
     if (!id_item) id_item = cJSON_GetObjectItem(obj_json, "name");
 
-    if (id_item && cJSON_IsString(id_item)) registered_id = id_item->valuestring;
+    if (id_item && cJSON_IsString(id_item)) registered_id_from_json = id_item->valuestring;
 
-    char* c_name = generate_unique_var_name(ctx, registered_id ? registered_id : json_type_str);
+    char* c_name = generate_unique_var_name(ctx, registered_id_from_json ? registered_id_from_json : json_type_str);
 
     const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, json_type_str);
     if (init_item && cJSON_IsObject(init_item) && init_item->child) {
@@ -173,9 +174,28 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         }
     }
 
-    IRObject* ir_obj = ir_new_object(c_name, json_type_str, object_c_type, registered_id);
+    const char* clean_id = registered_id_from_json;
+    if (clean_id && clean_id[0] == '@') {
+        clean_id++;
+    }
+
+    IRObject* ir_obj = ir_new_object(c_name, json_type_str, object_c_type, clean_id);
     free(c_name);
-    if (registered_id) registry_add_generated_var(ctx->registry, registered_id, ir_obj->c_name, ir_obj->c_type);
+
+    if (registered_id_from_json) {
+        registry_add_generated_var(ctx->registry, registered_id_from_json, ir_obj->c_name, ir_obj->c_type);
+
+        // Add the runtime registration instruction if an ID is present
+        const char* id_for_runtime = (registered_id_from_json[0] == '@') ? registered_id_from_json + 1 : registered_id_from_json;
+        IRExpr* obj_ref_expr = ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type);
+        IRExpr* reg_call_expr = ir_new_expr_runtime_reg_add(id_for_runtime, obj_ref_expr);
+
+        IRExprNode* reg_call_node = calloc(1, sizeof(IRExprNode));
+        if (!reg_call_node) render_abort("Failed to allocate IRExprNode for registration.");
+        reg_call_node->expr = reg_call_expr;
+        reg_call_node->next = ir_obj->setup_calls;
+        ir_obj->setup_calls = reg_call_node;
+    }
 
     const char* target_c_name_for_calls = ir_obj->c_name;
     if (init_item) {
@@ -187,7 +207,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
         if (create_func) {
             IRExprNode* args = NULL;
-            ir_expr_list_add(&args, ir_new_expr_registry_ref(parent_c_name, registry_get_c_type_for_id(ctx->registry, parent_c_name)));
+            ir_expr_list_add(&args, ir_new_expr_registry_ref("parent", registry_get_c_type_for_id(ctx->registry, parent_c_name)));
             const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, create_func);
             ir_obj->constructor_expr = ir_new_expr_func_call(create_func, args, ret_type);
             check_function_args(ctx, create_func, args);
@@ -302,6 +322,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             ir_expr_list_add(&args, ir_new_expr_literal(temp_s, "int32_t"));
             free(temp_s);
             return ir_new_expr_func_call("lv_pct", args, "lv_coord_t");
+        }
+
+        long const_val;
+        if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%ld", const_val);
+            return ir_new_expr_literal(buf, "int");
         }
 
         if (api_spec_is_enum_member(ctx->api_spec, expected_c_type, s)) {

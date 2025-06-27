@@ -1,0 +1,51 @@
+[
+  {
+    "type": "style",
+    "id": "@container",
+    "size": ["100%", "100%"]
+  },
+  {
+    "type": "component",
+    "id": "@my_reusable_component",
+    "name": "c_my_reusable_component",
+    "content": {
+      "type": "obj",
+      "children": [
+        {
+          "type": "label",
+          "text": "Hello from component"
+        },
+        {
+          "type": "button",
+          "name": "comp_button",
+          "children": [
+            {
+              "type": "label",
+              "text": "$label"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "type": "obj",
+    "id": "main_view",
+    "name": "v_main_view",
+    "size": ["100%", "100%"],
+    "add_style": "@container",
+    "children": [
+      {
+        "type": "label",
+        "text": "Main view label"
+      },
+      {
+        "type": "use-view",
+        "context": { "label": "THIS CAME FROM CONTEXT" },
+        "id": "@my_reusable_component",
+        "id": "instance_of_component",
+        "name": "uv_instance_1"
+      }
+    ]
+  }
+]

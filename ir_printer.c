@@ -69,6 +69,13 @@ static void print_expr(IRExpr* expr) {
             printf("]");
             break;
         }
+        case IR_EXPR_RUNTIME_REG_ADD: {
+            IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
+            printf("register(\"%s\", ", reg->id);
+            print_expr(reg->object_expr);
+            printf(")");
+            break;
+        }
         default:
             printf("UNKNOWN_EXPR");
             break;

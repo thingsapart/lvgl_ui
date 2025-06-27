@@ -14,6 +14,7 @@ static void free_property_list(IRProperty* head);
 static void free_with_block_list(IRWithBlock* head);
 static void free_object_list(IRObject* head);
 static void free_component_def_list(IRComponent* head);
+static void free_expr(IRExpr* expr);
 
 // --- Factory functions for Expressions ---
 
@@ -83,6 +84,15 @@ IRExpr* ir_new_expr_context_var(const char* name, const char* c_type) {
     var->base.c_type = safe_strdup(c_type);
     var->name = safe_strdup(name);
     return (IRExpr*)var;
+}
+
+IRExpr* ir_new_expr_runtime_reg_add(const char* id, IRExpr* object_expr) {
+    IRExprRuntimeRegAdd* reg = calloc(1, sizeof(IRExprRuntimeRegAdd));
+    reg->base.base.type = IR_EXPR_RUNTIME_REG_ADD;
+    reg->base.c_type = safe_strdup("void"); // Registration function assumed to return void
+    reg->id = safe_strdup(id);
+    reg->object_expr = object_expr;
+    return (IRExpr*)reg;
 }
 
 // --- Factory functions for High-Level Constructs ---
@@ -179,6 +189,12 @@ static void free_expr(IRExpr* expr) {
             break;
         }
         case IR_EXPR_ARRAY: free_expr_list(((IRExprArray*)expr)->elements); break;
+        case IR_EXPR_RUNTIME_REG_ADD: {
+            IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
+            free(reg->id);
+            free_expr(reg->object_expr);
+            break;
+        }
         default: break;
     }
     free(expr);
@@ -281,6 +297,7 @@ void ir_free(IRNode* node) {
         case IR_EXPR_CONTEXT_VAR:
         case IR_EXPR_FUNCTION_CALL:
         case IR_EXPR_ARRAY:
+        case IR_EXPR_RUNTIME_REG_ADD:
             free_expr((IRExpr*)node);
             return; // free_expr already frees the node itself.
         default: break;

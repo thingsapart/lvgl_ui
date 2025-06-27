@@ -25,6 +25,7 @@ static const char* get_ir_node_type_str(int type) {
         case IR_EXPR_REGISTRY_REF: return "IR_EXPR_REGISTRY_REF";
         case IR_EXPR_CONTEXT_VAR: return "IR_EXPR_CONTEXT_VAR";
         case IR_EXPR_STATIC_STRING: return "IR_EXPR_STATIC_STRING";
+        case IR_EXPR_RUNTIME_REG_ADD: return "IR_EXPR_RUNTIME_REG_ADD";
         default: return "UNKNOWN_NODE_TYPE";
     }
 }
@@ -72,6 +73,14 @@ static void debug_print_expr(IRExpr* expr, int indent_level) {
             debug_print_indent(indent_level + 1);
             printf("[ELEMENTS]\n");
             debug_print_expr_list(((IRExprArray*)expr)->elements, indent_level + 2);
+            break;
+        }
+        case IR_EXPR_RUNTIME_REG_ADD: {
+            IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
+            printf("id=\"%s\"\n", reg->id);
+            debug_print_indent(indent_level + 1);
+            printf("[OBJECT_EXPR]\n");
+            debug_print_expr(reg->object_expr, indent_level + 2);
             break;
         }
         default:

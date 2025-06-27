@@ -86,7 +86,7 @@
 # Components/Sub-Views
 - type: component
   id: '@axis_jog_speed_adjust'
-  root:
+  content:
     add_style: ['@flex_x', 0]
     add_style: ['@container', 0]
     size: [100%, LV_SIZE_CONTENT]
@@ -119,7 +119,7 @@
 
 - type: component
   id: '@axis_pos_display'
-  root:
+  content:
     add_style: ['@flex_y', 0]
     add_style: ['@container', 0]
     size: [100%, LV_SIZE_CONTENT]
@@ -179,7 +179,7 @@
 
 - type: component
   id: '@feed_rate_scale'
-  root:
+  content:
     size: [100%, 100%]
     add_style: ['@container', 0]
     layout: LV_LAYOUT_FLEX
@@ -266,7 +266,7 @@
 
 - type: component
   id: '@jog_feed'
-  root:
+  content:
     size: [100%, 100%]
     add_style: ['@container', 0]
     layout: LV_LAYOUT_FLEX
@@ -348,7 +348,7 @@
 
 - type: component
   id: '@nav_action_button'
-  root:
+  content:
     type: dropdown
     add_style: ['@action_button', 0]
     options: "\uF124 Jog\n\uF019 Probe\n\uF074 Status\n\uF079 X\n\uF079 y\n\uF079 Z\n\uF079 Off"
@@ -357,14 +357,13 @@
     lv_dropdown_set_text: "!\uF0C9"
     symbol: null
     move_foreground: []
-    with:
-      obj: { call: 'lv_dropdown_get_list', args: [] }
-      do:
+    children:
+      - init: { lv_dropdown_get_list: [] }
         min_width: 200
 
 - type: component
   id: '@jog_action_button'
-  root:
+  content:
     type: dropdown
     options: "\uF015 Home\n\uF021 Zero\n\uF074 G54\n\uF074 G55\n\uF074 G56\n\uF074 G57\n\uF074 G58"
     add_style: ['@action_button', 0]
@@ -374,15 +373,14 @@
     symbol: null
     move_foreground: []
     named: jog_action_button
-    with:
-      obj: { call: 'lv_dropdown_get_list', args: [] }
-      do:
+    children:
+      - init: { lv_dropdown_get_list: [] }
         min_width: 200
 
 # XYZ position display
 - type: component
   id: '@xyz_axis_pos_display'
-  root:
+  content:
     layout: LV_LAYOUT_FLEX
     flex_flow: LV_FLEX_FLOW_COLUMN
     add_style: ['@container', 0]
@@ -417,7 +415,7 @@
 # Jog View
 - type: component
   id: '@jog_view'
-  root:
+  content:
     layout: LV_LAYOUT_FLEX
     flex_flow: LV_FLEX_FLOW_ROW
     add_style: ['@container', 0]
@@ -490,7 +488,7 @@
 
 - type: component
   id: '@btn_label'
-  root:
+  content:
     type: button
     children:
       - type: label
@@ -537,12 +535,9 @@
   size: [100%, 100%]
   pad_row: 0
   pad_column: 0
-  with:
-    obj: { call: lv_tileview_add_tile, args: [0, 0, LV_DIR_RIGHT] }
-    do:
-  with:
-    obj: { call: lv_tileview_add_tile, args: [0, 0, LV_DIR_RIGHT] }
-    do:
+  children:
+    - init: { lv_tileview_add_tile: [0, 0, LV_DIR_RIGHT] }
+    - init: { lv_tileview_add_tile: [0, 0, LV_DIR_RIGHT] }
       add_style: ['@container', 0]
       bg_color: '#ff0000'
       bg_opa: LV_OPA_COVER
@@ -550,16 +545,18 @@
         - type: label
           center: []
           text: 'Scroll right'
-  with:
-    obj: { call: lv_tileview_add_tile, args: [1, 0, LV_DIR_LEFT] }
-    do:
+    - init: { lv_tileview_add_tile: [1, 0, LV_DIR_LEFT] }
       add_style: ['@container', 0]
       children:
+        - type: label
+          text: 'TEST'
         - type: use-view
           id: '@jog_view'
 
-- type: use-view
+# - type: use-view
+- type: label
   id: '@nav_action_button'
+  name: 's_nav_action_button'
 
 - type: use-view
   id: '@jog_action_button'

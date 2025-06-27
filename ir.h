@@ -31,7 +31,8 @@ typedef struct IRNode {
         IR_EXPR_ARRAY,
         IR_EXPR_REGISTRY_REF, // @name
         IR_EXPR_CONTEXT_VAR,  // $name
-        IR_EXPR_STATIC_STRING // !string
+        IR_EXPR_STATIC_STRING, // !string
+        IR_EXPR_RUNTIME_REG_ADD
     } type;
 } IRNode;
 
@@ -96,6 +97,13 @@ typedef struct {
     char* name;
 } IRExprContextVar;
 
+// Represents a call to the runtime object registry
+typedef struct {
+    IRExpr base;
+    char* id; // The string ID for registration
+    IRExpr* object_expr; // Expression for the object pointer (usually a RegistryRef)
+} IRExprRuntimeRegAdd;
+
 
 // --- High-Level UI Constructs ---
 
@@ -157,6 +165,7 @@ IRExpr* ir_new_expr_func_call(const char* func_name, IRExprNode* args, const cha
 IRExpr* ir_new_expr_array(IRExprNode* elements, const char* array_c_type);
 IRExpr* ir_new_expr_registry_ref(const char* name, const char* c_type);
 IRExpr* ir_new_expr_context_var(const char* name, const char* c_type);
+IRExpr* ir_new_expr_runtime_reg_add(const char* id, IRExpr* object_expr);
 
 // --- Factory functions for High-Level Constructs ---
 IRRoot* ir_new_root();
