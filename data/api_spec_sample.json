@@ -1,0 +1,529 @@
+{
+  "constants": {
+    "LV_ANIM_ON": "true",
+    "LV_ANIM_PLAYTIME_INFINITE": "0xFFFFFFFF",
+    "LV_BTNMATRIX_CTRL_CHECKABLE": "V_BTTONMATRIX_CTR_CHECKABE",
+    "LV_CHART_POINT_NONE": "(INT32_MAX)",
+    "LV_COORD_MAX": "((1 << V_COORD_TYPE_SHIFT) - 1)",
+    "LV_DISP_ROTATION_90": "V_DISPAY_ROTATION_90",
+    "LV_FLEX_COLUMN": "(1 << 0)",
+    "LV_GRID_CONTENT": "( V_COORD_MAX - 101)",
+    "LV_HOR_RES": "lv_display_get_horizontal_resolution ( lv_display_get_default ())",
+    "LV_LABEL_LONG_SCROLL": "V_ABE_ONG_MODE_SCRO",
+    "LV_LOG_LEVEL_ERROR": "3",
+    "LV_OPA_MAX": "253",
+    "LV_RADIUS_CIRCLE": "0x7FFF",
+    "LV_SIZE_CONTENT": "V_COORD_SET_SPEC( V_COORD_MAX )",
+    "LV_STYLE_WIDTH": "0x001",
+    "LV_STYLE_BG_COLOR": "0x01C",
+    "LV_STYLE_TEXT_FONT": "0x05A",
+    "LV_SYMBOL_OK": "\"\\xEF\\x80\\x8C\" /*61452, 0xF00C*/",
+    "LV_TABLE_CELL_NONE": "0XFFFF",
+    "LV_VER_RES": "lv_display_get_vertical_resolution ( lv_display_get_default ())"
+  },
+  "enums": {
+    "lv_align_t": {
+      "LV_ALIGN_DEFAULT": "0x00",
+      "LV_ALIGN_TOP_LEFT": "0x01",
+      "LV_ALIGN_TOP_MID": "0x02",
+      "LV_ALIGN_TOP_RIGHT": "0x03",
+      "LV_ALIGN_BOTTOM_LEFT": "0x04",
+      "LV_ALIGN_BOTTOM_MID": "0x05",
+      "LV_ALIGN_BOTTOM_RIGHT": "0x06",
+      "LV_ALIGN_LEFT_MID": "0x07",
+      "LV_ALIGN_RIGHT_MID": "0x08",
+      "LV_ALIGN_CENTER": "0x09"
+    },
+    "lv_event_code_t": {
+      "LV_EVENT_ALL": "0x00000",
+      "LV_EVENT_PRESSED": "0x00001",
+      "LV_EVENT_CLICKED": "0x0000A",
+      "LV_EVENT_RELEASED": "0x0000B",
+      "LV_EVENT_FOCUSED": "0x00013",
+      "LV_EVENT_DEFOCUSED": "0x00014",
+      "LV_EVENT_VALUE_CHANGED": "0x00023",
+      "LV_EVENT_DRAW_MAIN_BEGIN": "0x0001C",
+      "LV_EVENT_DELETE": "0x00029",
+      "LV_EVENT_LAST": "0x00043"
+    },
+    "lv_dir_t": {
+      "LV_DIR_NONE": "0x00",
+      "LV_DIR_LEFT": "0x01",
+      "LV_DIR_RIGHT": "0x02",
+      "LV_DIR_TOP": "0x04",
+      "LV_DIR_BOTTOM": "0x08",
+      "LV_DIR_HOR": "0x03",
+      "LV_DIR_VER": "0x0C",
+      "LV_DIR_ALL": "0x0F"
+    },
+    "lv_color_format_t": {
+      "LV_COLOR_FORMAT_UNKNOWN": "0x00",
+      "LV_COLOR_FORMAT_NATIVE": "0x12",
+      "LV_COLOR_FORMAT_RGB565": "0x12",
+      "LV_COLOR_FORMAT_RGB888": "0x0F",
+      "LV_COLOR_FORMAT_ARGB8888": "0x10",
+      "LV_COLOR_FORMAT_L8": "0x06",
+      "LV_COLOR_FORMAT_I8": "0x0A",
+      "LV_COLOR_FORMAT_A8": "0x0E"
+    },
+    "lv_obj_flag_t": {
+      "LV_OBJ_FLAG_HIDDEN": "0x00000001",
+      "LV_OBJ_FLAG_CLICKABLE": "0x00000002",
+      "LV_OBJ_FLAG_CLICK_FOCUSABLE": "0x00000004",
+      "LV_OBJ_FLAG_CHECKABLE": "0x00000008",
+      "LV_OBJ_FLAG_SCROLLABLE": "0x00000010",
+      "LV_OBJ_FLAG_SCROLL_ON_FOCUS": "0x00000400",
+      "LV_OBJ_FLAG_GESTURE_BUBBLE": "0x00008000",
+      "LV_OBJ_FLAG_FLOATING": "0x00040000"
+    },
+    "lv_state_enum_t": {
+      "LV_STATE_DEFAULT": "0x00000",
+      "LV_STATE_CHECKED": "0x00001",
+      "LV_STATE_FOCUSED": "0x00002",
+      "LV_STATE_HOVERED": "0x00010",
+      "LV_STATE_PRESSED": "0x00020",
+      "LV_STATE_DISABLED": "0x00080",
+      "LV_STATE_ANY": "0x0FFFF"
+    },
+    "lv_style_parts_t": {
+      "LV_PART_MAIN": "0x00000",
+      "LV_PART_SCROLLBAR": "0x10000",
+      "LV_PART_INDICATOR": "0x20000",
+      "LV_PART_KNOB": "0x30000",
+      "LV_PART_SELECTED": "0x40000",
+      "LV_PART_ITEMS": "0x50000",
+      "LV_PART_CURSOR": "0x60000",
+      "LV_PART_ANY": "0xF0000"
+    }
+  },
+  "functions": {
+    "lv_anim_start": {
+      "return_type": "lv_anim_t*",
+      "args": [ "lv_anim_t*" ]
+    },
+    "lv_btn_create": "lv_button_create",
+    "lv_deinit": {
+      "return_type": "void",
+      "args": []
+    },
+    "lv_display_create": {
+      "return_type": "lv_display_t*",
+      "args": [ "int32_t", "int32_t" ]
+    },
+    "lv_display_flush_ready": {
+      "return_type": "void",
+      "args": [ "lv_display_t*" ]
+    },
+    "lv_draw_rect": {
+      "return_type": "void",
+      "args": [ "lv_layer_t*", "lv_draw_rect_dsc_t*", "lv_area_t*" ]
+    },
+    "lv_event_send": {
+      "return_type": "lv_result_t",
+      "args": [ "lv_event_list_t*", "lv_event_t*", "bool" ]
+    },
+    "lv_init": {
+      "return_type": "void",
+      "args": []
+    },
+    "lv_label_create": {
+      "return_type": "lv_obj_t*",
+      "args": [ "lv_obj_t*" ]
+    },
+    "lv_label_set_text": {
+      "return_type": "void",
+      "args": [ "lv_obj_t*", "char*" ]
+    },
+    "lv_obj_add_event_cb": {
+      "return_type": "lv_event_dsc_t*",
+      "args": [ "lv_obj_t*", "lv_event_cb_t", "lv_event_code_t", "void*" ]
+    },
+    "lv_obj_add_flag": {
+      "return_type": "void",
+      "args": [ "lv_obj_t*", "lv_obj_flag_t" ]
+    },
+    "lv_obj_add_style": {
+      "return_type": "void",
+      "args": [ "lv_obj_t*", "lv_style_t*", "lv_style_selector_t" ]
+    },
+    "lv_obj_create": {
+      "return_type": "lv_obj_t*",
+      "args": [ "lv_obj_t*" ]
+    },
+    "lv_obj_delete": {
+      "return_type": "void",
+      "args": [ "lv_obj_t*" ]
+    },
+    "lv_obj_set_size": {
+      "return_type": "void",
+      "args": [ "lv_obj_t*", "int32_t", "int32_t" ]
+    },
+    "lv_style_init": {
+      "return_type": "void",
+      "args": [ "lv_style_t*" ]
+    },
+    "lv_style_set_bg_color": {
+      "return_type": "void",
+      "args": [ "lv_style_t*", "lv_color_t" ]
+    },
+    "lv_tick_inc": {
+      "return_type": "void",
+      "args": [ "uint32_t" ]
+    },
+    "lv_timer_handler": {
+      "return_type": "uint32_t",
+      "args": []
+    }
+  },
+  "objects": {
+    "anim": {
+      "c_type": "lv_anim_t",
+      "init": "lv_anim_init",
+      "methods": {
+        "lv_anim_start": {
+          "return_type": "lv_anim_t*", "args": [ "lv_anim_t*" ]
+        }
+      },
+      "properties": {
+        "duration": { "setter": "lv_anim_set_duration", "type": "uint32_t" },
+        "exec_cb": { "setter": "lv_anim_set_exec_cb", "type": "lv_anim_exec_xcb_t" }
+      }
+    },
+    "array": {
+      "c_type": "lv_array_t",
+      "init": "lv_array_init",
+      "methods": {
+        "lv_array_push_back": { "return_type": "lv_result_t", "args": [ "lv_array_t*", "void*" ] }
+      },
+      "properties": {}
+    },
+    "draw": {
+      "c_type": "lv_draw_t",
+      "init": "lv_draw_init",
+      "methods": {
+        "lv_draw_rect": { "return_type": "void", "args": [ "lv_layer_t*", "lv_draw_rect_dsc_t*", "lv_area_t*" ] },
+        "lv_draw_label": { "return_type": "void", "args": [ "lv_layer_t*", "lv_draw_label_dsc_t*", "lv_area_t*" ] }
+      },
+      "properties": {}
+    },
+    "draw_rect_dsc": {
+      "c_type": "lv_draw_rect_dsc_t",
+      "init": "lv_draw_rect_dsc_init"
+    },
+    "flex": {
+      "c_type": "lv_flex_t",
+      "init": "lv_flex_init"
+    },
+    "grid": {
+      "c_type": "lv_grid_t",
+      "init": "lv_grid_init"
+    },
+    "ll": {
+      "c_type": "lv_ll_t",
+      "init": "lv_ll_init",
+      "methods": {
+        "lv_ll_ins_tail": { "return_type": "void*", "args": [ "lv_ll_t*" ] }
+      },
+      "properties": {}
+    },
+    "rb": {
+      "c_type": "lv_rb_t",
+      "init": "lv_rb_init"
+    },
+    "style": {
+      "c_type": "lv_style_t",
+      "init": "lv_style_init",
+      "methods": {
+        "lv_style_set_prop": { "return_type": "void", "args": [ "lv_style_t*", "lv_style_prop_t", "lv_style_value_t" ] }
+      },
+      "properties": {
+        "bg_color": { "setter": "lv_style_set_bg_color", "type": "lv_color_t" },
+        "width": { "setter": "lv_style_set_width", "type": "int32_t" }
+      }
+    },
+    "theme_default": {
+      "c_type": "lv_theme_default_t",
+      "init": "lv_theme_default_init"
+    }
+  },
+  "widgets": {
+    "obj": {
+      "inherits": null,
+      "methods": {
+        "lv_obj_create": { "return_type": "lv_obj_t*", "args": [ "lv_obj_t*" ] },
+        "lv_obj_delete": { "return_type": "void", "args": [ "lv_obj_t*" ] },
+        "lv_obj_add_event_cb": { "return_type": "lv_event_dsc_t*", "args": ["lv_obj_t*", "lv_event_cb_t", "lv_event_code_t", "void*"] },
+        "lv_obj_get_child": { "return_type": "lv_obj_t*", "args": ["lv_obj_t*", "int32_t"] },
+        "lv_obj_invalidate": { "return_type": "void", "args": [ "lv_obj_t*" ] }
+      },
+      "properties": {
+        "align": { "setter": "lv_obj_set_align", "type": "lv_align_t" },
+        "size": { "setter": "lv_obj_set_size", "type": "int32_t" },
+        "pos": { "setter": "lv_obj_set_pos", "type": "int32_t" },
+        "style_bg_color": { "setter": "lv_obj_set_style_bg_color", "type": "lv_color_t" }
+      }
+    },
+    "arc": {
+      "create": "lv_arc_create",
+      "inherits": "obj",
+      "methods": { "lv_arc_get_value": { "return_type": "int32_t", "args": [ "lv_obj_t*" ] } },
+      "properties": { "value": { "setter": "lv_arc_set_value", "type": "int32_t" } }
+    },
+    "button": {
+      "create": "lv_button_create",
+      "inherits": "obj",
+      "methods": {},
+      "properties": {}
+    },
+    "chart": {
+      "create": "lv_chart_create",
+      "inherits": "obj",
+      "methods": { "lv_chart_add_series": { "return_type": "lv_chart_series_t*", "args": ["lv_obj_t*", "lv_color_t", "lv_chart_axis_t"] } },
+      "properties": { "type": { "setter": "lv_chart_set_type", "type": "lv_chart_type_t" } }
+    },
+    "checkbox": {
+      "create": "lv_checkbox_create",
+      "inherits": "obj",
+      "methods": { "lv_checkbox_get_text": { "return_type": "char*", "args": [ "lv_obj_t*" ] } },
+      "properties": { "text": { "setter": "lv_checkbox_set_text", "type": "char*" } }
+    },
+    "label": {
+      "create": "lv_label_create",
+      "inherits": "obj",
+      "methods": { "lv_label_get_text": { "return_type": "char*", "args": [ "lv_obj_t*" ] } },
+      "properties": { "text": { "setter": "lv_label_set_text", "type": "char*" } }
+    },
+    "list": {
+      "create": "lv_list_create",
+      "inherits": "obj",
+      "methods": { "lv_list_add_button": { "return_type": "lv_obj_t*", "args": ["lv_obj_t*", "void*", "char*"] } },
+      "properties": {}
+    },
+    "slider": {
+      "create": "lv_slider_create",
+      "inherits": "obj",
+      "methods": { "lv_slider_get_value": { "return_type": "int32_t", "args": [ "lv_obj_t*" ] } },
+      "properties": { "value": { "setter": "lv_slider_set_value", "type": "int32_t" } }
+    },
+    "switch": {
+      "create": "lv_switch_create",
+      "inherits": "obj",
+      "methods": {},
+      "properties": {}
+    },
+    "textarea": {
+      "create": "lv_textarea_create",
+      "inherits": "obj",
+      "methods": { "lv_textarea_add_text": { "return_type": "void", "args": [ "lv_obj_t*", "char*" ] } },
+      "properties": { "placeholder_text": { "setter": "lv_textarea_set_placeholder_text", "type": "char*" } }
+    }
+    "obj": {
+      "inherits": null,
+      "methods": {
+        "lv_obj_add_event_cb": {
+          "return_type": "lv_event_dsc_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_event_cb_t",
+            "lv_event_code_t",
+            "void*"
+          ]
+        },
+        "lv_obj_add_flag": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*",
+            "lv_obj_flag_t"
+          ]
+        },
+        "lv_obj_add_screen_create_event": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*",
+            "lv_event_code_t",
+            "lv_screen_create_cb_t",
+            "lv_screen_load_anim_t",
+            "uint32_t",
+            "uint32_t"
+          ]
+        },
+        "lv_obj_add_screen_load_event": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*",
+            "lv_event_code_t",
+            "lv_obj_t*",
+            "lv_screen_load_anim_t",
+            "uint32_t",
+            "uint32_t"
+          ]
+        },
+        "lv_obj_add_state": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*",
+            "lv_state_t"
+          ]
+        },
+        "lv_obj_add_style": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*",
+            "lv_style_t*",
+            "lv_style_selector_t"
+          ]
+        },
+        "lv_obj_add_subject_increment_event": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_event_code_t",
+            "int32_t",
+            "int32_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_add_subject_set_int_event": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_event_code_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_add_subject_set_string_event": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_event_code_t",
+            "char*"
+          ]
+        },
+        "lv_obj_align": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*",
+            "lv_align_t",
+            "int32_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_align_to": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*",
+            "lv_obj_t*",
+            "lv_align_t",
+            "int32_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_allocate_spec_attr": {
+          "return_type": "void",
+          "args": [
+            "lv_obj_t*"
+          ]
+        },
+        "lv_obj_area_is_visible": {
+          "return_type": "bool",
+          "args": [
+            "lv_obj_t*",
+            "lv_area_t*"
+          ]
+        },
+        "lv_obj_bind_checked": {
+          "return_type": "lv_observer_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*"
+          ]
+        },
+        "lv_obj_bind_flag_if_eq": {
+          "return_type": "lv_observer_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_obj_flag_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_bind_flag_if_ge": {
+          "return_type": "lv_observer_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_obj_flag_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_bind_flag_if_gt": {
+          "return_type": "lv_observer_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_obj_flag_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_bind_flag_if_le": {
+          "return_type": "lv_observer_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_obj_flag_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_bind_flag_if_lt": {
+          "return_type": "lv_observer_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_obj_flag_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_bind_flag_if_not_eq": {
+          "return_type": "lv_observer_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_obj_flag_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_bind_state_if_eq": {
+          "return_type": "lv_observer_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_state_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_bind_state_if_ge": {
+          "return_type": "lv_observer_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_state_t",
+            "int32_t"
+          ]
+        },
+        "lv_obj_bind_state_if_gt": {
+          "return_type": "lv_observer_t*",
+          "args": [
+            "lv_obj_t*",
+            "lv_subject_t*",
+            "lv_state_t",
+            "int32_t"
+          ]
+        },
+        {
+          "//": "... and so on"
+        }
+  }
+}
