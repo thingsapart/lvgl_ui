@@ -6,7 +6,7 @@
   {
     "type": "component",
     "id": "@jog_view",
-    "root": {
+    "content": {
       "bg_color": "#00ff00",
       "size": [
         "100%",

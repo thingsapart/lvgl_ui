@@ -125,6 +125,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         cJSON* prop_item = NULL;
         cJSON_ArrayForEach(prop_item, obj_json) {
             const char* key = prop_item->string;
+            if (strncmp(key, "//", 2) == 0) continue;
             if (strcmp(key, "type") == 0 || strcmp(key, "id") == 0 || strcmp(key, "context") == 0) continue;
             if (cJSON_HasObjectItem(merged_json, key)) {
                 cJSON_ReplaceItemInObject(merged_json, key, cJSON_Duplicate(prop_item, true));
@@ -133,32 +134,32 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             }
         }
 
-        cJSON* new_context = NULL;
+        cJSON* new_context = cJSON_CreateObject();
+        if (ui_context) merge_json_objects(new_context, ui_context);
+
         cJSON* local_context = cJSON_GetObjectItem(obj_json, "context");
-        if (ui_context || local_context) {
-            new_context = cJSON_CreateObject();
-            if (ui_context) merge_json_objects(new_context, ui_context);
-            if (local_context) merge_json_objects(new_context, local_context);
-        }
+        if (local_context) merge_json_objects(new_context, local_context);
+
+        // Add parent reference to the context for use-view
+        cJSON_AddItemToObject(new_context, "$parent", cJSON_CreateString(parent_c_name));
 
         IRObject* generated_obj = parse_object(ctx, merged_json, parent_c_name, new_context);
 
         cJSON_Delete(merged_json);
-        if (new_context) cJSON_Delete(new_context);
+        cJSON_Delete(new_context);
 
         return generated_obj;
     }
 
-    cJSON* new_scope_context = NULL;
-    const cJSON* effective_context = ui_context;
-    cJSON* local_context = cJSON_GetObjectItem(obj_json, "context");
+    cJSON* new_scope_context = cJSON_CreateObject();
+    if(ui_context) merge_json_objects(new_scope_context, ui_context);
 
+    cJSON* local_context = cJSON_GetObjectItem(obj_json, "context");
     if (local_context && cJSON_IsObject(local_context)) {
-        new_scope_context = cJSON_CreateObject();
-        if (ui_context) merge_json_objects(new_scope_context, ui_context);
         merge_json_objects(new_scope_context, local_context);
-        effective_context = new_scope_context;
     }
+    // Always add the parent to the context
+    cJSON_AddItemToObject(new_scope_context, "$parent", cJSON_CreateString(parent_c_name));
 
     cJSON* init_item = cJSON_GetObjectItem(obj_json, "init");
     cJSON* id_item = cJSON_GetObjectItem(obj_json, "id");
@@ -167,6 +168,8 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     if (id_item && cJSON_IsString(id_item)) registered_id_from_json = id_item->valuestring;
 
     char* c_name = generate_unique_var_name(ctx, registered_id_from_json ? registered_id_from_json : json_type_str);
+    cJSON_AddItemToObject(new_scope_context, "$current_obj", cJSON_CreateString(c_name));
+
 
     const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, json_type_str);
     if (init_item && cJSON_IsObject(init_item) && init_item->child) {
@@ -184,7 +187,6 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         clean_id++;
     }
     IRObject* ir_obj = ir_new_object(c_name, json_type_str, object_c_type, clean_id);
-    free(c_name);
 
     if (registered_id_from_json) {
         registry_add_generated_var(ctx->registry, registered_id_from_json, ir_obj->c_name, ir_obj->c_type);
@@ -194,8 +196,30 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         ir_expr_list_add(&ir_obj->setup_calls, reg_call_expr);
     }
 
+    registry_add_generated_var(ctx->registry, c_name, ir_obj->c_name, ir_obj->c_type);
+
     if (init_item) {
-        ir_obj->constructor_expr = unmarshal_value(ctx, init_item, effective_context, object_c_type);
+        // This is not a constructor, it's an initializer that *receives* the parent
+        // and returns a new object.
+        IRExpr* init_expr = unmarshal_value(ctx, init_item, new_scope_context, object_c_type);
+
+        // Check if the first argument of the init function is an object, and if so,
+        // implicitly pass the parent.
+        if (init_expr->base.type == IR_EXPR_FUNCTION_CALL) {
+             IRExprFunctionCall* call = (IRExprFunctionCall*)init_expr;
+             const FunctionDefinition* init_func_def = api_spec_find_function(ctx->api_spec, call->func_name);
+             if (init_func_def && init_func_def->args_head) {
+                 const char* first_arg_type = init_func_def->args_head->type;
+                 if (first_arg_type && strstr(first_arg_type, "_t*")) {
+                     IRExprNode* parent_arg_node = calloc(1, sizeof(IRExprNode));
+                     parent_arg_node->expr = ir_new_expr_registry_ref(parent_c_name, first_arg_type);
+                     parent_arg_node->next = call->args;
+                     call->args = parent_arg_node;
+                 }
+             }
+        }
+        ir_obj->constructor_expr = init_expr;
+
     } else {
         const char* create_func = NULL;
         if (widget_def && widget_def->create) create_func = widget_def->create;
@@ -203,12 +227,14 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
         if (create_func) {
             IRExprNode* args = NULL;
-            ir_expr_list_add(&args, ir_new_expr_registry_ref("parent", registry_get_c_type_for_id(ctx->registry, parent_c_name)));
+            ir_expr_list_add(&args, ir_new_expr_registry_ref(parent_c_name, "lv_obj_t*"));
             const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, create_func);
             ir_obj->constructor_expr = ir_new_expr_func_call(create_func, args, ret_type);
             process_and_validate_call(ctx, create_func, &((IRExprFunctionCall*)ir_obj->constructor_expr)->args);
         } else if (widget_def && widget_def->init_func) {
+            // This is for non-widget objects like styles, which are not parented
             IRExprNode* init_args = NULL;
+            // The c_code_printer handles passing by reference for non-pointers automatically
             ir_expr_list_add(&init_args, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
             ir_expr_list_add(&ir_obj->setup_calls, ir_new_expr_func_call(widget_def->init_func, init_args, "void"));
             process_and_validate_call(ctx, widget_def->init_func, &init_args);
@@ -218,6 +244,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     cJSON* prop_item = NULL;
     cJSON_ArrayForEach(prop_item, obj_json) {
         const char* key = prop_item->string;
+        if (strncmp(key, "//", 2) == 0) continue;
         if (strcmp(key, "type") == 0 || strcmp(key, "init") == 0 || strcmp(key, "id") == 0 ||
             strcmp(key, "name") == 0 || strcmp(key, "children") == 0 || strcmp(key, "context") == 0) continue;
 
@@ -247,13 +274,13 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             cJSON* val_item = NULL;
             cJSON_ArrayForEach(val_item, prop_item) {
                 const char* expected_type = expected_arg ? expected_arg->type : "unknown";
-                IRExpr* arg_expr = unmarshal_value(ctx, val_item, effective_context, expected_type);
+                IRExpr* arg_expr = unmarshal_value(ctx, val_item, new_scope_context, expected_type);
                 ir_expr_list_add(&final_args, arg_expr);
                 if (expected_arg) expected_arg = expected_arg->next;
             }
         } else {
             const char* expected_type = expected_arg ? expected_arg->type : "unknown";
-            IRExpr* arg_expr = unmarshal_value(ctx, prop_item, effective_context, expected_type);
+            IRExpr* arg_expr = unmarshal_value(ctx, prop_item, new_scope_context, expected_type);
             ir_expr_list_add(&final_args, arg_expr);
         }
 
@@ -267,11 +294,12 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     if (children_item && cJSON_IsArray(children_item)) {
         cJSON* child_json = NULL;
         cJSON_ArrayForEach(child_json, children_item) {
-            ir_object_list_add(&ir_obj->children, parse_object(ctx, child_json, ir_obj->c_name, effective_context));
+            ir_object_list_add(&ir_obj->children, parse_object(ctx, child_json, ir_obj->c_name, new_scope_context));
         }
     }
 
-    if (new_scope_context) cJSON_Delete(new_scope_context);
+    free(c_name);
+    cJSON_Delete(new_scope_context);
 
     return ir_obj;
 }
@@ -289,6 +317,23 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
 
         if (s[0] == '$') {
             const char* var_name = s + 1;
+            // Handle special context variables
+            if (strcmp(var_name, "parent") == 0) {
+                 const cJSON* parent_name_json = cJSON_GetObjectItem(ui_context, "$parent");
+                 if(parent_name_json && cJSON_IsString(parent_name_json)) {
+                    const char* parent_c_name = parent_name_json->valuestring;
+                    return ir_new_expr_registry_ref(parent_c_name, registry_get_c_type_for_id(ctx->registry, parent_c_name));
+                 }
+            }
+            if (strcmp(var_name, "current_obj") == 0) {
+                 const cJSON* current_name_json = cJSON_GetObjectItem(ui_context, "$current_obj");
+                 if(current_name_json && cJSON_IsString(current_name_json)) {
+                    const char* current_c_name = current_name_json->valuestring;
+                    return ir_new_expr_registry_ref(current_c_name, registry_get_c_type_for_id(ctx->registry, current_c_name));
+                 }
+            }
+
+            // Fallback to user-defined context
             if (ui_context && cJSON_IsObject(ui_context)) {
                 const cJSON* context_val = cJSON_GetObjectItem(ui_context, var_name);
                 if (context_val) {
@@ -327,13 +372,17 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             return ir_new_expr_literal(buf, "int");
         }
 
-        if (api_spec_is_enum_member(ctx->api_spec, expected_c_type, s)) {
-            return ir_new_expr_enum(s, 0, (char*)expected_c_type);
+        if (expected_c_type && api_spec_is_enum_member(ctx->api_spec, expected_c_type, s)) {
+            long enum_val;
+            api_spec_find_enum_value(ctx->api_spec, expected_c_type, s, &enum_val);
+            return ir_new_expr_enum(s, enum_val, (char*)expected_c_type);
         }
 
         const char* inferred_enum_type = api_spec_find_global_enum_type(ctx->api_spec, s);
         if (inferred_enum_type) {
-            return ir_new_expr_enum(s, 0, (char*)inferred_enum_type);
+             long enum_val;
+            api_spec_find_enum_value(ctx->api_spec, inferred_enum_type, s, &enum_val);
+            return ir_new_expr_enum(s, enum_val, (char*)inferred_enum_type);
         }
 
         return ir_new_expr_literal_string(s);
@@ -341,7 +390,12 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
     if (cJSON_IsNumber(value)) {
         char buf[32];
         snprintf(buf, sizeof(buf), "%g", value->valuedouble);
-        const char* type_str = (expected_c_type && (strstr(expected_c_type, "int") || strstr(expected_c_type, "coord"))) ? expected_c_type : "int";
+        const char* type_str = "int";
+        if (expected_c_type) {
+            if (strstr(expected_c_type, "int") || strstr(expected_c_type, "coord") || strstr(expected_c_type, "opa_t") || strstr(expected_c_type, "selector")) {
+                type_str = expected_c_type;
+            }
+        }
         return ir_new_expr_literal(buf, type_str);
     }
     if (cJSON_IsBool(value)) {
@@ -363,8 +417,14 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             IRExprNode* args_list = NULL;
             if (cJSON_IsArray(func_item)) {
                 cJSON* arg_json;
+                const FunctionArg* expected_arg_list = api_spec_get_function_args_by_name(ctx->api_spec, func_name);
                 cJSON_ArrayForEach(arg_json, func_item) {
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context, "unknown"));
+                    const char* expected_type = "unknown";
+                    if (expected_arg_list) {
+                        expected_type = expected_arg_list->type;
+                        expected_arg_list = expected_arg_list->next;
+                    }
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context, expected_type));
                 }
             } else {
                  ir_expr_list_add(&args_list, unmarshal_value(ctx, func_item, ui_context, "unknown"));
@@ -400,9 +460,21 @@ static bool types_compatible(const char* expected, const char* actual) {
     if ((strcmp(expected, "const char*") == 0 && strcmp(actual, "char*") == 0) ||
         (strcmp(expected, "char*") == 0 && strcmp(actual, "const char*") == 0)) return true;
 
+    // More lenient check for style_t vs style_t*
+    if (strcmp(expected, "lv_style_t*") == 0 && strcmp(actual, "lv_style_t") == 0) return true;
+
+
     // Handle integer type variations
-    if ((strcmp(expected, "lv_coord_t") == 0 || strcmp(expected, "int32_t") == 0 || strcmp(expected, "int") == 0) &&
-        (strcmp(actual, "int") == 0 || strcmp(actual, "int32_t") == 0)) return true;
+    const char* int_types[] = {"int", "int32_t", "uint32_t", "lv_coord_t", "lv_style_selector_t", "lv_opa_t"};
+    int num_int_types = sizeof(int_types) / sizeof(char*);
+    bool expected_is_int = false;
+    bool actual_is_int = false;
+    for(int i=0; i < num_int_types; i++) {
+        if(strcmp(expected, int_types[i]) == 0) expected_is_int = true;
+        if(strcmp(actual, int_types[i]) == 0) actual_is_int = true;
+    }
+    if (expected_is_int && actual_is_int) return true;
+
 
     // Allow any pointer type to be passed as void*
     if (strcmp(expected, "void*") == 0 && strchr(actual, '*') != NULL) return true;
@@ -422,7 +494,9 @@ static void process_and_validate_call(GenContext* ctx, const char* func_name, IR
 
     int expected_argc = 0;
     const FunctionArg* last_expected_arg = NULL;
-    for (FunctionArg* a = func_def->args_head; a; a = a->next) {
+    for (const FunctionArg* a = func_def->args_head; a; a = a->next) {
+        // Skip void placeholder
+        if(a->type && strcmp(a->type, "void") == 0) continue;
         expected_argc++;
         last_expected_arg = a;
     }
@@ -441,9 +515,13 @@ static void process_and_validate_call(GenContext* ctx, const char* func_name, IR
     }
 
     IRExprNode* actual_arg_node = *args_list_ptr;
-    FunctionArg* expected_arg = func_def->args_head;
+    const FunctionArg* expected_arg = func_def->args_head;
     int i = 0;
     while (actual_arg_node && expected_arg) {
+        if(expected_arg->type && strcmp(expected_arg->type, "void") == 0) {
+             expected_arg = expected_arg->next;
+             continue;
+        }
         if (!types_compatible(expected_arg->type, actual_arg_node->expr->c_type)) {
             generator_warning("Type mismatch for argument %d of '%s'. Expected '%s', but got '%s'.",
                 i, func_name, expected_arg->type, actual_arg_node->expr->c_type);

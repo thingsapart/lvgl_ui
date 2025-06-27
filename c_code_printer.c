@@ -52,7 +52,7 @@ static void id_map_free(IdMapNode* map_head) {
 
 
 // --- Forward Declarations ---
-static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map);
+static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, bool pass_by_ref_for_struct);
 static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* map);
 
 
@@ -66,12 +66,13 @@ static void print_expr_list(IRExprNode* head, const char* parent_c_name, IdMapNo
     bool first = true;
     for (IRExprNode* current = head; current; current = current->next) {
         if (!first) printf(", ");
-        print_expr(current->expr, parent_c_name, map);
+        // When passing arguments to functions, non-pointer structs should be passed by reference.
+        print_expr(current->expr, parent_c_name, map, true);
         first = false;
     }
 }
 
-static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map) {
+static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, bool pass_by_ref_for_struct) {
     if (!expr) { printf("NULL"); return; }
 
     switch (expr->base.type) {
@@ -87,37 +88,37 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map) 
             break;
         case IR_EXPR_REGISTRY_REF: {
             const char* name = ((IRExprRegistryRef*)expr)->name;
+            const char* c_name_to_print = NULL;
+            const char* c_type_of_ref = NULL;
+
             if (strcmp(name, "parent") == 0) {
-                printf("%s", parent_c_name);
-            } else if (name[0] == '@') {
-                const IdMapNode* node = id_map_get_node(map, name + 1);
+                c_name_to_print = parent_c_name;
+                 const IdMapNode* parent_node = id_map_get_node(map, parent_c_name);
+                 if (parent_node) c_type_of_ref = parent_node->c_type;
+
+            } else {
+                const char* lookup_key = (name[0] == '@') ? name + 1 : name;
+                const IdMapNode* node = id_map_get_node(map, lookup_key);
                 if (node) {
-                    bool is_pointer = strchr(node->c_type, '*') != NULL;
-                    if (is_pointer) {
-                        printf("%s", node->c_name);
-                    } else {
-                        // Non-pointer types (like lv_style_t) must be passed by reference.
-                        printf("&%s", node->c_name);
-                    }
+                    c_name_to_print = node->c_name;
+                    c_type_of_ref = node->c_type;
                 } else {
                     printf("/* unresolved_ref: %s */", name);
+                    return;
                 }
-            } else {
-                // This is a direct C variable name from the generator (e.g., for init funcs)
-                // We need to check if it refers to a non-pointer and needs an '&'
-                const IdMapNode* node = id_map_get_node(map, name);
-                 if (node) {
-                    bool is_pointer = strchr(node->c_type, '*') != NULL;
-                    if(is_pointer) {
-                        printf("%s", node->c_name);
-                    } else {
-                        printf("&%s", node->c_name);
-                    }
-                 } else {
-                    // Fallback for names not in the ID map (like the implicit 'parent').
-                    printf("%s", name);
-                 }
             }
+
+            if (c_name_to_print && c_type_of_ref) {
+                bool is_pointer = strchr(c_type_of_ref, '*') != NULL;
+                if (!is_pointer && pass_by_ref_for_struct) {
+                     printf("&%s", c_name_to_print);
+                } else {
+                     printf("%s", c_name_to_print);
+                }
+            } else if (c_name_to_print) {
+                 printf("%s", c_name_to_print); // Fallback if type info is missing
+            }
+
             break;
         }
         case IR_EXPR_CONTEXT_VAR:
@@ -140,7 +141,8 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map) 
         case IR_EXPR_RUNTIME_REG_ADD: {
             IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
             printf("obj_registry_add(\"%s\", ", reg->id);
-            print_expr(reg->object_expr, parent_c_name, map);
+            // when registering, we need to pass the address of a struct, but the value of a pointer.
+            print_expr(reg->object_expr, parent_c_name, map, true);
             printf(")");
             break;
         }
@@ -158,8 +160,10 @@ static void build_id_map_recursive(IRObject* head, IdMapNode** map_head) {
         if (current->registered_id && current->c_name && current->c_type) {
             id_map_add(map_head, current->registered_id, current->c_name, current->c_type);
         }
-        // Also map the c_name to itself for lookups from init functions
-        id_map_add(map_head, current->c_name, current->c_name, current->c_type);
+        // Also map the c_name to itself for lookups
+        if (current->c_name && current->c_type) {
+            id_map_add(map_head, current->c_name, current->c_name, current->c_type);
+        }
 
         if (current->children) build_id_map_recursive(current->children, map_head);
         // if (current->with_blocks) ... // TODO: handle with blocks if needed
@@ -168,6 +172,8 @@ static void build_id_map_recursive(IRObject* head, IdMapNode** map_head) {
 
 static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* map) {
     for (IRObject* current = head; current; current = current->next) {
+        if(strncmp(current->json_type, "//", 2) == 0) continue; // Skip comment objects
+
         print_indent(indent_level);
         printf("// %s: %s (%s)\n", current->registered_id ? current->registered_id : "unnamed", current->c_name, current->json_type);
         print_indent(indent_level);
@@ -183,14 +189,18 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
 
         if (current->constructor_expr) {
             print_indent(indent_level + 1);
-            printf("%s = ", current->c_name);
-            print_expr(current->constructor_expr, parent_c_name, map);
+            if (is_pointer) {
+                printf("%s = ", current->c_name);
+            }
+            // For non-pointers, the expression is an init function that takes a reference,
+            // so we don't assign it. e.g. lv_style_init(&style_0);
+            print_expr(current->constructor_expr, parent_c_name, map, false);
             printf(";\n");
         }
 
         for (IRExprNode* call_node = current->setup_calls; call_node; call_node = call_node->next) {
             print_indent(indent_level + 1);
-            print_expr(call_node->expr, parent_c_name, map);
+            print_expr(call_node->expr, parent_c_name, map, false);
             printf(";\n");
         }
 
@@ -210,7 +220,7 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
 
     printf("/* AUTO-GENERATED by the 'c_code' backend */\n\n");
     printf("#include \"lvgl.h\"\n");
-    printf("#include \"dynamic_lvgl.h\" // For obj_registry_add\n\n");
+    printf("#include \"c_gen/lvgl_dispatch.h\" // For obj_registry_add\n\n");
     printf("void create_ui(lv_obj_t* parent) {\n");
 
     IdMapNode* id_map = NULL;
