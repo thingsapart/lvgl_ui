@@ -6,17 +6,24 @@
     "bg_opa": 255
   },
   {
-    "size": ["101%", "102%"],
+    "size": ["100%", "100%"],
     "children": [
       {
         "type": "obj",
-        "size": [100, 100]
-      },
-      {
-        "type": "label",
-        "name": "center_label",
-        "size": [200, 100],
-        "text": "TEST2"
+        "bg_color": "#ff0000",
+        "bg_opa": 20,
+        "size": [100, 100],
+        "children": [
+          {
+            "type": "label",
+            "name": "center_label",
+            "bg_color": "#ff0000",
+            "bg_opa": 20,
+            "align": ["LV_ALIGN_CENTER", 0, 10],
+            "size": [200, 100],
+            "text": "TEST2"
+          }
+        ]
       }
     ]
   }

@@ -11,6 +11,9 @@
 #include "ir_printer.h"
 #include "ir_debug_printer.h"
 #include "c_code_printer.h"
+#include "lvgl_renderer.h"
+#include "viewer/sdl_viewer.h"
+#include "c_gen/lvgl_dispatch.h"
 
 
 // --- Function Declarations ---
@@ -22,7 +25,7 @@ void print_usage(const char* prog_name);
 void print_usage(const char* prog_name) {
     fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json> [--codegen <backends>]\n", prog_name);
     fprintf(stderr, "  <backends> is a comma-separated list of code generation backends.\n");
-    fprintf(stderr, "  Available backends: ir_print, ir_debug_print, c_code\n");
+    fprintf(stderr, "  Available backends: ir_print, ir_debug_print, c_code, lvgl_render\n");
     fprintf(stderr, "  If --codegen is not specified, 'ir_print' is run by default.\n");
 }
 
@@ -124,6 +127,34 @@ int main(int argc, char* argv[]) {
             ir_debug_print_backend(ir_root, api_spec);
         } else if (strcmp(backend_name, "c_code") == 0) {
             c_code_print_backend(ir_root, api_spec);
+        } else if (strcmp(backend_name, "lvgl_render") == 0) {
+            DEBUG_LOG(LOG_MODULE_MAIN, "Executing 'lvgl_render' backend.");
+
+            if (sdl_viewer_init() != 0) {
+                fprintf(stderr, "FATAL: Failed to initialize SDL viewer.\n");
+                // The main cleanup block below will handle freeing memory.
+                exit(1);
+            }
+
+            lv_obj_t* parent_screen = sdl_viewer_create_main_screen();
+            if (!parent_screen) {
+                fprintf(stderr, "FATAL: Failed to create main screen.\n");
+                sdl_viewer_deinit();
+                exit(1);
+            }
+
+            // Render the IR onto the created screen.
+            lvgl_render_backend(ir_root, api_spec, parent_screen);
+
+            // Enter the main rendering loop. This will block until the user closes the window.
+            printf("Starting SDL viewer loop. Close the window to exit.\n");
+            sdl_viewer_loop();
+
+            // Clean up resources used by the runtime renderer
+            obj_registry_deinit();
+            sdl_viewer_deinit();
+
+            printf("SDL viewer exited.\n");
         } else {
             fprintf(stderr, "Warning: Unknown codegen backend '%s'.\n", backend_name);
         }
