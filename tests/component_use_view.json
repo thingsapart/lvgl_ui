@@ -2,7 +2,7 @@
   {
     "type": "component",
     "id": "@my_reusable_component",
-    "named": "c_my_reusable_component",
+    "name": "c_my_reusable_component",
     "content": {
       "type": "obj",
       "children": [
@@ -12,7 +12,7 @@
         },
         {
           "type": "button",
-          "named": "comp_button",
+          "name": "comp_button",
           "children": [
             {
               "type": "label",
@@ -26,7 +26,7 @@
   {
     "type": "obj",
     "id": "main_view",
-    "named": "v_main_view",
+    "name": "v_main_view",
     "size": ["100%", "100%"],
     "children": [
       {
@@ -37,7 +37,7 @@
         "type": "use-view",
         "id": "@my_reusable_component",
         "id": "instance_of_component",
-        "named": "uv_instance_1"
+        "name": "uv_instance_1"
       }
     ]
   }

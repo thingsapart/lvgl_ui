@@ -115,6 +115,10 @@ class CCodeGenerator:
     This dispatcher can call LVGL functions by name, taking arguments from an
     Intermediate Representation (IR) format.
     """
+    UNSUPPORTED_RETURN_STRUCTS = {
+        'lv_color32_t', 'lv_point_t', 'lv_color_hsv_t', 'lv_style_value_t',
+        'lv_point_precise_t', 'lv_span_coords_t'
+    }
 
     def __init__(self, api_spec):
         """Initializes the generator with the parsed API specification."""
@@ -240,10 +244,33 @@ extern "C" {
 #include "lvgl.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 // Forward declarations for required structs
 struct IRNode;
 struct ApiSpec;
+
+// --- Value Representation for Dynamic Dispatch ---
+// A struct to hold a concrete C value from a dispatched function call.
+typedef enum {
+    RENDER_VAL_TYPE_NULL,
+    RENDER_VAL_TYPE_INT,
+    RENDER_VAL_TYPE_POINTER,
+    RENDER_VAL_TYPE_STRING,
+    RENDER_VAL_TYPE_COLOR,
+    RENDER_VAL_TYPE_BOOL
+} RenderValueType;
+
+typedef struct {
+    RenderValueType type;
+    union {
+        intptr_t i_val;
+        void* p_val;
+        const char* s_val;
+        lv_color_t color_val;
+        bool b_val;
+    } as;
+} RenderValue;
 
 typedef struct _lv_obj_t _lv_obj_t;
 
@@ -258,7 +285,7 @@ void obj_registry_deinit(void);
 // --- Dynamic Dispatcher ---
 // Calls an LVGL function by name, with arguments provided as an array of IR nodes.
 // Added ApiSpec* spec argument for context-aware parsing (e.g., enums by string name).
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);
+RenderValue dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);
 
 #ifdef __cplusplus
 }
@@ -282,10 +309,11 @@ lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct I
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 // --- Typedefs for Dispatcher Mechanism ---
 typedef void (*generic_lvgl_func_t)(void);
-typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);
+typedef RenderValue (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);
 """)
 
             self.archetype_map = {}
@@ -294,7 +322,7 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, 
             for i, key in enumerate(self.archetypes.keys()):
                 dispatcher_name = f"dispatch_ir_archetype_{i}"
                 self.archetype_map[key] = dispatcher_name
-                f.write(f"static lv_obj_t* {dispatcher_name}(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);\n")
+                f.write(f"static RenderValue {dispatcher_name}(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);\n")
 
             f.write("\n// --- Archetype Dispatcher Implementations ---\n")
 
@@ -305,12 +333,15 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, 
                 first_func = func_list[0]
 
                 f.write(f"// Archetype for {len(func_list)} functions like: {first_func['name']}\n")
-                f.write(f"static lv_obj_t* {dispatcher_name}(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {{\n")
+                f.write(f"static RenderValue {dispatcher_name}(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {{\n")
+                f.write(f"    RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;\n")
 
+                if target_c_type != 'void*':
+                    f.write(f'    if (target == NULL) {{ render_abort("Argument 0 (target) is NULL - not allowed"); }}\n')
                 num_expected_args = len(arg_types)
                 f.write(f"    if (arg_count != {num_expected_args}) {{\n")
                 f.write(f"        print_warning(\"IR call to {first_func['name']}-like function: expected {num_expected_args} args, got %d\", arg_count);\n")
-                f.write(f"        return NULL;\n")
+                f.write(f"        return result;\n")
                 f.write(f"    }}\n\n")
 
                 # Argument parsing using the new IR helpers
@@ -330,13 +361,26 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, 
                 call_params.extend(f"arg{j}" for j in range(len(arg_types)))
                 call_str = f"((specific_func_t)fn)({', '.join(call_params)})"
 
-                if ret_type == "void":
-                    f.write(f"    {call_str};\n    return NULL;\n")
-                elif ret_type.endswith('*'): # Assume any pointer return can be a lv_obj_t* for chaining
-                    f.write(f"    return (lv_obj_t*){call_str};\n")
-                else: # Non-pointer return, not chainable
-                    f.write(f"    (void){call_str};\n    return NULL;\n")
+                ret_type_no_const = ret_type.replace('const ', '').strip()
 
+                if ret_type == "void":
+                    f.write(f"    {call_str};\n")
+                elif ret_type_no_const in self.UNSUPPORTED_RETURN_STRUCTS:
+                    f.write(f"    (void){call_str}; // Return type '{ret_type_no_const}' is a struct and not supported. Value ignored.\n")
+                elif ret_type_no_const == "bool":
+                    f.write(f"    result.type = RENDER_VAL_TYPE_BOOL;\n")
+                    f.write(f"    result.as.b_val = {call_str};\n")
+                elif ret_type.endswith('*'): # Pointer return
+                    f.write(f"    result.type = RENDER_VAL_TYPE_POINTER;\n")
+                    f.write(f"    result.as.p_val = {call_str};\n")
+                elif ret_type_no_const == "lv_color_t":
+                    f.write(f"    result.type = RENDER_VAL_TYPE_COLOR;\n")
+                    f.write(f"    result.as.color_val = {call_str};\n")
+                else: # Non-pointer, non-void return (assume integer-like)
+                    f.write(f"    result.type = RENDER_VAL_TYPE_INT;\n")
+                    f.write(f"    result.as.i_val = (intptr_t)({call_str});\n")
+
+                f.write("    return result;\n")
                 f.write("}\n\n")
 
             # --- Function Registry and Main Dispatcher ---
@@ -370,8 +414,9 @@ static int compare_func_mappings(const void* a, const void* b) {
     return strcmp((const char*)a, ((const FunctionMapping*)b)->name);
 }
 
-lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
-    if (!func_name) return NULL;
+RenderValue dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+    RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
+    if (!func_name) return result;
     const FunctionMapping* mapping = (const FunctionMapping*)bsearch(
         func_name, function_registry,
         sizeof(function_registry) / sizeof(FunctionMapping),
@@ -382,7 +427,7 @@ lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct I
         return mapping->ir_dispatcher(mapping->func_ptr, target_obj, ir_args, arg_count, spec);
     }
     print_warning("Dynamic LVGL IR call failed: function '%s' not found or dispatcher missing.", func_name);
-    return NULL;
+    return result;
 }
 
 // --- Simple Object Registry Implementation ---

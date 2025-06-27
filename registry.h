@@ -59,6 +59,7 @@ const char* registry_get_c_type_for_id(const Registry* reg, const char* name);
 // The 'id', 'json_type', and 'c_type' strings are duplicated by the registry.
 void registry_add_pointer(Registry* reg, void *ptr, const char *id, const char *json_type, const char* c_type);
 void *registry_get_pointer(const Registry* reg, const char *id, const char *type);
+const char* registry_get_id_from_pointer(const Registry* reg, const void* ptr);
 
 // --- String Registry ---
 const char *registry_add_str(Registry* reg, const char *value);

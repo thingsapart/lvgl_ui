@@ -5,26 +5,6 @@
 #include "utils.h"
 #include <stdlib.h>
 
-// --- Value Representation ---
-// A struct to hold the concrete C value of a fully evaluated expression.
-typedef enum {
-    RENDER_VAL_TYPE_NULL,
-    RENDER_VAL_TYPE_INT,
-    RENDER_VAL_TYPE_POINTER,
-    RENDER_VAL_TYPE_STRING,
-    RENDER_VAL_TYPE_COLOR // Special case for lv_color_t which is a struct
-} RenderValueType;
-
-typedef struct {
-    RenderValueType type;
-    union {
-        intptr_t i_val;
-        void* p_val;
-        const char* s_val;
-        lv_color_t color_val;
-    } as;
-} RenderValue;
-
 
 // --- Forward Declarations ---
 static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry);
@@ -61,13 +41,18 @@ static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry
     for (IRObject* current_obj = head; current_obj; current_obj = current_obj->next) {
         DEBUG_LOG(LOG_MODULE_RENDERER, "Rendering object: c_name='%s', json_type='%s'", current_obj->c_name, current_obj->json_type);
 
-        RenderValue constructor_result = { .type = RENDER_VAL_TYPE_NULL };
+        RenderValue constructor_result;
+        constructor_result.type = RENDER_VAL_TYPE_NULL;
+        constructor_result.as.p_val = NULL;
+
         void* c_obj = NULL;
 
         // 1. Create the object by executing its constructor expression
         if (current_obj->constructor_expr) {
             evaluate_expression(spec, registry, current_obj->constructor_expr, &constructor_result);
-            c_obj = constructor_result.as.p_val;
+            if(constructor_result.type == RENDER_VAL_TYPE_POINTER) {
+                c_obj = constructor_result.as.p_val;
+            }
         }
 
         // Handle non-pointer types like lv_style_t which are stack-allocated by the C-backend
@@ -121,17 +106,23 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
                 out_val->type = RENDER_VAL_TYPE_STRING;
                 out_val->as.s_val = lit->value;
             } else {
-                out_val->type = RENDER_VAL_TYPE_INT;
-                out_val->as.i_val = strtol(lit->value, NULL, 0);
+                if(strcmp(lit->value, "true") == 0) {
+                    out_val->type = RENDER_VAL_TYPE_BOOL;
+                    out_val->as.b_val = true;
+                } else if (strcmp(lit->value, "false") == 0) {
+                    out_val->type = RENDER_VAL_TYPE_BOOL;
+                    out_val->as.b_val = false;
+                } else {
+                    out_val->type = RENDER_VAL_TYPE_INT;
+                    out_val->as.i_val = strtol(lit->value, NULL, 0);
+                }
             }
             return;
         }
 
         case IR_EXPR_ENUM: {
-            long enum_val = 0;
             // The dispatcher's helpers need the enum's C type, so we must pass the symbol.
-            // For direct evaluation, we'd need to find the enum's integer value.
-            // Let's pass the symbol as a string and let the dispatcher resolve it.
+            // We pass the symbol as a string and let the dispatcher resolve it.
             out_val->type = RENDER_VAL_TYPE_STRING;
             out_val->as.s_val = ((IRExprEnum*)expr)->symbol;
             return;
@@ -150,22 +141,6 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
         case IR_EXPR_FUNCTION_CALL: {
             IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
             DEBUG_LOG(LOG_MODULE_DISPATCH, "Evaluating call: %s", call->func_name);
-
-            // Special case for value-returning functions that the dispatcher can't handle.
-            if (strcmp(call->func_name, "lv_color_hex") == 0) {
-                RenderValue arg_val;
-                evaluate_expression(spec, registry, call->args->expr, &arg_val);
-                out_val->type = RENDER_VAL_TYPE_COLOR;
-                out_val->as.color_val = lv_color_hex(arg_val.as.i_val);
-                return;
-            }
-            if (strcmp(call->func_name, "lv_pct") == 0) {
-                RenderValue arg_val;
-                evaluate_expression(spec, registry, call->args->expr, &arg_val);
-                out_val->type = RENDER_VAL_TYPE_INT;
-                out_val->as.i_val = lv_pct(arg_val.as.i_val);
-                return;
-            }
 
             // --- General-purpose dynamic dispatch ---
 
@@ -205,6 +180,11 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
                         snprintf(str_buffers[i], 32, "%ld", (long)evaluated_args[i].as.i_val);
                         literal_nodes[i].value = str_buffers[i];
                         break;
+                    case RENDER_VAL_TYPE_BOOL:
+                        literal_nodes[i].is_string = false;
+                        snprintf(str_buffers[i], 32, "%d", evaluated_args[i].as.b_val);
+                        literal_nodes[i].value = str_buffers[i];
+                        break;
                     case RENDER_VAL_TYPE_COLOR: // Pass color as its integer representation
                         literal_nodes[i].is_string = false;
                         snprintf(str_buffers[i], 32, "%u", lv_color_to_u32(evaluated_args[i].as.color_val));
@@ -215,14 +195,24 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
                         literal_nodes[i].value = (char*)evaluated_args[i].as.s_val;
                         break;
                     case RENDER_VAL_TYPE_POINTER:
-                    case RENDER_VAL_TYPE_NULL:
-                         // The dispatcher can't receive raw pointers. It needs a registry ID.
-                         // This path should not be taken for evaluated object pointers.
-                         // Instead, the IR should have an IR_EXPR_REGISTRY_REF.
-                         // For now, we pass NULL.
-                        literal_nodes[i].is_string = true;
-                        literal_nodes[i].value = "NULL";
+                    case RENDER_VAL_TYPE_NULL: {
+                         if (evaluated_args[i].as.p_val == NULL) {
+                            literal_nodes[i].is_string = true;
+                            literal_nodes[i].value = "NULL";
+                        } else {
+                            // It's a pointer to an object. We need to find its ID to pass to the dispatcher.
+                            const char* id = registry_get_id_from_pointer(registry, evaluated_args[i].as.p_val);
+                            if (id) {
+                                literal_nodes[i].is_string = true;
+                                literal_nodes[i].value = (char*)id;
+                            } else {
+                                print_warning("Could not find registry ID for pointer arg %p in call to %s. Passing NULL.", evaluated_args[i].as.p_val, call->func_name);
+                                literal_nodes[i].is_string = true;
+                                literal_nodes[i].value = "NULL";
+                            }
+                        }
                         break;
+                    }
                 }
             }
 
@@ -245,9 +235,7 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             }
 
             // 4. Dispatch the call
-            void* result = dynamic_lvgl_call_ir(call->func_name, target_obj, final_ir_args, final_arg_count, spec);
-            out_val->type = RENDER_VAL_TYPE_POINTER;
-            out_val->as.p_val = result;
+            *out_val = dynamic_lvgl_call_ir(call->func_name, target_obj, final_ir_args, final_arg_count, spec);
 
             // 5. Cleanup
             free(evaluated_args);

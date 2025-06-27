@@ -19,7 +19,7 @@
             "name": "center_label",
             "bg_color": "#ff0000",
             "bg_opa": 20,
-            "align": ["LV_ALIGN_CENTER", 0, 10],
+            "align": ["LV_ALIGN_CENTER"],
             "size": [200, 100],
             "text": "TEST2"
           }

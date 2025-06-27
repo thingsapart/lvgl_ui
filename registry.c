@@ -95,6 +95,16 @@ void* registry_get_pointer(const Registry* reg, const char* id, const char* type
     return NULL;
 }
 
+const char* registry_get_id_from_pointer(const Registry* reg, const void* ptr) {
+    if (!reg || !ptr) return NULL;
+    for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
+        if (node->ptr == ptr) {
+            return node->id;
+        }
+    }
+    return NULL;
+}
+
 
 // --- String Registration ---
 
