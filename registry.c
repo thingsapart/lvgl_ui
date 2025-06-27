@@ -63,7 +63,7 @@ void registry_free(Registry* reg) {
 // --- Pointer Registration ---
 
 void registry_add_pointer(Registry* reg, void* ptr, const char* id, const char* json_type, const char* c_type) {
-    if (!reg || !id || !ptr) return;
+    if (!reg || !id) return; // Allow adding NULL pointers
     const char* key = (id[0] == '@') ? id + 1 : id;
 
     PointerRegistryNode* new_node = (PointerRegistryNode*)calloc(1, sizeof(PointerRegistryNode));
@@ -123,6 +123,14 @@ void registry_add_component(Registry* reg, const char* name, const cJSON* compon
     reg->components = new_node;
 }
 
+void registry_print_components(const Registry* reg) {
+    if (!reg) return;
+    for (ComponentRegistryNode* node = reg->components; node; node = node->next) {
+      printf("Component %s:\n", node->name);
+      cJSON_Print(node->component_root);
+    }
+}
+
 const cJSON* registry_get_component(const Registry* reg, const char* name) {
     if (!reg || !name) return NULL;
     const char* key = (name[0] == '@') ? name + 1 : name;
@@ -132,24 +140,15 @@ const cJSON* registry_get_component(const Registry* reg, const char* name) {
     return NULL;
 }
 
-void registry_print_components(const Registry* reg) {
-    if (!reg) return;
-    for (ComponentRegistryNode* node = reg->components; node; node = node->next) {
-      printf("Component %s:\n", node->name);
-      cJSON_Print(node->component_root);
-    }
-
-}
-
 void registry_add_generated_var(Registry* reg, const char* name, const char* c_var_name, const char* c_type) {
-    if (!reg || !name || !c_var_name || !c_type) return;
+    if (!reg || !name || !c_var_name) return; // c_type can be null
     const char* key = (name[0] == '@') ? name + 1 : name;
 
     VarRegistryNode* new_node = (VarRegistryNode*)malloc(sizeof(VarRegistryNode));
     if (!new_node) render_abort("Failed to allocate var registry node");
     new_node->name = strdup(key);
     new_node->c_var_name = strdup(c_var_name);
-    new_node->c_type = strdup(c_type);
+    new_node->c_type = c_type ? strdup(c_type) : NULL;
 
     new_node->next = reg->generated_vars;
     reg->generated_vars = new_node;

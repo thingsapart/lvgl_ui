@@ -1,12 +1,35 @@
 #include "lvgl_renderer.h"
-#include "c_gen/lvgl_dispatch.h" // For dynamic_lvgl_call_ir and obj_registry_*
+#include "c_gen/lvgl_dispatch.h"
 #include "debug_log.h"
+#include "registry.h"
 #include "utils.h"
 #include <stdlib.h>
 
+// --- Value Representation ---
+// A struct to hold the concrete C value of a fully evaluated expression.
+typedef enum {
+    RENDER_VAL_TYPE_NULL,
+    RENDER_VAL_TYPE_INT,
+    RENDER_VAL_TYPE_POINTER,
+    RENDER_VAL_TYPE_STRING,
+    RENDER_VAL_TYPE_COLOR // Special case for lv_color_t which is a struct
+} RenderValueType;
+
+typedef struct {
+    RenderValueType type;
+    union {
+        intptr_t i_val;
+        void* p_val;
+        const char* s_val;
+        lv_color_t color_val;
+    } as;
+} RenderValue;
+
+
 // --- Forward Declarations ---
-static void render_object_list(ApiSpec* spec, IRObject* head);
-static void* execute_expression(ApiSpec* spec, IRExpr* expr);
+static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry);
+static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr, RenderValue* out_val);
+
 
 // --- Main Backend Entry Point ---
 
@@ -16,92 +39,194 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent) {
         return;
     }
 
-    obj_registry_init();
+    // Use a single registry for the entire rendering process.
+    Registry* registry = registry_create();
+    obj_registry_init(); // Also init the C-side registry.
+
     // Add the top-level parent widget to the registry so it can be referenced as "parent"
+    registry_add_pointer(registry, parent, "parent", "obj", "lv_obj_t*");
     obj_registry_add("parent", parent);
 
     DEBUG_LOG(LOG_MODULE_RENDERER, "Starting LVGL render backend.");
-    render_object_list(api_spec, root->root_objects);
+    render_object_list(api_spec, root->root_objects, registry);
     DEBUG_LOG(LOG_MODULE_RENDERER, "LVGL render backend finished.");
 
-    // The caller is responsible for deinit if they want the registry cleared.
-    // obj_registry_deinit();
+    registry_free(registry);
+    // The C-side registry should be de-inited by the caller (e.g., main) after the loop ends.
 }
 
 // --- Core Rendering Logic ---
 
-static void render_object_list(ApiSpec* spec, IRObject* head) {
+static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry) {
     for (IRObject* current_obj = head; current_obj; current_obj = current_obj->next) {
         DEBUG_LOG(LOG_MODULE_RENDERER, "Rendering object: c_name='%s', json_type='%s'", current_obj->c_name, current_obj->json_type);
 
-        // 1. Create the object by executing its constructor expression
-        void* c_obj = execute_expression(spec, current_obj->constructor_expr);
+        RenderValue constructor_result = { .type = RENDER_VAL_TYPE_NULL };
+        void* c_obj = NULL;
 
-        // Handle non-pointer types like lv_style_t which must be heap-allocated for runtime use.
+        // 1. Create the object by executing its constructor expression
+        if (current_obj->constructor_expr) {
+            evaluate_expression(spec, registry, current_obj->constructor_expr, &constructor_result);
+            c_obj = constructor_result.as.p_val;
+        }
+
+        // Handle non-pointer types like lv_style_t which are stack-allocated by the C-backend
+        // but must be heap-allocated for the dynamic renderer.
         if (!c_obj && current_obj->c_type && strchr(current_obj->c_type, '*') == NULL) {
             DEBUG_LOG(LOG_MODULE_RENDERER, "Allocating heap memory for non-pointer type '%s'", current_obj->c_type);
             if (strcmp(current_obj->c_type, "lv_style_t") == 0) {
                 c_obj = malloc(sizeof(lv_style_t));
                 if (!c_obj) render_abort("Failed to malloc lv_style_t");
             }
-             // NOTE: Add other non-pointer types here if they become necessary
         }
 
         if (!c_obj && current_obj->constructor_expr) {
             DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Constructor for '%s' returned NULL.", current_obj->c_name);
         }
 
-        // Add the created C object to the runtime registry using its generated C name as the key.
-        // This allows setup calls to find their target.
-        obj_registry_add(current_obj->c_name, c_obj);
+        // Register the newly created object so it can be found by subsequent calls.
+        registry_add_pointer(registry, c_obj, current_obj->c_name, current_obj->json_type, current_obj->c_type);
+        if (current_obj->registered_id) {
+             registry_add_pointer(registry, c_obj, current_obj->registered_id, current_obj->json_type, current_obj->c_type);
+             obj_registry_add(current_obj->registered_id, c_obj);
+             DEBUG_LOG(LOG_MODULE_REGISTRY, "Registered ID '%s' to pointer %p", current_obj->registered_id, c_obj);
+        }
 
         // 2. Execute all setup calls for this object.
-        // This includes the obj_registry_add call for the user-defined 'id'.
         for (IRExprNode* call_node = current_obj->setup_calls; call_node; call_node = call_node->next) {
-            execute_expression(spec, call_node->expr);
+            RenderValue ignored_result;
+            evaluate_expression(spec, registry, call_node->expr, &ignored_result);
         }
 
         // 3. Recursively render child objects
         if (current_obj->children) {
-            render_object_list(spec, current_obj->children);
+            render_object_list(spec, current_obj->children, registry);
         }
     }
 }
 
-static void* execute_expression(ApiSpec* spec, IRExpr* expr) {
-    if (!expr) return NULL;
+// --- Recursive Expression Evaluator ---
+
+static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr, RenderValue* out_val) {
+    if (!expr) {
+        out_val->type = RENDER_VAL_TYPE_NULL;
+        out_val->as.p_val = NULL;
+        return;
+    }
 
     switch (expr->base.type) {
-        case IR_EXPR_RUNTIME_REG_ADD: {
-            IRExprRuntimeRegAdd* reg_add = (IRExprRuntimeRegAdd*)expr;
-            // The object to register is given as a reference to its C-name.
-            IRExprRegistryRef* obj_ref = (IRExprRegistryRef*)reg_add->object_expr;
-            void* c_obj = obj_registry_get(obj_ref->name);
-            if (c_obj) {
-                obj_registry_add(reg_add->id, c_obj);
-                DEBUG_LOG(LOG_MODULE_REGISTRY, "Runtime-registered ID '%s' to pointer %p", reg_add->id, c_obj);
+        case IR_EXPR_LITERAL: {
+            IRExprLiteral* lit = (IRExprLiteral*)expr;
+            if (lit->is_string) {
+                out_val->type = RENDER_VAL_TYPE_STRING;
+                out_val->as.s_val = lit->value;
             } else {
-                DEBUG_LOG(LOG_MODULE_REGISTRY, "Error: Could not find object C-name '%s' to register with ID '%s'", obj_ref->name, reg_add->id);
+                out_val->type = RENDER_VAL_TYPE_INT;
+                out_val->as.i_val = strtol(lit->value, NULL, 0);
             }
-            return NULL; // This expression does not return a value
+            return;
+        }
+
+        case IR_EXPR_ENUM: {
+            long enum_val = 0;
+            // The dispatcher's helpers need the enum's C type, so we must pass the symbol.
+            // For direct evaluation, we'd need to find the enum's integer value.
+            // Let's pass the symbol as a string and let the dispatcher resolve it.
+            out_val->type = RENDER_VAL_TYPE_STRING;
+            out_val->as.s_val = ((IRExprEnum*)expr)->symbol;
+            return;
+        }
+
+        case IR_EXPR_REGISTRY_REF: {
+            const char* name = ((IRExprRegistryRef*)expr)->name;
+            out_val->type = RENDER_VAL_TYPE_POINTER;
+            out_val->as.p_val = registry_get_pointer(registry, name, NULL);
+            if (!out_val->as.p_val) {
+                 DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Registry reference '%s' resolved to NULL.", name);
+            }
+            return;
         }
 
         case IR_EXPR_FUNCTION_CALL: {
             IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
+            DEBUG_LOG(LOG_MODULE_DISPATCH, "Evaluating call: %s", call->func_name);
 
-            // 1. Count arguments and prepare IRNode** array for the dispatcher.
+            // Special case for value-returning functions that the dispatcher can't handle.
+            if (strcmp(call->func_name, "lv_color_hex") == 0) {
+                RenderValue arg_val;
+                evaluate_expression(spec, registry, call->args->expr, &arg_val);
+                out_val->type = RENDER_VAL_TYPE_COLOR;
+                out_val->as.color_val = lv_color_hex(arg_val.as.i_val);
+                return;
+            }
+            if (strcmp(call->func_name, "lv_pct") == 0) {
+                RenderValue arg_val;
+                evaluate_expression(spec, registry, call->args->expr, &arg_val);
+                out_val->type = RENDER_VAL_TYPE_INT;
+                out_val->as.i_val = lv_pct(arg_val.as.i_val);
+                return;
+            }
+
+            // --- General-purpose dynamic dispatch ---
+
+            // 1. Evaluate all arguments into concrete values.
             int arg_count = 0;
             for (IRExprNode* n = call->args; n; n = n->next) arg_count++;
 
-            IRNode** ir_args = arg_count > 0 ? calloc(arg_count, sizeof(IRNode*)) : NULL;
-            if (arg_count > 0 && !ir_args) render_abort("Failed to allocate ir_args array");
+            RenderValue* evaluated_args = arg_count > 0 ? calloc(arg_count, sizeof(RenderValue)) : NULL;
+            if (arg_count > 0 && !evaluated_args) render_abort("Failed to allocate evaluated_args array");
 
             int i = 0;
             for (IRExprNode* n = call->args; n; n = n->next) {
-                ir_args[i++] = (IRNode*)n->expr;
+                evaluate_expression(spec, registry, n->expr, &evaluated_args[i++]);
             }
 
-            // 2. Determine the target object and the final arguments for the dispatcher.
+            // 2. Repackage the concrete values into temporary IR_EXPR_LITERAL nodes
+            //    that `dynamic_lvgl_call_ir` and its helpers can understand.
+            IRNode** temp_ir_args = arg_count > 0 ? calloc(arg_count, sizeof(IRNode*)) : NULL;
+            if (arg_count > 0 && !temp_ir_args) render_abort("Failed to alloc temp_ir_args");
+
+            IRExprLiteral* literal_nodes = arg_count > 0 ? calloc(arg_count, sizeof(IRExprLiteral)) : NULL;
+            if(arg_count > 0 && !literal_nodes) render_abort("Failed to alloc literal_nodes");
+
+            char** str_buffers = calloc(arg_count, sizeof(char*));
+            if(arg_count > 0 && !str_buffers) render_abort("Failed to alloc str_buffers");
+
+
+            for (i = 0; i < arg_count; i++) {
+                literal_nodes[i].base.base.type = IR_EXPR_LITERAL;
+                temp_ir_args[i] = (IRNode*)&literal_nodes[i];
+                str_buffers[i] = malloc(32); // Buffer for converting numbers to strings
+                if(!str_buffers[i]) render_abort("Failed to alloc str_buffer");
+
+                switch (evaluated_args[i].type) {
+                    case RENDER_VAL_TYPE_INT:
+                        literal_nodes[i].is_string = false;
+                        snprintf(str_buffers[i], 32, "%ld", (long)evaluated_args[i].as.i_val);
+                        literal_nodes[i].value = str_buffers[i];
+                        break;
+                    case RENDER_VAL_TYPE_COLOR: // Pass color as its integer representation
+                        literal_nodes[i].is_string = false;
+                        snprintf(str_buffers[i], 32, "%u", lv_color_to_u32(evaluated_args[i].as.color_val));
+                        literal_nodes[i].value = str_buffers[i];
+                        break;
+                    case RENDER_VAL_TYPE_STRING:
+                        literal_nodes[i].is_string = true;
+                        literal_nodes[i].value = (char*)evaluated_args[i].as.s_val;
+                        break;
+                    case RENDER_VAL_TYPE_POINTER:
+                    case RENDER_VAL_TYPE_NULL:
+                         // The dispatcher can't receive raw pointers. It needs a registry ID.
+                         // This path should not be taken for evaluated object pointers.
+                         // Instead, the IR should have an IR_EXPR_REGISTRY_REF.
+                         // For now, we pass NULL.
+                        literal_nodes[i].is_string = true;
+                        literal_nodes[i].value = "NULL";
+                        break;
+                }
+            }
+
+            // 3. Determine target and final arguments for the dispatcher
             void* target_obj = NULL;
             IRNode** final_ir_args = NULL;
             int final_arg_count = 0;
@@ -110,41 +235,33 @@ static void* execute_expression(ApiSpec* spec, IRExpr* expr) {
             bool first_arg_is_target = f_args && f_args->type && (strstr(f_args->type, "_t*") != NULL);
 
             if (first_arg_is_target && arg_count > 0) {
-                // The first argument is the target object. It MUST be a registry reference.
-                if (ir_args[0]->type == IR_EXPR_REGISTRY_REF) {
-                    IRExprRegistryRef* target_ref = (IRExprRegistryRef*)ir_args[0];
-                    const char* target_id = target_ref->name;
-                     // The ID could be a user-defined one ('@id') or a generated c_name ('label_0').
-                    if (target_id[0] == '@') target_id++; // Strip prefix for lookup.
-                    target_obj = obj_registry_get(target_id);
-                } else {
-                    DEBUG_LOG(LOG_MODULE_RENDERER, "Error: First argument to '%s' is not a registry ref, cannot determine target.", call->func_name);
-                }
-                final_ir_args = (arg_count > 1) ? &ir_args[1] : NULL;
+                target_obj = evaluated_args[0].as.p_val;
+                final_ir_args = (arg_count > 1) ? &temp_ir_args[1] : NULL;
                 final_arg_count = arg_count - 1;
             } else {
-                // No target object (e.g., lv_tick_inc())
                 target_obj = NULL;
-                final_ir_args = ir_args;
+                final_ir_args = temp_ir_args;
                 final_arg_count = arg_count;
             }
 
-            DEBUG_LOG(LOG_MODULE_DISPATCH, "Dispatching: %s", call->func_name);
-
-            // 3. Dispatch the call via the generated function
+            // 4. Dispatch the call
             void* result = dynamic_lvgl_call_ir(call->func_name, target_obj, final_ir_args, final_arg_count, spec);
+            out_val->type = RENDER_VAL_TYPE_POINTER;
+            out_val->as.p_val = result;
 
-            // 4. Cleanup
-            free(ir_args);
-
-            return result;
+            // 5. Cleanup
+            free(evaluated_args);
+            for(i=0; i<arg_count; i++) free(str_buffers[i]);
+            free(str_buffers);
+            free(literal_nodes);
+            free(temp_ir_args);
+            return;
         }
 
         default:
-            // Other expressions like literals, enums, etc., are not directly executable.
-            // They only have meaning as arguments to a function call, which are handled
-            // by the dispatcher. This case should not be hit in a valid IR tree.
-            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: execute_expression called on non-executable node type %d", expr->base.type);
-            return NULL;
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: evaluate_expression called on un-evaluatable node type %d", expr->base.type);
+            out_val->type = RENDER_VAL_TYPE_NULL;
+            out_val->as.p_val = NULL;
+            return;
     }
 }
