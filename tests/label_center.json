@@ -1,0 +1,21 @@
+[
+  {
+    "type": "style",
+    "id": "@main",
+    "bg_color": "#ffffff",
+    "bg_opa": 255
+  },
+  {
+    "size": ["100%", "100%"],
+    "children": [
+        {
+          "type": "label",
+          "name": "center_label",
+          "bg_color": "#ff0000",
+          "bg_opa": 20,
+          "align": ["LV_ALIGN_CENTER"],
+          "text": "This is a label"
+        }
+    ]
+  }
+]
