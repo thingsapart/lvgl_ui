@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils.h"
@@ -95,3 +96,14 @@ long ir_node_get_enum_value(struct IRNode* node, const char* expected_enum_c_typ
             return 0; // Default for unhandled IRNode types or non-expression nodes
     }
 }
+
+void print_warning(const char *msg, ...) {
+    va_list args;
+    va_start(args, msg);
+    fprintf(stderr, "[WARNING] ");
+
+    vfprintf(stderr, msg, args);
+    va_end(args);
+    fprintf(stderr, "\n");
+}
+

@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 // --- Generation Context ---
 typedef struct {
@@ -21,9 +22,18 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type);
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
-static bool types_compatible(const char* expected, const char* actual);
-static void check_function_args(GenContext* ctx, const char* func_name, IRExprNode* args_list);
+static void process_and_validate_call(GenContext* ctx, const char* func_name, IRExprNode** args_list_ptr);
 static void merge_json_objects(cJSON* dest, const cJSON* source);
+
+// --- Warning & Error Reporting ---
+static void generator_warning(const char* format, ...) {
+    fprintf(stderr, "Generator Warning: ");
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fprintf(stderr, "\n");
+}
 
 // --- Main Entry Point ---
 
@@ -58,7 +68,7 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
                     registry_add_component(ctx.registry, id_item->valuestring, content_item);
                     DEBUG_LOG(LOG_MODULE_GENERATOR, "Registered component: %s", id_item->valuestring);
                 } else {
-                    DEBUG_LOG(LOG_MODULE_GENERATOR, "Warning: Found 'component' with missing 'id' or 'content'.");
+                    generator_warning("Found 'component' with missing 'id' or 'content'.");
                 }
             }
         }
@@ -66,14 +76,12 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
 
 
     const char* root_parent_name = "parent";
-    // Register the implicit parent so its type can be looked up.
     registry_add_generated_var(ctx.registry, root_parent_name, root_parent_name, "lv_obj_t*");
 
 
     cJSON* obj_json = NULL;
     cJSON_ArrayForEach(obj_json, ui_spec_root) {
         if (cJSON_IsObject(obj_json)) {
-            // Skip component definitions in the main rendering pass
             cJSON* type_item = cJSON_GetObjectItemCaseSensitive(obj_json, "type");
             if (type_item && cJSON_IsString(type_item) && strcmp(type_item->valuestring, "component") == 0) {
                 continue;
@@ -100,18 +108,16 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     cJSON* type_item = cJSON_GetObjectItem(obj_json, "type");
     if (type_item && cJSON_IsString(type_item)) json_type_str = type_item->valuestring;
 
-    // Handle 'use-view' by replacing the current JSON node with the component's content
     if (strcmp(json_type_str, "use-view") == 0) {
         cJSON* id_item = cJSON_GetObjectItem(obj_json, "id");
         if (!id_item || !cJSON_IsString(id_item)) {
-            DEBUG_LOG(LOG_MODULE_GENERATOR, "Error: 'use-view' requires a string 'id'.");
+            generator_warning("'use-view' requires a string 'id'.");
             return NULL;
         }
 
         const cJSON* component_content = registry_get_component(ctx->registry, id_item->valuestring);
         if (!component_content) {
-            registry_print_components(ctx->registry);
-            DEBUG_LOG(LOG_MODULE_GENERATOR, "Error: Component '%s' not found for 'use-view'.", id_item->valuestring);
+            generator_warning("Component '%s' not found for 'use-view'.", id_item->valuestring);
             return NULL;
         }
 
@@ -143,7 +149,6 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         return generated_obj;
     }
 
-    // --- Regular Object Parsing ---
     cJSON* new_scope_context = NULL;
     const cJSON* effective_context = ui_context;
     cJSON* local_context = cJSON_GetObjectItem(obj_json, "context");
@@ -178,26 +183,17 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     if (clean_id && clean_id[0] == '@') {
         clean_id++;
     }
-
     IRObject* ir_obj = ir_new_object(c_name, json_type_str, object_c_type, clean_id);
     free(c_name);
 
     if (registered_id_from_json) {
         registry_add_generated_var(ctx->registry, registered_id_from_json, ir_obj->c_name, ir_obj->c_type);
-
-        // Add the runtime registration instruction if an ID is present
         const char* id_for_runtime = (registered_id_from_json[0] == '@') ? registered_id_from_json + 1 : registered_id_from_json;
         IRExpr* obj_ref_expr = ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type);
         IRExpr* reg_call_expr = ir_new_expr_runtime_reg_add(id_for_runtime, obj_ref_expr);
-
-        IRExprNode* reg_call_node = calloc(1, sizeof(IRExprNode));
-        if (!reg_call_node) render_abort("Failed to allocate IRExprNode for registration.");
-        reg_call_node->expr = reg_call_expr;
-        reg_call_node->next = ir_obj->setup_calls;
-        ir_obj->setup_calls = reg_call_node;
+        ir_expr_list_add(&ir_obj->setup_calls, reg_call_expr);
     }
 
-    const char* target_c_name_for_calls = ir_obj->c_name;
     if (init_item) {
         ir_obj->constructor_expr = unmarshal_value(ctx, init_item, effective_context, object_c_type);
     } else {
@@ -210,12 +206,12 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             ir_expr_list_add(&args, ir_new_expr_registry_ref("parent", registry_get_c_type_for_id(ctx->registry, parent_c_name)));
             const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, create_func);
             ir_obj->constructor_expr = ir_new_expr_func_call(create_func, args, ret_type);
-            check_function_args(ctx, create_func, args);
+            process_and_validate_call(ctx, create_func, &((IRExprFunctionCall*)ir_obj->constructor_expr)->args);
         } else if (widget_def && widget_def->init_func) {
             IRExprNode* init_args = NULL;
             ir_expr_list_add(&init_args, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
             ir_expr_list_add(&ir_obj->setup_calls, ir_new_expr_func_call(widget_def->init_func, init_args, "void"));
-            check_function_args(ctx, widget_def->init_func, init_args);
+            process_and_validate_call(ctx, widget_def->init_func, &init_args);
         }
     }
 
@@ -228,48 +224,50 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, ir_obj->json_type, key);
         const char* func_name = (prop_def && prop_def->setter) ? prop_def->setter : (api_spec_has_function(ctx->api_spec, key) ? key : NULL);
         if (!func_name) {
-            DEBUG_LOG(LOG_MODULE_GENERATOR, "Warning: Could not resolve property/method '%s' for type '%s'.", key, ir_obj->json_type);
+            generator_warning("Could not resolve property/method '%s' for type '%s'.", key, ir_obj->json_type);
             continue;
         }
 
-        const FunctionArg* expected_args = api_spec_get_function_args_by_name(ctx->api_spec, func_name);
-        bool takes_implicit_obj = (expected_args && expected_args->type && (strstr(expected_args->type, "_t*")));
+        const FunctionDefinition* func_def = api_spec_find_function(ctx->api_spec, func_name);
+        if (!func_def) {
+            generator_warning("Could not find function definition for '%s'.", func_name);
+            continue;
+        }
 
         IRExprNode* final_args = NULL;
-        const FunctionArg* current_expected_arg = expected_args;
+        const FunctionArg* expected_arg = func_def->args_head;
 
+        bool takes_implicit_obj = (expected_arg && expected_arg->type && (strstr(expected_arg->type, "_t*")));
         if (takes_implicit_obj) {
-            const char* target_c_type = registry_get_c_type_for_id(ctx->registry, target_c_name_for_calls);
-            ir_expr_list_add(&final_args, ir_new_expr_registry_ref(target_c_name_for_calls, target_c_type));
-            if(current_expected_arg) current_expected_arg = current_expected_arg->next;
+            ir_expr_list_add(&final_args, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
+            expected_arg = expected_arg->next;
         }
 
-        cJSON* prop_val_array = cJSON_IsArray(prop_item) ? prop_item : NULL;
-        if (prop_val_array) {
+        if (cJSON_IsArray(prop_item)) {
             cJSON* val_item = NULL;
-            cJSON_ArrayForEach(val_item, prop_val_array) {
-                const char* expected_type = current_expected_arg ? current_expected_arg->type : "unknown";
+            cJSON_ArrayForEach(val_item, prop_item) {
+                const char* expected_type = expected_arg ? expected_arg->type : "unknown";
                 IRExpr* arg_expr = unmarshal_value(ctx, val_item, effective_context, expected_type);
-                if (arg_expr) ir_expr_list_add(&final_args, arg_expr);
-                if (current_expected_arg) current_expected_arg = current_expected_arg->next;
+                ir_expr_list_add(&final_args, arg_expr);
+                if (expected_arg) expected_arg = expected_arg->next;
             }
         } else {
-            const char* expected_type = current_expected_arg ? current_expected_arg->type : "unknown";
+            const char* expected_type = expected_arg ? expected_arg->type : "unknown";
             IRExpr* arg_expr = unmarshal_value(ctx, prop_item, effective_context, expected_type);
-            if (arg_expr) ir_expr_list_add(&final_args, arg_expr);
+            ir_expr_list_add(&final_args, arg_expr);
         }
+
+        process_and_validate_call(ctx, func_name, &final_args);
 
         const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, func_name);
         ir_expr_list_add(&ir_obj->setup_calls, ir_new_expr_func_call(func_name, final_args, ret_type));
-        check_function_args(ctx, func_name, final_args);
     }
 
     cJSON* children_item = cJSON_GetObjectItem(obj_json, "children");
     if (children_item && cJSON_IsArray(children_item)) {
-        const char* child_parent_c_name = ir_obj->c_name;
         cJSON* child_json = NULL;
         cJSON_ArrayForEach(child_json, children_item) {
-            ir_object_list_add(&ir_obj->children, parse_object(ctx, child_json, child_parent_c_name, effective_context));
+            ir_object_list_add(&ir_obj->children, parse_object(ctx, child_json, ir_obj->c_name, effective_context));
         }
     }
 
@@ -297,15 +295,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
                     return unmarshal_value(ctx, (cJSON*)context_val, ui_context, expected_c_type);
                 }
             }
-            DEBUG_LOG(LOG_MODULE_GENERATOR, "Warning: Context variable '%s' not found.", s);
+            generator_warning("Context variable '$%s' not found.", var_name);
             return ir_new_expr_context_var(var_name, "unknown");
         }
         if (s[0] == '@') {
-            const char* type = registry_get_c_type_for_id(ctx->registry, s);
-            return ir_new_expr_registry_ref(s, type ? type : "unknown");
+            return ir_new_expr_registry_ref(s, registry_get_c_type_for_id(ctx->registry, s));
         }
         if (s[0] == '!') return ir_new_expr_static_string(s + 1);
-
         if (s[0] == '#') {
             long hex_val = strtol(s + 1, NULL, 16);
             char hex_str_arg[32];
@@ -332,10 +328,12 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         }
 
         if (api_spec_is_enum_member(ctx->api_spec, expected_c_type, s)) {
-            return ir_new_expr_enum(s, 0, expected_c_type);
+            return ir_new_expr_enum(s, 0, (char*)expected_c_type);
         }
-        if (api_spec_is_global_enum_member(ctx->api_spec, s)) {
-            return ir_new_expr_enum(s, 0, "enum");
+
+        const char* inferred_enum_type = api_spec_find_global_enum_type(ctx->api_spec, s);
+        if (inferred_enum_type) {
+            return ir_new_expr_enum(s, 0, (char*)inferred_enum_type);
         }
 
         return ir_new_expr_literal_string(s);
@@ -369,9 +367,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
                     ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context, "unknown"));
                 }
             } else {
-                ir_expr_list_add(&args_list, unmarshal_value(ctx, func_item, ui_context, "unknown"));
+                 ir_expr_list_add(&args_list, unmarshal_value(ctx, func_item, ui_context, "unknown"));
             }
-            check_function_args(ctx, func_name, args_list);
+            process_and_validate_call(ctx, func_name, &args_list);
             return ir_new_expr_func_call(func_name, args_list, ret_type);
         }
     }
@@ -395,39 +393,64 @@ static void merge_json_objects(cJSON* dest, const cJSON* source) {
 static bool types_compatible(const char* expected, const char* actual) {
     if (!expected || !actual) return false;
     if (strcmp(expected, "unknown") == 0 || strcmp(actual, "unknown") == 0) return true;
+    if (strcmp(expected, "enum") == 0 && strstr(actual, "_t")) return true;
     if (strcmp(expected, actual) == 0) return true;
 
-    if ((strcmp(expected, "lv_coord_t") == 0 || strcmp(expected, "int32_t") == 0) &&
-        (strcmp(actual, "int") == 0 || strcmp(actual, "int32_t") == 0)) return true;
-    if (strcmp(expected, "void*") == 0 && strchr(actual, '*') != NULL) return true;
+    // Handle const char* vs char*
+    if ((strcmp(expected, "const char*") == 0 && strcmp(actual, "char*") == 0) ||
+        (strcmp(expected, "char*") == 0 && strcmp(actual, "const char*") == 0)) return true;
 
-    char clean_expected[128];
-    snprintf(clean_expected, sizeof(clean_expected), "const %s", actual);
-    if(strcmp(clean_expected, expected) == 0) return true;
+    // Handle integer type variations
+    if ((strcmp(expected, "lv_coord_t") == 0 || strcmp(expected, "int32_t") == 0 || strcmp(expected, "int") == 0) &&
+        (strcmp(actual, "int") == 0 || strcmp(actual, "int32_t") == 0)) return true;
+
+    // Allow any pointer type to be passed as void*
+    if (strcmp(expected, "void*") == 0 && strchr(actual, '*') != NULL) return true;
 
     return false;
 }
 
-static void check_function_args(GenContext* ctx, const char* func_name, IRExprNode* args_list) {
-    const FunctionArg* expected_arg = api_spec_get_function_args_by_name(ctx->api_spec, func_name);
-    IRExprNode* actual_arg_node = args_list;
-    int arg_idx = 0;
-
-    while (expected_arg && actual_arg_node) {
-        IRExpr* actual_expr = actual_arg_node->expr;
-        if (!types_compatible(expected_arg->type, actual_expr->c_type)) {
-            DEBUG_LOG(LOG_MODULE_GENERATOR, "Type Mismatch: Arg %d of '%s'. Expected '%s', but got '%s'.",
-                arg_idx, func_name, expected_arg->type, actual_expr->c_type);
-        }
-        expected_arg = expected_arg->next;
-        actual_arg_node = actual_arg_node->next;
-        arg_idx++;
+static void process_and_validate_call(GenContext* ctx, const char* func_name, IRExprNode** args_list_ptr) {
+    const FunctionDefinition* func_def = api_spec_find_function(ctx->api_spec, func_name);
+    if (!func_def) {
+        generator_warning("Cannot validate call to unknown function '%s'.", func_name);
+        return;
     }
 
-    if (expected_arg && !actual_arg_node) {
-        DEBUG_LOG(LOG_MODULE_GENERATOR, "Type Warning: Too few arguments for '%s'. Expected more args starting with type '%s'.", func_name, expected_arg->type);
-    } else if (!expected_arg && actual_arg_node) {
-         DEBUG_LOG(LOG_MODULE_GENERATOR, "Type Warning: Too many arguments for '%s'.", func_name);
+    int actual_argc = 0;
+    for (IRExprNode* n = *args_list_ptr; n; n = n->next) actual_argc++;
+
+    int expected_argc = 0;
+    const FunctionArg* last_expected_arg = NULL;
+    for (FunctionArg* a = func_def->args_head; a; a = a->next) {
+        expected_argc++;
+        last_expected_arg = a;
+    }
+
+    // Special case for style setters missing the selector argument
+    if (strncmp(func_name, "lv_obj_set_style_", 17) == 0 && actual_argc == expected_argc - 1) {
+        if (last_expected_arg && strcmp(last_expected_arg->type, "lv_style_selector_t") == 0) {
+            ir_expr_list_add(args_list_ptr, ir_new_expr_literal("0", "lv_style_selector_t"));
+            actual_argc++; // Update count after adding the default
+        }
+    }
+
+    if (actual_argc != expected_argc) {
+        generator_warning("Argument count mismatch for '%s'. Expected %d, got %d.", func_name, expected_argc, actual_argc);
+        return;
+    }
+
+    IRExprNode* actual_arg_node = *args_list_ptr;
+    FunctionArg* expected_arg = func_def->args_head;
+    int i = 0;
+    while (actual_arg_node && expected_arg) {
+        if (!types_compatible(expected_arg->type, actual_arg_node->expr->c_type)) {
+            generator_warning("Type mismatch for argument %d of '%s'. Expected '%s', but got '%s'.",
+                i, func_name, expected_arg->type, actual_arg_node->expr->c_type);
+        }
+        actual_arg_node = actual_arg_node->next;
+        expected_arg = expected_arg->next;
+        i++;
     }
 }
 

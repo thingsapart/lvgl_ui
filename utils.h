@@ -28,4 +28,7 @@ long ir_node_get_enum_value(struct IRNode* node, const char* expected_enum_c_typ
 // Function to call when a rendering or code generation error occurs that should stop execution.
 extern void render_abort(const char *msg);
 
+// Shows a warning.
+void print_warning(const char *msg, ...);
+
 #endif // UTILS_H

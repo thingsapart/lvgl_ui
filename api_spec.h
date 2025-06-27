@@ -125,6 +125,9 @@ bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_name, const 
 // Checks if a string is a member of any enum type defined in the spec.
 bool api_spec_is_global_enum_member(const ApiSpec* spec, const char* member_name);
 
+// Searches all enums and returns the type name for a given member.
+const char* api_spec_find_global_enum_type(const ApiSpec* spec, const char* member_name);
+
 // Checks if a string is a defined constant in the spec.
 bool api_spec_is_constant(const ApiSpec* spec, const char* const_name);
 

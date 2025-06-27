@@ -89,6 +89,9 @@ void* registry_get_pointer(const Registry* reg, const char* id, const char* type
             }
         }
     }
+
+	print_warning("Pointer \"@%s\" has not been found in the registry", id);
+
     return NULL;
 }
 

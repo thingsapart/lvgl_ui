@@ -309,7 +309,7 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, 
 
                 num_expected_args = len(arg_types)
                 f.write(f"    if (arg_count != {num_expected_args}) {{\n")
-                f.write(f"        LV_LOG_WARN(\"IR call to {first_func['name']}-like function: expected {num_expected_args} args, got %d\", arg_count);\n")
+                f.write(f"        print_warning(\"IR call to {first_func['name']}-like function: expected {num_expected_args} args, got %d\", arg_count);\n")
                 f.write(f"        return NULL;\n")
                 f.write(f"    }}\n\n")
 
@@ -317,6 +317,8 @@ typedef lv_obj_t* (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, 
                 for j, c_type in enumerate(arg_types):
                     parser_code = self._get_parser_for_ir_node(c_type, 'ir_args', j)
                     f.write(f"    {c_type} arg{j} = {parser_code};\n")
+                    if c_type == 'lv_style_t*' or c_type == 'lv_obj_t*':
+                        f.write(f'    if (arg{j} == NULL) {{ render_abort("Argument {j} ({c_type}) is NULL - not allowed"); }}\n')
 
                 # Typedef for the specific function pointer
                 c_call_arg_types = [target_c_type] if target_c_type != 'void*' else []
@@ -379,7 +381,7 @@ lv_obj_t* dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct I
         // Pass the spec pointer to the archetype dispatcher for context
         return mapping->ir_dispatcher(mapping->func_ptr, target_obj, ir_args, arg_count, spec);
     }
-    LV_LOG_WARN("Dynamic LVGL IR call failed: function '%s' not found or dispatcher missing.", func_name);
+    print_warning("Dynamic LVGL IR call failed: function '%s' not found or dispatcher missing.", func_name);
     return NULL;
 }
 
@@ -405,7 +407,7 @@ void obj_registry_init(void) {
 char* obj_registry_add_str(const char *s) {
     if (!s) return NULL;
     if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS) {
-        LV_LOG_WARN("Cannot add string to registry: registry full");
+        print_warning("Cannot add string to registry: registry full");
         return (char*)s; // Fallback: return original pointer
     }
     // We use a prefix to avoid ID collisions with objects.
@@ -429,7 +431,7 @@ char* obj_registry_add_str(const char *s) {
 void obj_registry_add(const char* id, void* obj) {
     if (!id) return;
     if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS) {
-        LV_LOG_WARN("Cannot add object to registry: full or null ID");
+        print_warning("Cannot add object to registry: full or null ID");
         return;
     }
     for (int i = 0; i < obj_registry_count; i++) {
@@ -446,14 +448,14 @@ void obj_registry_add(const char* id, void* obj) {
 void* obj_registry_get(const char* id) {
     if (!id) return NULL;
     if (strcmp(id, "SCREEN_ACTIVE") == 0) return (void*)lv_screen_active();
-    if (strcmp(id, "NULL") == 0) return NULL;
+    // if (strcmp(id, "NULL") == 0) return NULL;
 
     for (int i = 0; i < obj_registry_count; i++) {
         if (strcmp(obj_registry[i].id, id) == 0) {
             return obj_registry[i].obj;
         }
     }
-    LV_LOG_WARN("Object with ID '%s' not found in registry.", id);
+    print_warning("Object with ID '%s' not found in registry.", id);
     return NULL;
 }
 

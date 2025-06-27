@@ -550,9 +550,6 @@ const char* widget_get_create_func(const WidgetDefinition* widget) {
     return widget ? widget->create : NULL;
 }
 
-// Basic implementation of api_spec_get_function_return_type
-// For now, it returns "lv_obj_t*" for all function names.
-// A more robust version would look up the function in spec->functions.
 const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* func_name) {
     if (!spec || !func_name) {
         return "lv_obj_t*"; // Default or error
@@ -570,9 +567,6 @@ const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* f
         current_func_node = current_func_node->next;
     }
 
-    // If not found in global functions, iterate through widget methods (if applicable, though less common for this specific use case)
-    // This part might be an over-optimization for now, as 'with obj = func()' usually implies global factory/constructor functions.
-    // However, for completeness:
     WidgetMapNode* current_widget_node = spec->widgets_list_head;
     while (current_widget_node) {
         if (current_widget_node->widget && current_widget_node->widget->methods) {
@@ -582,9 +576,7 @@ const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* f
                      if (current_method_node->func_def && current_method_node->func_def->return_type) {
                         return current_method_node->func_def->return_type;
                     }
-                    // Found the method, but no return type.
-                    // Depending on policy, could return default or break.
-                    return "lv_obj_t*"; // Default if found but no specific type
+                    return "lv_obj_t*";
                 }
                 current_method_node = current_method_node->next;
             }
@@ -592,84 +584,49 @@ const char* api_spec_get_function_return_type(const ApiSpec* spec, const char* f
         current_widget_node = current_widget_node->next;
     }
 
-
-    // Default if not found or no return type specified
-    //fprintf(stderr, "Warning: Function '%s' not found in API spec or has no return type, defaulting to lv_obj_t*.\n", func_name);
     return "lv_obj_t*";
 }
 
-// Retrieves the FunctionArg list for a given function name from the global functions or widget methods.
-// The caller should NOT free the returned list as it points to existing data within the ApiSpec structure.
 const FunctionArg* api_spec_get_function_args_by_name(const ApiSpec* spec, const char* func_name) {
     if (!spec || !func_name) {
         return NULL;
     }
 
-    // 1. Search global functions
-    FunctionMapNode* current_fnode = spec->functions;
-    while (current_fnode) {
-        if (current_fnode->name && strcmp(current_fnode->name, func_name) == 0) {
-            if (current_fnode->func_def) {
-                return current_fnode->func_def->args_head;
-            }
-            return NULL; // Function found, but no definition (should not happen with valid spec)
-        }
-        current_fnode = current_fnode->next;
+    const FunctionDefinition* func_def = api_spec_find_function(spec, func_name);
+    if(func_def) {
+        return func_def->args_head;
     }
 
-    // 2. Search widget methods (less common for direct setters, but possible)
-    // This might need refinement if setters are strictly global or from a base "obj" type.
-    // For now, a comprehensive search.
-    WidgetMapNode* current_wnode = spec->widgets_list_head;
-    while (current_wnode) {
-        if (current_wnode->widget && current_wnode->widget->methods) {
-            FunctionMapNode* current_mnode = current_wnode->widget->methods;
-            while (current_mnode) {
-                if (current_mnode->name && strcmp(current_mnode->name, func_name) == 0) {
-                    if (current_mnode->func_def) {
-                        return current_mnode->func_def->args_head;
-                    }
-                    return NULL; // Method found, but no definition
-                }
-                current_mnode = current_mnode->next;
-            }
-        }
-        current_wnode = current_wnode->next;
-    }
-
-    // fprintf(stderr, "Debug: Function/method '%s' not found in api_spec_get_function_args_by_name.\n", func_name);
-    return NULL; // Not found
+    return NULL;
 }
 
 bool api_spec_is_valid_enum_int_value(const ApiSpec* spec, const char* enum_type_name, int int_value) {
     if (!spec || !spec->enums || !enum_type_name) {
-        return false; // Cannot validate
+        return false;
     }
 
     const cJSON* enum_type_json = cJSON_GetObjectItem(spec->enums, enum_type_name);
     if (!enum_type_json || !cJSON_IsObject(enum_type_json)) {
-        // This specific enum type is not defined in the spec
         return false;
     }
 
     cJSON* enum_member = NULL;
     cJSON_ArrayForEach(enum_member, enum_type_json) {
         if (cJSON_IsString(enum_member) && enum_member->valuestring) {
-            // Enum values in LVGL can be decimal or hex strings
             char* endptr;
-            long val = strtol(enum_member->valuestring, &endptr, 0); // Base 0 auto-detects hex
-            if (*endptr == '\0') { // Successful conversion
+            long val = strtol(enum_member->valuestring, &endptr, 0);
+            if (*endptr == '\0') {
                 if (val == int_value) {
-                    return true; // Found a match
+                    return true;
                 }
             }
-        } else if (cJSON_IsNumber(enum_member)) { // Though spec usually has them as strings
+        } else if (cJSON_IsNumber(enum_member)) {
              if (enum_member->valueint == int_value) {
                  return true;
              }
         }
     }
-    return false; // No member had a matching integer value
+    return false;
 }
 
 bool api_spec_is_enum_member(const ApiSpec* spec, const char* enum_name, const char* member_name) {
@@ -683,19 +640,23 @@ bool api_spec_is_enum_member(const ApiSpec* spec, const char* enum_name, const c
     return cJSON_GetObjectItem(enum_type_json, member_name) != NULL;
 }
 
-bool api_spec_is_global_enum_member(const ApiSpec* spec, const char* member_name) {
+const char* api_spec_find_global_enum_type(const ApiSpec* spec, const char* member_name) {
     if (!spec || !spec->enums || !member_name) {
-        return false;
+        return NULL;
     }
     cJSON* enum_type_json = NULL;
-    for (enum_type_json = spec->enums->child; enum_type_json != NULL; enum_type_json = enum_type_json->next) {
+    cJSON_ArrayForEach(enum_type_json, spec->enums) {
         if (cJSON_IsObject(enum_type_json)) {
             if (cJSON_GetObjectItem(enum_type_json, member_name) != NULL) {
-                return true;
+                return enum_type_json->string; // The key of the enum object is its type name
             }
         }
     }
-    return false;
+    return NULL;
+}
+
+bool api_spec_is_global_enum_member(const ApiSpec* spec, const char* member_name) {
+    return api_spec_find_global_enum_type(spec, member_name) != NULL;
 }
 
 bool api_spec_is_constant(const ApiSpec* spec, const char* const_name) {
@@ -724,15 +685,12 @@ bool api_spec_find_constant_value(const ApiSpec* spec, const char* const_name, l
         char* endptr;
         const char* str_val = const_json->valuestring;
 
-        // Skip leading non-digit/non-minus characters (like parentheses)
         while (*str_val && !isdigit((unsigned char)*str_val) && *str_val != '-' && *str_val != '+') {
             str_val++;
         }
 
-        // strtol with base 0 will automatically handle "0x" prefixes for hex.
         long val = strtol(str_val, &endptr, 0);
 
-        // Check if a conversion was actually made.
         if (endptr != str_val) {
             *out_value = val;
             return true;
@@ -743,21 +701,9 @@ bool api_spec_find_constant_value(const ApiSpec* spec, const char* const_name, l
 }
 
 bool api_spec_has_function(const ApiSpec* spec, const char* func_name) {
-    if (!spec || !spec->functions || !func_name) {
-        return false;
-    }
-    FunctionMapNode* current_fnode = spec->functions;
-    while (current_fnode) {
-        if (current_fnode->name && strcmp(current_fnode->name, func_name) == 0) {
-            return true; // Function found
-        }
-        current_fnode = current_fnode->next;
-    }
-    return false; // Function not found
+    return api_spec_find_function(spec, func_name) != NULL;
 }
 
-// Finds the integer value of a specific enum member within a given enum type.
-// Returns true if found and out_value is set, false otherwise.
 bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_type_name, const char* member_name, long* out_value) {
     if (!spec || !spec->enums || !enum_type_name || !member_name || !out_value) {
         return false;
@@ -765,48 +711,55 @@ bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_type_name, c
 
     const cJSON* enum_type_obj = cJSON_GetObjectItemCaseSensitive(spec->enums, enum_type_name);
     if (!cJSON_IsObject(enum_type_obj)) {
-        // fprintf(stderr, "Enum type '%s' not found in API spec.\n", enum_type_name);
         return false;
     }
 
     const cJSON* enum_member_json = cJSON_GetObjectItemCaseSensitive(enum_type_obj, member_name);
     if (!enum_member_json) {
-        // fprintf(stderr, "Enum member '%s' not found in enum type '%s'.\n", member_name, enum_type_name);
         return false;
     }
 
     if (cJSON_IsString(enum_member_json) && enum_member_json->valuestring != NULL) {
-        // Value is stored as a string, potentially hex or decimal
         char* endptr;
-        *out_value = strtol(enum_member_json->valuestring, &endptr, 0); // Base 0 auto-detects hex
-        if (*endptr == '\0' && endptr != enum_member_json->valuestring) { // Successful conversion
+        *out_value = strtol(enum_member_json->valuestring, &endptr, 0);
+        if (*endptr == '\0' && endptr != enum_member_json->valuestring) {
             return true;
         } else {
-            // This case might indicate a non-integer string value for an enum, which is unusual.
-            // fprintf(stderr, "Enum member '%s' in '%s' has non-integer string value '%s'.\n", member_name, enum_type_name, enum_member_json->valuestring);
             return false;
         }
     } else if (cJSON_IsNumber(enum_member_json)) {
-        // Direct number, though spec usually has them as strings
         *out_value = (long)enum_member_json->valuedouble;
         return true;
     }
 
-    // fprintf(stderr, "Enum member '%s' in '%s' has unexpected JSON type.\n", member_name, enum_type_name);
     return false;
 }
 
 const FunctionDefinition* api_spec_find_function(const ApiSpec* spec, const char* func_name) {
-    if (!spec || !spec->functions || !func_name) {
-        return NULL;
+    if (!spec || !func_name) return NULL;
+
+    if(spec->functions) {
+        FunctionMapNode* current_fnode = spec->functions;
+        while (current_fnode) {
+            if (current_fnode->name && strcmp(current_fnode->name, func_name) == 0) {
+                return current_fnode->func_def; // Function found
+            }
+            current_fnode = current_fnode->next;
+        }
     }
 
-    FunctionMapNode* current_fnode = spec->functions;
-    while (current_fnode) {
-        if (current_fnode->name && strcmp(current_fnode->name, func_name) == 0) {
-            return current_fnode->func_def; // Function found
+    WidgetMapNode* current_wnode = spec->widgets_list_head;
+    while (current_wnode) {
+        if(current_wnode->widget && current_wnode->widget->methods) {
+             FunctionMapNode* current_mnode = current_wnode->widget->methods;
+             while(current_mnode) {
+                if(current_mnode->name && strcmp(current_mnode->name, func_name) == 0) {
+                    return current_mnode->func_def;
+                }
+                current_mnode = current_mnode->next;
+             }
         }
-        current_fnode = current_fnode->next;
+        current_wnode = current_wnode->next;
     }
 
     return NULL; // Function not found
