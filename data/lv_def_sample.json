@@ -1,0 +1,427 @@
+{
+    "enums": [
+        {
+            "name": "lv_align_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "",
+            "members": [
+                { "name": "LV_ALIGN_DEFAULT", "value": "0x00" },
+                { "name": "LV_ALIGN_TOP_LEFT", "value": "0x01" },
+                { "name": "LV_ALIGN_TOP_MID", "value": "0x02" },
+                { "name": "LV_ALIGN_TOP_RIGHT", "value": "0x03" },
+                { "name": "LV_ALIGN_BOTTOM_LEFT", "value": "0x04" },
+                { "name": "LV_ALIGN_BOTTOM_MID", "value": "0x05" },
+                { "name": "LV_ALIGN_BOTTOM_RIGHT", "value": "0x06" },
+                { "name": "LV_ALIGN_LEFT_MID", "value": "0x07" },
+                { "name": "LV_ALIGN_RIGHT_MID", "value": "0x08" },
+                { "name": "LV_ALIGN_CENTER", "value": "0x09" },
+                { "name": "LV_ALIGN_OUT_TOP_LEFT", "value": "0x0A" },
+                { "name": "LV_ALIGN_OUT_BOTTOM_RIGHT", "value": "0x0F" },
+                { "name": "LV_ALIGN_OUT_RIGHT_BOTTOM", "value": "0x15" }
+            ]
+        },
+        {
+            "name": "lv_dir_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "",
+            "members": [
+                { "name": "LV_DIR_NONE", "value": "0x00" },
+                { "name": "LV_DIR_LEFT", "value": "0x01" },
+                { "name": "LV_DIR_RIGHT", "value": "0x02" },
+                { "name": "LV_DIR_TOP", "value": "0x04" },
+                { "name": "LV_DIR_BOTTOM", "value": "0x08" },
+                { "name": "LV_DIR_HOR", "value": "0x03" },
+                { "name": "LV_DIR_VER", "value": "0x0C" },
+                { "name": "LV_DIR_ALL", "value": "0x0F" }
+            ]
+        },
+        {
+            "name": null,
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Opacity values.",
+            "members": [
+                { "name": "LV_OPA_TRANSP", "value": "0x000" },
+                { "name": "LV_OPA_0", "value": "0x000" },
+                { "name": "LV_OPA_10", "value": "0x019" },
+                { "name": "LV_OPA_50", "value": "0x07F" },
+                { "name": "LV_OPA_90", "value": "0x0E5" },
+                { "name": "LV_OPA_100", "value": "0x0FF" },
+                { "name": "LV_OPA_COVER", "value": "0x0FF" }
+            ]
+        },
+        {
+            "name": "lv_color_format_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Color formats.",
+            "members": [
+                { "name": "LV_COLOR_FORMAT_UNKNOWN", "value": "0x00" },
+                { "name": "LV_COLOR_FORMAT_RAW", "value": "0x01" },
+                { "name": "LV_COLOR_FORMAT_L8", "value": "0x06" },
+                { "name": "LV_COLOR_FORMAT_I8", "value": "0x0A" },
+                { "name": "LV_COLOR_FORMAT_A8", "value": "0x0E" },
+                { "name": "LV_COLOR_FORMAT_RGB565", "value": "0x12" },
+                { "name": "LV_COLOR_FORMAT_RGB888", "value": "0x0F" },
+                { "name": "LV_COLOR_FORMAT_ARGB8888", "value": "0x10" },
+                { "name": "LV_COLOR_FORMAT_XRGB8888", "value": "0x11" },
+                { "name": "LV_COLOR_FORMAT_NATIVE", "value": "0x12" }
+            ]
+        },
+        {
+            "name": "lv_palette_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Material Design palettes",
+            "members": [
+                { "name": "LV_PALETTE_RED", "value": "0x000" },
+                { "name": "LV_PALETTE_PINK", "value": "0x001" },
+                { "name": "LV_PALETTE_PURPLE", "value": "0x002" },
+                { "name": "LV_PALETTE_BLUE", "value": "0x005" },
+                { "name": "LV_PALETTE_GREEN", "value": "0x009" },
+                { "name": "LV_PALETTE_YELLOW", "value": "0x00C" },
+                { "name": "LV_PALETTE_ORANGE", "value": "0x00E" },
+                { "name": "LV_PALETTE_GREY", "value": "0x012" },
+                { "name": "LV_PALETTE_NONE", "value": "0x0FF" }
+            ]
+        },
+        {
+            "name": null,
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Built-in symbols",
+            "members": [
+                { "name": "LV_STR_SYMBOL_AUDIO", "value": "0x01" },
+                { "name": "LV_STR_SYMBOL_VIDEO", "value": "0x02" },
+                { "name": "LV_STR_SYMBOL_OK", "value": "0x04" },
+                { "name": "LV_STR_SYMBOL_CLOSE", "value": "0x05" },
+                { "name": "LV_STR_SYMBOL_POWER", "value": "0x06" },
+                { "name": "LV_STR_SYMBOL_SETTINGS", "value": "0x07" },
+                { "name": "LV_STR_SYMBOL_HOME", "value": "0x08" },
+                { "name": "LV_STR_SYMBOL_PLAY", "value": "0x12" },
+                { "name": "LV_STR_SYMBOL_PAUSE", "value": "0x13" },
+                { "name": "LV_STR_SYMBOL_LEFT", "value": "0x17" },
+                { "name": "LV_STR_SYMBOL_RIGHT", "value": "0x18" },
+                { "name": "LV_STR_SYMBOL_PLUS", "value": "0x19" },
+                { "name": "LV_STR_SYMBOL_MINUS", "value": "0x1A" },
+                { "name": "LV_STR_SYMBOL_EYE_OPEN", "value": "0x1B" },
+                { "name": "LV_STR_SYMBOL_WARNING", "value": "0x1D" },
+                { "name": "LV_STR_SYMBOL_UP", "value": "0x1F" },
+                { "name": "LV_STR_SYMBOL_DOWN", "value": "0x20" }
+            ]
+        },
+        {
+            "name": "lv_text_align_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "",
+            "members": [
+                { "name": "LV_TEXT_ALIGN_AUTO", "value": "0x0" },
+                { "name": "LV_TEXT_ALIGN_LEFT", "value": "0x1" },
+                { "name": "LV_TEXT_ALIGN_CENTER", "value": "0x2" },
+                { "name": "LV_TEXT_ALIGN_RIGHT", "value": "0x3" }
+            ]
+        },
+        {
+            "name": "lv_blend_mode_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "",
+            "members": [
+                { "name": "LV_BLEND_MODE_NORMAL", "value": "0x0" },
+                { "name": "LV_BLEND_MODE_ADDITIVE", "value": "0x1" },
+                { "name": "LV_BLEND_MODE_SUBTRACTIVE", "value": "0x2" },
+                { "name": "LV_BLEND_MODE_MULTIPLY", "value": "0x3" }
+            ]
+        },
+        {
+            "name": null,
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Style properties",
+            "members": [
+                { "name": "LV_STYLE_WIDTH", "value": "0x001" },
+                { "name": "LV_STYLE_HEIGHT", "value": "0x002" },
+                { "name": "LV_STYLE_PAD_TOP", "value": "0x010" },
+                { "name": "LV_STYLE_PAD_LEFT", "value": "0x012" },
+                { "name": "LV_STYLE_BG_COLOR", "value": "0x01C" },
+                { "name": "LV_STYLE_BG_OPA", "value": "0x01D" },
+                { "name": "LV_STYLE_BORDER_WIDTH", "value": "0x030" },
+                { "name": "LV_STYLE_BORDER_COLOR", "value": "0x031" },
+                { "name": "LV_STYLE_OUTLINE_WIDTH", "value": "0x038" },
+                { "name": "LV_STYLE_SHADOW_WIDTH", "value": "0x03C" },
+                { "name": "LV_STYLE_IMAGE_OPA", "value": "0x044" },
+                { "name": "LV_STYLE_TEXT_COLOR", "value": "0x058" },
+                { "name": "LV_STYLE_TEXT_FONT", "value": "0x05A" },
+                { "name": "LV_STYLE_TRANSFORM_SCALE_X", "value": "0x06E" },
+                { "name": "LV_STYLE_TRANSFORM_ROTATION", "value": "0x070" },
+                { "name": "LV_STYLE_FLEX_FLOW", "value": "0x07A" },
+                { "name": "LV_STYLE_GRID_COLUMN_ALIGN", "value": "0x07F" }
+            ]
+        },
+        {
+            "name": "lv_event_code_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Event codes.",
+            "members": [
+                { "name": "LV_EVENT_ALL", "value": "0x00000" },
+                { "name": "LV_EVENT_PRESSED", "value": "0x00001" },
+                { "name": "LV_EVENT_CLICKED", "value": "0x0000A" },
+                { "name": "LV_EVENT_LONG_PRESSED", "value": "0x00008" },
+                { "name": "LV_EVENT_SCROLL_BEGIN", "value": "0x0000C" },
+                { "name": "LV_EVENT_SCROLL", "value": "0x0000F" },
+                { "name": "LV_EVENT_SCROLL_END", "value": "0x0000E" },
+                { "name": "LV_EVENT_KEY", "value": "0x00011" },
+                { "name": "LV_EVENT_FOCUSED", "value": "0x00013" },
+                { "name": "LV_EVENT_DEFOCUSED", "value": "0x00014" },
+                { "name": "LV_EVENT_DRAW_MAIN_BEGIN", "value": "0x0001C" },
+                { "name": "LV_EVENT_DRAW_POST_END", "value": "0x00021" },
+                { "name": "LV_EVENT_VALUE_CHANGED", "value": "0x00023" },
+                { "name": "LV_EVENT_READY", "value": "0x00026" },
+                { "name": "LV_EVENT_CANCEL", "value": "0x00027" },
+                { "name": "LV_EVENT_CREATE", "value": "0x00028" },
+                { "name": "LV_EVENT_DELETE", "value": "0x00029" },
+                { "name": "LV_EVENT_CHILD_CHANGED", "value": "0x0002A" },
+                { "name": "LV_EVENT_SIZE_CHANGED", "value": "0x00031" },
+                { "name": "LV_EVENT_STYLE_CHANGED", "value": "0x00032" }
+            ]
+        },
+        {
+            "name": "lv_screen_load_anim_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "",
+            "members": [
+                { "name": "LV_SCREEN_LOAD_ANIM_NONE", "value": "0x0" },
+                { "name": "LV_SCREEN_LOAD_ANIM_OVER_LEFT", "value": "0x1" },
+                { "name": "LV_SCREEN_LOAD_ANIM_MOVE_LEFT", "value": "0x5" },
+                { "name": "LV_SCREEN_LOAD_ANIM_FADE_IN", "value": "0x9" },
+                { "name": "LV_SCREEN_LOAD_ANIM_FADE_ON", "value": "0x9" }
+            ]
+        },
+        {
+            "name": "lv_key_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Key codes for keypad/keyboard.",
+            "members": [
+                { "name": "LV_KEY_UP", "value": "0x11" },
+                { "name": "LV_KEY_DOWN", "value": "0x12" },
+                { "name": "LV_KEY_RIGHT", "value": "0x13" },
+                { "name": "LV_KEY_LEFT", "value": "0x14" },
+                { "name": "LV_KEY_ESC", "value": "0x1B" },
+                { "name": "LV_KEY_ENTER", "value": "0xA" },
+                { "name": "LV_KEY_HOME", "value": "0x2" },
+                { "name": "LV_KEY_END", "value": "0x3" }
+            ]
+        },
+        {
+            "name": "lv_indev_type_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Input device types.",
+            "members": [
+                { "name": "LV_INDEV_TYPE_NONE", "value": "0x0" },
+                { "name": "LV_INDEV_TYPE_POINTER", "value": "0x1" },
+                { "name": "LV_INDEV_TYPE_KEYPAD", "value": "0x2" },
+                { "name": "LV_INDEV_TYPE_BUTTON", "value": "0x3" },
+                { "name": "LV_INDEV_TYPE_ENCODER", "value": "0x4" }
+            ]
+        },
+        {
+            "name": null,
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Object states.",
+            "members": [
+                { "name": "LV_STATE_DEFAULT", "value": "0x00000" },
+                { "name": "LV_STATE_CHECKED", "value": "0x00001" },
+                { "name": "LV_STATE_FOCUSED", "value": "0x00002" },
+                { "name": "LV_STATE_EDITED", "value": "0x00008" },
+                { "name": "LV_STATE_HOVERED", "value": "0x00010" },
+                { "name": "LV_STATE_PRESSED", "value": "0x00020" },
+                { "name": "LV_STATE_DISABLED", "value": "0x00080" }
+            ]
+        },
+        {
+            "name": null,
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Object parts.",
+            "members": [
+                { "name": "LV_PART_MAIN", "value": "0x00000" },
+                { "name": "LV_PART_SCROLLBAR", "value": "0x10000" },
+                { "name": "LV_PART_INDICATOR", "value": "0x20000" },
+                { "name": "LV_PART_KNOB", "value": "0x30000" },
+                { "name": "LV_PART_SELECTED", "value": "0x40000" },
+                { "name": "LV_PART_ITEMS", "value": "0x50000" },
+                { "name": "LV_PART_CURSOR", "value": "0x60000" }
+            ]
+        },
+        {
+            "name": "lv_obj_flag_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "Object flags.",
+            "members": [
+                { "name": "LV_OBJ_FLAG_HIDDEN", "value": "0x00000001" },
+                { "name": "LV_OBJ_FLAG_CLICKABLE", "value": "0x00000002" },
+                { "name": "LV_OBJ_FLAG_CHECKABLE", "value": "0x00000008" },
+                { "name": "LV_OBJ_FLAG_SCROLLABLE", "value": "0x00000010" },
+                { "name": "LV_OBJ_FLAG_SCROLL_MOMENTUM", "value": "0x00000040" },
+                { "name": "LV_OBJ_FLAG_EVENT_BUBBLE", "value": "0x00004000" },
+                { "name": "LV_OBJ_FLAG_FLOATING", "value": "0x00040000" }
+            ]
+        },
+        {
+            "name": "lv_label_long_mode_t",
+            "type": { "name": "int", "json_type": "primitive_type" },
+            "json_type": "enum", "docstring": "",
+            "members": [
+                { "name": "LV_LABEL_LONG_MODE_WRAP", "value": "0x0" },
+                { "name": "LV_LABEL_LONG_MODE_DOTS", "value": "0x1" },
+                { "name": "LV_LABEL_LONG_MODE_SCROLL", "value": "0x2" },
+                { "name": "LV_LABEL_LONG_MODE_SCROLL_CIRCULAR", "value": "0x3" },
+                { "name": "LV_LABEL_LONG_MODE_CLIP", "value": "0x4" }
+            ]
+        }
+    ],
+    "functions": [
+        { "name": "lv_init", "docstring": "Initialize LVGL library." },
+        { "name": "lv_tick_inc", "docstring": "You have to call this function periodically" },
+        { "name": "lv_timer_handler", "docstring": "Call it periodically to handle lv_timers." },
+        { "name": "lv_obj_create", "docstring": "Create a base object (a rectangle)" },
+        { "name": "lv_obj_delete", "docstring": "Delete an object and all of its children." },
+        { "name": "lv_obj_set_parent", "docstring": "Move the parent of an object." },
+        { "name": "lv_obj_get_parent", "docstring": "Get the parent of an object" },
+        { "name": "lv_obj_get_child", "docstring": "Get the child of an object by the child's index." },
+        { "name": "lv_obj_add_flag", "docstring": "Set one or more flags" },
+        { "name": "lv_obj_remove_flag", "docstring": "Remove one or more flags" },
+        { "name": "lv_obj_has_flag", "docstring": "Check if a given flag is set on an object." },
+        { "name": "lv_obj_add_state", "docstring": "Add one or more states to the object." },
+        { "name": "lv_obj_get_state", "docstring": "Get the state of an object" },
+        { "name": "lv_obj_set_pos", "docstring": "Set the position of an object relative to the set alignment." },
+        { "name": "lv_obj_set_size", "docstring": "Set the size of an object." },
+        { "name": "lv_obj_get_width", "docstring": "Get the width of an object" },
+        { "name": "lv_obj_get_height", "docstring": "Get the height of an object" },
+        { "name": "lv_obj_align", "docstring": "Change the alignment of an object and set new coordinates." },
+        { "name": "lv_obj_align_to", "docstring": "Align an object to another object." },
+        { "name": "lv_obj_invalidate", "docstring": "Mark the object as invalid to redrawn its area" },
+        { "name": "lv_obj_add_style", "docstring": "Add a style to an object." },
+        { "name": "lv_obj_get_style_prop", "docstring": "Get the value of a style property." },
+        { "name": "lv_obj_add_event_cb", "docstring": "Add an event handler function for an object." },
+        { "name": "lv_event_send", "docstring": "Send an event to an object." },
+        { "name": "lv_display_create", "docstring": "Create a new display." },
+        { "name": "lv_display_set_buffers", "docstring": "Set the buffers for a display." },
+        { "name": "lv_display_flush_ready", "docstring": "Call from the display driver when the flushing is finished" },
+        { "name": "lv_screen_active", "docstring": "Get the active screen of the default display" },
+        { "name": "lv_screen_load", "docstring": "Load a screen on the default display" },
+        { "name": "lv_label_create", "docstring": "Create a label object" },
+        { "name": "lv_label_set_text", "docstring": "Set a new text for a label." },
+        { "name": "lv_button_create", "docstring": "Create a button object" },
+        { "name": "lv_slider_create", "docstring": "Create a slider object" },
+        { "name": "lv_slider_set_value", "docstring": "Set a new value on the slider" },
+        { "name": "lv_anim_init", "docstring": "Initialize an animation variable." },
+        { "name": "lv_anim_start", "docstring": "Create an animation" },
+        { "name": "lv_timer_create", "docstring": "Create a new lv_timer" }
+    ],
+    "function_pointers": [
+        { "name": "lv_timer_cb_t", "docstring": "Timers execute this type of functions." },
+        { "name": "lv_event_cb_t", "docstring": "Event handler callback." },
+        { "name": "lv_anim_exec_xcb_t", "docstring": "Generic prototype of 'animator' functions." },
+        { "name": "lv_anim_path_cb_t", "docstring": "Provides path (curve) of animation." },
+        { "name": "lv_anim_completed_cb_t", "docstring": "Callback to call when the animation is ready." },
+        { "name": "lv_display_flush_cb_t", "docstring": "Display flush callback." },
+        { "name": "lv_indev_read_cb_t", "docstring": "Input device read callback." },
+        { "name": "lv_layout_update_cb_t", "docstring": "Layout update callback." },
+        { "name": "lv_theme_apply_cb_t", "docstring": "Theme apply callback." },
+        { "name": "lv_fs_open_cb", "docstring": "Filesystem open callback." },
+        { "name": "lv_image_decoder_info_f_t", "docstring": "Image decoder info callback." },
+        { "name": "lv_observer_cb_t", "docstring": "Observer callback for subject changes." }
+    ],
+    "structures": [
+        { "name": "lv_area_t", "docstring": "Represents an area of the screen." },
+        { "name": "lv_point_t", "docstring": "Represents a point on the screen." },
+        { "name": "lv_color_t", "docstring": "Color representation." },
+        { "name": "lv_color_hsv_t", "docstring": "HSV color representation." },
+        { "name": "_lv_anim_t", "docstring": "Describes an animation." },
+        { "name": "lv_style_t", "docstring": "Descriptor of a style (a collection of properties and values)." },
+        { "name": "lv_style_transition_dsc_t", "docstring": "Descriptor for style transitions." },
+        { "name": "lv_grad_dsc_t", "docstring": "A descriptor of a gradient." },
+        { "name": "lv_event_list_t", "docstring": "List of event callbacks." },
+        { "name": "lv_fs_drv_t", "docstring": "Filesystem driver." },
+        { "name": "_lv_layer_t", "docstring": "Drawing layer." },
+        { "name": "lv_draw_rect_dsc_t", "docstring": "Draw descriptor for rectangles." },
+        { "name": "lv_draw_label_dsc_t", "docstring": "Draw descriptor for labels." },
+        { "name": "lv_draw_image_dsc_t", "docstring": "Draw descriptor for images." },
+        { "name": "lv_image_dsc_t", "docstring": "Struct to describe a constant image resource." },
+        { "name": "lv_indev_data_t", "docstring": "Data structure passed to an input driver to fill." },
+        { "name": "lv_obj_class_t", "docstring": "Describe the common methods of every object." },
+        { "name": "lv_subject_t", "docstring": "The Subject (an observable value)." }
+    ],
+    "unions": [
+        {
+            "name": "lv_yuv_buf_t", "docstring": "YUV buffer representation.",
+            "fields": [ { "name": "yuv" }, { "name": "planar" }, { "name": "semi_planar" } ]
+        },
+        {
+            "name": "lv_style_value_t", "docstring": "A common type to handle all the property types.",
+            "fields": [ { "name": "num" }, { "name": "ptr" }, { "name": "color" } ]
+        },
+        {
+            "name": "lv_subject_value_t", "docstring": "A common type to handle all the various observable types.",
+            "fields": [ { "name": "num" }, { "name": "pointer" }, { "name": "color" } ]
+        }
+    ],
+    "variables": [
+        { "name": "lv_color_filter_shade", "docstring": "Color filter for shading." },
+        { "name": "lv_font_montserrat_14", "docstring": "Built-in Montserrat 14 font." },
+        { "name": "lv_obj_class", "docstring": "Base object class." },
+        { "name": "lv_label_class", "docstring": "Label widget class." },
+        { "name": "lv_button_class", "docstring": "Button widget class." },
+        { "name": "lv_slider_class", "docstring": "Slider widget class." },
+        { "name": "lv_bar_class", "docstring": "Bar widget class." },
+        { "name": "lv_image_class", "docstring": "Image widget class." },
+        { "name": "lv_checkbox_class", "docstring": "Checkbox widget class." },
+        { "name": "lv_dropdown_class", "docstring": "Dropdown widget class." },
+        { "name": "lv_keyboard_class", "docstring": "Keyboard widget class." },
+        { "name": "lv_list_class", "docstring": "List widget class." },
+        { "name": "lv_table_class", "docstring": "Table widget class." },
+        { "name": "lv_win_class", "docstring": "Window widget class." }
+    ],
+    "typedefs": [
+        { "name": "lv_coord_t", "type": { "name": "int32_t" } },
+        { "name": "lv_opa_t", "type": { "name": "uint8_t" } },
+        { "name": "lv_res_t", "type": { "name": "lv_result_t" } },
+        { "name": "lv_state_t", "type": { "name": "uint16_t" } },
+        { "name": "lv_part_t", "type": { "name": "uint32_t" } },
+        { "name": "lv_style_prop_t", "type": { "name": "uint8_t" } },
+        { "name": "lv_anim_enable_t", "type": { "name": "bool" } },
+        { "name": "lv_disp_t", "type": { "name": "lv_display_t" } }
+    ],
+    "forward_decls": [
+        { "name": "lv_obj_t" },
+        { "name": "lv_obj_class_t" },
+        { "name": "lv_group_t" },
+        { "name": "lv_display_t" },
+        { "name": "lv_layer_t" },
+        { "name": "lv_draw_unit_t" },
+        { "name": "lv_draw_task_t" },
+        { "name": "lv_indev_t" },
+        { "name": "lv_event_t" },
+        { "name": "lv_timer_t" },
+        { "name": "lv_theme_t" },
+        { "name": "lv_anim_t" },
+        { "name": "lv_font_t" },
+        { "name": "lv_image_decoder_t" }
+    ],
+    "macros": [
+        { "name": "LV_ASSERT_OBJ", "docstring": "Assert if an object is not of a given type or is invalid." },
+        { "name": "LV_HOR_RES", "docstring": "The horizontal resolution of the currently active display." },
+        { "name": "LV_VER_RES", "docstring": "The vertical resolution of the currently active display." },
+        { "name": "LV_DPX", "docstring": "Converts a value to device-independent pixels." },
+        { "name": "LV_RADIUS_CIRCLE", "docstring": "A very big radius to always draw as circle" },
+        { "name": "LV_SIZE_CONTENT", "docstring": "Special value for width/height to set the size to the content." },
+        { "name": "LV_PCT", "docstring": "A special value to set size/coordinates in percentage." },
+        { "name": "LV_MIN", "docstring": "Get the minimum of two values." },
+        { "name": "LV_MAX", "docstring": "Get the maximum of two values." },
+        { "name": "LV_ABS", "docstring": "Get the absolute value of a number." },
+        { "name": "LV_CLAMP", "docstring": "Clamp a value between a min and max." },
+        { "name": "LV_LOG_INFO", "docstring": "Log an info message." },
+        { "name": "LV_FONT_DECLARE", "docstring": "Declare a font." },
+        { "name": "LV_IMG_DECLARE", "docstring": "Declare an image." },
+        { "name": "LV_SYMBOL_OK", "initializer": "\"\\xEF\\x80\\x8C\"" },
+        { "name": "LV_SYMBOL_PLAY", "initializer": "\"\\xEF\\x81\\x8B\"" },
+        { "name": "LV_SYMBOL_SETTINGS", "initializer": "\"\\xEF\\x80\\x93\"" },
+        { "name": "LV_GRID_FR", "docstring": "Can be used track size to make the track fill the free space." },
+        { "name": "lv_obj_del", "docstring": "Alias for lv_obj_delete" },
+        { "name": "lv_scr_act", "docstring": "Alias for lv_screen_active" }
+    ]
+}
