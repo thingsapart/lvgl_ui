@@ -70,7 +70,6 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     const char* json_type_str = "obj";
     const char* object_c_type = "lv_obj_t*";
     const char* registered_id = NULL;
-    bool new_object_created = false;
 
     cJSON* type_item = cJSON_GetObjectItem(obj_json, "type");
     cJSON* init_item = cJSON_GetObjectItem(obj_json, "init");
@@ -83,50 +82,54 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     char* c_name = generate_unique_var_name(ctx, registered_id ? registered_id : json_type_str);
 
     // Determine the C type of the object we are creating.
-    if (type_item) {
-        const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, json_type_str);
-        if (widget_def) {
-            if (widget_def->create) {
-                object_c_type = api_spec_get_function_return_type(ctx->api_spec, widget_def->create);
-            } else if (widget_def->c_type) {
-                object_c_type = widget_def->c_type;
-            }
-        }
-    } else if (init_item && cJSON_IsObject(init_item) && init_item->child) {
+    // Every object in the JSON tree corresponds to a new widget/object instance.
+    // The "proxy object" concept is removed; if 'type' is missing, it's 'obj'.
+    const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, json_type_str);
+    if (init_item && cJSON_IsObject(init_item) && init_item->child) {
         object_c_type = api_spec_get_function_return_type(ctx->api_spec, init_item->child->string);
-    } else {
-        // This is a typeless proxy object; its properties apply to the parent.
-        // Its C type is the parent's type.
-        object_c_type = registry_get_c_type_for_id(ctx->registry, parent_c_name);
+    } else if (widget_def) {
+        if (widget_def->create) {
+            object_c_type = api_spec_get_function_return_type(ctx->api_spec, widget_def->create);
+        } else if (widget_def->c_type) {
+            object_c_type = widget_def->c_type;
+        }
     }
 
     IRObject* ir_obj = ir_new_object(c_name, json_type_str, object_c_type, registered_id);
     free(c_name);
     if (registered_id) registry_add_generated_var(ctx->registry, registered_id, ir_obj->c_name, ir_obj->c_type);
 
-    const char* target_c_name_for_calls = parent_c_name;
-    if (type_item || init_item) { // A new object is being created
-        new_object_created = true;
-        target_c_name_for_calls = ir_obj->c_name;
-        if (type_item) {
-            const WidgetDefinition* wd = api_spec_find_widget(ctx->api_spec, json_type_str);
-            if (wd && wd->create) {
-                IRExprNode* args = NULL;
-                ir_expr_list_add(&args, ir_new_expr_registry_ref(parent_c_name, registry_get_c_type_for_id(ctx->registry, parent_c_name)));
-                const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, wd->create);
-                ir_obj->constructor_expr = ir_new_expr_func_call(wd->create, args, ret_type);
-                check_function_args(ctx, wd->create, args);
-            } else if (wd && wd->init_func) {
-                IRExprNode* init_args = NULL;
-                ir_expr_list_add(&init_args, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
-                ir_expr_list_add(&ir_obj->setup_calls, ir_new_expr_func_call(wd->init_func, init_args, "void"));
-                check_function_args(ctx, wd->init_func, init_args);
-            }
-        } else { // init_item must be present
-            ir_obj->constructor_expr = unmarshal_value(ctx, init_item, ui_context, object_c_type);
+    // Since every JSON object creates a new C object, a constructor/initializer is always needed.
+    const char* target_c_name_for_calls = ir_obj->c_name;
+    if (init_item) {
+        // `init` takes precedence for creating the object.
+        ir_obj->constructor_expr = unmarshal_value(ctx, init_item, ui_context, object_c_type);
+    } else {
+        // `type` or typeless (defaulting to 'obj') case.
+        const char* create_func = NULL;
+        if (widget_def && widget_def->create) {
+            create_func = widget_def->create;
+        } else if (strcmp(json_type_str, "obj") == 0) {
+            // FIX: Hardcode the create function for the base 'obj' type if not in spec.
+            create_func = "lv_obj_create";
+        }
+
+        if (create_func) {
+            IRExprNode* args = NULL;
+            ir_expr_list_add(&args, ir_new_expr_registry_ref(parent_c_name, registry_get_c_type_for_id(ctx->registry, parent_c_name)));
+            const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, create_func);
+            ir_obj->constructor_expr = ir_new_expr_func_call(create_func, args, ret_type);
+            check_function_args(ctx, create_func, args);
+        } else if (widget_def && widget_def->init_func) {
+            // For objects like styles that are initialized, not constructed via return value.
+            IRExprNode* init_args = NULL;
+            ir_expr_list_add(&init_args, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
+            ir_expr_list_add(&ir_obj->setup_calls, ir_new_expr_func_call(widget_def->init_func, init_args, "void"));
+            check_function_args(ctx, widget_def->init_func, init_args);
         }
     }
 
+    // Process all other keys as properties or methods.
     cJSON* prop_item = NULL;
     cJSON_ArrayForEach(prop_item, obj_json) {
         const char* key = prop_item->string;
@@ -174,7 +177,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
     cJSON* children_item = cJSON_GetObjectItem(obj_json, "children");
     if (children_item && cJSON_IsArray(children_item)) {
-        const char* child_parent_c_name = new_object_created ? ir_obj->c_name : parent_c_name;
+        const char* child_parent_c_name = ir_obj->c_name;
         cJSON* child_json = NULL;
         cJSON_ArrayForEach(child_json, children_item) {
             ir_object_list_add(&ir_obj->children, parse_object(ctx, child_json, child_parent_c_name, ui_context));
@@ -183,6 +186,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
     return ir_obj;
 }
+
 
 // --- Value Unmarshaler ---
 
