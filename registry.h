@@ -7,6 +7,7 @@
 typedef struct PointerRegistryNode {
     char* id;           // The ID used in JSON (e.g., "my_button")
     char* json_type;    // Specific JSON type from the "type" field (e.g. "label", "button", "style")
+    char* c_type;       // The C type of the pointer (e.g. "lv_obj_t*", "lv_style_t*")
     void* ptr;          // Pointer to the actual C object/style (not owned by registry)
     struct PointerRegistryNode* next;
 } PointerRegistryNode;
@@ -30,6 +31,7 @@ typedef struct ComponentRegistryNode {
 typedef struct VarRegistryNode {
     char* name;        // Key (e.g., "style_id" from "@style_id")
     char* c_var_name;  // Value (e.g., "style_0" or "button_1")
+    char* c_type;      // The C type of the variable (e.g. "lv_style_t*", "lv_obj_t*")
     struct VarRegistryNode* next;
 } VarRegistryNode;
 
@@ -42,45 +44,31 @@ Registry* registry_create();
 void registry_free(Registry* reg);
 
 // --- Component Management ---
-// Components are top-level objects from the "components" section of the UI spec.
-// They are identified by a name (e.g., "my_custom_button").
-// The `component_root` is a pointer to the cJSON object defining the component.
-// This cJSON object is owned by the main parsed document and should NOT be freed by the registry.
 void registry_add_component(Registry* reg, const char* name, const cJSON* component_root);
 const cJSON* registry_get_component(const Registry* reg, const char* name);
 
 // --- Generated Variable Name Management ---
-// Manages mappings from a UI-spec name (e.g., "style_main_button", "widget_login_button")
-// to a generated C variable name (e.g., "style_0", "button_1").
-// This is used to ensure that if a style or widget is referenced by its name multiple times,
-// we re-use the same generated C variable.
-// Both `name` and `c_var_name` are duplicated by the registry and freed by `registry_free`.
-void registry_add_generated_var(Registry* reg, const char* name, const char* c_var_name);
+void registry_add_generated_var(Registry* reg, const char* name, const char* c_var_name, const char* c_type);
 const char* registry_get_generated_var(const Registry* reg, const char* name);
+const char* registry_get_c_type_for_id(const Registry* reg, const char* name);
+
 
 // --- Pointer Registry ---
 // Note: The registry does NOT take ownership of the 'ptr' itself.
-// The 'id' and 'type' strings are duplicated by the registry.
-void registry_add_pointer(Registry* reg, void *ptr, const char *id, const char *type);
+// The 'id', 'json_type', and 'c_type' strings are duplicated by the registry.
+void registry_add_pointer(Registry* reg, void *ptr, const char *id, const char *json_type, const char* c_type);
 void *registry_get_pointer(const Registry* reg, const char *id, const char *type);
 
 // --- String Registry ---
-// Adds a string to an internal registry. If the string already exists,
-// it returns a pointer to the existing string. Otherwise, it duplicates
-// the input string, stores it, and returns a pointer to the new copy.
-// The registry owns the memory for these stored strings.
 const char *registry_add_str(Registry* reg, const char *value);
-
-// Retrieves the stored JSON type for a given ID.
-const char* registry_get_json_type_for_id(const Registry* reg, const char* id);
 
 // --- Registry struct ---
 // This is the full definition of the Registry.
 struct Registry {
-    ComponentRegistryNode* components;   // For original component management
-    VarRegistryNode* generated_vars; // For original generated variable name management
-    PointerRegistryNode* pointers;     // For new pointer registration
-    StringRegistryNode* strings;      // For new string registration
+    ComponentRegistryNode* components;
+    VarRegistryNode* generated_vars;
+    PointerRegistryNode* pointers;
+    StringRegistryNode* strings;
 };
 
 #endif // REGISTRY_H

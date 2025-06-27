@@ -5,7 +5,7 @@
 // --- Forward Declarations ---
 static void print_indent(int level);
 static void print_expr(IRExpr* expr);
-static void print_property_list(IRProperty* head, int indent_level);
+static void print_expr_list(IRExprNode* head, int indent_level);
 static void print_object_list(IRObject* head, int indent_level);
 static void print_with_block_list(IRWithBlock* head, int indent_level);
 
@@ -22,7 +22,7 @@ static void print_expr(IRExpr* expr) {
         printf("NULL_EXPR");
         return;
     }
-    switch(expr->type) {
+    switch(expr->base.type) {
         case IR_EXPR_LITERAL: {
             IRExprLiteral* lit = (IRExprLiteral*)expr;
             if (lit->is_string) printf("\"%s\"", lit->value);
@@ -75,12 +75,11 @@ static void print_expr(IRExpr* expr) {
     }
 }
 
-static void print_property_list(IRProperty* head, int indent_level) {
-    IRProperty* current = head;
+static void print_expr_list(IRExprNode* head, int indent_level) {
+    IRExprNode* current = head;
     while(current) {
         print_indent(indent_level);
-        printf("[PROPERTY name=\"%s\"] value=", current->name);
-        print_expr(current->value);
+        print_expr(current->expr);
         printf("\n");
         current = current->next;
     }
@@ -96,15 +95,29 @@ static void print_object_list(IRObject* head, int indent_level) {
         }
         printf("]\n");
 
-        if (current->properties) {
-            print_property_list(current->properties, indent_level + 1);
+        if (current->constructor_expr) {
+            print_indent(indent_level + 1);
+            printf("CONSTRUCTOR: ");
+            print_expr(current->constructor_expr);
+            printf("\n");
+        } else {
+             print_indent(indent_level + 1);
+             printf("CONSTRUCTOR: NULL (declare variable, do not assign from call)\n");
         }
+
+
+        if (current->setup_calls) {
+            print_indent(indent_level + 1);
+            printf("SETUP_CALLS:\n");
+            print_expr_list(current->setup_calls, indent_level + 2);
+        }
+
         if (current->with_blocks) {
             print_with_block_list(current->with_blocks, indent_level + 1);
         }
         if (current->children) {
             print_indent(indent_level + 1);
-            printf("[CHILDREN]\n");
+            printf("CHILDREN:\n");
             print_object_list(current->children, indent_level + 2);
         }
         current = current->next;
@@ -119,8 +132,10 @@ static void print_with_block_list(IRWithBlock* head, int indent_level) {
         print_expr(current->target_expr);
         printf("]\n");
 
-        if (current->properties) {
-            print_property_list(current->properties, indent_level + 1);
+        if (current->setup_calls) {
+            print_indent(indent_level + 1);
+            printf("SETUP_CALLS:\n");
+            print_expr_list(current->setup_calls, indent_level + 2);
         }
         if (current->children_root) {
              print_indent(indent_level + 1);

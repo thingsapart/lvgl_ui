@@ -17,9 +17,10 @@ static void free_component_def_list(IRComponent* head);
 
 // --- Factory functions for Expressions ---
 
-IRExpr* ir_new_expr_literal(const char* value) {
+IRExpr* ir_new_expr_literal(const char* value, const char* c_type) {
     IRExprLiteral* lit = calloc(1, sizeof(IRExprLiteral));
-    lit->base.type = IR_EXPR_LITERAL;
+    lit->base.base.type = IR_EXPR_LITERAL;
+    lit->base.c_type = safe_strdup(c_type);
     lit->value = safe_strdup(value);
     lit->is_string = false;
     return (IRExpr*)lit;
@@ -27,7 +28,8 @@ IRExpr* ir_new_expr_literal(const char* value) {
 
 IRExpr* ir_new_expr_literal_string(const char* value) {
     IRExprLiteral* lit = calloc(1, sizeof(IRExprLiteral));
-    lit->base.type = IR_EXPR_LITERAL;
+    lit->base.base.type = IR_EXPR_LITERAL;
+    lit->base.c_type = safe_strdup("const char*");
     lit->value = safe_strdup(value);
     lit->is_string = true;
     return (IRExpr*)lit;
@@ -35,44 +37,50 @@ IRExpr* ir_new_expr_literal_string(const char* value) {
 
 IRExpr* ir_new_expr_static_string(const char* value) {
     IRExprStaticString* sstr = calloc(1, sizeof(IRExprStaticString));
-    sstr->base.type = IR_EXPR_STATIC_STRING;
+    sstr->base.base.type = IR_EXPR_STATIC_STRING;
+    sstr->base.c_type = safe_strdup("const char*");
     sstr->value = safe_strdup(value);
     return (IRExpr*)sstr;
 }
 
-IRExpr* ir_new_expr_enum(const char* symbol, intptr_t val) {
+IRExpr* ir_new_expr_enum(const char* symbol, intptr_t val, const char* enum_c_type) {
     IRExprEnum* en = calloc(1, sizeof(IRExprEnum));
-    en->base.type = IR_EXPR_ENUM;
+    en->base.base.type = IR_EXPR_ENUM;
+    en->base.c_type = safe_strdup(enum_c_type);
     en->symbol = safe_strdup(symbol);
     en->value = val;
     return (IRExpr*)en;
 }
 
-IRExpr* ir_new_expr_func_call(const char* func_name, IRExprNode* args) {
+IRExpr* ir_new_expr_func_call(const char* func_name, IRExprNode* args, const char* return_c_type) {
     IRExprFunctionCall* call = calloc(1, sizeof(IRExprFunctionCall));
-    call->base.type = IR_EXPR_FUNCTION_CALL;
+    call->base.base.type = IR_EXPR_FUNCTION_CALL;
+    call->base.c_type = safe_strdup(return_c_type);
     call->func_name = safe_strdup(func_name);
     call->args = args;
     return (IRExpr*)call;
 }
 
-IRExpr* ir_new_expr_array(IRExprNode* elements) {
+IRExpr* ir_new_expr_array(IRExprNode* elements, const char* array_c_type) {
     IRExprArray* arr = calloc(1, sizeof(IRExprArray));
-    arr->base.type = IR_EXPR_ARRAY;
+    arr->base.base.type = IR_EXPR_ARRAY;
+    arr->base.c_type = safe_strdup(array_c_type);
     arr->elements = elements;
     return (IRExpr*)arr;
 }
 
-IRExpr* ir_new_expr_registry_ref(const char* name) {
+IRExpr* ir_new_expr_registry_ref(const char* name, const char* c_type) {
     IRExprRegistryRef* ref = calloc(1, sizeof(IRExprRegistryRef));
-    ref->base.type = IR_EXPR_REGISTRY_REF;
+    ref->base.base.type = IR_EXPR_REGISTRY_REF;
+    ref->base.c_type = safe_strdup(c_type);
     ref->name = safe_strdup(name);
     return (IRExpr*)ref;
 }
 
-IRExpr* ir_new_expr_context_var(const char* name) {
+IRExpr* ir_new_expr_context_var(const char* name, const char* c_type) {
     IRExprContextVar* var = calloc(1, sizeof(IRExprContextVar));
-    var->base.type = IR_EXPR_CONTEXT_VAR;
+    var->base.base.type = IR_EXPR_CONTEXT_VAR;
+    var->base.c_type = safe_strdup(c_type);
     var->name = safe_strdup(name);
     return (IRExpr*)var;
 }
@@ -85,11 +93,12 @@ IRRoot* ir_new_root() {
     return root;
 }
 
-IRObject* ir_new_object(const char* c_name, const char* json_type, const char* registered_id) {
+IRObject* ir_new_object(const char* c_name, const char* json_type, const char* c_type, const char* registered_id) {
     IRObject* obj = calloc(1, sizeof(IRObject));
     obj->base.type = IR_NODE_OBJECT;
     obj->c_name = safe_strdup(c_name);
     obj->json_type = safe_strdup(json_type);
+    obj->c_type = safe_strdup(c_type);
     obj->registered_id = safe_strdup(registered_id);
     return obj;
 }
@@ -110,11 +119,11 @@ IRProperty* ir_new_property(const char* name, IRExpr* value) {
     return prop;
 }
 
-IRWithBlock* ir_new_with_block(IRExpr* target, IRProperty* props, IRObject* children) {
+IRWithBlock* ir_new_with_block(IRExpr* target, IRExprNode* calls, IRObject* children) {
     IRWithBlock* wb = calloc(1, sizeof(IRWithBlock));
     wb->base.type = IR_NODE_WITH_BLOCK;
     wb->target_expr = target;
-    wb->properties = props;
+    wb->setup_calls = calls;
     wb->children_root = children;
     return wb;
 }
@@ -153,11 +162,34 @@ void ir_expr_list_add(IRExprNode** head, IRExpr* expr) {
 
 // --- Free Functions ---
 
+static void free_expr(IRExpr* expr) {
+    if (!expr) return;
+    free(expr->c_type); // Free the C type string
+
+    switch (expr->base.type) {
+        case IR_EXPR_LITERAL: free(((IRExprLiteral*)expr)->value); break;
+        case IR_EXPR_STATIC_STRING: free(((IRExprStaticString*)expr)->value); break;
+        case IR_EXPR_ENUM: free(((IRExprEnum*)expr)->symbol); break;
+        case IR_EXPR_REGISTRY_REF: free(((IRExprRegistryRef*)expr)->name); break;
+        case IR_EXPR_CONTEXT_VAR: free(((IRExprContextVar*)expr)->name); break;
+        case IR_EXPR_FUNCTION_CALL: {
+            IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
+            free(call->func_name);
+            free_expr_list(call->args);
+            break;
+        }
+        case IR_EXPR_ARRAY: free_expr_list(((IRExprArray*)expr)->elements); break;
+        default: break;
+    }
+    free(expr);
+}
+
+
 static void free_expr_list(IRExprNode* head) {
     IRExprNode* current = head;
     while (current) {
         IRExprNode* next = current->next;
-        ir_free((IRNode*)current->expr);
+        free_expr(current->expr);
         free(current);
         current = next;
     }
@@ -213,10 +245,12 @@ void ir_free(IRNode* node) {
             IRObject* obj = (IRObject*)node;
             free(obj->c_name);
             free(obj->json_type);
+            free(obj->c_type);
             free(obj->registered_id);
             free(obj->use_view_component_id);
+            free_expr(obj->constructor_expr);
+            free_expr_list(obj->setup_calls);
             free_property_list(obj->use_view_context);
-            free_property_list(obj->properties);
             free_with_block_list(obj->with_blocks);
             free_object_list(obj->children);
             break;
@@ -230,30 +264,25 @@ void ir_free(IRNode* node) {
         case IR_NODE_PROPERTY: {
             IRProperty* prop = (IRProperty*)node;
             free(prop->name);
-            ir_free((IRNode*)prop->value);
+            free_expr(prop->value);
             break;
         }
         case IR_NODE_WITH_BLOCK: {
             IRWithBlock* wb = (IRWithBlock*)node;
-            ir_free((IRNode*)wb->target_expr);
-            free_property_list(wb->properties);
+            free_expr(wb->target_expr);
+            free_expr_list(wb->setup_calls);
             ir_free((IRNode*)wb->children_root);
             break;
         }
-
-        // Expression nodes
-        case IR_EXPR_LITERAL: free(((IRExprLiteral*)node)->value); break;
-        case IR_EXPR_STATIC_STRING: free(((IRExprStaticString*)node)->value); break;
-        case IR_EXPR_ENUM: free(((IRExprEnum*)node)->symbol); break;
-        case IR_EXPR_REGISTRY_REF: free(((IRExprRegistryRef*)node)->name); break;
-        case IR_EXPR_CONTEXT_VAR: free(((IRExprContextVar*)node)->name); break;
-        case IR_EXPR_FUNCTION_CALL: {
-            IRExprFunctionCall* call = (IRExprFunctionCall*)node;
-            free(call->func_name);
-            free_expr_list(call->args);
-            break;
-        }
-        case IR_EXPR_ARRAY: free_expr_list(((IRExprArray*)node)->elements); break;
+        case IR_EXPR_LITERAL:
+        case IR_EXPR_STATIC_STRING:
+        case IR_EXPR_ENUM:
+        case IR_EXPR_REGISTRY_REF:
+        case IR_EXPR_CONTEXT_VAR:
+        case IR_EXPR_FUNCTION_CALL:
+        case IR_EXPR_ARRAY:
+            free_expr((IRExpr*)node);
+            return; // free_expr already frees the node itself.
         default: break;
     }
     free(node);

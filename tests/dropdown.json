@@ -15,18 +15,15 @@
     "lv_dropdown_set_text": "!",
     "symbol": null,
     "move_foreground": [],
-    "with": {
-      "obj": {
-        "call": "lv_dropdown_get_list",
-        "args": []
-      },
-      "do": {
+    "children": [
+      {
+        "init": { "lv_dropdown_get_list": [] },
         "min_width": 200
       }
-    }
+    ]
   },
   {
-    "size": ["100%", "100%"],
+    "size": ["101%", "102%"],
     "children": [
       {
         "type": "label",
