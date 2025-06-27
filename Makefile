@@ -29,8 +29,8 @@ TARGET = lvgl_ui_generator
 # Python script for generating lvgl_dispatch.c and .h
 API_SPEC_GENERATOR_PY = ./generate_dynamic_lvgl_dispatch.py
 API_SPEC_JSON = ./data/lv_def.json # Input for the generator script
-DYNAMIC_LVGL_H = ./lvgl_dispatch.h
-DYNAMIC_LVGL_C = ./lvgl_dispatch.c
+DYNAMIC_LVGL_H = ./c_gen/lvgl_dispatch.h
+DYNAMIC_LVGL_C = ./c_gen/lvgl_dispatch.c
 DYNAMIC_LVGL_O = $(DYNAMIC_LVGL_C:.c=.o)
 
 # Options for the python script

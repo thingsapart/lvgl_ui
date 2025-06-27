@@ -14,6 +14,7 @@
       },
       {
         "type": "label",
+        "name": "center_label",
         "size": [200, 100],
         "text": "TEST2"
       }
