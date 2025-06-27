@@ -1,5 +1,10 @@
 [
   {
+    "type": "style",
+    "id": "@action_button",
+    "bg_color": "#ff0000"
+  },
+  {
     "type": "dropdown",
     "add_style": [
       "@action_button",
@@ -12,8 +17,8 @@
       -10
     ],
     "add_flag": "LV_OBJ_FLAG_FLOATING",
-    "lv_dropdown_set_text": "!",
-    "symbol": null,
+    "lv_dropdown_set_text": "TEST",
+    "symbol": "A",
     "move_foreground": [],
     "children": [
       {
@@ -23,7 +28,7 @@
     ]
   },
   {
-    "size": ["101%", "102%"],
+    "size": ["LV_CONTENT", "LV_CONTENT"],
     "children": [
       {
         "type": "label",

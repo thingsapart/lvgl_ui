@@ -1,6 +1,13 @@
 [
   {
     "type": "button",
-    "radius": "LV_RADIUS_CIRCLE"
+    "radius": "LV_RADIUS_CIRCLE",
+    "align": "LV_ALIGN_CENTER",
+    "children": [
+      {
+        "type": "label",
+        "text": "Button"
+      }
+    ]
   }
 ]
