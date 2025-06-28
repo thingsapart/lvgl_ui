@@ -120,6 +120,12 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             return;
         }
 
+        case IR_EXPR_STATIC_STRING: {
+            out_val->type = RENDER_VAL_TYPE_STRING;
+            out_val->as.s_val = ((IRExprStaticString*)expr)->value;
+            return;
+        }
+
         case IR_EXPR_ENUM: {
             // The dispatcher's helpers need the enum's C type, so we must pass the symbol.
             // We pass the symbol as a string and let the dispatcher resolve it.

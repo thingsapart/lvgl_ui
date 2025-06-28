@@ -700,6 +700,70 @@ bool api_spec_find_constant_value(const ApiSpec* spec, const char* const_name, l
     return false;
 }
 
+/**
+ * @brief Helper to clean up a string constant value.
+ *
+ * This function takes a string, typically from the "constants" section of the spec,
+ * and performs the following operations:
+ * 1. Strips C-style block (`/* ... * /`) and line (`// ...`) comments.
+ * 2. Trims leading and trailing whitespace.
+ * 3. If the resulting string is enclosed in double quotes, it removes them.
+ *
+ * @param input The raw string value of the constant.
+ * @return A new, heap-allocated string with the cleaned value. The caller must free this string.
+ *         Returns NULL if the input is NULL or memory allocation fails.
+ */
+static char* strip_comments_and_trim_quotes(const char* input) {
+    if (!input) return NULL;
+    char* buffer = strdup(input);
+    if (!buffer) return NULL;
+
+    // Find and terminate at comments
+    char* comment_start = strstr(buffer, "/*");
+    if (comment_start) {
+        *comment_start = '\0';
+    }
+    comment_start = strstr(buffer, "//");
+    if (comment_start) {
+        *comment_start = '\0';
+    }
+
+    // Trim trailing whitespace
+    char* end = buffer + strlen(buffer) - 1;
+    while (end >= buffer && isspace((unsigned char)*end)) {
+        *end-- = '\0';
+    }
+
+    // Trim leading whitespace
+    char* start = buffer;
+    while (*start && isspace((unsigned char)*start)) {
+        start++;
+    }
+
+    // Un-quote if the result is surrounded by quotes
+    size_t len = strlen(start);
+    if (len >= 2 && start[0] == '"' && start[len - 1] == '"') {
+        start[len - 1] = '\0'; // Nuke the last quote
+        start++;               // Move pointer past the first quote
+    }
+
+    char* result = strdup(start);
+    free(buffer);
+    return result;
+}
+
+char* api_spec_find_constant_string(const ApiSpec* spec, const char* const_name) {
+    if (!spec || !spec->constants || !const_name) {
+        return NULL;
+    }
+    const cJSON* const_json = cJSON_GetObjectItemCaseSensitive(spec->constants, const_name);
+    if (!cJSON_IsString(const_json) || !const_json->valuestring) {
+        return NULL;
+    }
+
+    return strip_comments_and_trim_quotes(const_json->valuestring);
+}
+
 bool api_spec_has_function(const ApiSpec* spec, const char* func_name) {
     return api_spec_find_function(spec, func_name) != NULL;
 }

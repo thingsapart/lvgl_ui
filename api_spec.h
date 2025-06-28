@@ -135,6 +135,11 @@ bool api_spec_is_constant(const ApiSpec* spec, const char* const_name);
 // Returns true if found and out_value is set, false otherwise.
 bool api_spec_find_constant_value(const ApiSpec* spec, const char* const_name, long* out_value);
 
+// Finds the string value of a named constant (e.g., for LV_SYMBOL_...).
+// The string is cleaned of comments and surrounding quotes.
+// Returns a heap-allocated string that the caller must free, or NULL if not found/not a string.
+char* api_spec_find_constant_string(const ApiSpec* spec, const char* const_name);
+
 // Checks if a function name exists in the API spec's global functions.
 bool api_spec_has_function(const ApiSpec* spec, const char* func_name);
 

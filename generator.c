@@ -379,6 +379,15 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             // If an error occurred, fall through to default string handling which will probably fail.
         }
 
+        // Check for string constant like LV_SYMBOL_*
+        char* const_str_val = api_spec_find_constant_string(ctx->api_spec, s);
+        if (const_str_val) {
+            // It's a string constant like a symbol. The generator should treat it as a static string.
+            IRExpr* expr = ir_new_expr_static_string(const_str_val);
+            free(const_str_val); // Free the string returned by api_spec_find_constant_string
+            return expr;
+        }
+
         size_t len = strlen(s);
 
         if (s[0] == '$') {
