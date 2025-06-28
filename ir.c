@@ -24,23 +24,34 @@ IRExpr* ir_new_expr_literal(const char* value, const char* c_type) {
     lit->base.c_type = safe_strdup(c_type);
     lit->value = safe_strdup(value);
     lit->is_string = false;
+    lit->len = lit->value ? strlen(lit->value) : 0;
     return (IRExpr*)lit;
 }
 
-IRExpr* ir_new_expr_literal_string(const char* value) {
+IRExpr* ir_new_expr_literal_string(const char* value, size_t len) {
     IRExprLiteral* lit = calloc(1, sizeof(IRExprLiteral));
     lit->base.base.type = IR_EXPR_LITERAL;
     lit->base.c_type = safe_strdup("const char*");
-    lit->value = safe_strdup(value);
+    lit->value = malloc(len + 1); // +1 for safety null terminator
+    if (lit->value) {
+        memcpy(lit->value, value, len);
+        lit->value[len] = '\0';
+    }
+    lit->len = len;
     lit->is_string = true;
     return (IRExpr*)lit;
 }
 
-IRExpr* ir_new_expr_static_string(const char* value) {
+IRExpr* ir_new_expr_static_string(const char* value, size_t len) {
     IRExprStaticString* sstr = calloc(1, sizeof(IRExprStaticString));
     sstr->base.base.type = IR_EXPR_STATIC_STRING;
     sstr->base.c_type = safe_strdup("const char*");
-    sstr->value = safe_strdup(value);
+    sstr->value = malloc(len + 1);
+    if (sstr->value) {
+        memcpy(sstr->value, value, len);
+        sstr->value[len] = '\0';
+    }
+    sstr->len = len;
     return (IRExpr*)sstr;
 }
 

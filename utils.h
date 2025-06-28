@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stddef.h> // For size_t
+
 char* read_file(const char* filename);
 
 #ifdef __DEBUG
@@ -15,6 +17,11 @@ char* read_file(const char* filename);
 // into the simplified object type string used by api_spec_find_property
 // (e.g., "label", "button"). Defaults to "obj".
 const char* get_obj_type_from_c_type(const char* c_type_str);
+
+// Unescapes a C-style string literal. Handles common escape sequences like \n, \t, \xHH.
+// The returned string is heap-allocated and must be freed by the caller.
+// It can contain null bytes, so the length is returned in out_len.
+char* unescape_c_string(const char* input, size_t* out_len);
 
 // Forward declare IRNode and ApiSpec to avoid pulling in full headers here if not needed,
 // or include them if their definitions are small / commonly used with utils.

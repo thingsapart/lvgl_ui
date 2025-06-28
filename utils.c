@@ -22,6 +22,88 @@ char* read_file(const char* filename) {
 }
 
 #include <string.h>
+#include <ctype.h>
+
+// Helper function to convert a single hex digit character to its integer value
+static int hex_digit_to_val(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+char* unescape_c_string(const char* input, size_t* out_len) {
+    if (!input) {
+        if (out_len) *out_len = 0;
+        return NULL;
+    }
+
+    size_t input_len = strlen(input);
+    char* output = (char*)malloc(input_len + 1); // Worst case is no escapes, so same length.
+    if (!output) {
+        if (out_len) *out_len = 0;
+        return NULL;
+    }
+
+    size_t i = 0, j = 0;
+    while (i < input_len) {
+        if (input[i] == '\\') {
+            i++; // Skip the backslash
+            if (i >= input_len) {
+                // Dangling backslash at the end
+                output[j++] = '\\';
+                break;
+            }
+            switch (input[i]) {
+                case 'n': output[j++] = '\n'; break;
+                case 't': output[j++] = '\t'; break;
+                case 'r': output[j++] = '\r'; break;
+                case 'b': output[j++] = '\b'; break;
+                case 'f': output[j++] = '\f'; break;
+                case 'v': output[j++] = '\v'; break;
+                case '\\': output[j++] = '\\'; break;
+                case '\'': output[j++] = '\''; break;
+                case '"': output[j++] = '"'; break;
+                case 'x':
+                case 'X': {
+                    i++; // Skip 'x'
+                    int val1 = -1, val2 = -1;
+                    if (i < input_len) val1 = hex_digit_to_val(input[i]);
+
+                    if (val1 != -1 && (i + 1) < input_len) {
+                        val2 = hex_digit_to_val(input[i+1]);
+                        if (val2 != -1) {
+                            output[j++] = (char)((val1 << 4) | val2);
+                            i++; // consumed second hex digit
+                        } else {
+                            output[j++] = (char)val1;
+                        }
+                    } else if (val1 != -1) {
+                         output[j++] = (char)val1;
+                    } else {
+                        // Incomplete hex escape, treat as literal 'x'
+                        i--; // backtrack to 'x'
+                        output[j++] = input[i];
+                    }
+                    break;
+                }
+                default:
+                    // Unrecognized escape sequence, just copy the character
+                    output[j++] = input[i];
+                    break;
+            }
+            i++;
+        } else {
+            output[j++] = input[i++];
+        }
+    }
+    output[j] = '\0'; // Null terminate for safety, though it may contain other nulls.
+
+    if (out_len) {
+        *out_len = j;
+    }
+    return output;
+}
 
 // Helper function to convert C type string to simplified object type string
 const char* get_obj_type_from_c_type(const char* c_type_str) {
@@ -106,4 +188,3 @@ void print_warning(const char *msg, ...) {
     va_end(args);
     fprintf(stderr, "\n");
 }
-

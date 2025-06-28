@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h> // For size_t
 
 // Forward declarations
 struct IRNode;
@@ -56,6 +57,7 @@ typedef struct IRExprNode {
 typedef struct {
     IRExpr base;
     char* value;
+    size_t len;     // Length of the value if it's a string, can contain nulls
     bool is_string;
 } IRExprLiteral;
 
@@ -63,6 +65,7 @@ typedef struct {
 typedef struct {
     IRExpr base;
     char* value;
+    size_t len;     // Length of the string, can contain nulls
 } IRExprStaticString;
 
 // Enum literal (e.g., LV_ALIGN_CENTER)
@@ -158,8 +161,8 @@ typedef struct {
 
 // --- Factory functions for Expressions ---
 IRExpr* ir_new_expr_literal(const char* value, const char* c_type);
-IRExpr* ir_new_expr_literal_string(const char* value);
-IRExpr* ir_new_expr_static_string(const char* value);
+IRExpr* ir_new_expr_literal_string(const char* value, size_t len);
+IRExpr* ir_new_expr_static_string(const char* value, size_t len);
 IRExpr* ir_new_expr_enum(const char* symbol, intptr_t val, const char* enum_c_type);
 IRExpr* ir_new_expr_func_call(const char* func_name, IRExprNode* args, const char* return_c_type);
 IRExpr* ir_new_expr_array(IRExprNode* elements, const char* array_c_type);

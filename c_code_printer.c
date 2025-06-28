@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 // --- ID to C-Name/Type Mapping ---
 // The IR uses registered IDs (@my_button), but the C code needs the generated
@@ -62,6 +63,28 @@ static void print_indent(int level) {
     for (int i = 0; i < level; ++i) printf("    ");
 }
 
+static void print_c_string_literal(const char* str, size_t len) {
+    printf("\"");
+    for (size_t i = 0; i < len; ++i) {
+        unsigned char c = str[i];
+        switch (c) {
+            case '\n': printf("\\n"); break;
+            case '\r': printf("\\r"); break;
+            case '\t': printf("\\t"); break;
+            case '"':  printf("\\\""); break;
+            case '\\': printf("\\\\"); break;
+            default:
+                if (isprint(c)) {
+                    printf("%c", c);
+                } else {
+                    printf("\\x%02x", c);
+                }
+                break;
+        }
+    }
+    printf("\"");
+}
+
 static void print_expr_list(IRExprNode* head, const char* parent_c_name, IdMapNode* map) {
     bool first = true;
     for (IRExprNode* current = head; current; current = current->next) {
@@ -76,13 +99,20 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, 
     if (!expr) { printf("NULL"); return; }
 
     switch (expr->base.type) {
-        case IR_EXPR_LITERAL:
-            if (((IRExprLiteral*)expr)->is_string) printf("\"%s\"", ((IRExprLiteral*)expr)->value);
-            else printf("%s", ((IRExprLiteral*)expr)->value);
+        case IR_EXPR_LITERAL: {
+            IRExprLiteral* lit = (IRExprLiteral*)expr;
+            if (lit->is_string) {
+                print_c_string_literal(lit->value, lit->len);
+            } else {
+                printf("%s", lit->value);
+            }
             break;
-        case IR_EXPR_STATIC_STRING:
-            printf("\"%s\"", ((IRExprStaticString*)expr)->value);
+        }
+        case IR_EXPR_STATIC_STRING: {
+            IRExprStaticString* sstr = (IRExprStaticString*)expr;
+            print_c_string_literal(sstr->value, sstr->len);
             break;
+        }
         case IR_EXPR_ENUM:
             printf("%s", ((IRExprEnum*)expr)->symbol);
             break;

@@ -382,9 +382,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         // Check for string constant like LV_SYMBOL_*
         char* const_str_val = api_spec_find_constant_string(ctx->api_spec, s);
         if (const_str_val) {
-            // It's a string constant like a symbol. The generator should treat it as a static string.
-            IRExpr* expr = ir_new_expr_static_string(const_str_val);
-            free(const_str_val); // Free the string returned by api_spec_find_constant_string
+            size_t unescaped_len = 0;
+            char* unescaped_val = unescape_c_string(const_str_val, &unescaped_len);
+
+            IRExpr* expr = ir_new_expr_static_string(unescaped_val, unescaped_len);
+
+            free(const_str_val);
+            free(unescaped_val);
             return expr;
         }
 
@@ -421,7 +425,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         if (s[0] == '@') {
             return ir_new_expr_registry_ref(s, registry_get_c_type_for_id(ctx->registry, s));
         }
-        if (s[0] == '!') return ir_new_expr_static_string(s + 1);
+        if (s[0] == '!') {
+            size_t unescaped_len = 0;
+            char* unescaped_val = unescape_c_string(s + 1, &unescaped_len);
+            IRExpr* expr = ir_new_expr_static_string(unescaped_val, unescaped_len);
+            free(unescaped_val);
+            return expr;
+        }
         if (s[0] == '#') {
             long hex_val = strtol(s + 1, NULL, 16);
             char hex_str_arg[32];
@@ -460,7 +470,11 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             return ir_new_expr_enum(s, enum_val, (char*)inferred_enum_type);
         }
 
-        return ir_new_expr_literal_string(s);
+        size_t unescaped_len = 0;
+        char* unescaped_val = unescape_c_string(s, &unescaped_len);
+        IRExpr* expr = ir_new_expr_literal_string(unescaped_val, unescaped_len);
+        free(unescaped_val);
+        return expr;
     }
     if (cJSON_IsNumber(value)) {
         char buf[32];
