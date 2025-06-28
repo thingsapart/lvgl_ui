@@ -7482,7 +7482,7 @@
       "return_type": "lv_obj_t*",
       "args": [
         "lv_obj_t*",
-        "void*",
+        "const char*",
         "char*"
       ]
     },
@@ -22335,7 +22335,7 @@
           "return_type": "lv_obj_t*",
           "args": [
             "lv_obj_t*",
-            "void*",
+            "const char*",
             "char*"
           ]
         },
@@ -22371,7 +22371,7 @@
       "properties": {
         "add_button": {
           "setter": "lv_list_add_button",
-          "type": "void*"
+          "type": "lv_obj_t*"
         },
         "add_text": {
           "setter": "lv_list_add_text",

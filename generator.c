@@ -313,6 +313,72 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
 
     if (cJSON_IsString(value)) {
         const char* s = value->valuestring;
+
+        // Check for bitwise OR operator
+        if (strchr(s, '|')) {
+            long final_val = 0;
+            char* temp_str = strdup(s);
+            if (!temp_str) render_abort("Failed to duplicate string for OR-parsing");
+
+            char* rest = temp_str;
+            char* token;
+            bool error = false;
+
+            // Use strtok to split the string by '|'
+            token = strtok(rest, "|");
+            while (token != NULL) {
+                // Trim whitespace from the current token
+                while (isspace((unsigned char)*token)) token++;
+                char* end = token + strlen(token) - 1;
+                while (end > token && isspace((unsigned char)*end)) *end-- = '\0';
+
+                if (strlen(token) > 0) {
+                    long part_val = 0;
+                    bool found = false;
+
+                    // Try to resolve token as enum or constant.
+                    if (expected_c_type && strcmp(expected_c_type, "unknown") != 0 && api_spec_is_enum_member(ctx->api_spec, expected_c_type, token)) {
+                        if (api_spec_find_enum_value(ctx->api_spec, expected_c_type, token, &part_val)) {
+                            found = true;
+                        }
+                    }
+                    if (!found) {
+                        const char* inferred_enum_type = api_spec_find_global_enum_type(ctx->api_spec, token);
+                        if (inferred_enum_type) {
+                            if (api_spec_find_enum_value(ctx->api_spec, inferred_enum_type, token, &part_val)) {
+                                found = true;
+                            }
+                        }
+                    }
+                    if (!found) {
+                        if (api_spec_find_constant_value(ctx->api_spec, token, &part_val)) {
+                            found = true;
+                        }
+                    }
+
+                    if (found) {
+                        final_val |= part_val;
+                    } else {
+                        generator_warning("Could not resolve part '%s' of OR-expression '%s'", token, s);
+                        error = true;
+                        break;
+                    }
+                }
+                // Get the next token
+                token = strtok(NULL, "|");
+            }
+
+            free(temp_str);
+
+            if (!error) {
+                char buf[32];
+                snprintf(buf, sizeof(buf), "%ld", final_val);
+                const char* final_type = (expected_c_type && strcmp(expected_c_type, "unknown") != 0) ? expected_c_type : "int";
+                return ir_new_expr_literal(buf, final_type);
+            }
+            // If an error occurred, fall through to default string handling which will probably fail.
+        }
+
         size_t len = strlen(s);
 
         if (s[0] == '$') {

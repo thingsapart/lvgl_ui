@@ -73274,7 +73274,7 @@
                     "name": "icon",
                     "type": {
                         "type": {
-                            "name": "void",
+                            "name": "char",
                             "json_type": "primitive_type",
                             "quals": [
                                 "const"
