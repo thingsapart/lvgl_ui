@@ -15,6 +15,14 @@
 #include "viewer/sdl_viewer.h"
 #include "c_gen/lvgl_dispatch.h"
 
+// For getpid() to create unique temporary filenames
+#ifdef _WIN32
+#include <process.h>
+#define getpid _getpid
+#else
+#include <unistd.h>
+#endif
+
 
 // --- Function Declarations ---
 void print_usage(const char* prog_name);
@@ -23,10 +31,11 @@ void print_usage(const char* prog_name);
 // --- Main Application ---
 
 void print_usage(const char* prog_name) {
-    fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json> [--codegen <backends>]\n", prog_name);
+    fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json|yaml> [--codegen <backends>]\n", prog_name);
     fprintf(stderr, "  <backends> is a comma-separated list of code generation backends.\n");
     fprintf(stderr, "  Available backends: ir_print, ir_debug_print, c_code, lvgl_render\n");
     fprintf(stderr, "  If --codegen is not specified, 'ir_print' is run by default.\n");
+    fprintf(stderr, "  If a .yaml file is provided, 'yq' must be installed to convert it to JSON.\n");
 }
 
 void render_abort(const char *msg) {
@@ -39,11 +48,22 @@ void render_abort(const char *msg) {
 int main(int argc, char* argv[]) {
     debug_log_init();
 
+    // --- Resource Declarations for robust cleanup ---
+    int return_code = 0;
+    char* api_spec_content = NULL;
+    cJSON* api_spec_json = NULL;
+    char* ui_spec_content = NULL;
+    cJSON* ui_spec_json = NULL;
+    ApiSpec* api_spec = NULL;
+    IRRoot* ir_root = NULL;
+    char* backend_list_copy = NULL;
+    char temp_json_path[256] = {0}; // Will hold path to temporary JSON file
+
+    // --- 1. Argument Parsing ---
     const char* api_spec_path = NULL;
     const char* ui_spec_path = NULL;
     const char* codegen_list_str = "ir_print"; // Default backend
 
-    // --- 1. Argument Parsing ---
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--codegen") == 0) {
             if (i + 1 < argc) {
@@ -69,54 +89,76 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // --- 2. File Loading & JSON Parsing ---
-    char* api_spec_content = read_file(api_spec_path);
-    if (!api_spec_content) {
-        fprintf(stderr, "Error reading API spec file: %s\n", api_spec_path);
-        return 1;
-    }
-    cJSON* api_spec_json = cJSON_Parse(api_spec_content);
-    free(api_spec_content);
-    if (!api_spec_json) {
-        fprintf(stderr, "Error parsing API spec JSON: %s\n", cJSON_GetErrorPtr());
-        return 1;
+    // --- 1.5. YAML to JSON conversion (if necessary) ---
+    const char* ui_spec_to_load = ui_spec_path;
+    const char* extension = strrchr(ui_spec_path, '.');
+
+    if (extension && (strcmp(extension, ".yaml") == 0 || strcmp(extension, ".yml") == 0)) {
+        printf("YAML file detected: '%s'. Converting with 'yq'...\n", ui_spec_path);
+
+        snprintf(temp_json_path, sizeof(temp_json_path), "__temp_ui_%d.json", getpid());
+
+        char command[1024];
+        snprintf(command, sizeof(command), "yq e -o json \"%s\" > \"%s\"", ui_spec_path, temp_json_path);
+
+        printf("Executing: %s\n", command);
+        int ret = system(command);
+
+        if (ret != 0) {
+            fprintf(stderr, "Error: 'yq' command failed. Is 'yq' installed and in your PATH?\n");
+            remove(temp_json_path); // Attempt to clean up potentially empty/partial file
+            return_code = 1;
+            goto cleanup;
+        }
+        ui_spec_to_load = temp_json_path;
     }
 
-    char* ui_spec_content = read_file(ui_spec_path);
-    if (!ui_spec_content) {
-        fprintf(stderr, "Error reading UI spec file: %s\n", ui_spec_path);
-        cJSON_Delete(api_spec_json);
-        return 1;
+
+    // --- 2. File Loading & JSON Parsing ---
+    api_spec_content = read_file(api_spec_path);
+    if (!api_spec_content) {
+        fprintf(stderr, "Error reading API spec file: %s\n", api_spec_path);
+        return_code = 1;
+        goto cleanup;
     }
-    cJSON* ui_spec_json = cJSON_Parse(ui_spec_content);
-    free(ui_spec_content);
+    api_spec_json = cJSON_Parse(api_spec_content);
+    if (!api_spec_json) {
+        fprintf(stderr, "Error parsing API spec JSON: %s\n", cJSON_GetErrorPtr());
+        return_code = 1;
+        goto cleanup;
+    }
+
+    ui_spec_content = read_file(ui_spec_to_load);
+    if (!ui_spec_content) {
+        fprintf(stderr, "Error reading UI spec file: %s\n", ui_spec_to_load);
+        return_code = 1;
+        goto cleanup;
+    }
+    ui_spec_json = cJSON_Parse(ui_spec_content);
     if (!ui_spec_json) {
         fprintf(stderr, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
-        cJSON_Delete(api_spec_json);
-        return 1;
+        return_code = 1;
+        goto cleanup;
     }
 
     // --- 3. IR Generation ---
-    ApiSpec* api_spec = api_spec_parse(api_spec_json);
+    api_spec = api_spec_parse(api_spec_json);
     if (!api_spec) {
         fprintf(stderr, "Failed to parse the loaded API spec into internal structures.\n");
-        cJSON_Delete(api_spec_json);
-        cJSON_Delete(ui_spec_json);
-        return 1;
+        return_code = 1;
+        goto cleanup;
     }
 
-    IRRoot* ir_root = generate_ir_from_ui_spec(ui_spec_json, api_spec);
+    ir_root = generate_ir_from_ui_spec(ui_spec_json, api_spec);
     if (!ir_root) {
         fprintf(stderr, "Failed to generate IR from the UI spec.\n");
-        api_spec_free(api_spec);
-        cJSON_Delete(api_spec_json);
-        cJSON_Delete(ui_spec_json);
-        return 1;
+        return_code = 1;
+        goto cleanup;
     }
 
 
     // --- 4. Run Code Generation Backends ---
-    char* backend_list_copy = strdup(codegen_list_str);
+    backend_list_copy = strdup(codegen_list_str);
     if (!backend_list_copy) render_abort("Failed to duplicate codegen string.");
 
     char* backend_name = strtok(backend_list_copy, ",");
@@ -132,15 +174,16 @@ int main(int argc, char* argv[]) {
 
             if (sdl_viewer_init() != 0) {
                 fprintf(stderr, "FATAL: Failed to initialize SDL viewer.\n");
-                // The main cleanup block below will handle freeing memory.
-                exit(1);
+                return_code = 1;
+                goto cleanup;
             }
 
             lv_obj_t* parent_screen = sdl_viewer_create_main_screen();
             if (!parent_screen) {
                 fprintf(stderr, "FATAL: Failed to create main screen.\n");
                 sdl_viewer_deinit();
-                exit(1);
+                return_code = 1;
+                goto cleanup;
             }
 
             // Render the IR onto the created screen.
@@ -160,14 +203,22 @@ int main(int argc, char* argv[]) {
         }
         backend_name = strtok(NULL, ",");
     }
-    free(backend_list_copy);
 
-
+cleanup:
     // --- 5. Cleanup ---
-    ir_free((IRNode*)ir_root);
-    api_spec_free(api_spec);
-    cJSON_Delete(api_spec_json);
-    cJSON_Delete(ui_spec_json);
+    if(backend_list_copy) free(backend_list_copy);
+    if(ir_root) ir_free((IRNode*)ir_root);
+    if(api_spec) api_spec_free(api_spec);
+    if(api_spec_json) cJSON_Delete(api_spec_json);
+    if(ui_spec_json) cJSON_Delete(ui_spec_json);
+    if(api_spec_content) free(api_spec_content);
+    if(ui_spec_content) free(ui_spec_content);
 
-    return 0;
+    // Clean up temporary file if it was created
+    if (temp_json_path[0] != '\0') {
+        printf("Cleaning up temporary file: %s\n", temp_json_path);
+        remove(temp_json_path);
+    }
+
+    return return_code;
 }
