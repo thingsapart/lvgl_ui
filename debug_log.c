@@ -45,9 +45,9 @@ const char* debug_log_get_module_name(DebugLogModule module) {
 
 void debug_log_init(void) {
     // Ensure all modules are disabled initially
-    for (int i = 0; i < LOG_MODULE_COUNT; ++i) {
-        enabled_modules[i] = false;
-    }
+    //for (int i = 0; i < LOG_MODULE_COUNT; ++i) {
+    //    enabled_modules[i] = false;
+    //}
 
     const char* env_var_value = getenv("LVGL_DEBUG_MODULES");
     if (env_var_value) {

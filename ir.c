@@ -15,6 +15,7 @@ static void free_with_block_list(IRWithBlock* head);
 static void free_object_list(IRObject* head);
 static void free_component_def_list(IRComponent* head);
 static void free_expr(IRExpr* expr);
+static void free_operation_list(IROperationNode* head);
 
 // --- Factory functions for Expressions ---
 
@@ -181,6 +182,24 @@ void ir_expr_list_add(IRExprNode** head, IRExpr* expr) {
     }
 }
 
+void ir_operation_list_add(IROperationNode** head, IRNode* node) {
+    if (!head || !node) return;
+    IROperationNode* new_node = calloc(1, sizeof(IROperationNode));
+    new_node->op_node = node;
+    new_node->next = NULL;
+
+    if (!*head) {
+        *head = new_node;
+    } else {
+        IROperationNode* current = *head;
+        while (current->next) {
+            current = current->next;
+        }
+        current->next = new_node;
+    }
+}
+
+
 // --- Free Functions ---
 
 static void free_expr(IRExpr* expr) {
@@ -258,6 +277,16 @@ static void free_component_def_list(IRComponent* head) {
     }
 }
 
+static void free_operation_list(IROperationNode* head) {
+    IROperationNode* current = head;
+    while (current) {
+        IROperationNode* next = current->next;
+        ir_free(current->op_node);
+        free(current);
+        current = next;
+    }
+}
+
 void ir_free(IRNode* node) {
     if (!node) return;
     switch (node->type) {
@@ -276,10 +305,9 @@ void ir_free(IRNode* node) {
             free(obj->registered_id);
             free(obj->use_view_component_id);
             free_expr(obj->constructor_expr);
-            free_expr_list(obj->setup_calls);
+            free_operation_list(obj->operations);
             free_property_list(obj->use_view_context);
             free_with_block_list(obj->with_blocks);
-            free_object_list(obj->children);
             break;
         }
         case IR_NODE_COMPONENT_DEF: {

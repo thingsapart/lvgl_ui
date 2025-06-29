@@ -195,7 +195,15 @@ static void build_id_map_recursive(IRObject* head, IdMapNode** map_head) {
             id_map_add(map_head, current->c_name, current->c_name, current->c_type);
         }
 
-        if (current->children) build_id_map_recursive(current->children, map_head);
+        if (current->operations) {
+            IROperationNode* op_node = current->operations;
+            while (op_node) {
+                if (op_node->op_node->type == IR_NODE_OBJECT) {
+                    build_id_map_recursive((IRObject*)op_node->op_node, map_head);
+                }
+                op_node = op_node->next;
+            }
+        }
         // if (current->with_blocks) ... // TODO: handle with blocks if needed
     }
 }
@@ -228,15 +236,19 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             printf(";\n");
         }
 
-        for (IRExprNode* call_node = current->setup_calls; call_node; call_node = call_node->next) {
-            print_indent(indent_level + 1);
-            print_expr(call_node->expr, parent_c_name, map, false);
-            printf(";\n");
-        }
-
-        if (current->children) {
+        if (current->operations) {
             printf("\n");
-            print_object_list(current->children, indent_level + 1, current->c_name, map);
+            IROperationNode* op_node = current->operations;
+            while(op_node) {
+                if (op_node->op_node->type == IR_NODE_OBJECT) {
+                    print_object_list((IRObject*)op_node->op_node, indent_level + 1, current->c_name, map);
+                } else {
+                    print_indent(indent_level + 1);
+                    print_expr((IRExpr*)op_node->op_node, parent_c_name, map, false);
+                    printf(";\n");
+                }
+                op_node = op_node->next;
+            }
         }
 
         print_indent(indent_level);

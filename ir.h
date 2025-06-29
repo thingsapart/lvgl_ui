@@ -127,6 +127,12 @@ typedef struct IRWithBlock {
     struct IRWithBlock* next;
 } IRWithBlock;
 
+// A node in the ordered list of operations for an IRObject
+typedef struct IROperationNode {
+    IRNode* op_node; // Can be an IRObject (for a child) or an IRExpr (for a setup call)
+    struct IROperationNode* next;
+} IROperationNode;
+
 // Represents a widget, style, or other UI object from the spec
 typedef struct IRObject {
     IRNode base;
@@ -135,11 +141,10 @@ typedef struct IRObject {
     char* c_type;           // The C type of this object (e.g. "lv_obj_t*", "lv_style_t*")
     char* registered_id;    // If "named" or "id" is present, this is the string key.
     IRExpr* constructor_expr;
-    IRExprNode* setup_calls;
+    IROperationNode* operations;
     char* use_view_component_id;
     IRProperty* use_view_context;
     IRWithBlock* with_blocks;
-    struct IRObject* children;
     struct IRObject* next;
 } IRObject;
 
@@ -183,6 +188,7 @@ void ir_object_list_add(IRObject** head, IRObject* object);
 void ir_property_list_add(IRProperty** head, IRProperty* prop);
 void ir_with_block_list_add(IRWithBlock** head, IRWithBlock* block);
 void ir_component_def_list_add(IRComponent** head, IRComponent* comp);
+void ir_operation_list_add(IROperationNode** head, IRNode* node);
 
 // --- Memory Management ---
 void ir_free(IRNode* node);

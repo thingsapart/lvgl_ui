@@ -135,21 +135,24 @@ static void debug_print_object_list(IRObject* head, int indent_level) {
         printf("[CONSTRUCTOR_EXPR]\n");
         debug_print_expr(current->constructor_expr, indent_level + 2);
 
-        if (current->setup_calls) {
+        if (current->operations) {
             debug_print_indent(indent_level + 1);
-            printf("[SETUP_CALLS]\n");
-            debug_print_expr_list(current->setup_calls, indent_level + 2);
+            printf("[OPERATIONS]\n");
+            IROperationNode* op_node = current->operations;
+            while(op_node) {
+                if(op_node->op_node->type == IR_NODE_OBJECT) {
+                    debug_print_object_list((IRObject*)op_node->op_node, indent_level + 2);
+                } else {
+                    debug_print_expr((IRExpr*)op_node->op_node, indent_level + 2);
+                }
+                op_node = op_node->next;
+            }
         }
 
         if (current->with_blocks) {
             debug_print_indent(indent_level + 1);
             printf("[WITH_BLOCKS]\n");
             debug_print_with_block_list(current->with_blocks, indent_level + 2);
-        }
-        if (current->children) {
-            debug_print_indent(indent_level + 1);
-            printf("[CHILDREN]\n");
-            debug_print_object_list(current->children, indent_level + 2);
         }
     }
 }

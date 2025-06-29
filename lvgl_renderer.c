@@ -8,7 +8,9 @@
 
 // --- Forward Declarations ---
 static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry);
+static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry* registry);
 static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr, RenderValue* out_val);
+static void debug_print_expr_as_c(IRExpr* expr, Registry* registry, FILE* stream);
 
 
 // --- Main Backend Entry Point ---
@@ -35,60 +37,192 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent) {
     // The C-side registry should be de-inited by the caller (e.g., main) after the loop ends.
 }
 
-// --- Core Rendering Logic ---
+// --- Debugging Helper ---
 
-static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry) {
-    for (IRObject* current_obj = head; current_obj; current_obj = current_obj->next) {
-        DEBUG_LOG(LOG_MODULE_RENDERER, "Rendering object: c_name='%s', json_type='%s'", current_obj->c_name, current_obj->json_type);
+static void debug_print_expr_as_c(IRExpr* expr, Registry* registry, FILE* stream) {
+    if (!expr) {
+        fprintf(stream, "NULL");
+        return;
+    }
 
-        RenderValue constructor_result;
-        constructor_result.type = RENDER_VAL_TYPE_NULL;
-        constructor_result.as.p_val = NULL;
-
-        void* c_obj = NULL;
-
-        // 1. Create the object by executing its constructor expression
-        if (current_obj->constructor_expr) {
-            evaluate_expression(spec, registry, current_obj->constructor_expr, &constructor_result);
-            if(constructor_result.type == RENDER_VAL_TYPE_POINTER) {
-                c_obj = constructor_result.as.p_val;
+    switch (expr->base.type) {
+        case IR_EXPR_LITERAL: {
+            IRExprLiteral* lit = (IRExprLiteral*)expr;
+            if (lit->is_string) {
+                // A full C-escape is complex, this is good enough for debug
+                fprintf(stream, "\"%s\"", lit->value);
+            } else {
+                fprintf(stream, "%s", lit->value);
             }
+            break;
         }
-
-        // Handle non-pointer types like lv_style_t which are stack-allocated by the C-backend
-        // but must be heap-allocated for the dynamic renderer.
-        if (!c_obj && current_obj->c_type && strchr(current_obj->c_type, '*') == NULL) {
-            DEBUG_LOG(LOG_MODULE_RENDERER, "Allocating heap memory for non-pointer type '%s'", current_obj->c_type);
-            if (strcmp(current_obj->c_type, "lv_style_t") == 0) {
-                c_obj = malloc(sizeof(lv_style_t));
-                if (!c_obj) render_abort("Failed to malloc lv_style_t");
+        case IR_EXPR_STATIC_STRING: {
+            fprintf(stream, "\"%s\"", ((IRExprStaticString*)expr)->value);
+            break;
+        }
+        case IR_EXPR_ENUM:
+            fprintf(stream, "%s", ((IRExprEnum*)expr)->symbol);
+            break;
+        case IR_EXPR_REGISTRY_REF: {
+            fprintf(stream, "%s", ((IRExprRegistryRef*)expr)->name);
+            break;
+        }
+        case IR_EXPR_CONTEXT_VAR:
+             fprintf(stream, "/* CONTEXT_VAR: %s */", ((IRExprContextVar*)expr)->name);
+            break;
+        case IR_EXPR_FUNCTION_CALL: {
+            IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
+            fprintf(stream, "%s(", call->func_name);
+            IRExprNode* arg_node = call->args;
+            bool first = true;
+            while(arg_node) {
+                if (!first) fprintf(stream, ", ");
+                bool is_struct_by_value = false;
+                if (arg_node->expr->base.type == IR_EXPR_REGISTRY_REF) {
+                    const char* ref_name = ((IRExprRegistryRef*)arg_node->expr)->name;
+                    const char* c_type = registry_get_c_type_for_id(registry, ref_name);
+                    if (c_type && strchr(c_type, '*') == NULL) {
+                        is_struct_by_value = true;
+                    }
+                }
+                if (is_struct_by_value) fprintf(stream, "&");
+                debug_print_expr_as_c(arg_node->expr, registry, stream);
+                first = false;
+                arg_node = arg_node->next;
             }
+            fprintf(stream, ")");
+            break;
         }
-
-        if (!c_obj && current_obj->constructor_expr) {
-            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Constructor for '%s' returned NULL.", current_obj->c_name);
+        case IR_EXPR_ARRAY: {
+            fprintf(stream, "{ ");
+            IRExprNode* elem_node = ((IRExprArray*)expr)->elements;
+            bool first = true;
+            while(elem_node) {
+                if (!first) fprintf(stream, ", ");
+                debug_print_expr_as_c(elem_node->expr, registry, stream);
+                first = false;
+                elem_node = elem_node->next;
+            }
+            fprintf(stream, " }");
+            break;
         }
-
-        // Register the newly created object so it can be found by subsequent calls.
-        registry_add_pointer(registry, c_obj, current_obj->c_name, current_obj->json_type, current_obj->c_type);
-        if (current_obj->registered_id) {
-             registry_add_pointer(registry, c_obj, current_obj->registered_id, current_obj->json_type, current_obj->c_type);
-             obj_registry_add(current_obj->registered_id, c_obj);
-             DEBUG_LOG(LOG_MODULE_REGISTRY, "Registered ID '%s' to pointer %p", current_obj->registered_id, c_obj);
+        case IR_EXPR_RUNTIME_REG_ADD: {
+            IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
+            fprintf(stream, "obj_registry_add(\"%s\", ", reg->id);
+            bool is_struct_by_value = false;
+            if (reg->object_expr->base.type == IR_EXPR_REGISTRY_REF) {
+                const char* ref_name = ((IRExprRegistryRef*)reg->object_expr)->name;
+                const char* c_type = registry_get_c_type_for_id(registry, ref_name);
+                if (c_type && strchr(c_type, '*') == NULL) {
+                    is_struct_by_value = true;
+                }
+            }
+            if (is_struct_by_value) fprintf(stream, "&");
+            debug_print_expr_as_c(reg->object_expr, registry, stream);
+            fprintf(stream, ")");
+            break;
         }
-
-        // 2. Execute all setup calls for this object.
-        for (IRExprNode* call_node = current_obj->setup_calls; call_node; call_node = call_node->next) {
-            RenderValue ignored_result;
-            evaluate_expression(spec, registry, call_node->expr, &ignored_result);
-        }
-
-        // 3. Recursively render child objects
-        if (current_obj->children) {
-            render_object_list(spec, current_obj->children, registry);
-        }
+        default:
+            fprintf(stream, "/* UNKNOWN_EXPR */");
+            break;
     }
 }
+
+
+// --- Core Rendering Logic ---
+
+// This function processes a SINGLE object: creates it, registers it, and processes its operations.
+static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry* registry) {
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Rendering object: c_name='%s', json_type='%s'", current_obj->c_name, current_obj->json_type);
+
+    bool debug_c_code = debug_log_is_module_enabled(LOG_MODULE_RENDERER);
+    if (debug_c_code) {
+        fprintf(stderr, "[RENDERER C-CODE] // %s: %s\n", current_obj->registered_id ? current_obj->registered_id : "unnamed", current_obj->c_name);
+        fprintf(stderr, "[RENDERER C-CODE] do {\n");
+        bool is_pointer = (current_obj->c_type && strchr(current_obj->c_type, '*') != NULL);
+        fprintf(stderr, "[RENDERER C-CODE]     %s %s%s;\n", current_obj->c_type, current_obj->c_name, is_pointer ? " = NULL" : "");
+    }
+
+    RenderValue constructor_result;
+    constructor_result.type = RENDER_VAL_TYPE_NULL;
+    constructor_result.as.p_val = NULL;
+
+    void* c_obj = NULL;
+
+    // 1. Create the object by executing its constructor expression
+    if (current_obj->constructor_expr) {
+        if (debug_c_code) {
+            bool is_pointer = (current_obj->c_type && strchr(current_obj->c_type, '*') != NULL);
+            fprintf(stderr, "[RENDERER C-CODE]     ");
+            if (is_pointer) {
+                fprintf(stderr, "%s = ", current_obj->c_name);
+            }
+            debug_print_expr_as_c(current_obj->constructor_expr, registry, stderr);
+            fprintf(stderr, ";\n");
+        }
+        evaluate_expression(spec, registry, current_obj->constructor_expr, &constructor_result);
+        if(constructor_result.type == RENDER_VAL_TYPE_POINTER) {
+            c_obj = constructor_result.as.p_val;
+        }
+    }
+
+    // Handle non-pointer types like lv_style_t which are stack-allocated by the C-backend
+    // but must be heap-allocated for the dynamic renderer.
+    if (!c_obj && current_obj->c_type && strchr(current_obj->c_type, '*') == NULL) {
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Allocating heap memory for non-pointer type '%s'", current_obj->c_type);
+        if (strcmp(current_obj->c_type, "lv_style_t") == 0) {
+            c_obj = malloc(sizeof(lv_style_t));
+            if (!c_obj) render_abort("Failed to malloc lv_style_t");
+        }
+    }
+
+    if (!c_obj && current_obj->constructor_expr) {
+        DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Constructor for '%s' returned NULL.", current_obj->c_name);
+    }
+
+    // Register the newly created object so it can be found by subsequent calls.
+    // This happens BEFORE operations are processed.
+    registry_add_pointer(registry, c_obj, current_obj->c_name, current_obj->json_type, current_obj->c_type);
+    if (current_obj->registered_id) {
+         registry_add_pointer(registry, c_obj, current_obj->registered_id, current_obj->json_type, current_obj->c_type);
+         obj_registry_add(current_obj->registered_id, c_obj);
+         DEBUG_LOG(LOG_MODULE_REGISTRY, "Registered ID '%s' to pointer %p", current_obj->registered_id, c_obj);
+    }
+
+    // 2. Execute all operations for this object (setup calls and children, in order).
+    if (current_obj->operations) {
+        if (debug_c_code) fprintf(stderr, "[RENDERER C-CODE]\n");
+        IROperationNode* op_node = current_obj->operations;
+        while(op_node) {
+            if (op_node->op_node->type == IR_NODE_OBJECT) {
+                // It's a child object. Recursively render it.
+                render_single_object(spec, (IRObject*)op_node->op_node, registry);
+            } else {
+                // It's an expression (a setup call). Evaluate it.
+                if (debug_c_code) {
+                    fprintf(stderr, "[RENDERER C-CODE]     ");
+                    debug_print_expr_as_c((IRExpr*)op_node->op_node, registry, stderr);
+                    fprintf(stderr, ";\n");
+                }
+                RenderValue ignored_result;
+                evaluate_expression(spec, registry, (IRExpr*)op_node->op_node, &ignored_result);
+            }
+            op_node = op_node->next;
+        }
+    }
+
+    if (debug_c_code) {
+        fprintf(stderr, "[RENDERER C-CODE] } while(0);\n\n");
+    }
+}
+
+// This function iterates over a list of SIBLING objects.
+static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry) {
+    for (IRObject* current_obj = head; current_obj; current_obj = current_obj->next) {
+        render_single_object(spec, current_obj, registry);
+    }
+}
+
 
 // --- Recursive Expression Evaluator ---
 
