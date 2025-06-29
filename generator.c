@@ -396,6 +396,15 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             }
         }
 
+        // Check for numeric constants FIRST. This handles cases like LV_RADIUS_CIRCLE="0x7FFF"
+        long const_val;
+        if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%ld", const_val);
+            return ir_new_expr_literal(buf, "int");
+        }
+
+        // THEN check for string constants like LV_SYMBOL_*
         char* const_str_val = api_spec_find_constant_string(ctx->api_spec, s);
         if (const_str_val) {
             size_t unescaped_len = 0;
@@ -434,13 +443,6 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             ir_expr_list_add(&args, ir_new_expr_literal(temp_s, "int32_t"));
             free(temp_s);
             return ir_new_expr_func_call("lv_pct", args, "lv_coord_t");
-        }
-
-        long const_val;
-        if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
-            char buf[32];
-            snprintf(buf, sizeof(buf), "%ld", const_val);
-            return ir_new_expr_literal(buf, "int");
         }
 
         if (expected_c_type && api_spec_is_enum_member(ctx->api_spec, expected_c_type, s)) {
