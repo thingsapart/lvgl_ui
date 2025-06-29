@@ -32800,7 +32800,7 @@
                 "docstring": ""
             },
             "json_type": "function",
-            "docstring": "Set the frame buffers for a display, similarly to lv_display_set_buffers , but allow for a custom stride as required by a display controller. This allows the frame buffers to have a stride alignment different from the rest of the buffers @param disp pointer to a display @param buf1 first buffer @param buf2 second buffer (can be NULL`) ",
+            "docstring": "Set the frame buffers for a display, similarly to lv_display_set_buffers , but allow for a custom stride as required by a display controller. This allows the frame buffers to have a stride alignment different from the rest of the buffers` ",
             "args": [
                 {
                     "name": "disp",
@@ -32814,7 +32814,7 @@
                         "quals": []
                     },
                     "json_type": "arg",
-                    "docstring": ""
+                    "docstring": "pointer to a display "
                 },
                 {
                     "name": "buf1",
@@ -32828,7 +32828,7 @@
                         "quals": []
                     },
                     "json_type": "arg",
-                    "docstring": ""
+                    "docstring": "first buffer "
                 },
                 {
                     "name": "buf2",
@@ -32842,7 +32842,7 @@
                         "quals": []
                     },
                     "json_type": "arg",
-                    "docstring": ""
+                    "docstring": "second buffer (can be NULL ) "
                 },
                 {
                     "name": "buf_size",
@@ -60250,7 +60250,7 @@
                         "quals": []
                     },
                     "json_type": "arg",
-                    "docstring": "an element of lv_cover_check_info_t "
+                    "docstring": "an element of ::lv_cover_check_info_t "
                 }
             ]
         },
@@ -69371,7 +69371,7 @@
                         "quals": []
                     },
                     "json_type": "arg",
-                    "docstring": "the y axis to which the series should be attached (LV_CHART_AXIS_PRIMARY_Y or LV_CHART_AXIS_SECONDARY_Y) "
+                    "docstring": "the y axis to which the series should be attached (::LV_CHART_AXIS_PRIMARY_Y or ::LV_CHART_AXIS_SECONDARY_Y) "
                 }
             ]
         },
@@ -73274,7 +73274,7 @@
                     "name": "icon",
                     "type": {
                         "type": {
-                            "name": "char",
+                            "name": "void",
                             "json_type": "primitive_type",
                             "quals": [
                                 "const"
@@ -78301,7 +78301,7 @@
                 "docstring": ""
             },
             "json_type": "function",
-            "docstring": "Insert a character to the current cursor position. To add a wide char, e.g. '\u00c1' use lv_text_encoded_conv_wc('\u00c1 ) ",
+            "docstring": "Insert a character to the current cursor position. To add a wide char, e.g. '\u00c1' use lv_text_encoded_conv_wc('\u00c1 )` ",
             "args": [
                 {
                     "name": "obj",
@@ -78325,7 +78325,7 @@
                         "quals": []
                     },
                     "json_type": "arg",
-                    "docstring": "a character (e.g. 'a ) "
+                    "docstring": "a character (e.g. 'a') "
                 }
             ]
         },
@@ -80306,10 +80306,10 @@
                     "quals": []
                 },
                 "json_type": "ret_type",
-                "docstring": "switch orientation from lv_switch_orientation_t "
+                "docstring": "switch orientation from ::lv_switch_orientation_t "
             },
             "json_type": "function",
-            "docstring": "Get the orientation of switch. switch orientation from lv_switch_orientation_t ",
+            "docstring": "Get the orientation of switch. switch orientation from ::lv_switch_orientation_t ",
             "args": [
                 {
                     "name": "obj",
@@ -80688,7 +80688,7 @@
                         "quals": []
                     },
                     "json_type": "arg",
-                    "docstring": "OR-ed values from lv_table_cell_ctrl_t "
+                    "docstring": "OR-ed values from ::lv_table_cell_ctrl_t "
                 }
             ]
         },
@@ -80748,7 +80748,7 @@
                         "quals": []
                     },
                     "json_type": "arg",
-                    "docstring": "OR-ed values from lv_table_cell_ctrl_t "
+                    "docstring": "OR-ed values from ::lv_table_cell_ctrl_t "
                 }
             ]
         },
@@ -81078,7 +81078,7 @@
                         "quals": []
                     },
                     "json_type": "arg",
-                    "docstring": "OR-ed values from lv_table_cell_ctrl_t "
+                    "docstring": "OR-ed values from ::lv_table_cell_ctrl_t "
                 }
             ]
         },
@@ -105618,7 +105618,7 @@
         {
             "name": "LV_USE_ANIMIMAGE",
             "json_type": "macro",
-            "docstring": "Handle special Kconfig options. Color depth: 1 (I1), 8 (L8), 16 (RGB565), 24 (RGB888), 32 (XRGB8888) Possible values LV_STDLIB_BUILTIN: LVGL's built in implementation LV_STDLIB_CLIB: Standard C functions, like malloc, strlen, etc LV_STDLIB_MICROPYTHON: MicroPython implementation LV_STDLIB_RTTHREAD: RT-Thread implementation LV_STDLIB_CUSTOM: Implement the functions externally Possible values LV_STDLIB_BUILTIN: LVGL's built in implementation LV_STDLIB_CLIB: Standard C functions, like malloc, strlen, etc LV_STDLIB_MICROPYTHON: MicroPython implementation LV_STDLIB_RTTHREAD: RT-Thread implementation LV_STDLIB_CUSTOM: Implement the functions externally Possible values LV_STDLIB_BUILTIN: LVGL's built in implementation LV_STDLIB_CLIB: Standard C functions, like malloc, strlen, etc LV_STDLIB_MICROPYTHON: MicroPython implementation LV_STDLIB_RTTHREAD: RT-Thread implementation LV_STDLIB_CUSTOM: Implement the functions externally Size of memory available for :ref:`lv_malloc()` in bytes (>= 2kB) Size of the memory expand for :ref:`lv_malloc()` in bytes Set an address for the memory pool instead of allocating it as a normal array. Can be in external SRAM too. Default display refresh, input device read and animation step period. Default Dots Per Inch. Used to initialize default sizes such as widgets sized, style paddings. (Not so important, you can adjust it to modify default sizes and spaces.) Select operating system to use. Possible options: LV_OS_NONE LV_OS_PTHREAD LV_OS_FREERTOS LV_OS_CMSIS_RTOS2 LV_OS_RTTHREAD LV_OS_WINDOWS LV_OS_MQX LV_OS_SDL2 LV_OS_CUSTOM Align stride of all layers and images to this bytes Align start address of draw_buf addresses to this bytes Using matrix for transformations. Requirements: LV_USE_MATRIX = 1 . Rendering engine needs to support 3x3 matrix transformations. The target buffer size for simple layer chunks. Stack size of drawing thread. NOTE: If FreeType or ThorVG is enabled, it is recommended to set it to 32KB or more. Thread priority of the drawing task. Higher values mean higher priority. Can use values from lv_thread_prio_t enum in :ref:`lv_os.h` : LV_THREAD_PRIO_LOWEST, LV_THREAD_PRIO_LOW, LV_THREAD_PRIO_MID, LV_THREAD_PRIO_HIGH, LV_THREAD_PRIO_HIGHEST Make sure the priority value aligns with the OS-specific priority levels. On systems with limited priority levels (e.g., FreeRTOS), a higher value can improve rendering performance but might cause other tasks to starve. Set number of draw units. > 1 requires operating system to be enabled in LV_USE_OS . > 1 means multiple threads will render the screen in parallel. Use Arm-2D to accelerate software (sw) rendering. Enable native helium assembly to be compiled. 0: Use a simple renderer capable of drawing only simple rectangles with gradient, images, text, and straight lines only. 1: Use a complex renderer capable of drawing rounded corners, shadow, skew lines, and arcs too. Allow buffering some shadow calculation. LV_DRAW_SW_SHADOW_CACHE_SIZE is the maximum shadow size to buffer, where shadow size is shadow_width + radius . Caching has LV_DRAW_SW_SHADOW_CACHE_SIZE^2 RAM cost. Set number of maximally-cached circle data. The circumference of 1/4 circle are saved for anti-aliasing. radius * 4 bytes are used per circle (the most often used radiuses are saved). 0: disables caching Enable drawing complex gradients in software: linear at an angle, radial or conical Use NXP's VG-Lite GPU on iMX RTxxx platforms. Use NXP's PXP on iMX RTxxx platforms. Use NXP's G2D on MPU platforms. Use Renesas Dave2D on RA platforms. Draw using cached SDL textures Use VG-Lite GPU. Accelerate blends, fills, etc. with STM32 DMA2D Draw using cached OpenGLES textures Draw using espressif PPA accelerator Enable log module Add a custom handler when assert happens e.g. to restart MCU. 1: Draw random colored rectangles over the redrawn areas. 1: Draw a red overlay for ARGB layers and a green overlay for RGB layers 1: Adds the following behaviors for debugging: Draw overlays with different colors for each draw_unit's tasks. Draw index number of draw unit on white background. For layers, draws index number of draw unit on black background. Default cache size in bytes. Used by image decoders such as lv_lodepng to keep the decoded image in memory. If size is not set to 0, the decoder will fail to decode when the cache is full. If size is 0, the cache function is not enabled and the decoded memory will be released immediately after use. Default number of image header cache entries. The cache is used to store the headers of images The main logic is like LV_CACHE_DEF_SIZE but for image headers. Number of stops allowed per gradient. Increase this to allow more stops. This adds (sizeof(lv_color_t) + 1) bytes per additional stop. Adjust color mix functions rounding. GPUs might calculate color mix (blending) differently. 0: round down, 64: round up from x.75, 128: round up from half, 192: round up from x.25, 254: round up Add 2 x 32-bit variables to each lv_obj_t to speed up getting style properties Add id field to lv_obj_t Enable support widget names Automatically assign an ID when obj is created Use builtin obj ID handler functions: lv_obj_assign_id: Called when a widget is created. Use a separate counter for each widget class as an ID. lv_obj_id_compare: Compare the ID to decide if it matches with a requested value. lv_obj_stringify_id: Return string-ified identifier, e.g. \"button3\". lv_obj_free_id: Does nothing, as there is no memory allocation for the ID. When disabled these functions needs to be implemented by the user. Use obj property set/get API. Enable property name support. For big endian systems set to 1 Define a custom attribute for lv_tick_inc function Define a custom attribute for lv_timer_handler function Define a custom attribute for lv_display_flush_ready function Align VG_LITE buffers on this number of bytes. vglite_src_buf_aligned() uses this value to validate alignment of passed buffer pointers. Will be added where memory needs to be aligned (with -Os data might not be aligned to boundary by default). E.g. attribute ((aligned(4))) Attribute to mark large constant arrays, for example for font bitmaps Compiler prefix for a large array declaration in RAM Place performance critical functions into a faster memory (e.g RAM) Export integer constant to binding. This macro is used with constants in the form of LV_<CONST> that should also appear on LVGL binding API such as MicroPython. Prefix all global extern data with this Use float as lv_value_precise_t Enable matrix support Requires LV_USE_FLOAT = 1 Include :ref:`lvgl_private.h` in :ref:`lvgl.h` to access internal data and functions by default Pixel perfect monospaced fonts Optionally declare custom fonts here. \n\nYou can use any of these fonts as the default font too and they will be available globally. Example:  \n\n#define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(my_font_1) LV_FONT_DECLARE(my_font_2) Always set a default font Enable handling large font and/or fonts with a lot of characters. The limit depends on the font size, font face and bpp. A compiler error will be triggered if a font needs it. Enables/disables support for compressed fonts. Enable drawing placeholders when glyph dsc is not found. Select a character encoding for strings. Your IDE or editor should have the same character encoding. LV_TXT_ENC_UTF8 LV_TXT_ENC_ASCII While rendering text strings, break (wrap) text on these chars. If a word is at least this long, will break wherever \"prettiest\". To disable, set to a value <= 0. Minimum number of characters in a long word to put on a line before a break. Depends on LV_TXT_LINE_BREAK_LONG_LEN. Minimum number of characters in a long word to put on a line after a break. Depends on LV_TXT_LINE_BREAK_LONG_LEN. Support bidirectional text. Allows mixing Left-to-Right and Right-to-Left text. The direction will be processed according to the Unicode Bidirectional Algorithm: https://www.w3.org/International/articles/inline-bidi-markup/uba-basics Enable Arabic/Persian processing In these languages characters should be replaced with another form based on their position in the text 1: Causes these widgets to be given default values at creation time. lv_buttonmatrix_t: Get default maps: {\"Btn1\", \"Btn2\", \"Btn3\", \"\\n\", \"Btn4\", \"Btn5\", \"\"}, else map not set. lv_checkbox_t : String label set to \"Check box\", else set to empty string. lv_dropdown_t : Options set to \"Option 1\", \"Option 2\", \"Option 3\", else no values are set. lv_roller_t : Options set to \"Option 1\", \"Option 2\", \"Option 3\", \"Option 4\", \"Option 5\", else no values are set. lv_label_t : Text set to \"Text\", else empty string. lv_arclabel_t : Text set to \"Arced Text\", else empty string. A line of text can contain this maximum number of span descriptors. A simple, impressive and very complete theme 0: Light mode; 1: Dark mode 1: Enable grow on press Default transition time in ms. A very simple theme that is a good starting point for a custom theme A theme designed for monochrome displays A layout similar to Flexbox in CSS. A layout similar to Grid in CSS. Setting a default driver letter allows skipping the driver prefix in filepaths. Documentation about how to use the below driver-identifier letters can be found at https://docs.lvgl.io/master/details/main-modules/fs.html#lv-fs-identifier-letters . API for fopen, fread, etc. API for open, read, etc. API for CreateFile, ReadFile, etc. API for FATFS (needs to be added separately). Uses f_open, f_read, etc. API for memory-mapped file access. API for LittleFs. API for Arduino LittleFs. API for Arduino Sd. API for UEFI LODEPNG decoder library PNG decoder(libpng) library BMP decoder library JPG + split JPG decoder library. Split JPG is a custom format optimized for embedded systems. libjpeg-turbo decoder library. Supports complete JPEG specifications and high-performance JPEG decoding. GIF decoder library Decode bin images to RAM RLE decompress library QR code library Barcode code library FreeType library Built-in TTF decoder Rlottie library Enable Vector Graphic APIs Requires LV_USE_MATRIX = 1 Enable ThorVG (vector graphics library) from the src/libs folder Enable ThorVG by assuming that its installed and linked to the project Use lvgl built-in LZ4 lib Use external LZ4 library FFmpeg library for image decoding and playing videos. Supports all major image formats so do not enable other image decoder with it. 1: Enable API to take snapshot for object 1: Enable system monitor component 1: Enable runtime performance profiler 1: Enable Monkey test 1: Enable grid navigation 1: Enable lv_obj fragment logic 1: Support using images as font in label or span widgets 1: Enable an observer pattern implementation 1: Enable Pinyin input method Requires: lv_keyboard 1: Enable file explorer. Requires: lv_table 1: Enable Font manager Enable emulated input devices, time emulation, and screenshot compares. Enable loading XML UIs runtime 1: Enable text translation support Use SDL to open window on PC and handle mouse and keyboard. Use X11 to open window on Linux desktop and handle mouse and keyboard Use Wayland to open a window and handle input on Linux or BSD desktops Driver for /dev/fb Use Nuttx to open window and handle touchscreen Driver for /dev/dri/card Interface for TFT_eSPI Driver for evdev input devices Driver for libinput input devices Driver for Renesas GLCD Driver for ST LTDC Driver for NXP ELCDIF LVGL Windows backend LVGL UEFI backend Use OpenGL to open window on PC and handle mouse and keyboard QNX Screen display and input drivers Enable examples to be built with the library. Build the demos Show some widgets. This might be required to increase LV_MEM_SIZE . Demonstrate usage of encoder and keyboard. Benchmark your system Render test for each primitive. Requires at least 480x272 display. Stress test for LVGL Music player demo Vector graphic demo Flex layout demo Smart-phone like multi-language demo Widget transformation demo Demonstrate scroll settings High-resolution demo   ",
+            "docstring": "Handle special Kconfig options. Color depth: 1 (I1), 8 (L8), 16 (RGB565), 24 (RGB888), 32 (XRGB8888) Possible values LV_STDLIB_BUILTIN: LVGL's built in implementation LV_STDLIB_CLIB: Standard C functions, like malloc, strlen, etc LV_STDLIB_MICROPYTHON: MicroPython implementation LV_STDLIB_RTTHREAD: RT-Thread implementation LV_STDLIB_CUSTOM: Implement the functions externally Possible values LV_STDLIB_BUILTIN: LVGL's built in implementation LV_STDLIB_CLIB: Standard C functions, like malloc, strlen, etc LV_STDLIB_MICROPYTHON: MicroPython implementation LV_STDLIB_RTTHREAD: RT-Thread implementation LV_STDLIB_CUSTOM: Implement the functions externally Possible values LV_STDLIB_BUILTIN: LVGL's built in implementation LV_STDLIB_CLIB: Standard C functions, like malloc, strlen, etc LV_STDLIB_MICROPYTHON: MicroPython implementation LV_STDLIB_RTTHREAD: RT-Thread implementation LV_STDLIB_CUSTOM: Implement the functions externally Size of memory available for :ref:`lv_malloc()` in bytes (>= 2kB) Size of the memory expand for :ref:`lv_malloc()` in bytes Set an address for the memory pool instead of allocating it as a normal array. Can be in external SRAM too. Default display refresh, input device read and animation step period. Default Dots Per Inch. Used to initialize default sizes such as widgets sized, style paddings. (Not so important, you can adjust it to modify default sizes and spaces.) Select operating system to use. Possible options: LV_OS_NONE LV_OS_PTHREAD LV_OS_FREERTOS LV_OS_CMSIS_RTOS2 LV_OS_RTTHREAD LV_OS_WINDOWS LV_OS_MQX LV_OS_SDL2 LV_OS_CUSTOM Align stride of all layers and images to this bytes Align start address of draw_buf addresses to this bytes Using matrix for transformations. Requirements: LV_USE_MATRIX = 1 . Rendering engine needs to support 3x3 matrix transformations. The target buffer size for simple layer chunks. Stack size of drawing thread. NOTE: If FreeType or ThorVG is enabled, it is recommended to set it to 32KB or more. Thread priority of the drawing task. Higher values mean higher priority. Can use values from lv_thread_prio_t enum in :ref:`lv_os.h` : LV_THREAD_PRIO_LOWEST, LV_THREAD_PRIO_LOW, LV_THREAD_PRIO_MID, LV_THREAD_PRIO_HIGH, LV_THREAD_PRIO_HIGHEST Make sure the priority value aligns with the OS-specific priority levels. On systems with limited priority levels (e.g., FreeRTOS), a higher value can improve rendering performance but might cause other tasks to starve. Set number of draw units. > 1 requires operating system to be enabled in LV_USE_OS . > 1 means multiple threads will render the screen in parallel. Use Arm-2D to accelerate software (sw) rendering. Enable native helium assembly to be compiled. 0: Use a simple renderer capable of drawing only simple rectangles with gradient, images, text, and straight lines only. 1: Use a complex renderer capable of drawing rounded corners, shadow, skew lines, and arcs too. Allow buffering some shadow calculation. LV_DRAW_SW_SHADOW_CACHE_SIZE is the maximum shadow size to buffer, where shadow size is shadow_width + radius . Caching has LV_DRAW_SW_SHADOW_CACHE_SIZE^2 RAM cost. Set number of maximally-cached circle data. The circumference of 1/4 circle are saved for anti-aliasing. radius * 4 bytes are used per circle (the most often used radiuses are saved). 0: disables caching Enable drawing complex gradients in software: linear at an angle, radial or conical Use NXP's VG-Lite GPU on iMX RTxxx platforms. Use NXP's PXP on iMX RTxxx platforms. Use NXP's G2D on MPU platforms. Use Renesas Dave2D on RA platforms. Draw using cached SDL textures Use VG-Lite GPU. Accelerate blends, fills, etc. with STM32 DMA2D Draw using cached OpenGLES textures Draw using espressif PPA accelerator Enable log module Add a custom handler when assert happens e.g. to restart MCU. 1: Draw random colored rectangles over the redrawn areas. 1: Draw a red overlay for ARGB layers and a green overlay for RGB layers 1: Adds the following behaviors for debugging: Draw overlays with different colors for each draw_unit's tasks. Draw index number of draw unit on white background. For layers, draws index number of draw unit on black background. Default cache size in bytes. Used by image decoders such as lv_lodepng to keep the decoded image in memory. If size is not set to 0, the decoder will fail to decode when the cache is full. If size is 0, the cache function is not enabled and the decoded memory will be released immediately after use. Default number of image header cache entries. The cache is used to store the headers of images The main logic is like LV_CACHE_DEF_SIZE but for image headers. Number of stops allowed per gradient. Increase this to allow more stops. This adds (sizeof(lv_color_t) + 1) bytes per additional stop. Adjust color mix functions rounding. GPUs might calculate color mix (blending) differently. 0: round down, 64: round up from x.75, 128: round up from half, 192: round up from x.25, 254: round up Add 2 x 32-bit variables to each lv_obj_t to speed up getting style properties Add id field to lv_obj_t Enable support widget names Automatically assign an ID when obj is created Use builtin obj ID handler functions: lv_obj_assign_id: Called when a widget is created. Use a separate counter for each widget class as an ID. lv_obj_id_compare: Compare the ID to decide if it matches with a requested value. lv_obj_stringify_id: Return string-ified identifier, e.g. \"button3\". lv_obj_free_id: Does nothing, as there is no memory allocation for the ID. When disabled these functions needs to be implemented by the user. Use obj property set/get API. Enable property name support. For big endian systems set to 1 Define a custom attribute for lv_tick_inc function Define a custom attribute for lv_timer_handler function Define a custom attribute for lv_display_flush_ready function Align VG_LITE buffers on this number of bytes. vglite_src_buf_aligned() uses this value to validate alignment of passed buffer pointers. Will be added where memory needs to be aligned (with -Os data might not be aligned to boundary by default). E.g. attribute ((aligned(4))) Attribute to mark large constant arrays, for example for font bitmaps Compiler prefix for a large array declaration in RAM Place performance critical functions into a faster memory (e.g RAM) Export integer constant to binding. This macro is used with constants in the form of LV_<CONST> that should also appear on LVGL binding API such as MicroPython. Prefix all global extern data with this Use float as lv_value_precise_t Enable matrix support Requires LV_USE_FLOAT = 1 Include :ref:`lvgl_private.h` in :ref:`lvgl.h` to access internal data and functions by default Pixel perfect monospaced fonts Optionally declare custom fonts here. \n\nYou can use any of these fonts as the default font too and they will be available globally. Example:  \n\n#define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(my_font_1) LV_FONT_DECLARE(my_font_2) Always set a default font Enable handling large font and/or fonts with a lot of characters. The limit depends on the font size, font face and bpp. A compiler error will be triggered if a font needs it. Enables/disables support for compressed fonts. Enable drawing placeholders when glyph dsc is not found. Select a character encoding for strings. Your IDE or editor should have the same character encoding. LV_TXT_ENC_UTF8 LV_TXT_ENC_ASCII While rendering text strings, break (wrap) text on these chars. If a word is at least this long, will break wherever \"prettiest\". To disable, set to a value <= 0. Minimum number of characters in a long word to put on a line before a break. Depends on LV_TXT_LINE_BREAK_LONG_LEN. Minimum number of characters in a long word to put on a line after a break. Depends on LV_TXT_LINE_BREAK_LONG_LEN. Support bidirectional text. Allows mixing Left-to-Right and Right-to-Left text. The direction will be processed according to the Unicode Bidirectional Algorithm: https://www.w3.org/International/articles/inline-bidi-markup/uba-basics Enable Arabic/Persian processing In these languages characters should be replaced with another form based on their position in the text 1: Causes these widgets to be given default values at creation time. lv_buttonmatrix_t: Get default maps: {\"Btn1\", \"Btn2\", \"Btn3\", \"\\n\", \"Btn4\", \"Btn5\", \"\"}, else map not set. lv_checkbox_t : String label set to \"Check box\", else set to empty string. lv_dropdown_t : Options set to \"Option 1\", \"Option 2\", \"Option 3\", else no values are set. lv_roller_t : Options set to \"Option 1\", \"Option 2\", \"Option 3\", \"Option 4\", \"Option 5\", else no values are set. lv_label_t : Text set to \"Text\", else empty string. lv_arclabel_t : Text set to \"Arced Text\", else empty string. A line of text can contain this maximum number of span descriptors. A simple, impressive and very complete theme 0: Light mode; 1: Dark mode 1: Enable grow on press Default transition time in ms. A very simple theme that is a good starting point for a custom theme A theme designed for monochrome displays A layout similar to Flexbox in CSS. A layout similar to Grid in CSS. Setting a default driver letter allows skipping the driver prefix in filepaths. Documentation about how to use the below driver-identifier letters can be found at https://docs.lvgl.io/master/details/main-modules/fs.html#lv-fs-identifier-letters . API for fopen, fread, etc. API for open, read, etc. API for CreateFile, ReadFile, etc. API for FATFS (needs to be added separately). Uses f_open, f_read, etc. API for memory-mapped file access. API for LittleFs. API for Arduino LittleFs. API for Arduino Sd. API for UEFI LODEPNG decoder library PNG decoder(libpng) library BMP decoder library JPG + split JPG decoder library. Split JPG is a custom format optimized for embedded systems. libjpeg-turbo decoder library. Supports complete JPEG specifications and high-performance JPEG decoding. GIF decoder library Decode bin images to RAM RLE decompress library QR code library Barcode code library FreeType library Built-in TTF decoder Rlottie library Enable Vector Graphic APIs Requires LV_USE_MATRIX = 1 Enable ThorVG (vector graphics library) from the src/libs folder Enable ThorVG by assuming that its installed and linked to the project Use lvgl built-in LZ4 lib Use external LZ4 library FFmpeg library for image decoding and playing videos. Supports all major image formats so do not enable other image decoder with it. 1: Enable API to take snapshot for object 1: Enable system monitor component 1: Enable runtime performance profiler 1: Enable Monkey test 1: Enable grid navigation 1: Enable lv_obj fragment logic 1: Support using images as font in label or span widgets 1: Enable an observer pattern implementation 1: Enable Pinyin input method Requires: lv_keyboard 1: Enable file explorer. Requires: lv_table 1: Enable Font manager Enable emulated input devices, time emulation, and screenshot compares. Enable loading XML UIs runtime 1: Enable text translation support Use SDL to open window on PC and handle mouse and keyboard. Use X11 to open window on Linux desktop and handle mouse and keyboard Use Wayland to open a window and handle input on Linux or BSD desktops Driver for /dev/fb Use Nuttx to open window and handle touchscreen Driver for /dev/dri/card Interface for TFT_eSPI Driver for evdev input devices Driver for libinput input devices Driver for Renesas GLCD Driver for ST LTDC Driver for NXP ELCDIF LVGL Windows backend LVGL UEFI backend Use OpenGL to open window on PC and handle mouse and keyboard QNX Screen display and input drivers Enable examples to be built with the library. Build the demos   ",
             "params": null,
             "initializer": "LV_USE_ANIMIMG "
         },
@@ -105722,6 +105722,104 @@
         },
         {
             "name": "LV_USE_PERF_MONITOR_LOG_MODE",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_WIDGETS",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_KEYPAD_AND_ENCODER",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_BENCHMARK",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_RENDER",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_STRESS",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_MUSIC",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_VECTOR_GRAPHIC",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_FLEX_LAYOUT",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_MULTILANG",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_TRANSFORM",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_SCROLL",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_EBIKE",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_HIGH_RES",
+            "json_type": "macro",
+            "docstring": "",
+            "params": null,
+            "initializer": "0 "
+        },
+        {
+            "name": "LV_USE_DEMO_SMARTWATCH",
             "json_type": "macro",
             "docstring": "",
             "params": null,

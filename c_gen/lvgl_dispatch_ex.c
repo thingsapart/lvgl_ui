@@ -678,7 +678,6 @@ static RenderValue dispatch_ir_archetype_658(generic_lvgl_func_t fn, void* targe
 static RenderValue dispatch_ir_archetype_659(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);
 static RenderValue dispatch_ir_archetype_660(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);
 static RenderValue dispatch_ir_archetype_661(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);
-static RenderValue dispatch_ir_archetype_662(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);
 
 // --- Archetype Dispatcher Implementations ---
 // Archetype for 1 functions like: lv_anim_count_running
@@ -6608,25 +6607,8 @@ static RenderValue dispatch_ir_archetype_383(generic_lvgl_func_t fn, void* targe
     return result;
 }
 
-// Archetype for 1 functions like: lv_list_add_button
-static RenderValue dispatch_ir_archetype_384(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
-    RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
-    if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
-    if (arg_count != 2) {
-        print_warning("IR call to lv_list_add_button-like function: expected 2 args, got %d", arg_count);
-        return result;
-    }
-
-    char* arg0 = obj_registry_add_str(ir_node_get_string(ir_args[0]));
-    char* arg1 = obj_registry_add_str(ir_node_get_string(ir_args[1]));
-    typedef lv_obj_t* (*specific_func_t)(lv_obj_t*, char*, char*);
-    result.type = RENDER_VAL_TYPE_POINTER;
-    result.as.p_val = ((specific_func_t)fn)((lv_obj_t*)target, arg0, arg1);
-    return result;
-}
-
 // Archetype for 7 functions like: lv_list_add_text
-static RenderValue dispatch_ir_archetype_385(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_384(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -6642,7 +6624,7 @@ static RenderValue dispatch_ir_archetype_385(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_list_get_button_text
-static RenderValue dispatch_ir_archetype_386(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_385(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -6659,7 +6641,7 @@ static RenderValue dispatch_ir_archetype_386(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_list_set_button_text
-static RenderValue dispatch_ir_archetype_387(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_386(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -6676,7 +6658,7 @@ static RenderValue dispatch_ir_archetype_387(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 3 functions like: lv_lock_isr
-static RenderValue dispatch_ir_archetype_388(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_387(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 0) {
         print_warning("IR call to lv_lock_isr-like function: expected 0 args, got %d", arg_count);
@@ -6690,7 +6672,7 @@ static RenderValue dispatch_ir_archetype_388(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_mem_monitor
-static RenderValue dispatch_ir_archetype_389(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_388(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -6704,7 +6686,7 @@ static RenderValue dispatch_ir_archetype_389(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_mem_remove_pool
-static RenderValue dispatch_ir_archetype_390(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_389(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_mem_remove_pool-like function: expected 1 args, got %d", arg_count);
@@ -6718,7 +6700,7 @@ static RenderValue dispatch_ir_archetype_390(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_menu_back_button_is_root
-static RenderValue dispatch_ir_archetype_391(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_390(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -6735,7 +6717,7 @@ static RenderValue dispatch_ir_archetype_391(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_menu_set_load_page_event
-static RenderValue dispatch_ir_archetype_392(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_391(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -6753,7 +6735,7 @@ static RenderValue dispatch_ir_archetype_392(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_menu_set_mode_header
-static RenderValue dispatch_ir_archetype_393(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_392(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -6768,7 +6750,7 @@ static RenderValue dispatch_ir_archetype_393(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_menu_set_mode_root_back_button
-static RenderValue dispatch_ir_archetype_394(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_393(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -6783,7 +6765,7 @@ static RenderValue dispatch_ir_archetype_394(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 5 functions like: lv_mutex_delete
-static RenderValue dispatch_ir_archetype_395(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_394(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -6798,7 +6780,7 @@ static RenderValue dispatch_ir_archetype_395(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_add_flag
-static RenderValue dispatch_ir_archetype_396(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_395(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -6813,7 +6795,7 @@ static RenderValue dispatch_ir_archetype_396(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_add_screen_load_event
-static RenderValue dispatch_ir_archetype_397(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_396(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 5) {
@@ -6833,7 +6815,7 @@ static RenderValue dispatch_ir_archetype_397(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_add_state
-static RenderValue dispatch_ir_archetype_398(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_397(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -6848,7 +6830,7 @@ static RenderValue dispatch_ir_archetype_398(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_add_style
-static RenderValue dispatch_ir_archetype_399(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_398(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -6865,7 +6847,7 @@ static RenderValue dispatch_ir_archetype_399(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_add_subject_increment_event
-static RenderValue dispatch_ir_archetype_400(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_399(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 5) {
@@ -6884,7 +6866,7 @@ static RenderValue dispatch_ir_archetype_400(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_add_subject_set_int_event
-static RenderValue dispatch_ir_archetype_401(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_400(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -6901,7 +6883,7 @@ static RenderValue dispatch_ir_archetype_401(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_add_subject_set_string_event
-static RenderValue dispatch_ir_archetype_402(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_401(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -6918,7 +6900,7 @@ static RenderValue dispatch_ir_archetype_402(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_align
-static RenderValue dispatch_ir_archetype_403(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_402(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -6935,7 +6917,7 @@ static RenderValue dispatch_ir_archetype_403(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_align_to
-static RenderValue dispatch_ir_archetype_404(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_403(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 4) {
@@ -6954,7 +6936,7 @@ static RenderValue dispatch_ir_archetype_404(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_area_is_visible
-static RenderValue dispatch_ir_archetype_405(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_404(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -6970,7 +6952,7 @@ static RenderValue dispatch_ir_archetype_405(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 6 functions like: lv_obj_bind_flag_if_eq
-static RenderValue dispatch_ir_archetype_406(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_405(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -6988,7 +6970,7 @@ static RenderValue dispatch_ir_archetype_406(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 6 functions like: lv_obj_bind_state_if_eq
-static RenderValue dispatch_ir_archetype_407(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_406(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -7006,7 +6988,7 @@ static RenderValue dispatch_ir_archetype_407(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_bind_style
-static RenderValue dispatch_ir_archetype_408(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_407(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 4) {
@@ -7026,7 +7008,7 @@ static RenderValue dispatch_ir_archetype_408(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 61 functions like: lv_obj_calculate_ext_draw_size
-static RenderValue dispatch_ir_archetype_409(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_408(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7042,7 +7024,7 @@ static RenderValue dispatch_ir_archetype_409(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_calculate_style_text_align
-static RenderValue dispatch_ir_archetype_410(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_409(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7059,7 +7041,7 @@ static RenderValue dispatch_ir_archetype_410(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_check_type
-static RenderValue dispatch_ir_archetype_411(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_410(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7075,7 +7057,7 @@ static RenderValue dispatch_ir_archetype_411(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_class_create_obj
-static RenderValue dispatch_ir_archetype_412(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_411(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7092,7 +7074,7 @@ static RenderValue dispatch_ir_archetype_412(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_enable_style_refresh
-static RenderValue dispatch_ir_archetype_413(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_412(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_obj_enable_style_refresh-like function: expected 1 args, got %d", arg_count);
@@ -7106,7 +7088,7 @@ static RenderValue dispatch_ir_archetype_413(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_event_base
-static RenderValue dispatch_ir_archetype_414(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_413(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7122,7 +7104,7 @@ static RenderValue dispatch_ir_archetype_414(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_get_child
-static RenderValue dispatch_ir_archetype_415(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_414(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7138,7 +7120,7 @@ static RenderValue dispatch_ir_archetype_415(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_get_child_by_type
-static RenderValue dispatch_ir_archetype_416(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_415(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7155,7 +7137,7 @@ static RenderValue dispatch_ir_archetype_416(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_child_count_by_type
-static RenderValue dispatch_ir_archetype_417(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_416(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7171,7 +7153,7 @@ static RenderValue dispatch_ir_archetype_417(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_class
-static RenderValue dispatch_ir_archetype_418(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_417(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -7186,7 +7168,7 @@ static RenderValue dispatch_ir_archetype_418(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 4 functions like: lv_obj_get_click_area
-static RenderValue dispatch_ir_archetype_419(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_418(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7201,7 +7183,7 @@ static RenderValue dispatch_ir_archetype_419(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_display
-static RenderValue dispatch_ir_archetype_420(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_419(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -7216,7 +7198,7 @@ static RenderValue dispatch_ir_archetype_420(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_event_dsc
-static RenderValue dispatch_ir_archetype_421(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_420(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7232,7 +7214,7 @@ static RenderValue dispatch_ir_archetype_421(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_group
-static RenderValue dispatch_ir_archetype_422(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_421(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -7247,7 +7229,7 @@ static RenderValue dispatch_ir_archetype_422(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_index_by_type
-static RenderValue dispatch_ir_archetype_423(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_422(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7263,7 +7245,7 @@ static RenderValue dispatch_ir_archetype_423(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_local_style_prop
-static RenderValue dispatch_ir_archetype_424(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_423(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -7281,7 +7263,7 @@ static RenderValue dispatch_ir_archetype_424(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_get_scroll_snap_x
-static RenderValue dispatch_ir_archetype_425(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_424(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -7296,7 +7278,7 @@ static RenderValue dispatch_ir_archetype_425(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_scrollbar_area
-static RenderValue dispatch_ir_archetype_426(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_425(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7312,7 +7294,7 @@ static RenderValue dispatch_ir_archetype_426(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_scrollbar_mode
-static RenderValue dispatch_ir_archetype_427(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_426(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -7327,7 +7309,7 @@ static RenderValue dispatch_ir_archetype_427(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_state
-static RenderValue dispatch_ir_archetype_428(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_427(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -7342,7 +7324,7 @@ static RenderValue dispatch_ir_archetype_428(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_align
-static RenderValue dispatch_ir_archetype_429(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_428(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7358,7 +7340,7 @@ static RenderValue dispatch_ir_archetype_429(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_anim
-static RenderValue dispatch_ir_archetype_430(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_429(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7374,7 +7356,7 @@ static RenderValue dispatch_ir_archetype_430(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_get_style_anim_duration
-static RenderValue dispatch_ir_archetype_431(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_430(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7390,7 +7372,7 @@ static RenderValue dispatch_ir_archetype_431(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 23 functions like: lv_obj_get_style_arc_color
-static RenderValue dispatch_ir_archetype_432(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_431(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7406,7 +7388,7 @@ static RenderValue dispatch_ir_archetype_432(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 3 functions like: lv_obj_get_style_arc_image_src
-static RenderValue dispatch_ir_archetype_433(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_432(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7422,7 +7404,7 @@ static RenderValue dispatch_ir_archetype_433(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 19 functions like: lv_obj_get_style_arc_opa
-static RenderValue dispatch_ir_archetype_434(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_433(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7438,7 +7420,7 @@ static RenderValue dispatch_ir_archetype_434(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 5 functions like: lv_obj_get_style_arc_rounded
-static RenderValue dispatch_ir_archetype_435(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_434(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7454,7 +7436,7 @@ static RenderValue dispatch_ir_archetype_435(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_base_dir
-static RenderValue dispatch_ir_archetype_436(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_435(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7470,7 +7452,7 @@ static RenderValue dispatch_ir_archetype_436(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_bg_grad
-static RenderValue dispatch_ir_archetype_437(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_436(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7486,7 +7468,7 @@ static RenderValue dispatch_ir_archetype_437(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_bg_grad_dir
-static RenderValue dispatch_ir_archetype_438(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_437(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7502,7 +7484,7 @@ static RenderValue dispatch_ir_archetype_438(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_blend_mode
-static RenderValue dispatch_ir_archetype_439(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_438(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7518,7 +7500,7 @@ static RenderValue dispatch_ir_archetype_439(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_border_side
-static RenderValue dispatch_ir_archetype_440(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_439(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7534,7 +7516,7 @@ static RenderValue dispatch_ir_archetype_440(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_color_filter_dsc
-static RenderValue dispatch_ir_archetype_441(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_440(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7550,7 +7532,7 @@ static RenderValue dispatch_ir_archetype_441(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 3 functions like: lv_obj_get_style_flex_cross_place
-static RenderValue dispatch_ir_archetype_442(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_441(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7566,7 +7548,7 @@ static RenderValue dispatch_ir_archetype_442(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_flex_flow
-static RenderValue dispatch_ir_archetype_443(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_442(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7582,7 +7564,7 @@ static RenderValue dispatch_ir_archetype_443(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_flex_grow
-static RenderValue dispatch_ir_archetype_444(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_443(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7598,7 +7580,7 @@ static RenderValue dispatch_ir_archetype_444(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 4 functions like: lv_obj_get_style_grid_cell_x_align
-static RenderValue dispatch_ir_archetype_445(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_444(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7614,7 +7596,7 @@ static RenderValue dispatch_ir_archetype_445(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_get_style_grid_column_dsc_array
-static RenderValue dispatch_ir_archetype_446(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_445(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7630,7 +7612,7 @@ static RenderValue dispatch_ir_archetype_446(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_layout
-static RenderValue dispatch_ir_archetype_447(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_446(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7646,7 +7628,7 @@ static RenderValue dispatch_ir_archetype_447(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_prop
-static RenderValue dispatch_ir_archetype_448(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_447(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7662,7 +7644,7 @@ static RenderValue dispatch_ir_archetype_448(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_recolor_recursive
-static RenderValue dispatch_ir_archetype_449(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_448(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7677,7 +7659,7 @@ static RenderValue dispatch_ir_archetype_449(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_text_align
-static RenderValue dispatch_ir_archetype_450(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_449(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7693,7 +7675,7 @@ static RenderValue dispatch_ir_archetype_450(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_text_decor
-static RenderValue dispatch_ir_archetype_451(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_450(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7709,7 +7691,7 @@ static RenderValue dispatch_ir_archetype_451(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_text_font
-static RenderValue dispatch_ir_archetype_452(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_451(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7725,7 +7707,7 @@ static RenderValue dispatch_ir_archetype_452(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_style_transition
-static RenderValue dispatch_ir_archetype_453(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_452(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7741,7 +7723,7 @@ static RenderValue dispatch_ir_archetype_453(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_get_transform
-static RenderValue dispatch_ir_archetype_454(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_453(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -7756,7 +7738,7 @@ static RenderValue dispatch_ir_archetype_454(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_has_flag
-static RenderValue dispatch_ir_archetype_455(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_454(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7772,7 +7754,7 @@ static RenderValue dispatch_ir_archetype_455(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_has_state
-static RenderValue dispatch_ir_archetype_456(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_455(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7788,7 +7770,7 @@ static RenderValue dispatch_ir_archetype_456(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_has_style_prop
-static RenderValue dispatch_ir_archetype_457(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_456(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7805,7 +7787,7 @@ static RenderValue dispatch_ir_archetype_457(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_init_draw_arc_dsc
-static RenderValue dispatch_ir_archetype_458(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_457(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7821,7 +7803,7 @@ static RenderValue dispatch_ir_archetype_458(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_init_draw_image_dsc
-static RenderValue dispatch_ir_archetype_459(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_458(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7837,7 +7819,7 @@ static RenderValue dispatch_ir_archetype_459(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_init_draw_label_dsc
-static RenderValue dispatch_ir_archetype_460(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_459(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7853,7 +7835,7 @@ static RenderValue dispatch_ir_archetype_460(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_init_draw_line_dsc
-static RenderValue dispatch_ir_archetype_461(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_460(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7869,7 +7851,7 @@ static RenderValue dispatch_ir_archetype_461(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_init_draw_rect_dsc
-static RenderValue dispatch_ir_archetype_462(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_461(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7885,7 +7867,7 @@ static RenderValue dispatch_ir_archetype_462(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_move_children_by
-static RenderValue dispatch_ir_archetype_463(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_462(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -7902,7 +7884,7 @@ static RenderValue dispatch_ir_archetype_463(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_null_on_delete
-static RenderValue dispatch_ir_archetype_464(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_463(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_obj_null_on_delete-like function: expected 1 args, got %d", arg_count);
@@ -7916,7 +7898,7 @@ static RenderValue dispatch_ir_archetype_464(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 4 functions like: lv_obj_readjust_scroll
-static RenderValue dispatch_ir_archetype_465(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_464(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7931,7 +7913,7 @@ static RenderValue dispatch_ir_archetype_465(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_redraw
-static RenderValue dispatch_ir_archetype_466(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_465(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7947,7 +7929,7 @@ static RenderValue dispatch_ir_archetype_466(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_refresh_style
-static RenderValue dispatch_ir_archetype_467(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_466(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -7963,7 +7945,7 @@ static RenderValue dispatch_ir_archetype_467(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_remove_event
-static RenderValue dispatch_ir_archetype_468(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_467(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7979,7 +7961,7 @@ static RenderValue dispatch_ir_archetype_468(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_remove_event_dsc
-static RenderValue dispatch_ir_archetype_469(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_468(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -7995,7 +7977,7 @@ static RenderValue dispatch_ir_archetype_469(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_remove_from_subject
-static RenderValue dispatch_ir_archetype_470(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_469(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -8010,7 +7992,7 @@ static RenderValue dispatch_ir_archetype_470(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_remove_local_style_prop
-static RenderValue dispatch_ir_archetype_471(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_470(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8027,7 +8009,7 @@ static RenderValue dispatch_ir_archetype_471(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_replace_style
-static RenderValue dispatch_ir_archetype_472(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_471(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -8047,7 +8029,7 @@ static RenderValue dispatch_ir_archetype_472(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 3 functions like: lv_obj_report_style_change
-static RenderValue dispatch_ir_archetype_473(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_472(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -8061,7 +8043,7 @@ static RenderValue dispatch_ir_archetype_473(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 3 functions like: lv_obj_scroll_by
-static RenderValue dispatch_ir_archetype_474(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_473(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -8078,7 +8060,7 @@ static RenderValue dispatch_ir_archetype_474(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_align
-static RenderValue dispatch_ir_archetype_475(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_474(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -8093,7 +8075,7 @@ static RenderValue dispatch_ir_archetype_475(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_flag
-static RenderValue dispatch_ir_archetype_476(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_475(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8109,7 +8091,7 @@ static RenderValue dispatch_ir_archetype_476(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_flex_align
-static RenderValue dispatch_ir_archetype_477(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_476(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -8126,7 +8108,7 @@ static RenderValue dispatch_ir_archetype_477(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_flex_flow
-static RenderValue dispatch_ir_archetype_478(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_477(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -8141,7 +8123,7 @@ static RenderValue dispatch_ir_archetype_478(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_grid_align
-static RenderValue dispatch_ir_archetype_479(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_478(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8157,7 +8139,7 @@ static RenderValue dispatch_ir_archetype_479(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_grid_cell
-static RenderValue dispatch_ir_archetype_480(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_479(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 6) {
@@ -8177,7 +8159,7 @@ static RenderValue dispatch_ir_archetype_480(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_set_scroll_snap_x
-static RenderValue dispatch_ir_archetype_481(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_480(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -8192,7 +8174,7 @@ static RenderValue dispatch_ir_archetype_481(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_scrollbar_mode
-static RenderValue dispatch_ir_archetype_482(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_481(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -8207,7 +8189,7 @@ static RenderValue dispatch_ir_archetype_482(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_state
-static RenderValue dispatch_ir_archetype_483(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_482(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8223,7 +8205,7 @@ static RenderValue dispatch_ir_archetype_483(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_align
-static RenderValue dispatch_ir_archetype_484(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_483(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8239,7 +8221,7 @@ static RenderValue dispatch_ir_archetype_484(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_anim
-static RenderValue dispatch_ir_archetype_485(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_484(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8255,7 +8237,7 @@ static RenderValue dispatch_ir_archetype_485(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_set_style_anim_duration
-static RenderValue dispatch_ir_archetype_486(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_485(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8271,7 +8253,7 @@ static RenderValue dispatch_ir_archetype_486(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 12 functions like: lv_obj_set_style_arc_color
-static RenderValue dispatch_ir_archetype_487(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_486(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8287,7 +8269,7 @@ static RenderValue dispatch_ir_archetype_487(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 18 functions like: lv_obj_set_style_arc_opa
-static RenderValue dispatch_ir_archetype_488(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_487(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8303,7 +8285,7 @@ static RenderValue dispatch_ir_archetype_488(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 5 functions like: lv_obj_set_style_arc_rounded
-static RenderValue dispatch_ir_archetype_489(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_488(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8319,7 +8301,7 @@ static RenderValue dispatch_ir_archetype_489(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 62 functions like: lv_obj_set_style_arc_width
-static RenderValue dispatch_ir_archetype_490(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_489(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8335,7 +8317,7 @@ static RenderValue dispatch_ir_archetype_490(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_base_dir
-static RenderValue dispatch_ir_archetype_491(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_490(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8351,7 +8333,7 @@ static RenderValue dispatch_ir_archetype_491(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_bg_grad
-static RenderValue dispatch_ir_archetype_492(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_491(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8367,7 +8349,7 @@ static RenderValue dispatch_ir_archetype_492(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_bg_grad_dir
-static RenderValue dispatch_ir_archetype_493(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_492(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8383,7 +8365,7 @@ static RenderValue dispatch_ir_archetype_493(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_blend_mode
-static RenderValue dispatch_ir_archetype_494(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_493(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8399,7 +8381,7 @@ static RenderValue dispatch_ir_archetype_494(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_border_side
-static RenderValue dispatch_ir_archetype_495(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_494(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8415,7 +8397,7 @@ static RenderValue dispatch_ir_archetype_495(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_color_filter_dsc
-static RenderValue dispatch_ir_archetype_496(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_495(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8431,7 +8413,7 @@ static RenderValue dispatch_ir_archetype_496(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 3 functions like: lv_obj_set_style_flex_cross_place
-static RenderValue dispatch_ir_archetype_497(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_496(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8447,7 +8429,7 @@ static RenderValue dispatch_ir_archetype_497(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_flex_flow
-static RenderValue dispatch_ir_archetype_498(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_497(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8463,7 +8445,7 @@ static RenderValue dispatch_ir_archetype_498(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_flex_grow
-static RenderValue dispatch_ir_archetype_499(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_498(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8479,7 +8461,7 @@ static RenderValue dispatch_ir_archetype_499(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 4 functions like: lv_obj_set_style_grid_cell_x_align
-static RenderValue dispatch_ir_archetype_500(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_499(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8495,7 +8477,7 @@ static RenderValue dispatch_ir_archetype_500(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_obj_set_style_grid_column_dsc_array
-static RenderValue dispatch_ir_archetype_501(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_500(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8511,7 +8493,7 @@ static RenderValue dispatch_ir_archetype_501(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_layout
-static RenderValue dispatch_ir_archetype_502(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_501(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8527,7 +8509,7 @@ static RenderValue dispatch_ir_archetype_502(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_size
-static RenderValue dispatch_ir_archetype_503(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_502(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -8544,7 +8526,7 @@ static RenderValue dispatch_ir_archetype_503(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_text_align
-static RenderValue dispatch_ir_archetype_504(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_503(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8560,7 +8542,7 @@ static RenderValue dispatch_ir_archetype_504(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_text_decor
-static RenderValue dispatch_ir_archetype_505(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_504(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8576,7 +8558,7 @@ static RenderValue dispatch_ir_archetype_505(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_text_font
-static RenderValue dispatch_ir_archetype_506(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_505(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8592,7 +8574,7 @@ static RenderValue dispatch_ir_archetype_506(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_style_transition
-static RenderValue dispatch_ir_archetype_507(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_506(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8608,7 +8590,7 @@ static RenderValue dispatch_ir_archetype_507(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_set_transform
-static RenderValue dispatch_ir_archetype_508(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_507(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -8623,7 +8605,7 @@ static RenderValue dispatch_ir_archetype_508(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_style_apply_recolor
-static RenderValue dispatch_ir_archetype_509(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_508(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8639,7 +8621,7 @@ static RenderValue dispatch_ir_archetype_509(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_style_get_disabled
-static RenderValue dispatch_ir_archetype_510(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_509(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8657,7 +8639,7 @@ static RenderValue dispatch_ir_archetype_510(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_style_get_selector_part
-static RenderValue dispatch_ir_archetype_511(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_510(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_obj_style_get_selector_part-like function: expected 1 args, got %d", arg_count);
@@ -8672,7 +8654,7 @@ static RenderValue dispatch_ir_archetype_511(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_style_get_selector_state
-static RenderValue dispatch_ir_archetype_512(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_511(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_obj_style_get_selector_state-like function: expected 1 args, got %d", arg_count);
@@ -8687,7 +8669,7 @@ static RenderValue dispatch_ir_archetype_512(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_obj_style_set_disabled
-static RenderValue dispatch_ir_archetype_513(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_512(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -8705,7 +8687,7 @@ static RenderValue dispatch_ir_archetype_513(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_observer_get_target
-static RenderValue dispatch_ir_archetype_514(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_513(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -8720,7 +8702,7 @@ static RenderValue dispatch_ir_archetype_514(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_observer_get_target_obj
-static RenderValue dispatch_ir_archetype_515(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_514(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -8735,7 +8717,7 @@ static RenderValue dispatch_ir_archetype_515(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_observer_remove
-static RenderValue dispatch_ir_archetype_516(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_515(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -8749,7 +8731,7 @@ static RenderValue dispatch_ir_archetype_516(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_palette_darken
-static RenderValue dispatch_ir_archetype_517(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_516(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_palette_darken-like function: expected 2 args, got %d", arg_count);
@@ -8765,7 +8747,7 @@ static RenderValue dispatch_ir_archetype_517(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_palette_main
-static RenderValue dispatch_ir_archetype_518(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_517(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_palette_main-like function: expected 1 args, got %d", arg_count);
@@ -8780,7 +8762,7 @@ static RenderValue dispatch_ir_archetype_518(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_pct_to_px
-static RenderValue dispatch_ir_archetype_519(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_518(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_pct_to_px-like function: expected 2 args, got %d", arg_count);
@@ -8796,7 +8778,7 @@ static RenderValue dispatch_ir_archetype_519(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_point_array_transform
-static RenderValue dispatch_ir_archetype_520(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_519(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 6) {
@@ -8816,7 +8798,7 @@ static RenderValue dispatch_ir_archetype_520(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_point_from_precise
-static RenderValue dispatch_ir_archetype_521(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_520(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -8830,7 +8812,7 @@ static RenderValue dispatch_ir_archetype_521(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_point_precise_set
-static RenderValue dispatch_ir_archetype_522(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_521(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8846,7 +8828,7 @@ static RenderValue dispatch_ir_archetype_522(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_point_precise_swap
-static RenderValue dispatch_ir_archetype_523(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_522(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -8861,7 +8843,7 @@ static RenderValue dispatch_ir_archetype_523(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_point_set
-static RenderValue dispatch_ir_archetype_524(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_523(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -8877,7 +8859,7 @@ static RenderValue dispatch_ir_archetype_524(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_point_swap
-static RenderValue dispatch_ir_archetype_525(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_524(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -8892,7 +8874,7 @@ static RenderValue dispatch_ir_archetype_525(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_point_to_precise
-static RenderValue dispatch_ir_archetype_526(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_525(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -8906,7 +8888,7 @@ static RenderValue dispatch_ir_archetype_526(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_point_transform
-static RenderValue dispatch_ir_archetype_527(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_526(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 5) {
@@ -8925,7 +8907,7 @@ static RenderValue dispatch_ir_archetype_527(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_pow
-static RenderValue dispatch_ir_archetype_528(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_527(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_pow-like function: expected 2 args, got %d", arg_count);
@@ -8941,7 +8923,7 @@ static RenderValue dispatch_ir_archetype_528(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_rand
-static RenderValue dispatch_ir_archetype_529(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_528(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_rand-like function: expected 2 args, got %d", arg_count);
@@ -8957,7 +8939,7 @@ static RenderValue dispatch_ir_archetype_529(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_rb_destroy
-static RenderValue dispatch_ir_archetype_530(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_529(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -8971,7 +8953,7 @@ static RenderValue dispatch_ir_archetype_530(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_rb_drop_node
-static RenderValue dispatch_ir_archetype_531(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_530(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -8987,7 +8969,7 @@ static RenderValue dispatch_ir_archetype_531(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_rb_init
-static RenderValue dispatch_ir_archetype_532(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_531(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9004,7 +8986,7 @@ static RenderValue dispatch_ir_archetype_532(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_rb_maximum
-static RenderValue dispatch_ir_archetype_533(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_532(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9019,7 +9001,7 @@ static RenderValue dispatch_ir_archetype_533(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_rb_maximum_from
-static RenderValue dispatch_ir_archetype_534(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_533(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9034,7 +9016,7 @@ static RenderValue dispatch_ir_archetype_534(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_rb_remove_node
-static RenderValue dispatch_ir_archetype_535(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_534(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9050,7 +9032,7 @@ static RenderValue dispatch_ir_archetype_535(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_roller_set_options
-static RenderValue dispatch_ir_archetype_536(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_535(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9066,7 +9048,7 @@ static RenderValue dispatch_ir_archetype_536(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_roller_set_selected
-static RenderValue dispatch_ir_archetype_537(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_536(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9082,7 +9064,7 @@ static RenderValue dispatch_ir_archetype_537(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_roller_set_selected_str
-static RenderValue dispatch_ir_archetype_538(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_537(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9099,7 +9081,7 @@ static RenderValue dispatch_ir_archetype_538(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_scale_add_section
-static RenderValue dispatch_ir_archetype_539(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_538(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9114,7 +9096,7 @@ static RenderValue dispatch_ir_archetype_539(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_scale_get_mode
-static RenderValue dispatch_ir_archetype_540(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_539(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9129,7 +9111,7 @@ static RenderValue dispatch_ir_archetype_540(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_scale_section_set_range
-static RenderValue dispatch_ir_archetype_541(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_540(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9145,7 +9127,7 @@ static RenderValue dispatch_ir_archetype_541(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_scale_section_set_style
-static RenderValue dispatch_ir_archetype_542(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_541(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9162,7 +9144,7 @@ static RenderValue dispatch_ir_archetype_542(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_scale_set_line_needle_value
-static RenderValue dispatch_ir_archetype_543(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_542(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -9180,7 +9162,7 @@ static RenderValue dispatch_ir_archetype_543(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_scale_set_mode
-static RenderValue dispatch_ir_archetype_544(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_543(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9195,7 +9177,7 @@ static RenderValue dispatch_ir_archetype_544(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_scale_set_section_max_value
-static RenderValue dispatch_ir_archetype_545(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_544(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9211,7 +9193,7 @@ static RenderValue dispatch_ir_archetype_545(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_scale_set_section_range
-static RenderValue dispatch_ir_archetype_546(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_545(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -9228,7 +9210,7 @@ static RenderValue dispatch_ir_archetype_546(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 3 functions like: lv_scale_set_section_style_indicator
-static RenderValue dispatch_ir_archetype_547(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_546(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9245,7 +9227,7 @@ static RenderValue dispatch_ir_archetype_547(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_screen_load
-static RenderValue dispatch_ir_archetype_548(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_547(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_screen_load-like function: expected 1 args, got %d", arg_count);
@@ -9259,7 +9241,7 @@ static RenderValue dispatch_ir_archetype_548(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_screen_load_anim
-static RenderValue dispatch_ir_archetype_549(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_548(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 4) {
@@ -9277,7 +9259,7 @@ static RenderValue dispatch_ir_archetype_549(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_sdl_window_get_zoom
-static RenderValue dispatch_ir_archetype_550(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_549(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9292,7 +9274,7 @@ static RenderValue dispatch_ir_archetype_550(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_sdl_window_set_title
-static RenderValue dispatch_ir_archetype_551(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_550(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9307,7 +9289,7 @@ static RenderValue dispatch_ir_archetype_551(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_sdl_window_set_zoom
-static RenderValue dispatch_ir_archetype_552(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_551(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9322,7 +9304,7 @@ static RenderValue dispatch_ir_archetype_552(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_slider_get_mode
-static RenderValue dispatch_ir_archetype_553(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_552(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9337,7 +9319,7 @@ static RenderValue dispatch_ir_archetype_553(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_slider_get_orientation
-static RenderValue dispatch_ir_archetype_554(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_553(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9352,7 +9334,7 @@ static RenderValue dispatch_ir_archetype_554(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_slider_set_mode
-static RenderValue dispatch_ir_archetype_555(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_554(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9367,7 +9349,7 @@ static RenderValue dispatch_ir_archetype_555(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_slider_set_orientation
-static RenderValue dispatch_ir_archetype_556(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_555(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9382,7 +9364,7 @@ static RenderValue dispatch_ir_archetype_556(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_span_get_style
-static RenderValue dispatch_ir_archetype_557(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_556(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9397,7 +9379,7 @@ static RenderValue dispatch_ir_archetype_557(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_span_get_text
-static RenderValue dispatch_ir_archetype_558(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_557(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9412,7 +9394,7 @@ static RenderValue dispatch_ir_archetype_558(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_span_set_text
-static RenderValue dispatch_ir_archetype_559(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_558(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9427,7 +9409,7 @@ static RenderValue dispatch_ir_archetype_559(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_add_span
-static RenderValue dispatch_ir_archetype_560(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_559(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9442,7 +9424,7 @@ static RenderValue dispatch_ir_archetype_560(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_delete_span
-static RenderValue dispatch_ir_archetype_561(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_560(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9457,7 +9439,7 @@ static RenderValue dispatch_ir_archetype_561(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_align
-static RenderValue dispatch_ir_archetype_562(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_561(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9472,7 +9454,7 @@ static RenderValue dispatch_ir_archetype_562(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_child
-static RenderValue dispatch_ir_archetype_563(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_562(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9488,7 +9470,7 @@ static RenderValue dispatch_ir_archetype_563(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_expand_height
-static RenderValue dispatch_ir_archetype_564(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_563(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9504,7 +9486,7 @@ static RenderValue dispatch_ir_archetype_564(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_expand_width
-static RenderValue dispatch_ir_archetype_565(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_564(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9520,7 +9502,7 @@ static RenderValue dispatch_ir_archetype_565(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_mode
-static RenderValue dispatch_ir_archetype_566(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_565(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9535,7 +9517,7 @@ static RenderValue dispatch_ir_archetype_566(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_overflow
-static RenderValue dispatch_ir_archetype_567(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_566(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9550,7 +9532,7 @@ static RenderValue dispatch_ir_archetype_567(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_span_by_point
-static RenderValue dispatch_ir_archetype_568(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_567(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9566,7 +9548,7 @@ static RenderValue dispatch_ir_archetype_568(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_get_span_coords
-static RenderValue dispatch_ir_archetype_569(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_568(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9581,7 +9563,7 @@ static RenderValue dispatch_ir_archetype_569(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_spangroup_set_align
-static RenderValue dispatch_ir_archetype_570(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_569(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9596,7 +9578,7 @@ static RenderValue dispatch_ir_archetype_570(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_set_mode
-static RenderValue dispatch_ir_archetype_571(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_570(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9611,7 +9593,7 @@ static RenderValue dispatch_ir_archetype_571(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_set_overflow
-static RenderValue dispatch_ir_archetype_572(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_571(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9626,7 +9608,7 @@ static RenderValue dispatch_ir_archetype_572(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_spangroup_set_span_style
-static RenderValue dispatch_ir_archetype_573(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_572(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9643,7 +9625,7 @@ static RenderValue dispatch_ir_archetype_573(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_spangroup_set_span_text
-static RenderValue dispatch_ir_archetype_574(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_573(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9659,7 +9641,7 @@ static RenderValue dispatch_ir_archetype_574(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_sqrt
-static RenderValue dispatch_ir_archetype_575(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_574(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 3) {
         print_warning("IR call to lv_sqrt-like function: expected 3 args, got %d", arg_count);
@@ -9675,7 +9657,7 @@ static RenderValue dispatch_ir_archetype_575(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_sqrt32
-static RenderValue dispatch_ir_archetype_576(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_575(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_sqrt32-like function: expected 1 args, got %d", arg_count);
@@ -9690,7 +9672,7 @@ static RenderValue dispatch_ir_archetype_576(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_strcat
-static RenderValue dispatch_ir_archetype_577(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_576(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_strcat-like function: expected 2 args, got %d", arg_count);
@@ -9706,7 +9688,7 @@ static RenderValue dispatch_ir_archetype_577(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_strchr
-static RenderValue dispatch_ir_archetype_578(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_577(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_strchr-like function: expected 2 args, got %d", arg_count);
@@ -9722,7 +9704,7 @@ static RenderValue dispatch_ir_archetype_578(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_strcmp
-static RenderValue dispatch_ir_archetype_579(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_578(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_strcmp-like function: expected 2 args, got %d", arg_count);
@@ -9738,7 +9720,7 @@ static RenderValue dispatch_ir_archetype_579(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_streq
-static RenderValue dispatch_ir_archetype_580(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_579(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_streq-like function: expected 2 args, got %d", arg_count);
@@ -9754,7 +9736,7 @@ static RenderValue dispatch_ir_archetype_580(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_strlcpy
-static RenderValue dispatch_ir_archetype_581(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_580(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 3) {
         print_warning("IR call to lv_strlcpy-like function: expected 3 args, got %d", arg_count);
@@ -9771,7 +9753,7 @@ static RenderValue dispatch_ir_archetype_581(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_strlen
-static RenderValue dispatch_ir_archetype_582(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_581(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_strlen-like function: expected 1 args, got %d", arg_count);
@@ -9786,7 +9768,7 @@ static RenderValue dispatch_ir_archetype_582(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_strncat
-static RenderValue dispatch_ir_archetype_583(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_582(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 3) {
         print_warning("IR call to lv_strncat-like function: expected 3 args, got %d", arg_count);
@@ -9803,7 +9785,7 @@ static RenderValue dispatch_ir_archetype_583(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_strncmp
-static RenderValue dispatch_ir_archetype_584(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_583(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 3) {
         print_warning("IR call to lv_strncmp-like function: expected 3 args, got %d", arg_count);
@@ -9820,7 +9802,7 @@ static RenderValue dispatch_ir_archetype_584(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_strndup
-static RenderValue dispatch_ir_archetype_585(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_584(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_strndup-like function: expected 2 args, got %d", arg_count);
@@ -9836,7 +9818,7 @@ static RenderValue dispatch_ir_archetype_585(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_strnlen
-static RenderValue dispatch_ir_archetype_586(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_585(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_strnlen-like function: expected 2 args, got %d", arg_count);
@@ -9852,7 +9834,7 @@ static RenderValue dispatch_ir_archetype_586(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_copy
-static RenderValue dispatch_ir_archetype_587(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_586(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -9868,7 +9850,7 @@ static RenderValue dispatch_ir_archetype_587(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_get_num_custom_props
-static RenderValue dispatch_ir_archetype_588(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_587(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 0) {
         print_warning("IR call to lv_style_get_num_custom_props-like function: expected 0 args, got %d", arg_count);
@@ -9882,7 +9864,7 @@ static RenderValue dispatch_ir_archetype_588(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_style_get_prop
-static RenderValue dispatch_ir_archetype_589(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_588(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -9899,7 +9881,7 @@ static RenderValue dispatch_ir_archetype_589(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_get_prop_group
-static RenderValue dispatch_ir_archetype_590(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_589(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_style_get_prop_group-like function: expected 1 args, got %d", arg_count);
@@ -9914,7 +9896,7 @@ static RenderValue dispatch_ir_archetype_590(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_style_is_const
-static RenderValue dispatch_ir_archetype_591(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_590(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -9929,7 +9911,7 @@ static RenderValue dispatch_ir_archetype_591(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_prop_get_default
-static RenderValue dispatch_ir_archetype_592(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_591(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_style_prop_get_default-like function: expected 1 args, got %d", arg_count);
@@ -9943,7 +9925,7 @@ static RenderValue dispatch_ir_archetype_592(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_prop_has_flag
-static RenderValue dispatch_ir_archetype_593(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_592(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 2) {
         print_warning("IR call to lv_style_prop_has_flag-like function: expected 2 args, got %d", arg_count);
@@ -9959,7 +9941,7 @@ static RenderValue dispatch_ir_archetype_593(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_prop_lookup_flags
-static RenderValue dispatch_ir_archetype_594(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_593(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_style_prop_lookup_flags-like function: expected 1 args, got %d", arg_count);
@@ -9974,7 +9956,7 @@ static RenderValue dispatch_ir_archetype_594(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_register_prop
-static RenderValue dispatch_ir_archetype_595(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_594(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_style_register_prop-like function: expected 1 args, got %d", arg_count);
@@ -9989,7 +9971,7 @@ static RenderValue dispatch_ir_archetype_595(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_remove_prop
-static RenderValue dispatch_ir_archetype_596(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_595(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10005,7 +9987,7 @@ static RenderValue dispatch_ir_archetype_596(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_align
-static RenderValue dispatch_ir_archetype_597(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_596(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10020,7 +10002,7 @@ static RenderValue dispatch_ir_archetype_597(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_anim
-static RenderValue dispatch_ir_archetype_598(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_597(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10035,7 +10017,7 @@ static RenderValue dispatch_ir_archetype_598(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_style_set_anim_duration
-static RenderValue dispatch_ir_archetype_599(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_598(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10050,7 +10032,7 @@ static RenderValue dispatch_ir_archetype_599(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 12 functions like: lv_style_set_arc_color
-static RenderValue dispatch_ir_archetype_600(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_599(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10065,7 +10047,7 @@ static RenderValue dispatch_ir_archetype_600(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 18 functions like: lv_style_set_arc_opa
-static RenderValue dispatch_ir_archetype_601(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_600(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10080,7 +10062,7 @@ static RenderValue dispatch_ir_archetype_601(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 5 functions like: lv_style_set_arc_rounded
-static RenderValue dispatch_ir_archetype_602(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_601(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10095,7 +10077,7 @@ static RenderValue dispatch_ir_archetype_602(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 62 functions like: lv_style_set_arc_width
-static RenderValue dispatch_ir_archetype_603(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_602(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10110,7 +10092,7 @@ static RenderValue dispatch_ir_archetype_603(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_base_dir
-static RenderValue dispatch_ir_archetype_604(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_603(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10125,7 +10107,7 @@ static RenderValue dispatch_ir_archetype_604(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_bg_grad
-static RenderValue dispatch_ir_archetype_605(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_604(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10140,7 +10122,7 @@ static RenderValue dispatch_ir_archetype_605(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_bg_grad_dir
-static RenderValue dispatch_ir_archetype_606(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_605(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10155,7 +10137,7 @@ static RenderValue dispatch_ir_archetype_606(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_blend_mode
-static RenderValue dispatch_ir_archetype_607(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_606(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10170,7 +10152,7 @@ static RenderValue dispatch_ir_archetype_607(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_border_side
-static RenderValue dispatch_ir_archetype_608(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_607(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10185,7 +10167,7 @@ static RenderValue dispatch_ir_archetype_608(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_color_filter_dsc
-static RenderValue dispatch_ir_archetype_609(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_608(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10200,7 +10182,7 @@ static RenderValue dispatch_ir_archetype_609(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 3 functions like: lv_style_set_flex_cross_place
-static RenderValue dispatch_ir_archetype_610(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_609(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10215,7 +10197,7 @@ static RenderValue dispatch_ir_archetype_610(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_flex_flow
-static RenderValue dispatch_ir_archetype_611(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_610(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10230,7 +10212,7 @@ static RenderValue dispatch_ir_archetype_611(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_flex_grow
-static RenderValue dispatch_ir_archetype_612(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_611(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10245,7 +10227,7 @@ static RenderValue dispatch_ir_archetype_612(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 4 functions like: lv_style_set_grid_cell_x_align
-static RenderValue dispatch_ir_archetype_613(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_612(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10260,7 +10242,7 @@ static RenderValue dispatch_ir_archetype_613(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_style_set_grid_column_dsc_array
-static RenderValue dispatch_ir_archetype_614(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_613(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10275,7 +10257,7 @@ static RenderValue dispatch_ir_archetype_614(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_layout
-static RenderValue dispatch_ir_archetype_615(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_614(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10290,7 +10272,7 @@ static RenderValue dispatch_ir_archetype_615(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_size
-static RenderValue dispatch_ir_archetype_616(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_615(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -10306,7 +10288,7 @@ static RenderValue dispatch_ir_archetype_616(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_text_align
-static RenderValue dispatch_ir_archetype_617(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_616(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10321,7 +10303,7 @@ static RenderValue dispatch_ir_archetype_617(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_text_decor
-static RenderValue dispatch_ir_archetype_618(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_617(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10336,7 +10318,7 @@ static RenderValue dispatch_ir_archetype_618(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_text_font
-static RenderValue dispatch_ir_archetype_619(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_618(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10351,7 +10333,7 @@ static RenderValue dispatch_ir_archetype_619(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_style_set_transition
-static RenderValue dispatch_ir_archetype_620(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_619(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10366,7 +10348,7 @@ static RenderValue dispatch_ir_archetype_620(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_subject_copy_string
-static RenderValue dispatch_ir_archetype_621(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_620(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10381,7 +10363,7 @@ static RenderValue dispatch_ir_archetype_621(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_subject_deinit
-static RenderValue dispatch_ir_archetype_622(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_621(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10395,7 +10377,7 @@ static RenderValue dispatch_ir_archetype_622(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_subject_get_color
-static RenderValue dispatch_ir_archetype_623(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_622(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10410,7 +10392,7 @@ static RenderValue dispatch_ir_archetype_623(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_subject_get_group_element
-static RenderValue dispatch_ir_archetype_624(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_623(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10426,7 +10408,7 @@ static RenderValue dispatch_ir_archetype_624(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_subject_get_int
-static RenderValue dispatch_ir_archetype_625(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_624(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10441,7 +10423,7 @@ static RenderValue dispatch_ir_archetype_625(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_subject_get_pointer
-static RenderValue dispatch_ir_archetype_626(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_625(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10456,7 +10438,7 @@ static RenderValue dispatch_ir_archetype_626(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_subject_get_previous_string
-static RenderValue dispatch_ir_archetype_627(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_626(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10471,7 +10453,7 @@ static RenderValue dispatch_ir_archetype_627(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_subject_init_color
-static RenderValue dispatch_ir_archetype_628(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_627(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10486,7 +10468,7 @@ static RenderValue dispatch_ir_archetype_628(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_subject_init_int
-static RenderValue dispatch_ir_archetype_629(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_628(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10501,7 +10483,7 @@ static RenderValue dispatch_ir_archetype_629(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_subject_init_string
-static RenderValue dispatch_ir_archetype_630(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_629(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 4) {
@@ -10519,7 +10501,7 @@ static RenderValue dispatch_ir_archetype_630(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_switch_get_orientation
-static RenderValue dispatch_ir_archetype_631(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_630(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10534,7 +10516,7 @@ static RenderValue dispatch_ir_archetype_631(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_switch_set_orientation
-static RenderValue dispatch_ir_archetype_632(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_631(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10549,7 +10531,7 @@ static RenderValue dispatch_ir_archetype_632(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_table_clear_cell_ctrl
-static RenderValue dispatch_ir_archetype_633(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_632(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -10566,7 +10548,7 @@ static RenderValue dispatch_ir_archetype_633(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_table_get_cell_user_data
-static RenderValue dispatch_ir_archetype_634(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_633(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -10583,7 +10565,7 @@ static RenderValue dispatch_ir_archetype_634(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_table_get_cell_value
-static RenderValue dispatch_ir_archetype_635(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_634(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -10600,7 +10582,7 @@ static RenderValue dispatch_ir_archetype_635(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_table_get_column_width
-static RenderValue dispatch_ir_archetype_636(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_635(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10616,7 +10598,7 @@ static RenderValue dispatch_ir_archetype_636(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_table_get_selected_cell
-static RenderValue dispatch_ir_archetype_637(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_636(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -10632,7 +10614,7 @@ static RenderValue dispatch_ir_archetype_637(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_table_has_cell_ctrl
-static RenderValue dispatch_ir_archetype_638(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_637(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -10650,7 +10632,7 @@ static RenderValue dispatch_ir_archetype_638(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_table_set_cell_value
-static RenderValue dispatch_ir_archetype_639(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_638(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -10667,7 +10649,7 @@ static RenderValue dispatch_ir_archetype_639(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_table_set_column_width
-static RenderValue dispatch_ir_archetype_640(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_639(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -10683,7 +10665,7 @@ static RenderValue dispatch_ir_archetype_640(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_table_set_selected_cell
-static RenderValue dispatch_ir_archetype_641(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_640(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -10699,7 +10681,7 @@ static RenderValue dispatch_ir_archetype_641(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_text_get_size
-static RenderValue dispatch_ir_archetype_642(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_641(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 6) {
@@ -10719,7 +10701,7 @@ static RenderValue dispatch_ir_archetype_642(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_text_get_width
-static RenderValue dispatch_ir_archetype_643(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_642(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 4) {
         print_warning("IR call to lv_text_get_width-like function: expected 4 args, got %d", arg_count);
@@ -10737,7 +10719,7 @@ static RenderValue dispatch_ir_archetype_643(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_text_get_width_with_flags
-static RenderValue dispatch_ir_archetype_644(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_643(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 5) {
         print_warning("IR call to lv_text_get_width_with_flags-like function: expected 5 args, got %d", arg_count);
@@ -10756,7 +10738,7 @@ static RenderValue dispatch_ir_archetype_644(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_text_is_cmd
-static RenderValue dispatch_ir_archetype_645(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_644(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10772,7 +10754,7 @@ static RenderValue dispatch_ir_archetype_645(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_thread_delete
-static RenderValue dispatch_ir_archetype_646(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_645(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10787,7 +10769,7 @@ static RenderValue dispatch_ir_archetype_646(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 5 functions like: lv_thread_sync_delete
-static RenderValue dispatch_ir_archetype_647(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_646(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10802,7 +10784,7 @@ static RenderValue dispatch_ir_archetype_647(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_tick_get_cb
-static RenderValue dispatch_ir_archetype_648(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_647(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 0) {
         print_warning("IR call to lv_tick_get_cb-like function: expected 0 args, got %d", arg_count);
@@ -10816,7 +10798,7 @@ static RenderValue dispatch_ir_archetype_648(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_tileview_add_tile
-static RenderValue dispatch_ir_archetype_649(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_648(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -10834,7 +10816,7 @@ static RenderValue dispatch_ir_archetype_649(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_tileview_set_tile
-static RenderValue dispatch_ir_archetype_650(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_649(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 2) {
@@ -10851,7 +10833,7 @@ static RenderValue dispatch_ir_archetype_650(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_tileview_set_tile_by_index
-static RenderValue dispatch_ir_archetype_651(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_650(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 3) {
@@ -10868,7 +10850,7 @@ static RenderValue dispatch_ir_archetype_651(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_timer_get_next
-static RenderValue dispatch_ir_archetype_652(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_651(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10883,7 +10865,7 @@ static RenderValue dispatch_ir_archetype_652(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_timer_get_paused
-static RenderValue dispatch_ir_archetype_653(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_652(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10898,7 +10880,7 @@ static RenderValue dispatch_ir_archetype_653(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_timer_get_user_data
-static RenderValue dispatch_ir_archetype_654(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_653(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10913,7 +10895,7 @@ static RenderValue dispatch_ir_archetype_654(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_timer_set_auto_delete
-static RenderValue dispatch_ir_archetype_655(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_654(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10928,7 +10910,7 @@ static RenderValue dispatch_ir_archetype_655(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_timer_set_period
-static RenderValue dispatch_ir_archetype_656(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_655(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10943,7 +10925,7 @@ static RenderValue dispatch_ir_archetype_656(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_timer_set_repeat_count
-static RenderValue dispatch_ir_archetype_657(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_656(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10958,7 +10940,7 @@ static RenderValue dispatch_ir_archetype_657(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_tree_node_create
-static RenderValue dispatch_ir_archetype_658(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_657(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 1) {
@@ -10974,7 +10956,7 @@ static RenderValue dispatch_ir_archetype_658(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_tree_node_delete
-static RenderValue dispatch_ir_archetype_659(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_658(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (target == NULL) { render_abort("Argument 0 (target) is NULL - not allowed"); }
     if (arg_count != 0) {
@@ -10988,7 +10970,7 @@ static RenderValue dispatch_ir_archetype_659(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 2 functions like: lv_trigo_cos
-static RenderValue dispatch_ir_archetype_660(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_659(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 1) {
         print_warning("IR call to lv_trigo_cos-like function: expected 1 args, got %d", arg_count);
@@ -11003,7 +10985,7 @@ static RenderValue dispatch_ir_archetype_660(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 1 functions like: lv_version_info
-static RenderValue dispatch_ir_archetype_661(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_660(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 0) {
         print_warning("IR call to lv_version_info-like function: expected 0 args, got %d", arg_count);
@@ -11017,7 +10999,7 @@ static RenderValue dispatch_ir_archetype_661(generic_lvgl_func_t fn, void* targe
 }
 
 // Archetype for 3 functions like: lv_version_major
-static RenderValue dispatch_ir_archetype_662(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
+static RenderValue dispatch_ir_archetype_661(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec) {
     RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;
     if (arg_count != 0) {
         print_warning("IR call to lv_version_major-like function: expected 0 args, got %d", arg_count);
@@ -11726,25 +11708,24 @@ static const FunctionMapping function_registry[] = {
     {"lv_line_get_y_invert", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_line_get_y_invert},
     {"lv_line_is_point_array_mutable", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_line_is_point_array_mutable},
     {"lv_line_set_y_invert", dispatch_ir_archetype_46, (generic_lvgl_func_t)lv_line_set_y_invert},
-    {"lv_list_add_button", dispatch_ir_archetype_384, (generic_lvgl_func_t)lv_list_add_button},
-    {"lv_list_add_text", dispatch_ir_archetype_385, (generic_lvgl_func_t)lv_list_add_text},
+    {"lv_list_add_text", dispatch_ir_archetype_384, (generic_lvgl_func_t)lv_list_add_text},
     {"lv_list_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_list_create},
-    {"lv_list_get_button_text", dispatch_ir_archetype_386, (generic_lvgl_func_t)lv_list_get_button_text},
-    {"lv_list_set_button_text", dispatch_ir_archetype_387, (generic_lvgl_func_t)lv_list_set_button_text},
+    {"lv_list_get_button_text", dispatch_ir_archetype_385, (generic_lvgl_func_t)lv_list_get_button_text},
+    {"lv_list_set_button_text", dispatch_ir_archetype_386, (generic_lvgl_func_t)lv_list_set_button_text},
     {"lv_lock", dispatch_ir_archetype_1, (generic_lvgl_func_t)lv_lock},
-    {"lv_lock_isr", dispatch_ir_archetype_388, (generic_lvgl_func_t)lv_lock_isr},
+    {"lv_lock_isr", dispatch_ir_archetype_387, (generic_lvgl_func_t)lv_lock_isr},
     {"lv_malloc", dispatch_ir_archetype_239, (generic_lvgl_func_t)lv_malloc},
     {"lv_malloc_core", dispatch_ir_archetype_239, (generic_lvgl_func_t)lv_malloc_core},
     {"lv_malloc_zeroed", dispatch_ir_archetype_239, (generic_lvgl_func_t)lv_malloc_zeroed},
     {"lv_map", dispatch_ir_archetype_176, (generic_lvgl_func_t)lv_map},
     {"lv_mem_deinit", dispatch_ir_archetype_1, (generic_lvgl_func_t)lv_mem_deinit},
     {"lv_mem_init", dispatch_ir_archetype_1, (generic_lvgl_func_t)lv_mem_init},
-    {"lv_mem_monitor", dispatch_ir_archetype_389, (generic_lvgl_func_t)lv_mem_monitor},
-    {"lv_mem_monitor_core", dispatch_ir_archetype_389, (generic_lvgl_func_t)lv_mem_monitor_core},
-    {"lv_mem_remove_pool", dispatch_ir_archetype_390, (generic_lvgl_func_t)lv_mem_remove_pool},
-    {"lv_mem_test", dispatch_ir_archetype_388, (generic_lvgl_func_t)lv_mem_test},
-    {"lv_mem_test_core", dispatch_ir_archetype_388, (generic_lvgl_func_t)lv_mem_test_core},
-    {"lv_menu_back_button_is_root", dispatch_ir_archetype_391, (generic_lvgl_func_t)lv_menu_back_button_is_root},
+    {"lv_mem_monitor", dispatch_ir_archetype_388, (generic_lvgl_func_t)lv_mem_monitor},
+    {"lv_mem_monitor_core", dispatch_ir_archetype_388, (generic_lvgl_func_t)lv_mem_monitor_core},
+    {"lv_mem_remove_pool", dispatch_ir_archetype_389, (generic_lvgl_func_t)lv_mem_remove_pool},
+    {"lv_mem_test", dispatch_ir_archetype_387, (generic_lvgl_func_t)lv_mem_test},
+    {"lv_mem_test_core", dispatch_ir_archetype_387, (generic_lvgl_func_t)lv_mem_test_core},
+    {"lv_menu_back_button_is_root", dispatch_ir_archetype_390, (generic_lvgl_func_t)lv_menu_back_button_is_root},
     {"lv_menu_clear_history", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_menu_clear_history},
     {"lv_menu_cont_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_menu_cont_create},
     {"lv_menu_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_menu_create},
@@ -11754,20 +11735,20 @@ static const FunctionMapping function_registry[] = {
     {"lv_menu_get_main_header_back_button", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_menu_get_main_header_back_button},
     {"lv_menu_get_sidebar_header", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_menu_get_sidebar_header},
     {"lv_menu_get_sidebar_header_back_button", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_menu_get_sidebar_header_back_button},
-    {"lv_menu_page_create", dispatch_ir_archetype_385, (generic_lvgl_func_t)lv_menu_page_create},
+    {"lv_menu_page_create", dispatch_ir_archetype_384, (generic_lvgl_func_t)lv_menu_page_create},
     {"lv_menu_section_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_menu_section_create},
     {"lv_menu_separator_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_menu_separator_create},
-    {"lv_menu_set_load_page_event", dispatch_ir_archetype_392, (generic_lvgl_func_t)lv_menu_set_load_page_event},
-    {"lv_menu_set_mode_header", dispatch_ir_archetype_393, (generic_lvgl_func_t)lv_menu_set_mode_header},
-    {"lv_menu_set_mode_root_back_button", dispatch_ir_archetype_394, (generic_lvgl_func_t)lv_menu_set_mode_root_back_button},
+    {"lv_menu_set_load_page_event", dispatch_ir_archetype_391, (generic_lvgl_func_t)lv_menu_set_load_page_event},
+    {"lv_menu_set_mode_header", dispatch_ir_archetype_392, (generic_lvgl_func_t)lv_menu_set_mode_header},
+    {"lv_menu_set_mode_root_back_button", dispatch_ir_archetype_393, (generic_lvgl_func_t)lv_menu_set_mode_root_back_button},
     {"lv_menu_set_page", dispatch_ir_archetype_340, (generic_lvgl_func_t)lv_menu_set_page},
     {"lv_menu_set_page_title", dispatch_ir_archetype_47, (generic_lvgl_func_t)lv_menu_set_page_title},
     {"lv_menu_set_page_title_static", dispatch_ir_archetype_47, (generic_lvgl_func_t)lv_menu_set_page_title_static},
     {"lv_menu_set_sidebar_page", dispatch_ir_archetype_340, (generic_lvgl_func_t)lv_menu_set_sidebar_page},
     {"lv_msgbox_add_close_button", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_msgbox_add_close_button},
-    {"lv_msgbox_add_footer_button", dispatch_ir_archetype_385, (generic_lvgl_func_t)lv_msgbox_add_footer_button},
-    {"lv_msgbox_add_text", dispatch_ir_archetype_385, (generic_lvgl_func_t)lv_msgbox_add_text},
-    {"lv_msgbox_add_title", dispatch_ir_archetype_385, (generic_lvgl_func_t)lv_msgbox_add_title},
+    {"lv_msgbox_add_footer_button", dispatch_ir_archetype_384, (generic_lvgl_func_t)lv_msgbox_add_footer_button},
+    {"lv_msgbox_add_text", dispatch_ir_archetype_384, (generic_lvgl_func_t)lv_msgbox_add_text},
+    {"lv_msgbox_add_title", dispatch_ir_archetype_384, (generic_lvgl_func_t)lv_msgbox_add_title},
     {"lv_msgbox_close", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_msgbox_close},
     {"lv_msgbox_close_async", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_msgbox_close_async},
     {"lv_msgbox_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_msgbox_create},
@@ -11775,41 +11756,41 @@ static const FunctionMapping function_registry[] = {
     {"lv_msgbox_get_footer", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_msgbox_get_footer},
     {"lv_msgbox_get_header", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_msgbox_get_header},
     {"lv_msgbox_get_title", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_msgbox_get_title},
-    {"lv_mutex_delete", dispatch_ir_archetype_395, (generic_lvgl_func_t)lv_mutex_delete},
-    {"lv_mutex_init", dispatch_ir_archetype_395, (generic_lvgl_func_t)lv_mutex_init},
-    {"lv_mutex_lock", dispatch_ir_archetype_395, (generic_lvgl_func_t)lv_mutex_lock},
-    {"lv_mutex_lock_isr", dispatch_ir_archetype_395, (generic_lvgl_func_t)lv_mutex_lock_isr},
-    {"lv_mutex_unlock", dispatch_ir_archetype_395, (generic_lvgl_func_t)lv_mutex_unlock},
-    {"lv_obj_add_flag", dispatch_ir_archetype_396, (generic_lvgl_func_t)lv_obj_add_flag},
-    {"lv_obj_add_screen_load_event", dispatch_ir_archetype_397, (generic_lvgl_func_t)lv_obj_add_screen_load_event},
-    {"lv_obj_add_state", dispatch_ir_archetype_398, (generic_lvgl_func_t)lv_obj_add_state},
-    {"lv_obj_add_style", dispatch_ir_archetype_399, (generic_lvgl_func_t)lv_obj_add_style},
-    {"lv_obj_add_subject_increment_event", dispatch_ir_archetype_400, (generic_lvgl_func_t)lv_obj_add_subject_increment_event},
-    {"lv_obj_add_subject_set_int_event", dispatch_ir_archetype_401, (generic_lvgl_func_t)lv_obj_add_subject_set_int_event},
-    {"lv_obj_add_subject_set_string_event", dispatch_ir_archetype_402, (generic_lvgl_func_t)lv_obj_add_subject_set_string_event},
-    {"lv_obj_align", dispatch_ir_archetype_403, (generic_lvgl_func_t)lv_obj_align},
-    {"lv_obj_align_to", dispatch_ir_archetype_404, (generic_lvgl_func_t)lv_obj_align_to},
+    {"lv_mutex_delete", dispatch_ir_archetype_394, (generic_lvgl_func_t)lv_mutex_delete},
+    {"lv_mutex_init", dispatch_ir_archetype_394, (generic_lvgl_func_t)lv_mutex_init},
+    {"lv_mutex_lock", dispatch_ir_archetype_394, (generic_lvgl_func_t)lv_mutex_lock},
+    {"lv_mutex_lock_isr", dispatch_ir_archetype_394, (generic_lvgl_func_t)lv_mutex_lock_isr},
+    {"lv_mutex_unlock", dispatch_ir_archetype_394, (generic_lvgl_func_t)lv_mutex_unlock},
+    {"lv_obj_add_flag", dispatch_ir_archetype_395, (generic_lvgl_func_t)lv_obj_add_flag},
+    {"lv_obj_add_screen_load_event", dispatch_ir_archetype_396, (generic_lvgl_func_t)lv_obj_add_screen_load_event},
+    {"lv_obj_add_state", dispatch_ir_archetype_397, (generic_lvgl_func_t)lv_obj_add_state},
+    {"lv_obj_add_style", dispatch_ir_archetype_398, (generic_lvgl_func_t)lv_obj_add_style},
+    {"lv_obj_add_subject_increment_event", dispatch_ir_archetype_399, (generic_lvgl_func_t)lv_obj_add_subject_increment_event},
+    {"lv_obj_add_subject_set_int_event", dispatch_ir_archetype_400, (generic_lvgl_func_t)lv_obj_add_subject_set_int_event},
+    {"lv_obj_add_subject_set_string_event", dispatch_ir_archetype_401, (generic_lvgl_func_t)lv_obj_add_subject_set_string_event},
+    {"lv_obj_align", dispatch_ir_archetype_402, (generic_lvgl_func_t)lv_obj_align},
+    {"lv_obj_align_to", dispatch_ir_archetype_403, (generic_lvgl_func_t)lv_obj_align_to},
     {"lv_obj_allocate_spec_attr", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_allocate_spec_attr},
-    {"lv_obj_area_is_visible", dispatch_ir_archetype_405, (generic_lvgl_func_t)lv_obj_area_is_visible},
+    {"lv_obj_area_is_visible", dispatch_ir_archetype_404, (generic_lvgl_func_t)lv_obj_area_is_visible},
     {"lv_obj_bind_checked", dispatch_ir_archetype_34, (generic_lvgl_func_t)lv_obj_bind_checked},
-    {"lv_obj_bind_flag_if_eq", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_flag_if_eq},
-    {"lv_obj_bind_flag_if_ge", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_flag_if_ge},
-    {"lv_obj_bind_flag_if_gt", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_flag_if_gt},
-    {"lv_obj_bind_flag_if_le", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_flag_if_le},
-    {"lv_obj_bind_flag_if_lt", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_flag_if_lt},
-    {"lv_obj_bind_flag_if_not_eq", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_flag_if_not_eq},
-    {"lv_obj_bind_state_if_eq", dispatch_ir_archetype_407, (generic_lvgl_func_t)lv_obj_bind_state_if_eq},
-    {"lv_obj_bind_state_if_ge", dispatch_ir_archetype_407, (generic_lvgl_func_t)lv_obj_bind_state_if_ge},
-    {"lv_obj_bind_state_if_gt", dispatch_ir_archetype_407, (generic_lvgl_func_t)lv_obj_bind_state_if_gt},
-    {"lv_obj_bind_state_if_le", dispatch_ir_archetype_407, (generic_lvgl_func_t)lv_obj_bind_state_if_le},
-    {"lv_obj_bind_state_if_lt", dispatch_ir_archetype_407, (generic_lvgl_func_t)lv_obj_bind_state_if_lt},
-    {"lv_obj_bind_state_if_not_eq", dispatch_ir_archetype_407, (generic_lvgl_func_t)lv_obj_bind_state_if_not_eq},
-    {"lv_obj_bind_style", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_bind_style},
-    {"lv_obj_calculate_ext_draw_size", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_calculate_ext_draw_size},
-    {"lv_obj_calculate_style_text_align", dispatch_ir_archetype_410, (generic_lvgl_func_t)lv_obj_calculate_style_text_align},
+    {"lv_obj_bind_flag_if_eq", dispatch_ir_archetype_405, (generic_lvgl_func_t)lv_obj_bind_flag_if_eq},
+    {"lv_obj_bind_flag_if_ge", dispatch_ir_archetype_405, (generic_lvgl_func_t)lv_obj_bind_flag_if_ge},
+    {"lv_obj_bind_flag_if_gt", dispatch_ir_archetype_405, (generic_lvgl_func_t)lv_obj_bind_flag_if_gt},
+    {"lv_obj_bind_flag_if_le", dispatch_ir_archetype_405, (generic_lvgl_func_t)lv_obj_bind_flag_if_le},
+    {"lv_obj_bind_flag_if_lt", dispatch_ir_archetype_405, (generic_lvgl_func_t)lv_obj_bind_flag_if_lt},
+    {"lv_obj_bind_flag_if_not_eq", dispatch_ir_archetype_405, (generic_lvgl_func_t)lv_obj_bind_flag_if_not_eq},
+    {"lv_obj_bind_state_if_eq", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_state_if_eq},
+    {"lv_obj_bind_state_if_ge", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_state_if_ge},
+    {"lv_obj_bind_state_if_gt", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_state_if_gt},
+    {"lv_obj_bind_state_if_le", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_state_if_le},
+    {"lv_obj_bind_state_if_lt", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_state_if_lt},
+    {"lv_obj_bind_state_if_not_eq", dispatch_ir_archetype_406, (generic_lvgl_func_t)lv_obj_bind_state_if_not_eq},
+    {"lv_obj_bind_style", dispatch_ir_archetype_407, (generic_lvgl_func_t)lv_obj_bind_style},
+    {"lv_obj_calculate_ext_draw_size", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_calculate_ext_draw_size},
+    {"lv_obj_calculate_style_text_align", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_calculate_style_text_align},
     {"lv_obj_center", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_center},
-    {"lv_obj_check_type", dispatch_ir_archetype_411, (generic_lvgl_func_t)lv_obj_check_type},
-    {"lv_obj_class_create_obj", dispatch_ir_archetype_412, (generic_lvgl_func_t)lv_obj_class_create_obj},
+    {"lv_obj_check_type", dispatch_ir_archetype_410, (generic_lvgl_func_t)lv_obj_check_type},
+    {"lv_obj_class_create_obj", dispatch_ir_archetype_411, (generic_lvgl_func_t)lv_obj_class_create_obj},
     {"lv_obj_class_init_obj", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_class_init_obj},
     {"lv_obj_clean", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_clean},
     {"lv_obj_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_obj_create},
@@ -11818,28 +11799,28 @@ static const FunctionMapping function_registry[] = {
     {"lv_obj_delete_async", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_delete_async},
     {"lv_obj_delete_delayed", dispatch_ir_archetype_31, (generic_lvgl_func_t)lv_obj_delete_delayed},
     {"lv_obj_dump_tree", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_dump_tree},
-    {"lv_obj_enable_style_refresh", dispatch_ir_archetype_413, (generic_lvgl_func_t)lv_obj_enable_style_refresh},
-    {"lv_obj_event_base", dispatch_ir_archetype_414, (generic_lvgl_func_t)lv_obj_event_base},
+    {"lv_obj_enable_style_refresh", dispatch_ir_archetype_412, (generic_lvgl_func_t)lv_obj_enable_style_refresh},
+    {"lv_obj_event_base", dispatch_ir_archetype_413, (generic_lvgl_func_t)lv_obj_event_base},
     {"lv_obj_fade_in", dispatch_ir_archetype_86, (generic_lvgl_func_t)lv_obj_fade_in},
     {"lv_obj_fade_out", dispatch_ir_archetype_86, (generic_lvgl_func_t)lv_obj_fade_out},
-    {"lv_obj_get_child", dispatch_ir_archetype_415, (generic_lvgl_func_t)lv_obj_get_child},
-    {"lv_obj_get_child_by_type", dispatch_ir_archetype_416, (generic_lvgl_func_t)lv_obj_get_child_by_type},
+    {"lv_obj_get_child", dispatch_ir_archetype_414, (generic_lvgl_func_t)lv_obj_get_child},
+    {"lv_obj_get_child_by_type", dispatch_ir_archetype_415, (generic_lvgl_func_t)lv_obj_get_child_by_type},
     {"lv_obj_get_child_count", dispatch_ir_archetype_28, (generic_lvgl_func_t)lv_obj_get_child_count},
-    {"lv_obj_get_child_count_by_type", dispatch_ir_archetype_417, (generic_lvgl_func_t)lv_obj_get_child_count_by_type},
-    {"lv_obj_get_class", dispatch_ir_archetype_418, (generic_lvgl_func_t)lv_obj_get_class},
-    {"lv_obj_get_click_area", dispatch_ir_archetype_419, (generic_lvgl_func_t)lv_obj_get_click_area},
-    {"lv_obj_get_content_coords", dispatch_ir_archetype_419, (generic_lvgl_func_t)lv_obj_get_content_coords},
+    {"lv_obj_get_child_count_by_type", dispatch_ir_archetype_416, (generic_lvgl_func_t)lv_obj_get_child_count_by_type},
+    {"lv_obj_get_class", dispatch_ir_archetype_417, (generic_lvgl_func_t)lv_obj_get_class},
+    {"lv_obj_get_click_area", dispatch_ir_archetype_418, (generic_lvgl_func_t)lv_obj_get_click_area},
+    {"lv_obj_get_content_coords", dispatch_ir_archetype_418, (generic_lvgl_func_t)lv_obj_get_content_coords},
     {"lv_obj_get_content_height", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_content_height},
     {"lv_obj_get_content_width", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_content_width},
-    {"lv_obj_get_coords", dispatch_ir_archetype_419, (generic_lvgl_func_t)lv_obj_get_coords},
-    {"lv_obj_get_display", dispatch_ir_archetype_420, (generic_lvgl_func_t)lv_obj_get_display},
+    {"lv_obj_get_coords", dispatch_ir_archetype_418, (generic_lvgl_func_t)lv_obj_get_coords},
+    {"lv_obj_get_display", dispatch_ir_archetype_419, (generic_lvgl_func_t)lv_obj_get_display},
     {"lv_obj_get_event_count", dispatch_ir_archetype_28, (generic_lvgl_func_t)lv_obj_get_event_count},
-    {"lv_obj_get_event_dsc", dispatch_ir_archetype_421, (generic_lvgl_func_t)lv_obj_get_event_dsc},
-    {"lv_obj_get_group", dispatch_ir_archetype_422, (generic_lvgl_func_t)lv_obj_get_group},
+    {"lv_obj_get_event_dsc", dispatch_ir_archetype_420, (generic_lvgl_func_t)lv_obj_get_event_dsc},
+    {"lv_obj_get_group", dispatch_ir_archetype_421, (generic_lvgl_func_t)lv_obj_get_group},
     {"lv_obj_get_height", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_height},
     {"lv_obj_get_index", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_index},
-    {"lv_obj_get_index_by_type", dispatch_ir_archetype_423, (generic_lvgl_func_t)lv_obj_get_index_by_type},
-    {"lv_obj_get_local_style_prop", dispatch_ir_archetype_424, (generic_lvgl_func_t)lv_obj_get_local_style_prop},
+    {"lv_obj_get_index_by_type", dispatch_ir_archetype_422, (generic_lvgl_func_t)lv_obj_get_index_by_type},
+    {"lv_obj_get_local_style_prop", dispatch_ir_archetype_423, (generic_lvgl_func_t)lv_obj_get_local_style_prop},
     {"lv_obj_get_parent", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_obj_get_parent},
     {"lv_obj_get_screen", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_obj_get_screen},
     {"lv_obj_get_scroll_bottom", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_scroll_bottom},
@@ -11847,157 +11828,157 @@ static const FunctionMapping function_registry[] = {
     {"lv_obj_get_scroll_end", dispatch_ir_archetype_358, (generic_lvgl_func_t)lv_obj_get_scroll_end},
     {"lv_obj_get_scroll_left", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_scroll_left},
     {"lv_obj_get_scroll_right", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_scroll_right},
-    {"lv_obj_get_scroll_snap_x", dispatch_ir_archetype_425, (generic_lvgl_func_t)lv_obj_get_scroll_snap_x},
-    {"lv_obj_get_scroll_snap_y", dispatch_ir_archetype_425, (generic_lvgl_func_t)lv_obj_get_scroll_snap_y},
+    {"lv_obj_get_scroll_snap_x", dispatch_ir_archetype_424, (generic_lvgl_func_t)lv_obj_get_scroll_snap_x},
+    {"lv_obj_get_scroll_snap_y", dispatch_ir_archetype_424, (generic_lvgl_func_t)lv_obj_get_scroll_snap_y},
     {"lv_obj_get_scroll_top", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_scroll_top},
     {"lv_obj_get_scroll_x", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_scroll_x},
     {"lv_obj_get_scroll_y", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_scroll_y},
-    {"lv_obj_get_scrollbar_area", dispatch_ir_archetype_426, (generic_lvgl_func_t)lv_obj_get_scrollbar_area},
-    {"lv_obj_get_scrollbar_mode", dispatch_ir_archetype_427, (generic_lvgl_func_t)lv_obj_get_scrollbar_mode},
+    {"lv_obj_get_scrollbar_area", dispatch_ir_archetype_425, (generic_lvgl_func_t)lv_obj_get_scrollbar_area},
+    {"lv_obj_get_scrollbar_mode", dispatch_ir_archetype_426, (generic_lvgl_func_t)lv_obj_get_scrollbar_mode},
     {"lv_obj_get_self_height", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_self_height},
     {"lv_obj_get_self_width", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_self_width},
-    {"lv_obj_get_sibling", dispatch_ir_archetype_415, (generic_lvgl_func_t)lv_obj_get_sibling},
-    {"lv_obj_get_sibling_by_type", dispatch_ir_archetype_416, (generic_lvgl_func_t)lv_obj_get_sibling_by_type},
-    {"lv_obj_get_state", dispatch_ir_archetype_428, (generic_lvgl_func_t)lv_obj_get_state},
-    {"lv_obj_get_style_align", dispatch_ir_archetype_429, (generic_lvgl_func_t)lv_obj_get_style_align},
-    {"lv_obj_get_style_anim", dispatch_ir_archetype_430, (generic_lvgl_func_t)lv_obj_get_style_anim},
-    {"lv_obj_get_style_anim_duration", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_anim_duration},
-    {"lv_obj_get_style_arc_color", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_arc_color},
-    {"lv_obj_get_style_arc_color_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_arc_color_filtered},
-    {"lv_obj_get_style_arc_image_src", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_arc_image_src},
-    {"lv_obj_get_style_arc_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_arc_opa},
-    {"lv_obj_get_style_arc_rounded", dispatch_ir_archetype_435, (generic_lvgl_func_t)lv_obj_get_style_arc_rounded},
-    {"lv_obj_get_style_arc_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_arc_width},
-    {"lv_obj_get_style_base_dir", dispatch_ir_archetype_436, (generic_lvgl_func_t)lv_obj_get_style_base_dir},
-    {"lv_obj_get_style_bg_color", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_bg_color},
-    {"lv_obj_get_style_bg_color_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_bg_color_filtered},
-    {"lv_obj_get_style_bg_grad", dispatch_ir_archetype_437, (generic_lvgl_func_t)lv_obj_get_style_bg_grad},
-    {"lv_obj_get_style_bg_grad_color", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_bg_grad_color},
-    {"lv_obj_get_style_bg_grad_color_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_bg_grad_color_filtered},
-    {"lv_obj_get_style_bg_grad_dir", dispatch_ir_archetype_438, (generic_lvgl_func_t)lv_obj_get_style_bg_grad_dir},
-    {"lv_obj_get_style_bg_grad_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_bg_grad_opa},
-    {"lv_obj_get_style_bg_grad_stop", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_bg_grad_stop},
-    {"lv_obj_get_style_bg_image_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_bg_image_opa},
-    {"lv_obj_get_style_bg_image_recolor", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_bg_image_recolor},
-    {"lv_obj_get_style_bg_image_recolor_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_bg_image_recolor_filtered},
-    {"lv_obj_get_style_bg_image_recolor_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_bg_image_recolor_opa},
-    {"lv_obj_get_style_bg_image_src", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_bg_image_src},
-    {"lv_obj_get_style_bg_image_tiled", dispatch_ir_archetype_435, (generic_lvgl_func_t)lv_obj_get_style_bg_image_tiled},
-    {"lv_obj_get_style_bg_main_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_bg_main_opa},
-    {"lv_obj_get_style_bg_main_stop", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_bg_main_stop},
-    {"lv_obj_get_style_bg_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_bg_opa},
-    {"lv_obj_get_style_bitmap_mask_src", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_bitmap_mask_src},
-    {"lv_obj_get_style_blend_mode", dispatch_ir_archetype_439, (generic_lvgl_func_t)lv_obj_get_style_blend_mode},
-    {"lv_obj_get_style_border_color", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_border_color},
-    {"lv_obj_get_style_border_color_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_border_color_filtered},
-    {"lv_obj_get_style_border_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_border_opa},
-    {"lv_obj_get_style_border_post", dispatch_ir_archetype_435, (generic_lvgl_func_t)lv_obj_get_style_border_post},
-    {"lv_obj_get_style_border_side", dispatch_ir_archetype_440, (generic_lvgl_func_t)lv_obj_get_style_border_side},
-    {"lv_obj_get_style_border_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_border_width},
-    {"lv_obj_get_style_clip_corner", dispatch_ir_archetype_435, (generic_lvgl_func_t)lv_obj_get_style_clip_corner},
-    {"lv_obj_get_style_color_filter_dsc", dispatch_ir_archetype_441, (generic_lvgl_func_t)lv_obj_get_style_color_filter_dsc},
-    {"lv_obj_get_style_color_filter_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_color_filter_opa},
-    {"lv_obj_get_style_flex_cross_place", dispatch_ir_archetype_442, (generic_lvgl_func_t)lv_obj_get_style_flex_cross_place},
-    {"lv_obj_get_style_flex_flow", dispatch_ir_archetype_443, (generic_lvgl_func_t)lv_obj_get_style_flex_flow},
-    {"lv_obj_get_style_flex_grow", dispatch_ir_archetype_444, (generic_lvgl_func_t)lv_obj_get_style_flex_grow},
-    {"lv_obj_get_style_flex_main_place", dispatch_ir_archetype_442, (generic_lvgl_func_t)lv_obj_get_style_flex_main_place},
-    {"lv_obj_get_style_flex_track_place", dispatch_ir_archetype_442, (generic_lvgl_func_t)lv_obj_get_style_flex_track_place},
-    {"lv_obj_get_style_grid_cell_column_pos", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_column_pos},
-    {"lv_obj_get_style_grid_cell_column_span", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_column_span},
-    {"lv_obj_get_style_grid_cell_row_pos", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_row_pos},
-    {"lv_obj_get_style_grid_cell_row_span", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_row_span},
-    {"lv_obj_get_style_grid_cell_x_align", dispatch_ir_archetype_445, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_x_align},
-    {"lv_obj_get_style_grid_cell_y_align", dispatch_ir_archetype_445, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_y_align},
-    {"lv_obj_get_style_grid_column_align", dispatch_ir_archetype_445, (generic_lvgl_func_t)lv_obj_get_style_grid_column_align},
-    {"lv_obj_get_style_grid_column_dsc_array", dispatch_ir_archetype_446, (generic_lvgl_func_t)lv_obj_get_style_grid_column_dsc_array},
-    {"lv_obj_get_style_grid_row_align", dispatch_ir_archetype_445, (generic_lvgl_func_t)lv_obj_get_style_grid_row_align},
-    {"lv_obj_get_style_grid_row_dsc_array", dispatch_ir_archetype_446, (generic_lvgl_func_t)lv_obj_get_style_grid_row_dsc_array},
-    {"lv_obj_get_style_height", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_height},
-    {"lv_obj_get_style_image_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_image_opa},
-    {"lv_obj_get_style_image_recolor", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_image_recolor},
-    {"lv_obj_get_style_image_recolor_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_image_recolor_filtered},
-    {"lv_obj_get_style_image_recolor_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_image_recolor_opa},
-    {"lv_obj_get_style_layout", dispatch_ir_archetype_447, (generic_lvgl_func_t)lv_obj_get_style_layout},
-    {"lv_obj_get_style_length", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_length},
-    {"lv_obj_get_style_line_color", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_line_color},
-    {"lv_obj_get_style_line_color_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_line_color_filtered},
-    {"lv_obj_get_style_line_dash_gap", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_line_dash_gap},
-    {"lv_obj_get_style_line_dash_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_line_dash_width},
-    {"lv_obj_get_style_line_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_line_opa},
-    {"lv_obj_get_style_line_rounded", dispatch_ir_archetype_435, (generic_lvgl_func_t)lv_obj_get_style_line_rounded},
-    {"lv_obj_get_style_line_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_line_width},
-    {"lv_obj_get_style_margin_bottom", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_margin_bottom},
-    {"lv_obj_get_style_margin_left", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_margin_left},
-    {"lv_obj_get_style_margin_right", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_margin_right},
-    {"lv_obj_get_style_margin_top", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_margin_top},
-    {"lv_obj_get_style_max_height", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_max_height},
-    {"lv_obj_get_style_max_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_max_width},
-    {"lv_obj_get_style_min_height", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_min_height},
-    {"lv_obj_get_style_min_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_min_width},
-    {"lv_obj_get_style_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_opa},
-    {"lv_obj_get_style_opa_layered", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_opa_layered},
-    {"lv_obj_get_style_opa_recursive", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_opa_recursive},
-    {"lv_obj_get_style_outline_color", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_outline_color},
-    {"lv_obj_get_style_outline_color_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_outline_color_filtered},
-    {"lv_obj_get_style_outline_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_outline_opa},
-    {"lv_obj_get_style_outline_pad", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_outline_pad},
-    {"lv_obj_get_style_outline_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_outline_width},
-    {"lv_obj_get_style_pad_bottom", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_pad_bottom},
-    {"lv_obj_get_style_pad_column", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_pad_column},
-    {"lv_obj_get_style_pad_left", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_pad_left},
-    {"lv_obj_get_style_pad_radial", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_pad_radial},
-    {"lv_obj_get_style_pad_right", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_pad_right},
-    {"lv_obj_get_style_pad_row", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_pad_row},
-    {"lv_obj_get_style_pad_top", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_pad_top},
-    {"lv_obj_get_style_prop", dispatch_ir_archetype_448, (generic_lvgl_func_t)lv_obj_get_style_prop},
-    {"lv_obj_get_style_radial_offset", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_radial_offset},
-    {"lv_obj_get_style_radius", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_radius},
-    {"lv_obj_get_style_recolor", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_recolor},
-    {"lv_obj_get_style_recolor_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_recolor_opa},
-    {"lv_obj_get_style_recolor_recursive", dispatch_ir_archetype_449, (generic_lvgl_func_t)lv_obj_get_style_recolor_recursive},
-    {"lv_obj_get_style_rotary_sensitivity", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_rotary_sensitivity},
-    {"lv_obj_get_style_shadow_color", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_shadow_color},
-    {"lv_obj_get_style_shadow_color_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_shadow_color_filtered},
-    {"lv_obj_get_style_shadow_offset_x", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_shadow_offset_x},
-    {"lv_obj_get_style_shadow_offset_y", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_shadow_offset_y},
-    {"lv_obj_get_style_shadow_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_shadow_opa},
-    {"lv_obj_get_style_shadow_spread", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_shadow_spread},
-    {"lv_obj_get_style_shadow_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_shadow_width},
-    {"lv_obj_get_style_space_bottom", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_space_bottom},
-    {"lv_obj_get_style_space_left", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_space_left},
-    {"lv_obj_get_style_space_right", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_space_right},
-    {"lv_obj_get_style_space_top", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_space_top},
-    {"lv_obj_get_style_text_align", dispatch_ir_archetype_450, (generic_lvgl_func_t)lv_obj_get_style_text_align},
-    {"lv_obj_get_style_text_color", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_text_color},
-    {"lv_obj_get_style_text_color_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_text_color_filtered},
-    {"lv_obj_get_style_text_decor", dispatch_ir_archetype_451, (generic_lvgl_func_t)lv_obj_get_style_text_decor},
-    {"lv_obj_get_style_text_font", dispatch_ir_archetype_452, (generic_lvgl_func_t)lv_obj_get_style_text_font},
-    {"lv_obj_get_style_text_letter_space", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_text_letter_space},
-    {"lv_obj_get_style_text_line_space", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_text_line_space},
-    {"lv_obj_get_style_text_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_text_opa},
-    {"lv_obj_get_style_text_outline_stroke_color", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_text_outline_stroke_color},
-    {"lv_obj_get_style_text_outline_stroke_color_filtered", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_text_outline_stroke_color_filtered},
-    {"lv_obj_get_style_text_outline_stroke_opa", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_text_outline_stroke_opa},
-    {"lv_obj_get_style_text_outline_stroke_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_text_outline_stroke_width},
-    {"lv_obj_get_style_transform_height", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_height},
-    {"lv_obj_get_style_transform_pivot_x", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_pivot_x},
-    {"lv_obj_get_style_transform_pivot_y", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_pivot_y},
-    {"lv_obj_get_style_transform_rotation", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_rotation},
-    {"lv_obj_get_style_transform_scale_x", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_scale_x},
-    {"lv_obj_get_style_transform_scale_x_safe", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_scale_x_safe},
-    {"lv_obj_get_style_transform_scale_y", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_scale_y},
-    {"lv_obj_get_style_transform_scale_y_safe", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_scale_y_safe},
-    {"lv_obj_get_style_transform_skew_x", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_skew_x},
-    {"lv_obj_get_style_transform_skew_y", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_skew_y},
-    {"lv_obj_get_style_transform_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_transform_width},
-    {"lv_obj_get_style_transition", dispatch_ir_archetype_453, (generic_lvgl_func_t)lv_obj_get_style_transition},
-    {"lv_obj_get_style_translate_radial", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_translate_radial},
-    {"lv_obj_get_style_translate_x", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_translate_x},
-    {"lv_obj_get_style_translate_y", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_translate_y},
-    {"lv_obj_get_style_width", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_width},
-    {"lv_obj_get_style_x", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_x},
-    {"lv_obj_get_style_y", dispatch_ir_archetype_409, (generic_lvgl_func_t)lv_obj_get_style_y},
-    {"lv_obj_get_transform", dispatch_ir_archetype_454, (generic_lvgl_func_t)lv_obj_get_transform},
+    {"lv_obj_get_sibling", dispatch_ir_archetype_414, (generic_lvgl_func_t)lv_obj_get_sibling},
+    {"lv_obj_get_sibling_by_type", dispatch_ir_archetype_415, (generic_lvgl_func_t)lv_obj_get_sibling_by_type},
+    {"lv_obj_get_state", dispatch_ir_archetype_427, (generic_lvgl_func_t)lv_obj_get_state},
+    {"lv_obj_get_style_align", dispatch_ir_archetype_428, (generic_lvgl_func_t)lv_obj_get_style_align},
+    {"lv_obj_get_style_anim", dispatch_ir_archetype_429, (generic_lvgl_func_t)lv_obj_get_style_anim},
+    {"lv_obj_get_style_anim_duration", dispatch_ir_archetype_430, (generic_lvgl_func_t)lv_obj_get_style_anim_duration},
+    {"lv_obj_get_style_arc_color", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_arc_color},
+    {"lv_obj_get_style_arc_color_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_arc_color_filtered},
+    {"lv_obj_get_style_arc_image_src", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_arc_image_src},
+    {"lv_obj_get_style_arc_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_arc_opa},
+    {"lv_obj_get_style_arc_rounded", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_arc_rounded},
+    {"lv_obj_get_style_arc_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_arc_width},
+    {"lv_obj_get_style_base_dir", dispatch_ir_archetype_435, (generic_lvgl_func_t)lv_obj_get_style_base_dir},
+    {"lv_obj_get_style_bg_color", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_bg_color},
+    {"lv_obj_get_style_bg_color_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_bg_color_filtered},
+    {"lv_obj_get_style_bg_grad", dispatch_ir_archetype_436, (generic_lvgl_func_t)lv_obj_get_style_bg_grad},
+    {"lv_obj_get_style_bg_grad_color", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_bg_grad_color},
+    {"lv_obj_get_style_bg_grad_color_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_bg_grad_color_filtered},
+    {"lv_obj_get_style_bg_grad_dir", dispatch_ir_archetype_437, (generic_lvgl_func_t)lv_obj_get_style_bg_grad_dir},
+    {"lv_obj_get_style_bg_grad_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_bg_grad_opa},
+    {"lv_obj_get_style_bg_grad_stop", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_bg_grad_stop},
+    {"lv_obj_get_style_bg_image_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_bg_image_opa},
+    {"lv_obj_get_style_bg_image_recolor", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_bg_image_recolor},
+    {"lv_obj_get_style_bg_image_recolor_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_bg_image_recolor_filtered},
+    {"lv_obj_get_style_bg_image_recolor_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_bg_image_recolor_opa},
+    {"lv_obj_get_style_bg_image_src", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_bg_image_src},
+    {"lv_obj_get_style_bg_image_tiled", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_bg_image_tiled},
+    {"lv_obj_get_style_bg_main_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_bg_main_opa},
+    {"lv_obj_get_style_bg_main_stop", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_bg_main_stop},
+    {"lv_obj_get_style_bg_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_bg_opa},
+    {"lv_obj_get_style_bitmap_mask_src", dispatch_ir_archetype_432, (generic_lvgl_func_t)lv_obj_get_style_bitmap_mask_src},
+    {"lv_obj_get_style_blend_mode", dispatch_ir_archetype_438, (generic_lvgl_func_t)lv_obj_get_style_blend_mode},
+    {"lv_obj_get_style_border_color", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_border_color},
+    {"lv_obj_get_style_border_color_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_border_color_filtered},
+    {"lv_obj_get_style_border_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_border_opa},
+    {"lv_obj_get_style_border_post", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_border_post},
+    {"lv_obj_get_style_border_side", dispatch_ir_archetype_439, (generic_lvgl_func_t)lv_obj_get_style_border_side},
+    {"lv_obj_get_style_border_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_border_width},
+    {"lv_obj_get_style_clip_corner", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_clip_corner},
+    {"lv_obj_get_style_color_filter_dsc", dispatch_ir_archetype_440, (generic_lvgl_func_t)lv_obj_get_style_color_filter_dsc},
+    {"lv_obj_get_style_color_filter_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_color_filter_opa},
+    {"lv_obj_get_style_flex_cross_place", dispatch_ir_archetype_441, (generic_lvgl_func_t)lv_obj_get_style_flex_cross_place},
+    {"lv_obj_get_style_flex_flow", dispatch_ir_archetype_442, (generic_lvgl_func_t)lv_obj_get_style_flex_flow},
+    {"lv_obj_get_style_flex_grow", dispatch_ir_archetype_443, (generic_lvgl_func_t)lv_obj_get_style_flex_grow},
+    {"lv_obj_get_style_flex_main_place", dispatch_ir_archetype_441, (generic_lvgl_func_t)lv_obj_get_style_flex_main_place},
+    {"lv_obj_get_style_flex_track_place", dispatch_ir_archetype_441, (generic_lvgl_func_t)lv_obj_get_style_flex_track_place},
+    {"lv_obj_get_style_grid_cell_column_pos", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_column_pos},
+    {"lv_obj_get_style_grid_cell_column_span", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_column_span},
+    {"lv_obj_get_style_grid_cell_row_pos", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_row_pos},
+    {"lv_obj_get_style_grid_cell_row_span", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_row_span},
+    {"lv_obj_get_style_grid_cell_x_align", dispatch_ir_archetype_444, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_x_align},
+    {"lv_obj_get_style_grid_cell_y_align", dispatch_ir_archetype_444, (generic_lvgl_func_t)lv_obj_get_style_grid_cell_y_align},
+    {"lv_obj_get_style_grid_column_align", dispatch_ir_archetype_444, (generic_lvgl_func_t)lv_obj_get_style_grid_column_align},
+    {"lv_obj_get_style_grid_column_dsc_array", dispatch_ir_archetype_445, (generic_lvgl_func_t)lv_obj_get_style_grid_column_dsc_array},
+    {"lv_obj_get_style_grid_row_align", dispatch_ir_archetype_444, (generic_lvgl_func_t)lv_obj_get_style_grid_row_align},
+    {"lv_obj_get_style_grid_row_dsc_array", dispatch_ir_archetype_445, (generic_lvgl_func_t)lv_obj_get_style_grid_row_dsc_array},
+    {"lv_obj_get_style_height", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_height},
+    {"lv_obj_get_style_image_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_image_opa},
+    {"lv_obj_get_style_image_recolor", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_image_recolor},
+    {"lv_obj_get_style_image_recolor_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_image_recolor_filtered},
+    {"lv_obj_get_style_image_recolor_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_image_recolor_opa},
+    {"lv_obj_get_style_layout", dispatch_ir_archetype_446, (generic_lvgl_func_t)lv_obj_get_style_layout},
+    {"lv_obj_get_style_length", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_length},
+    {"lv_obj_get_style_line_color", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_line_color},
+    {"lv_obj_get_style_line_color_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_line_color_filtered},
+    {"lv_obj_get_style_line_dash_gap", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_line_dash_gap},
+    {"lv_obj_get_style_line_dash_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_line_dash_width},
+    {"lv_obj_get_style_line_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_line_opa},
+    {"lv_obj_get_style_line_rounded", dispatch_ir_archetype_434, (generic_lvgl_func_t)lv_obj_get_style_line_rounded},
+    {"lv_obj_get_style_line_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_line_width},
+    {"lv_obj_get_style_margin_bottom", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_margin_bottom},
+    {"lv_obj_get_style_margin_left", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_margin_left},
+    {"lv_obj_get_style_margin_right", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_margin_right},
+    {"lv_obj_get_style_margin_top", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_margin_top},
+    {"lv_obj_get_style_max_height", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_max_height},
+    {"lv_obj_get_style_max_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_max_width},
+    {"lv_obj_get_style_min_height", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_min_height},
+    {"lv_obj_get_style_min_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_min_width},
+    {"lv_obj_get_style_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_opa},
+    {"lv_obj_get_style_opa_layered", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_opa_layered},
+    {"lv_obj_get_style_opa_recursive", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_opa_recursive},
+    {"lv_obj_get_style_outline_color", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_outline_color},
+    {"lv_obj_get_style_outline_color_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_outline_color_filtered},
+    {"lv_obj_get_style_outline_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_outline_opa},
+    {"lv_obj_get_style_outline_pad", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_outline_pad},
+    {"lv_obj_get_style_outline_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_outline_width},
+    {"lv_obj_get_style_pad_bottom", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_pad_bottom},
+    {"lv_obj_get_style_pad_column", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_pad_column},
+    {"lv_obj_get_style_pad_left", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_pad_left},
+    {"lv_obj_get_style_pad_radial", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_pad_radial},
+    {"lv_obj_get_style_pad_right", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_pad_right},
+    {"lv_obj_get_style_pad_row", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_pad_row},
+    {"lv_obj_get_style_pad_top", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_pad_top},
+    {"lv_obj_get_style_prop", dispatch_ir_archetype_447, (generic_lvgl_func_t)lv_obj_get_style_prop},
+    {"lv_obj_get_style_radial_offset", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_radial_offset},
+    {"lv_obj_get_style_radius", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_radius},
+    {"lv_obj_get_style_recolor", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_recolor},
+    {"lv_obj_get_style_recolor_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_recolor_opa},
+    {"lv_obj_get_style_recolor_recursive", dispatch_ir_archetype_448, (generic_lvgl_func_t)lv_obj_get_style_recolor_recursive},
+    {"lv_obj_get_style_rotary_sensitivity", dispatch_ir_archetype_430, (generic_lvgl_func_t)lv_obj_get_style_rotary_sensitivity},
+    {"lv_obj_get_style_shadow_color", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_shadow_color},
+    {"lv_obj_get_style_shadow_color_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_shadow_color_filtered},
+    {"lv_obj_get_style_shadow_offset_x", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_shadow_offset_x},
+    {"lv_obj_get_style_shadow_offset_y", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_shadow_offset_y},
+    {"lv_obj_get_style_shadow_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_shadow_opa},
+    {"lv_obj_get_style_shadow_spread", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_shadow_spread},
+    {"lv_obj_get_style_shadow_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_shadow_width},
+    {"lv_obj_get_style_space_bottom", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_space_bottom},
+    {"lv_obj_get_style_space_left", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_space_left},
+    {"lv_obj_get_style_space_right", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_space_right},
+    {"lv_obj_get_style_space_top", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_space_top},
+    {"lv_obj_get_style_text_align", dispatch_ir_archetype_449, (generic_lvgl_func_t)lv_obj_get_style_text_align},
+    {"lv_obj_get_style_text_color", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_text_color},
+    {"lv_obj_get_style_text_color_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_text_color_filtered},
+    {"lv_obj_get_style_text_decor", dispatch_ir_archetype_450, (generic_lvgl_func_t)lv_obj_get_style_text_decor},
+    {"lv_obj_get_style_text_font", dispatch_ir_archetype_451, (generic_lvgl_func_t)lv_obj_get_style_text_font},
+    {"lv_obj_get_style_text_letter_space", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_text_letter_space},
+    {"lv_obj_get_style_text_line_space", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_text_line_space},
+    {"lv_obj_get_style_text_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_text_opa},
+    {"lv_obj_get_style_text_outline_stroke_color", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_text_outline_stroke_color},
+    {"lv_obj_get_style_text_outline_stroke_color_filtered", dispatch_ir_archetype_431, (generic_lvgl_func_t)lv_obj_get_style_text_outline_stroke_color_filtered},
+    {"lv_obj_get_style_text_outline_stroke_opa", dispatch_ir_archetype_433, (generic_lvgl_func_t)lv_obj_get_style_text_outline_stroke_opa},
+    {"lv_obj_get_style_text_outline_stroke_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_text_outline_stroke_width},
+    {"lv_obj_get_style_transform_height", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_height},
+    {"lv_obj_get_style_transform_pivot_x", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_pivot_x},
+    {"lv_obj_get_style_transform_pivot_y", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_pivot_y},
+    {"lv_obj_get_style_transform_rotation", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_rotation},
+    {"lv_obj_get_style_transform_scale_x", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_scale_x},
+    {"lv_obj_get_style_transform_scale_x_safe", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_scale_x_safe},
+    {"lv_obj_get_style_transform_scale_y", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_scale_y},
+    {"lv_obj_get_style_transform_scale_y_safe", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_scale_y_safe},
+    {"lv_obj_get_style_transform_skew_x", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_skew_x},
+    {"lv_obj_get_style_transform_skew_y", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_skew_y},
+    {"lv_obj_get_style_transform_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_transform_width},
+    {"lv_obj_get_style_transition", dispatch_ir_archetype_452, (generic_lvgl_func_t)lv_obj_get_style_transition},
+    {"lv_obj_get_style_translate_radial", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_translate_radial},
+    {"lv_obj_get_style_translate_x", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_translate_x},
+    {"lv_obj_get_style_translate_y", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_translate_y},
+    {"lv_obj_get_style_width", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_width},
+    {"lv_obj_get_style_x", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_x},
+    {"lv_obj_get_style_y", dispatch_ir_archetype_408, (generic_lvgl_func_t)lv_obj_get_style_y},
+    {"lv_obj_get_transform", dispatch_ir_archetype_453, (generic_lvgl_func_t)lv_obj_get_transform},
     {"lv_obj_get_user_data", dispatch_ir_archetype_109, (generic_lvgl_func_t)lv_obj_get_user_data},
     {"lv_obj_get_width", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_width},
     {"lv_obj_get_x", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_x},
@@ -12006,19 +11987,19 @@ static const FunctionMapping function_registry[] = {
     {"lv_obj_get_y", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_y},
     {"lv_obj_get_y2", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_y2},
     {"lv_obj_get_y_aligned", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_obj_get_y_aligned},
-    {"lv_obj_has_class", dispatch_ir_archetype_411, (generic_lvgl_func_t)lv_obj_has_class},
-    {"lv_obj_has_flag", dispatch_ir_archetype_455, (generic_lvgl_func_t)lv_obj_has_flag},
-    {"lv_obj_has_flag_any", dispatch_ir_archetype_455, (generic_lvgl_func_t)lv_obj_has_flag_any},
-    {"lv_obj_has_state", dispatch_ir_archetype_456, (generic_lvgl_func_t)lv_obj_has_state},
-    {"lv_obj_has_style_prop", dispatch_ir_archetype_457, (generic_lvgl_func_t)lv_obj_has_style_prop},
+    {"lv_obj_has_class", dispatch_ir_archetype_410, (generic_lvgl_func_t)lv_obj_has_class},
+    {"lv_obj_has_flag", dispatch_ir_archetype_454, (generic_lvgl_func_t)lv_obj_has_flag},
+    {"lv_obj_has_flag_any", dispatch_ir_archetype_454, (generic_lvgl_func_t)lv_obj_has_flag_any},
+    {"lv_obj_has_state", dispatch_ir_archetype_455, (generic_lvgl_func_t)lv_obj_has_state},
+    {"lv_obj_has_style_prop", dispatch_ir_archetype_456, (generic_lvgl_func_t)lv_obj_has_style_prop},
     {"lv_obj_hit_test", dispatch_ir_archetype_378, (generic_lvgl_func_t)lv_obj_hit_test},
-    {"lv_obj_init_draw_arc_dsc", dispatch_ir_archetype_458, (generic_lvgl_func_t)lv_obj_init_draw_arc_dsc},
-    {"lv_obj_init_draw_image_dsc", dispatch_ir_archetype_459, (generic_lvgl_func_t)lv_obj_init_draw_image_dsc},
-    {"lv_obj_init_draw_label_dsc", dispatch_ir_archetype_460, (generic_lvgl_func_t)lv_obj_init_draw_label_dsc},
-    {"lv_obj_init_draw_line_dsc", dispatch_ir_archetype_461, (generic_lvgl_func_t)lv_obj_init_draw_line_dsc},
-    {"lv_obj_init_draw_rect_dsc", dispatch_ir_archetype_462, (generic_lvgl_func_t)lv_obj_init_draw_rect_dsc},
+    {"lv_obj_init_draw_arc_dsc", dispatch_ir_archetype_457, (generic_lvgl_func_t)lv_obj_init_draw_arc_dsc},
+    {"lv_obj_init_draw_image_dsc", dispatch_ir_archetype_458, (generic_lvgl_func_t)lv_obj_init_draw_image_dsc},
+    {"lv_obj_init_draw_label_dsc", dispatch_ir_archetype_459, (generic_lvgl_func_t)lv_obj_init_draw_label_dsc},
+    {"lv_obj_init_draw_line_dsc", dispatch_ir_archetype_460, (generic_lvgl_func_t)lv_obj_init_draw_line_dsc},
+    {"lv_obj_init_draw_rect_dsc", dispatch_ir_archetype_461, (generic_lvgl_func_t)lv_obj_init_draw_rect_dsc},
     {"lv_obj_invalidate", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_invalidate},
-    {"lv_obj_invalidate_area", dispatch_ir_archetype_419, (generic_lvgl_func_t)lv_obj_invalidate_area},
+    {"lv_obj_invalidate_area", dispatch_ir_archetype_418, (generic_lvgl_func_t)lv_obj_invalidate_area},
     {"lv_obj_is_editable", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_obj_is_editable},
     {"lv_obj_is_group_def", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_obj_is_group_def},
     {"lv_obj_is_layout_positioned", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_obj_is_layout_positioned},
@@ -12027,224 +12008,224 @@ static const FunctionMapping function_registry[] = {
     {"lv_obj_is_visible", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_obj_is_visible},
     {"lv_obj_mark_layout_as_dirty", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_mark_layout_as_dirty},
     {"lv_obj_move_background", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_move_background},
-    {"lv_obj_move_children_by", dispatch_ir_archetype_463, (generic_lvgl_func_t)lv_obj_move_children_by},
+    {"lv_obj_move_children_by", dispatch_ir_archetype_462, (generic_lvgl_func_t)lv_obj_move_children_by},
     {"lv_obj_move_foreground", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_move_foreground},
     {"lv_obj_move_to", dispatch_ir_archetype_42, (generic_lvgl_func_t)lv_obj_move_to},
     {"lv_obj_move_to_index", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_obj_move_to_index},
-    {"lv_obj_null_on_delete", dispatch_ir_archetype_464, (generic_lvgl_func_t)lv_obj_null_on_delete},
-    {"lv_obj_readjust_scroll", dispatch_ir_archetype_465, (generic_lvgl_func_t)lv_obj_readjust_scroll},
-    {"lv_obj_redraw", dispatch_ir_archetype_466, (generic_lvgl_func_t)lv_obj_redraw},
+    {"lv_obj_null_on_delete", dispatch_ir_archetype_463, (generic_lvgl_func_t)lv_obj_null_on_delete},
+    {"lv_obj_readjust_scroll", dispatch_ir_archetype_464, (generic_lvgl_func_t)lv_obj_readjust_scroll},
+    {"lv_obj_redraw", dispatch_ir_archetype_465, (generic_lvgl_func_t)lv_obj_redraw},
     {"lv_obj_refr_pos", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_refr_pos},
     {"lv_obj_refr_size", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_obj_refr_size},
     {"lv_obj_refresh_ext_draw_size", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_refresh_ext_draw_size},
     {"lv_obj_refresh_self_size", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_obj_refresh_self_size},
-    {"lv_obj_refresh_style", dispatch_ir_archetype_467, (generic_lvgl_func_t)lv_obj_refresh_style},
-    {"lv_obj_remove_event", dispatch_ir_archetype_468, (generic_lvgl_func_t)lv_obj_remove_event},
-    {"lv_obj_remove_event_dsc", dispatch_ir_archetype_469, (generic_lvgl_func_t)lv_obj_remove_event_dsc},
-    {"lv_obj_remove_flag", dispatch_ir_archetype_396, (generic_lvgl_func_t)lv_obj_remove_flag},
-    {"lv_obj_remove_from_subject", dispatch_ir_archetype_470, (generic_lvgl_func_t)lv_obj_remove_from_subject},
-    {"lv_obj_remove_local_style_prop", dispatch_ir_archetype_471, (generic_lvgl_func_t)lv_obj_remove_local_style_prop},
-    {"lv_obj_remove_state", dispatch_ir_archetype_398, (generic_lvgl_func_t)lv_obj_remove_state},
-    {"lv_obj_remove_style", dispatch_ir_archetype_399, (generic_lvgl_func_t)lv_obj_remove_style},
+    {"lv_obj_refresh_style", dispatch_ir_archetype_466, (generic_lvgl_func_t)lv_obj_refresh_style},
+    {"lv_obj_remove_event", dispatch_ir_archetype_467, (generic_lvgl_func_t)lv_obj_remove_event},
+    {"lv_obj_remove_event_dsc", dispatch_ir_archetype_468, (generic_lvgl_func_t)lv_obj_remove_event_dsc},
+    {"lv_obj_remove_flag", dispatch_ir_archetype_395, (generic_lvgl_func_t)lv_obj_remove_flag},
+    {"lv_obj_remove_from_subject", dispatch_ir_archetype_469, (generic_lvgl_func_t)lv_obj_remove_from_subject},
+    {"lv_obj_remove_local_style_prop", dispatch_ir_archetype_470, (generic_lvgl_func_t)lv_obj_remove_local_style_prop},
+    {"lv_obj_remove_state", dispatch_ir_archetype_397, (generic_lvgl_func_t)lv_obj_remove_state},
+    {"lv_obj_remove_style", dispatch_ir_archetype_398, (generic_lvgl_func_t)lv_obj_remove_style},
     {"lv_obj_remove_style_all", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_remove_style_all},
-    {"lv_obj_replace_style", dispatch_ir_archetype_472, (generic_lvgl_func_t)lv_obj_replace_style},
-    {"lv_obj_report_style_change", dispatch_ir_archetype_473, (generic_lvgl_func_t)lv_obj_report_style_change},
+    {"lv_obj_replace_style", dispatch_ir_archetype_471, (generic_lvgl_func_t)lv_obj_replace_style},
+    {"lv_obj_report_style_change", dispatch_ir_archetype_472, (generic_lvgl_func_t)lv_obj_report_style_change},
     {"lv_obj_reset_transform", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_reset_transform},
-    {"lv_obj_scroll_by", dispatch_ir_archetype_474, (generic_lvgl_func_t)lv_obj_scroll_by},
-    {"lv_obj_scroll_by_bounded", dispatch_ir_archetype_474, (generic_lvgl_func_t)lv_obj_scroll_by_bounded},
-    {"lv_obj_scroll_to", dispatch_ir_archetype_474, (generic_lvgl_func_t)lv_obj_scroll_to},
-    {"lv_obj_scroll_to_view", dispatch_ir_archetype_465, (generic_lvgl_func_t)lv_obj_scroll_to_view},
-    {"lv_obj_scroll_to_view_recursive", dispatch_ir_archetype_465, (generic_lvgl_func_t)lv_obj_scroll_to_view_recursive},
+    {"lv_obj_scroll_by", dispatch_ir_archetype_473, (generic_lvgl_func_t)lv_obj_scroll_by},
+    {"lv_obj_scroll_by_bounded", dispatch_ir_archetype_473, (generic_lvgl_func_t)lv_obj_scroll_by_bounded},
+    {"lv_obj_scroll_to", dispatch_ir_archetype_473, (generic_lvgl_func_t)lv_obj_scroll_to},
+    {"lv_obj_scroll_to_view", dispatch_ir_archetype_464, (generic_lvgl_func_t)lv_obj_scroll_to_view},
+    {"lv_obj_scroll_to_view_recursive", dispatch_ir_archetype_464, (generic_lvgl_func_t)lv_obj_scroll_to_view_recursive},
     {"lv_obj_scroll_to_x", dispatch_ir_archetype_72, (generic_lvgl_func_t)lv_obj_scroll_to_x},
     {"lv_obj_scroll_to_y", dispatch_ir_archetype_72, (generic_lvgl_func_t)lv_obj_scroll_to_y},
     {"lv_obj_scrollbar_invalidate", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_scrollbar_invalidate},
-    {"lv_obj_set_align", dispatch_ir_archetype_475, (generic_lvgl_func_t)lv_obj_set_align},
+    {"lv_obj_set_align", dispatch_ir_archetype_474, (generic_lvgl_func_t)lv_obj_set_align},
     {"lv_obj_set_content_height", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_obj_set_content_height},
     {"lv_obj_set_content_width", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_obj_set_content_width},
     {"lv_obj_set_ext_click_area", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_obj_set_ext_click_area},
-    {"lv_obj_set_flag", dispatch_ir_archetype_476, (generic_lvgl_func_t)lv_obj_set_flag},
-    {"lv_obj_set_flex_align", dispatch_ir_archetype_477, (generic_lvgl_func_t)lv_obj_set_flex_align},
-    {"lv_obj_set_flex_flow", dispatch_ir_archetype_478, (generic_lvgl_func_t)lv_obj_set_flex_flow},
+    {"lv_obj_set_flag", dispatch_ir_archetype_475, (generic_lvgl_func_t)lv_obj_set_flag},
+    {"lv_obj_set_flex_align", dispatch_ir_archetype_476, (generic_lvgl_func_t)lv_obj_set_flex_align},
+    {"lv_obj_set_flex_flow", dispatch_ir_archetype_477, (generic_lvgl_func_t)lv_obj_set_flex_flow},
     {"lv_obj_set_flex_grow", dispatch_ir_archetype_381, (generic_lvgl_func_t)lv_obj_set_flex_grow},
-    {"lv_obj_set_grid_align", dispatch_ir_archetype_479, (generic_lvgl_func_t)lv_obj_set_grid_align},
-    {"lv_obj_set_grid_cell", dispatch_ir_archetype_480, (generic_lvgl_func_t)lv_obj_set_grid_cell},
+    {"lv_obj_set_grid_align", dispatch_ir_archetype_478, (generic_lvgl_func_t)lv_obj_set_grid_align},
+    {"lv_obj_set_grid_cell", dispatch_ir_archetype_479, (generic_lvgl_func_t)lv_obj_set_grid_cell},
     {"lv_obj_set_grid_dsc_array", dispatch_ir_archetype_42, (generic_lvgl_func_t)lv_obj_set_grid_dsc_array},
     {"lv_obj_set_height", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_obj_set_height},
     {"lv_obj_set_layout", dispatch_ir_archetype_31, (generic_lvgl_func_t)lv_obj_set_layout},
     {"lv_obj_set_parent", dispatch_ir_archetype_340, (generic_lvgl_func_t)lv_obj_set_parent},
     {"lv_obj_set_pos", dispatch_ir_archetype_42, (generic_lvgl_func_t)lv_obj_set_pos},
     {"lv_obj_set_scroll_dir", dispatch_ir_archetype_278, (generic_lvgl_func_t)lv_obj_set_scroll_dir},
-    {"lv_obj_set_scroll_snap_x", dispatch_ir_archetype_481, (generic_lvgl_func_t)lv_obj_set_scroll_snap_x},
-    {"lv_obj_set_scroll_snap_y", dispatch_ir_archetype_481, (generic_lvgl_func_t)lv_obj_set_scroll_snap_y},
-    {"lv_obj_set_scrollbar_mode", dispatch_ir_archetype_482, (generic_lvgl_func_t)lv_obj_set_scrollbar_mode},
+    {"lv_obj_set_scroll_snap_x", dispatch_ir_archetype_480, (generic_lvgl_func_t)lv_obj_set_scroll_snap_x},
+    {"lv_obj_set_scroll_snap_y", dispatch_ir_archetype_480, (generic_lvgl_func_t)lv_obj_set_scroll_snap_y},
+    {"lv_obj_set_scrollbar_mode", dispatch_ir_archetype_481, (generic_lvgl_func_t)lv_obj_set_scrollbar_mode},
     {"lv_obj_set_size", dispatch_ir_archetype_42, (generic_lvgl_func_t)lv_obj_set_size},
-    {"lv_obj_set_state", dispatch_ir_archetype_483, (generic_lvgl_func_t)lv_obj_set_state},
-    {"lv_obj_set_style_align", dispatch_ir_archetype_484, (generic_lvgl_func_t)lv_obj_set_style_align},
-    {"lv_obj_set_style_anim", dispatch_ir_archetype_485, (generic_lvgl_func_t)lv_obj_set_style_anim},
-    {"lv_obj_set_style_anim_duration", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_anim_duration},
-    {"lv_obj_set_style_arc_color", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_arc_color},
-    {"lv_obj_set_style_arc_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_arc_opa},
-    {"lv_obj_set_style_arc_rounded", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_arc_rounded},
-    {"lv_obj_set_style_arc_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_arc_width},
-    {"lv_obj_set_style_base_dir", dispatch_ir_archetype_491, (generic_lvgl_func_t)lv_obj_set_style_base_dir},
-    {"lv_obj_set_style_bg_color", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_bg_color},
-    {"lv_obj_set_style_bg_grad", dispatch_ir_archetype_492, (generic_lvgl_func_t)lv_obj_set_style_bg_grad},
-    {"lv_obj_set_style_bg_grad_color", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_bg_grad_color},
-    {"lv_obj_set_style_bg_grad_dir", dispatch_ir_archetype_493, (generic_lvgl_func_t)lv_obj_set_style_bg_grad_dir},
-    {"lv_obj_set_style_bg_grad_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_bg_grad_opa},
-    {"lv_obj_set_style_bg_grad_stop", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_bg_grad_stop},
-    {"lv_obj_set_style_bg_image_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_bg_image_opa},
-    {"lv_obj_set_style_bg_image_recolor", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_bg_image_recolor},
-    {"lv_obj_set_style_bg_image_recolor_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_bg_image_recolor_opa},
-    {"lv_obj_set_style_bg_image_tiled", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_bg_image_tiled},
-    {"lv_obj_set_style_bg_main_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_bg_main_opa},
-    {"lv_obj_set_style_bg_main_stop", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_bg_main_stop},
-    {"lv_obj_set_style_bg_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_bg_opa},
-    {"lv_obj_set_style_blend_mode", dispatch_ir_archetype_494, (generic_lvgl_func_t)lv_obj_set_style_blend_mode},
-    {"lv_obj_set_style_border_color", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_border_color},
-    {"lv_obj_set_style_border_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_border_opa},
-    {"lv_obj_set_style_border_post", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_border_post},
-    {"lv_obj_set_style_border_side", dispatch_ir_archetype_495, (generic_lvgl_func_t)lv_obj_set_style_border_side},
-    {"lv_obj_set_style_border_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_border_width},
-    {"lv_obj_set_style_clip_corner", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_clip_corner},
-    {"lv_obj_set_style_color_filter_dsc", dispatch_ir_archetype_496, (generic_lvgl_func_t)lv_obj_set_style_color_filter_dsc},
-    {"lv_obj_set_style_color_filter_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_color_filter_opa},
-    {"lv_obj_set_style_flex_cross_place", dispatch_ir_archetype_497, (generic_lvgl_func_t)lv_obj_set_style_flex_cross_place},
-    {"lv_obj_set_style_flex_flow", dispatch_ir_archetype_498, (generic_lvgl_func_t)lv_obj_set_style_flex_flow},
-    {"lv_obj_set_style_flex_grow", dispatch_ir_archetype_499, (generic_lvgl_func_t)lv_obj_set_style_flex_grow},
-    {"lv_obj_set_style_flex_main_place", dispatch_ir_archetype_497, (generic_lvgl_func_t)lv_obj_set_style_flex_main_place},
-    {"lv_obj_set_style_flex_track_place", dispatch_ir_archetype_497, (generic_lvgl_func_t)lv_obj_set_style_flex_track_place},
-    {"lv_obj_set_style_grid_cell_column_pos", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_column_pos},
-    {"lv_obj_set_style_grid_cell_column_span", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_column_span},
-    {"lv_obj_set_style_grid_cell_row_pos", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_row_pos},
-    {"lv_obj_set_style_grid_cell_row_span", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_row_span},
-    {"lv_obj_set_style_grid_cell_x_align", dispatch_ir_archetype_500, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_x_align},
-    {"lv_obj_set_style_grid_cell_y_align", dispatch_ir_archetype_500, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_y_align},
-    {"lv_obj_set_style_grid_column_align", dispatch_ir_archetype_500, (generic_lvgl_func_t)lv_obj_set_style_grid_column_align},
-    {"lv_obj_set_style_grid_column_dsc_array", dispatch_ir_archetype_501, (generic_lvgl_func_t)lv_obj_set_style_grid_column_dsc_array},
-    {"lv_obj_set_style_grid_row_align", dispatch_ir_archetype_500, (generic_lvgl_func_t)lv_obj_set_style_grid_row_align},
-    {"lv_obj_set_style_grid_row_dsc_array", dispatch_ir_archetype_501, (generic_lvgl_func_t)lv_obj_set_style_grid_row_dsc_array},
-    {"lv_obj_set_style_height", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_height},
-    {"lv_obj_set_style_image_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_image_opa},
-    {"lv_obj_set_style_image_recolor", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_image_recolor},
-    {"lv_obj_set_style_image_recolor_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_image_recolor_opa},
-    {"lv_obj_set_style_layout", dispatch_ir_archetype_502, (generic_lvgl_func_t)lv_obj_set_style_layout},
-    {"lv_obj_set_style_length", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_length},
-    {"lv_obj_set_style_line_color", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_line_color},
-    {"lv_obj_set_style_line_dash_gap", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_line_dash_gap},
-    {"lv_obj_set_style_line_dash_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_line_dash_width},
-    {"lv_obj_set_style_line_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_line_opa},
-    {"lv_obj_set_style_line_rounded", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_line_rounded},
-    {"lv_obj_set_style_line_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_line_width},
-    {"lv_obj_set_style_margin_all", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_margin_all},
-    {"lv_obj_set_style_margin_bottom", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_margin_bottom},
-    {"lv_obj_set_style_margin_hor", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_margin_hor},
-    {"lv_obj_set_style_margin_left", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_margin_left},
-    {"lv_obj_set_style_margin_right", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_margin_right},
-    {"lv_obj_set_style_margin_top", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_margin_top},
-    {"lv_obj_set_style_margin_ver", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_margin_ver},
-    {"lv_obj_set_style_max_height", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_max_height},
-    {"lv_obj_set_style_max_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_max_width},
-    {"lv_obj_set_style_min_height", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_min_height},
-    {"lv_obj_set_style_min_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_min_width},
-    {"lv_obj_set_style_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_opa},
-    {"lv_obj_set_style_opa_layered", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_opa_layered},
-    {"lv_obj_set_style_outline_color", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_outline_color},
-    {"lv_obj_set_style_outline_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_outline_opa},
-    {"lv_obj_set_style_outline_pad", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_outline_pad},
-    {"lv_obj_set_style_outline_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_outline_width},
-    {"lv_obj_set_style_pad_all", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_all},
-    {"lv_obj_set_style_pad_bottom", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_bottom},
-    {"lv_obj_set_style_pad_column", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_column},
-    {"lv_obj_set_style_pad_gap", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_gap},
-    {"lv_obj_set_style_pad_hor", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_hor},
-    {"lv_obj_set_style_pad_left", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_left},
-    {"lv_obj_set_style_pad_radial", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_radial},
-    {"lv_obj_set_style_pad_right", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_right},
-    {"lv_obj_set_style_pad_row", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_row},
-    {"lv_obj_set_style_pad_top", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_top},
-    {"lv_obj_set_style_pad_ver", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_pad_ver},
-    {"lv_obj_set_style_radial_offset", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_radial_offset},
-    {"lv_obj_set_style_radius", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_radius},
-    {"lv_obj_set_style_recolor", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_recolor},
-    {"lv_obj_set_style_recolor_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_recolor_opa},
-    {"lv_obj_set_style_rotary_sensitivity", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_rotary_sensitivity},
-    {"lv_obj_set_style_shadow_color", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_shadow_color},
-    {"lv_obj_set_style_shadow_offset_x", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_shadow_offset_x},
-    {"lv_obj_set_style_shadow_offset_y", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_shadow_offset_y},
-    {"lv_obj_set_style_shadow_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_shadow_opa},
-    {"lv_obj_set_style_shadow_spread", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_shadow_spread},
-    {"lv_obj_set_style_shadow_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_shadow_width},
-    {"lv_obj_set_style_size", dispatch_ir_archetype_503, (generic_lvgl_func_t)lv_obj_set_style_size},
-    {"lv_obj_set_style_text_align", dispatch_ir_archetype_504, (generic_lvgl_func_t)lv_obj_set_style_text_align},
-    {"lv_obj_set_style_text_color", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_text_color},
-    {"lv_obj_set_style_text_decor", dispatch_ir_archetype_505, (generic_lvgl_func_t)lv_obj_set_style_text_decor},
-    {"lv_obj_set_style_text_font", dispatch_ir_archetype_506, (generic_lvgl_func_t)lv_obj_set_style_text_font},
-    {"lv_obj_set_style_text_letter_space", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_text_letter_space},
-    {"lv_obj_set_style_text_line_space", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_text_line_space},
-    {"lv_obj_set_style_text_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_text_opa},
-    {"lv_obj_set_style_text_outline_stroke_color", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_text_outline_stroke_color},
-    {"lv_obj_set_style_text_outline_stroke_opa", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_text_outline_stroke_opa},
-    {"lv_obj_set_style_text_outline_stroke_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_text_outline_stroke_width},
-    {"lv_obj_set_style_transform_height", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_transform_height},
-    {"lv_obj_set_style_transform_pivot_x", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_transform_pivot_x},
-    {"lv_obj_set_style_transform_pivot_y", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_transform_pivot_y},
-    {"lv_obj_set_style_transform_rotation", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_transform_rotation},
-    {"lv_obj_set_style_transform_scale", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_transform_scale},
-    {"lv_obj_set_style_transform_scale_x", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_transform_scale_x},
-    {"lv_obj_set_style_transform_scale_y", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_transform_scale_y},
-    {"lv_obj_set_style_transform_skew_x", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_transform_skew_x},
-    {"lv_obj_set_style_transform_skew_y", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_transform_skew_y},
-    {"lv_obj_set_style_transform_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_transform_width},
-    {"lv_obj_set_style_transition", dispatch_ir_archetype_507, (generic_lvgl_func_t)lv_obj_set_style_transition},
-    {"lv_obj_set_style_translate_radial", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_translate_radial},
-    {"lv_obj_set_style_translate_x", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_translate_x},
-    {"lv_obj_set_style_translate_y", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_translate_y},
-    {"lv_obj_set_style_width", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_width},
-    {"lv_obj_set_style_x", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_x},
-    {"lv_obj_set_style_y", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_y},
-    {"lv_obj_set_transform", dispatch_ir_archetype_508, (generic_lvgl_func_t)lv_obj_set_transform},
+    {"lv_obj_set_state", dispatch_ir_archetype_482, (generic_lvgl_func_t)lv_obj_set_state},
+    {"lv_obj_set_style_align", dispatch_ir_archetype_483, (generic_lvgl_func_t)lv_obj_set_style_align},
+    {"lv_obj_set_style_anim", dispatch_ir_archetype_484, (generic_lvgl_func_t)lv_obj_set_style_anim},
+    {"lv_obj_set_style_anim_duration", dispatch_ir_archetype_485, (generic_lvgl_func_t)lv_obj_set_style_anim_duration},
+    {"lv_obj_set_style_arc_color", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_arc_color},
+    {"lv_obj_set_style_arc_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_arc_opa},
+    {"lv_obj_set_style_arc_rounded", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_arc_rounded},
+    {"lv_obj_set_style_arc_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_arc_width},
+    {"lv_obj_set_style_base_dir", dispatch_ir_archetype_490, (generic_lvgl_func_t)lv_obj_set_style_base_dir},
+    {"lv_obj_set_style_bg_color", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_bg_color},
+    {"lv_obj_set_style_bg_grad", dispatch_ir_archetype_491, (generic_lvgl_func_t)lv_obj_set_style_bg_grad},
+    {"lv_obj_set_style_bg_grad_color", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_bg_grad_color},
+    {"lv_obj_set_style_bg_grad_dir", dispatch_ir_archetype_492, (generic_lvgl_func_t)lv_obj_set_style_bg_grad_dir},
+    {"lv_obj_set_style_bg_grad_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_bg_grad_opa},
+    {"lv_obj_set_style_bg_grad_stop", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_bg_grad_stop},
+    {"lv_obj_set_style_bg_image_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_bg_image_opa},
+    {"lv_obj_set_style_bg_image_recolor", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_bg_image_recolor},
+    {"lv_obj_set_style_bg_image_recolor_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_bg_image_recolor_opa},
+    {"lv_obj_set_style_bg_image_tiled", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_bg_image_tiled},
+    {"lv_obj_set_style_bg_main_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_bg_main_opa},
+    {"lv_obj_set_style_bg_main_stop", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_bg_main_stop},
+    {"lv_obj_set_style_bg_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_bg_opa},
+    {"lv_obj_set_style_blend_mode", dispatch_ir_archetype_493, (generic_lvgl_func_t)lv_obj_set_style_blend_mode},
+    {"lv_obj_set_style_border_color", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_border_color},
+    {"lv_obj_set_style_border_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_border_opa},
+    {"lv_obj_set_style_border_post", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_border_post},
+    {"lv_obj_set_style_border_side", dispatch_ir_archetype_494, (generic_lvgl_func_t)lv_obj_set_style_border_side},
+    {"lv_obj_set_style_border_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_border_width},
+    {"lv_obj_set_style_clip_corner", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_clip_corner},
+    {"lv_obj_set_style_color_filter_dsc", dispatch_ir_archetype_495, (generic_lvgl_func_t)lv_obj_set_style_color_filter_dsc},
+    {"lv_obj_set_style_color_filter_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_color_filter_opa},
+    {"lv_obj_set_style_flex_cross_place", dispatch_ir_archetype_496, (generic_lvgl_func_t)lv_obj_set_style_flex_cross_place},
+    {"lv_obj_set_style_flex_flow", dispatch_ir_archetype_497, (generic_lvgl_func_t)lv_obj_set_style_flex_flow},
+    {"lv_obj_set_style_flex_grow", dispatch_ir_archetype_498, (generic_lvgl_func_t)lv_obj_set_style_flex_grow},
+    {"lv_obj_set_style_flex_main_place", dispatch_ir_archetype_496, (generic_lvgl_func_t)lv_obj_set_style_flex_main_place},
+    {"lv_obj_set_style_flex_track_place", dispatch_ir_archetype_496, (generic_lvgl_func_t)lv_obj_set_style_flex_track_place},
+    {"lv_obj_set_style_grid_cell_column_pos", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_column_pos},
+    {"lv_obj_set_style_grid_cell_column_span", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_column_span},
+    {"lv_obj_set_style_grid_cell_row_pos", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_row_pos},
+    {"lv_obj_set_style_grid_cell_row_span", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_row_span},
+    {"lv_obj_set_style_grid_cell_x_align", dispatch_ir_archetype_499, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_x_align},
+    {"lv_obj_set_style_grid_cell_y_align", dispatch_ir_archetype_499, (generic_lvgl_func_t)lv_obj_set_style_grid_cell_y_align},
+    {"lv_obj_set_style_grid_column_align", dispatch_ir_archetype_499, (generic_lvgl_func_t)lv_obj_set_style_grid_column_align},
+    {"lv_obj_set_style_grid_column_dsc_array", dispatch_ir_archetype_500, (generic_lvgl_func_t)lv_obj_set_style_grid_column_dsc_array},
+    {"lv_obj_set_style_grid_row_align", dispatch_ir_archetype_499, (generic_lvgl_func_t)lv_obj_set_style_grid_row_align},
+    {"lv_obj_set_style_grid_row_dsc_array", dispatch_ir_archetype_500, (generic_lvgl_func_t)lv_obj_set_style_grid_row_dsc_array},
+    {"lv_obj_set_style_height", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_height},
+    {"lv_obj_set_style_image_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_image_opa},
+    {"lv_obj_set_style_image_recolor", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_image_recolor},
+    {"lv_obj_set_style_image_recolor_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_image_recolor_opa},
+    {"lv_obj_set_style_layout", dispatch_ir_archetype_501, (generic_lvgl_func_t)lv_obj_set_style_layout},
+    {"lv_obj_set_style_length", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_length},
+    {"lv_obj_set_style_line_color", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_line_color},
+    {"lv_obj_set_style_line_dash_gap", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_line_dash_gap},
+    {"lv_obj_set_style_line_dash_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_line_dash_width},
+    {"lv_obj_set_style_line_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_line_opa},
+    {"lv_obj_set_style_line_rounded", dispatch_ir_archetype_488, (generic_lvgl_func_t)lv_obj_set_style_line_rounded},
+    {"lv_obj_set_style_line_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_line_width},
+    {"lv_obj_set_style_margin_all", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_margin_all},
+    {"lv_obj_set_style_margin_bottom", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_margin_bottom},
+    {"lv_obj_set_style_margin_hor", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_margin_hor},
+    {"lv_obj_set_style_margin_left", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_margin_left},
+    {"lv_obj_set_style_margin_right", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_margin_right},
+    {"lv_obj_set_style_margin_top", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_margin_top},
+    {"lv_obj_set_style_margin_ver", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_margin_ver},
+    {"lv_obj_set_style_max_height", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_max_height},
+    {"lv_obj_set_style_max_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_max_width},
+    {"lv_obj_set_style_min_height", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_min_height},
+    {"lv_obj_set_style_min_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_min_width},
+    {"lv_obj_set_style_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_opa},
+    {"lv_obj_set_style_opa_layered", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_opa_layered},
+    {"lv_obj_set_style_outline_color", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_outline_color},
+    {"lv_obj_set_style_outline_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_outline_opa},
+    {"lv_obj_set_style_outline_pad", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_outline_pad},
+    {"lv_obj_set_style_outline_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_outline_width},
+    {"lv_obj_set_style_pad_all", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_all},
+    {"lv_obj_set_style_pad_bottom", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_bottom},
+    {"lv_obj_set_style_pad_column", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_column},
+    {"lv_obj_set_style_pad_gap", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_gap},
+    {"lv_obj_set_style_pad_hor", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_hor},
+    {"lv_obj_set_style_pad_left", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_left},
+    {"lv_obj_set_style_pad_radial", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_radial},
+    {"lv_obj_set_style_pad_right", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_right},
+    {"lv_obj_set_style_pad_row", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_row},
+    {"lv_obj_set_style_pad_top", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_top},
+    {"lv_obj_set_style_pad_ver", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_pad_ver},
+    {"lv_obj_set_style_radial_offset", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_radial_offset},
+    {"lv_obj_set_style_radius", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_radius},
+    {"lv_obj_set_style_recolor", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_recolor},
+    {"lv_obj_set_style_recolor_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_recolor_opa},
+    {"lv_obj_set_style_rotary_sensitivity", dispatch_ir_archetype_485, (generic_lvgl_func_t)lv_obj_set_style_rotary_sensitivity},
+    {"lv_obj_set_style_shadow_color", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_shadow_color},
+    {"lv_obj_set_style_shadow_offset_x", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_shadow_offset_x},
+    {"lv_obj_set_style_shadow_offset_y", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_shadow_offset_y},
+    {"lv_obj_set_style_shadow_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_shadow_opa},
+    {"lv_obj_set_style_shadow_spread", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_shadow_spread},
+    {"lv_obj_set_style_shadow_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_shadow_width},
+    {"lv_obj_set_style_size", dispatch_ir_archetype_502, (generic_lvgl_func_t)lv_obj_set_style_size},
+    {"lv_obj_set_style_text_align", dispatch_ir_archetype_503, (generic_lvgl_func_t)lv_obj_set_style_text_align},
+    {"lv_obj_set_style_text_color", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_text_color},
+    {"lv_obj_set_style_text_decor", dispatch_ir_archetype_504, (generic_lvgl_func_t)lv_obj_set_style_text_decor},
+    {"lv_obj_set_style_text_font", dispatch_ir_archetype_505, (generic_lvgl_func_t)lv_obj_set_style_text_font},
+    {"lv_obj_set_style_text_letter_space", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_text_letter_space},
+    {"lv_obj_set_style_text_line_space", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_text_line_space},
+    {"lv_obj_set_style_text_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_text_opa},
+    {"lv_obj_set_style_text_outline_stroke_color", dispatch_ir_archetype_486, (generic_lvgl_func_t)lv_obj_set_style_text_outline_stroke_color},
+    {"lv_obj_set_style_text_outline_stroke_opa", dispatch_ir_archetype_487, (generic_lvgl_func_t)lv_obj_set_style_text_outline_stroke_opa},
+    {"lv_obj_set_style_text_outline_stroke_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_text_outline_stroke_width},
+    {"lv_obj_set_style_transform_height", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_transform_height},
+    {"lv_obj_set_style_transform_pivot_x", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_transform_pivot_x},
+    {"lv_obj_set_style_transform_pivot_y", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_transform_pivot_y},
+    {"lv_obj_set_style_transform_rotation", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_transform_rotation},
+    {"lv_obj_set_style_transform_scale", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_transform_scale},
+    {"lv_obj_set_style_transform_scale_x", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_transform_scale_x},
+    {"lv_obj_set_style_transform_scale_y", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_transform_scale_y},
+    {"lv_obj_set_style_transform_skew_x", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_transform_skew_x},
+    {"lv_obj_set_style_transform_skew_y", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_transform_skew_y},
+    {"lv_obj_set_style_transform_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_transform_width},
+    {"lv_obj_set_style_transition", dispatch_ir_archetype_506, (generic_lvgl_func_t)lv_obj_set_style_transition},
+    {"lv_obj_set_style_translate_radial", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_translate_radial},
+    {"lv_obj_set_style_translate_x", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_translate_x},
+    {"lv_obj_set_style_translate_y", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_translate_y},
+    {"lv_obj_set_style_width", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_width},
+    {"lv_obj_set_style_x", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_x},
+    {"lv_obj_set_style_y", dispatch_ir_archetype_489, (generic_lvgl_func_t)lv_obj_set_style_y},
+    {"lv_obj_set_transform", dispatch_ir_archetype_507, (generic_lvgl_func_t)lv_obj_set_transform},
     {"lv_obj_set_width", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_obj_set_width},
     {"lv_obj_set_x", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_obj_set_x},
     {"lv_obj_set_y", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_obj_set_y},
     {"lv_obj_stop_scroll_anim", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_stop_scroll_anim},
-    {"lv_obj_style_apply_recolor", dispatch_ir_archetype_509, (generic_lvgl_func_t)lv_obj_style_apply_recolor},
-    {"lv_obj_style_get_disabled", dispatch_ir_archetype_510, (generic_lvgl_func_t)lv_obj_style_get_disabled},
-    {"lv_obj_style_get_selector_part", dispatch_ir_archetype_511, (generic_lvgl_func_t)lv_obj_style_get_selector_part},
-    {"lv_obj_style_get_selector_state", dispatch_ir_archetype_512, (generic_lvgl_func_t)lv_obj_style_get_selector_state},
-    {"lv_obj_style_set_disabled", dispatch_ir_archetype_513, (generic_lvgl_func_t)lv_obj_style_set_disabled},
+    {"lv_obj_style_apply_recolor", dispatch_ir_archetype_508, (generic_lvgl_func_t)lv_obj_style_apply_recolor},
+    {"lv_obj_style_get_disabled", dispatch_ir_archetype_509, (generic_lvgl_func_t)lv_obj_style_get_disabled},
+    {"lv_obj_style_get_selector_part", dispatch_ir_archetype_510, (generic_lvgl_func_t)lv_obj_style_get_selector_part},
+    {"lv_obj_style_get_selector_state", dispatch_ir_archetype_511, (generic_lvgl_func_t)lv_obj_style_get_selector_state},
+    {"lv_obj_style_set_disabled", dispatch_ir_archetype_512, (generic_lvgl_func_t)lv_obj_style_set_disabled},
     {"lv_obj_swap", dispatch_ir_archetype_340, (generic_lvgl_func_t)lv_obj_swap},
     {"lv_obj_update_layout", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_obj_update_layout},
-    {"lv_obj_update_snap", dispatch_ir_archetype_465, (generic_lvgl_func_t)lv_obj_update_snap},
-    {"lv_observer_get_target", dispatch_ir_archetype_514, (generic_lvgl_func_t)lv_observer_get_target},
-    {"lv_observer_get_target_obj", dispatch_ir_archetype_515, (generic_lvgl_func_t)lv_observer_get_target_obj},
-    {"lv_observer_get_user_data", dispatch_ir_archetype_514, (generic_lvgl_func_t)lv_observer_get_user_data},
-    {"lv_observer_remove", dispatch_ir_archetype_516, (generic_lvgl_func_t)lv_observer_remove},
+    {"lv_obj_update_snap", dispatch_ir_archetype_464, (generic_lvgl_func_t)lv_obj_update_snap},
+    {"lv_observer_get_target", dispatch_ir_archetype_513, (generic_lvgl_func_t)lv_observer_get_target},
+    {"lv_observer_get_target_obj", dispatch_ir_archetype_514, (generic_lvgl_func_t)lv_observer_get_target_obj},
+    {"lv_observer_get_user_data", dispatch_ir_archetype_513, (generic_lvgl_func_t)lv_observer_get_user_data},
+    {"lv_observer_remove", dispatch_ir_archetype_515, (generic_lvgl_func_t)lv_observer_remove},
     {"lv_os_get_idle_percent", dispatch_ir_archetype_246, (generic_lvgl_func_t)lv_os_get_idle_percent},
-    {"lv_palette_darken", dispatch_ir_archetype_517, (generic_lvgl_func_t)lv_palette_darken},
-    {"lv_palette_lighten", dispatch_ir_archetype_517, (generic_lvgl_func_t)lv_palette_lighten},
-    {"lv_palette_main", dispatch_ir_archetype_518, (generic_lvgl_func_t)lv_palette_main},
+    {"lv_palette_darken", dispatch_ir_archetype_516, (generic_lvgl_func_t)lv_palette_darken},
+    {"lv_palette_lighten", dispatch_ir_archetype_516, (generic_lvgl_func_t)lv_palette_lighten},
+    {"lv_palette_main", dispatch_ir_archetype_517, (generic_lvgl_func_t)lv_palette_main},
     {"lv_pct", dispatch_ir_archetype_208, (generic_lvgl_func_t)lv_pct},
-    {"lv_pct_to_px", dispatch_ir_archetype_519, (generic_lvgl_func_t)lv_pct_to_px},
-    {"lv_point_array_transform", dispatch_ir_archetype_520, (generic_lvgl_func_t)lv_point_array_transform},
-    {"lv_point_from_precise", dispatch_ir_archetype_521, (generic_lvgl_func_t)lv_point_from_precise},
-    {"lv_point_precise_set", dispatch_ir_archetype_522, (generic_lvgl_func_t)lv_point_precise_set},
-    {"lv_point_precise_swap", dispatch_ir_archetype_523, (generic_lvgl_func_t)lv_point_precise_swap},
-    {"lv_point_set", dispatch_ir_archetype_524, (generic_lvgl_func_t)lv_point_set},
-    {"lv_point_swap", dispatch_ir_archetype_525, (generic_lvgl_func_t)lv_point_swap},
-    {"lv_point_to_precise", dispatch_ir_archetype_526, (generic_lvgl_func_t)lv_point_to_precise},
-    {"lv_point_transform", dispatch_ir_archetype_527, (generic_lvgl_func_t)lv_point_transform},
-    {"lv_pow", dispatch_ir_archetype_528, (generic_lvgl_func_t)lv_pow},
-    {"lv_rand", dispatch_ir_archetype_529, (generic_lvgl_func_t)lv_rand},
+    {"lv_pct_to_px", dispatch_ir_archetype_518, (generic_lvgl_func_t)lv_pct_to_px},
+    {"lv_point_array_transform", dispatch_ir_archetype_519, (generic_lvgl_func_t)lv_point_array_transform},
+    {"lv_point_from_precise", dispatch_ir_archetype_520, (generic_lvgl_func_t)lv_point_from_precise},
+    {"lv_point_precise_set", dispatch_ir_archetype_521, (generic_lvgl_func_t)lv_point_precise_set},
+    {"lv_point_precise_swap", dispatch_ir_archetype_522, (generic_lvgl_func_t)lv_point_precise_swap},
+    {"lv_point_set", dispatch_ir_archetype_523, (generic_lvgl_func_t)lv_point_set},
+    {"lv_point_swap", dispatch_ir_archetype_524, (generic_lvgl_func_t)lv_point_swap},
+    {"lv_point_to_precise", dispatch_ir_archetype_525, (generic_lvgl_func_t)lv_point_to_precise},
+    {"lv_point_transform", dispatch_ir_archetype_526, (generic_lvgl_func_t)lv_point_transform},
+    {"lv_pow", dispatch_ir_archetype_527, (generic_lvgl_func_t)lv_pow},
+    {"lv_rand", dispatch_ir_archetype_528, (generic_lvgl_func_t)lv_rand},
     {"lv_rand_set_seed", dispatch_ir_archetype_177, (generic_lvgl_func_t)lv_rand_set_seed},
-    {"lv_rb_destroy", dispatch_ir_archetype_530, (generic_lvgl_func_t)lv_rb_destroy},
-    {"lv_rb_drop_node", dispatch_ir_archetype_531, (generic_lvgl_func_t)lv_rb_drop_node},
-    {"lv_rb_init", dispatch_ir_archetype_532, (generic_lvgl_func_t)lv_rb_init},
-    {"lv_rb_maximum", dispatch_ir_archetype_533, (generic_lvgl_func_t)lv_rb_maximum},
-    {"lv_rb_maximum_from", dispatch_ir_archetype_534, (generic_lvgl_func_t)lv_rb_maximum_from},
-    {"lv_rb_minimum", dispatch_ir_archetype_533, (generic_lvgl_func_t)lv_rb_minimum},
-    {"lv_rb_minimum_from", dispatch_ir_archetype_534, (generic_lvgl_func_t)lv_rb_minimum_from},
-    {"lv_rb_remove_node", dispatch_ir_archetype_535, (generic_lvgl_func_t)lv_rb_remove_node},
+    {"lv_rb_destroy", dispatch_ir_archetype_529, (generic_lvgl_func_t)lv_rb_destroy},
+    {"lv_rb_drop_node", dispatch_ir_archetype_530, (generic_lvgl_func_t)lv_rb_drop_node},
+    {"lv_rb_init", dispatch_ir_archetype_531, (generic_lvgl_func_t)lv_rb_init},
+    {"lv_rb_maximum", dispatch_ir_archetype_532, (generic_lvgl_func_t)lv_rb_maximum},
+    {"lv_rb_maximum_from", dispatch_ir_archetype_533, (generic_lvgl_func_t)lv_rb_maximum_from},
+    {"lv_rb_minimum", dispatch_ir_archetype_532, (generic_lvgl_func_t)lv_rb_minimum},
+    {"lv_rb_minimum_from", dispatch_ir_archetype_533, (generic_lvgl_func_t)lv_rb_minimum_from},
+    {"lv_rb_remove_node", dispatch_ir_archetype_534, (generic_lvgl_func_t)lv_rb_remove_node},
     {"lv_refr_now", dispatch_ir_archetype_179, (generic_lvgl_func_t)lv_refr_now},
     {"lv_roller_bind_value", dispatch_ir_archetype_34, (generic_lvgl_func_t)lv_roller_bind_value},
     {"lv_roller_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_roller_create},
@@ -12252,101 +12233,101 @@ static const FunctionMapping function_registry[] = {
     {"lv_roller_get_options", dispatch_ir_archetype_142, (generic_lvgl_func_t)lv_roller_get_options},
     {"lv_roller_get_selected", dispatch_ir_archetype_28, (generic_lvgl_func_t)lv_roller_get_selected},
     {"lv_roller_get_selected_str", dispatch_ir_archetype_275, (generic_lvgl_func_t)lv_roller_get_selected_str},
-    {"lv_roller_set_options", dispatch_ir_archetype_536, (generic_lvgl_func_t)lv_roller_set_options},
-    {"lv_roller_set_selected", dispatch_ir_archetype_537, (generic_lvgl_func_t)lv_roller_set_selected},
-    {"lv_roller_set_selected_str", dispatch_ir_archetype_538, (generic_lvgl_func_t)lv_roller_set_selected_str},
+    {"lv_roller_set_options", dispatch_ir_archetype_535, (generic_lvgl_func_t)lv_roller_set_options},
+    {"lv_roller_set_selected", dispatch_ir_archetype_536, (generic_lvgl_func_t)lv_roller_set_selected},
+    {"lv_roller_set_selected_str", dispatch_ir_archetype_537, (generic_lvgl_func_t)lv_roller_set_selected_str},
     {"lv_roller_set_visible_row_count", dispatch_ir_archetype_31, (generic_lvgl_func_t)lv_roller_set_visible_row_count},
-    {"lv_scale_add_section", dispatch_ir_archetype_539, (generic_lvgl_func_t)lv_scale_add_section},
+    {"lv_scale_add_section", dispatch_ir_archetype_538, (generic_lvgl_func_t)lv_scale_add_section},
     {"lv_scale_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_scale_create},
     {"lv_scale_get_angle_range", dispatch_ir_archetype_28, (generic_lvgl_func_t)lv_scale_get_angle_range},
     {"lv_scale_get_label_show", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_scale_get_label_show},
     {"lv_scale_get_major_tick_every", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_scale_get_major_tick_every},
-    {"lv_scale_get_mode", dispatch_ir_archetype_540, (generic_lvgl_func_t)lv_scale_get_mode},
+    {"lv_scale_get_mode", dispatch_ir_archetype_539, (generic_lvgl_func_t)lv_scale_get_mode},
     {"lv_scale_get_range_max_value", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_scale_get_range_max_value},
     {"lv_scale_get_range_min_value", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_scale_get_range_min_value},
     {"lv_scale_get_rotation", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_scale_get_rotation},
     {"lv_scale_get_total_tick_count", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_scale_get_total_tick_count},
-    {"lv_scale_section_set_range", dispatch_ir_archetype_541, (generic_lvgl_func_t)lv_scale_section_set_range},
-    {"lv_scale_section_set_style", dispatch_ir_archetype_542, (generic_lvgl_func_t)lv_scale_section_set_style},
+    {"lv_scale_section_set_range", dispatch_ir_archetype_540, (generic_lvgl_func_t)lv_scale_section_set_range},
+    {"lv_scale_section_set_style", dispatch_ir_archetype_541, (generic_lvgl_func_t)lv_scale_section_set_style},
     {"lv_scale_set_angle_range", dispatch_ir_archetype_31, (generic_lvgl_func_t)lv_scale_set_angle_range},
     {"lv_scale_set_draw_ticks_on_top", dispatch_ir_archetype_46, (generic_lvgl_func_t)lv_scale_set_draw_ticks_on_top},
     {"lv_scale_set_image_needle_value", dispatch_ir_archetype_33, (generic_lvgl_func_t)lv_scale_set_image_needle_value},
     {"lv_scale_set_label_show", dispatch_ir_archetype_46, (generic_lvgl_func_t)lv_scale_set_label_show},
-    {"lv_scale_set_line_needle_value", dispatch_ir_archetype_543, (generic_lvgl_func_t)lv_scale_set_line_needle_value},
+    {"lv_scale_set_line_needle_value", dispatch_ir_archetype_542, (generic_lvgl_func_t)lv_scale_set_line_needle_value},
     {"lv_scale_set_major_tick_every", dispatch_ir_archetype_31, (generic_lvgl_func_t)lv_scale_set_major_tick_every},
     {"lv_scale_set_max_value", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_scale_set_max_value},
     {"lv_scale_set_min_value", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_scale_set_min_value},
-    {"lv_scale_set_mode", dispatch_ir_archetype_544, (generic_lvgl_func_t)lv_scale_set_mode},
+    {"lv_scale_set_mode", dispatch_ir_archetype_543, (generic_lvgl_func_t)lv_scale_set_mode},
     {"lv_scale_set_post_draw", dispatch_ir_archetype_46, (generic_lvgl_func_t)lv_scale_set_post_draw},
     {"lv_scale_set_range", dispatch_ir_archetype_42, (generic_lvgl_func_t)lv_scale_set_range},
     {"lv_scale_set_rotation", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_scale_set_rotation},
-    {"lv_scale_set_section_max_value", dispatch_ir_archetype_545, (generic_lvgl_func_t)lv_scale_set_section_max_value},
-    {"lv_scale_set_section_min_value", dispatch_ir_archetype_545, (generic_lvgl_func_t)lv_scale_set_section_min_value},
-    {"lv_scale_set_section_range", dispatch_ir_archetype_546, (generic_lvgl_func_t)lv_scale_set_section_range},
-    {"lv_scale_set_section_style_indicator", dispatch_ir_archetype_547, (generic_lvgl_func_t)lv_scale_set_section_style_indicator},
-    {"lv_scale_set_section_style_items", dispatch_ir_archetype_547, (generic_lvgl_func_t)lv_scale_set_section_style_items},
-    {"lv_scale_set_section_style_main", dispatch_ir_archetype_547, (generic_lvgl_func_t)lv_scale_set_section_style_main},
+    {"lv_scale_set_section_max_value", dispatch_ir_archetype_544, (generic_lvgl_func_t)lv_scale_set_section_max_value},
+    {"lv_scale_set_section_min_value", dispatch_ir_archetype_544, (generic_lvgl_func_t)lv_scale_set_section_min_value},
+    {"lv_scale_set_section_range", dispatch_ir_archetype_545, (generic_lvgl_func_t)lv_scale_set_section_range},
+    {"lv_scale_set_section_style_indicator", dispatch_ir_archetype_546, (generic_lvgl_func_t)lv_scale_set_section_style_indicator},
+    {"lv_scale_set_section_style_items", dispatch_ir_archetype_546, (generic_lvgl_func_t)lv_scale_set_section_style_items},
+    {"lv_scale_set_section_style_main", dispatch_ir_archetype_546, (generic_lvgl_func_t)lv_scale_set_section_style_main},
     {"lv_scale_set_total_tick_count", dispatch_ir_archetype_31, (generic_lvgl_func_t)lv_scale_set_total_tick_count},
     {"lv_screen_active", dispatch_ir_archetype_365, (generic_lvgl_func_t)lv_screen_active},
-    {"lv_screen_load", dispatch_ir_archetype_548, (generic_lvgl_func_t)lv_screen_load},
-    {"lv_screen_load_anim", dispatch_ir_archetype_549, (generic_lvgl_func_t)lv_screen_load_anim},
+    {"lv_screen_load", dispatch_ir_archetype_547, (generic_lvgl_func_t)lv_screen_load},
+    {"lv_screen_load_anim", dispatch_ir_archetype_548, (generic_lvgl_func_t)lv_screen_load_anim},
     {"lv_sdl_keyboard_create", dispatch_ir_archetype_364, (generic_lvgl_func_t)lv_sdl_keyboard_create},
     {"lv_sdl_mouse_create", dispatch_ir_archetype_364, (generic_lvgl_func_t)lv_sdl_mouse_create},
     {"lv_sdl_mousewheel_create", dispatch_ir_archetype_364, (generic_lvgl_func_t)lv_sdl_mousewheel_create},
     {"lv_sdl_quit", dispatch_ir_archetype_1, (generic_lvgl_func_t)lv_sdl_quit},
     {"lv_sdl_window_create", dispatch_ir_archetype_178, (generic_lvgl_func_t)lv_sdl_window_create},
     {"lv_sdl_window_get_renderer", dispatch_ir_archetype_189, (generic_lvgl_func_t)lv_sdl_window_get_renderer},
-    {"lv_sdl_window_get_zoom", dispatch_ir_archetype_550, (generic_lvgl_func_t)lv_sdl_window_get_zoom},
+    {"lv_sdl_window_get_zoom", dispatch_ir_archetype_549, (generic_lvgl_func_t)lv_sdl_window_get_zoom},
     {"lv_sdl_window_set_resizeable", dispatch_ir_archetype_182, (generic_lvgl_func_t)lv_sdl_window_set_resizeable},
-    {"lv_sdl_window_set_title", dispatch_ir_archetype_551, (generic_lvgl_func_t)lv_sdl_window_set_title},
-    {"lv_sdl_window_set_zoom", dispatch_ir_archetype_552, (generic_lvgl_func_t)lv_sdl_window_set_zoom},
+    {"lv_sdl_window_set_title", dispatch_ir_archetype_550, (generic_lvgl_func_t)lv_sdl_window_set_title},
+    {"lv_sdl_window_set_zoom", dispatch_ir_archetype_551, (generic_lvgl_func_t)lv_sdl_window_set_zoom},
     {"lv_slider_bind_value", dispatch_ir_archetype_34, (generic_lvgl_func_t)lv_slider_bind_value},
     {"lv_slider_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_slider_create},
     {"lv_slider_get_left_value", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_slider_get_left_value},
     {"lv_slider_get_max_value", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_slider_get_max_value},
     {"lv_slider_get_min_value", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_slider_get_min_value},
-    {"lv_slider_get_mode", dispatch_ir_archetype_553, (generic_lvgl_func_t)lv_slider_get_mode},
-    {"lv_slider_get_orientation", dispatch_ir_archetype_554, (generic_lvgl_func_t)lv_slider_get_orientation},
+    {"lv_slider_get_mode", dispatch_ir_archetype_552, (generic_lvgl_func_t)lv_slider_get_mode},
+    {"lv_slider_get_orientation", dispatch_ir_archetype_553, (generic_lvgl_func_t)lv_slider_get_orientation},
     {"lv_slider_get_value", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_slider_get_value},
     {"lv_slider_is_dragged", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_slider_is_dragged},
     {"lv_slider_is_symmetrical", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_slider_is_symmetrical},
     {"lv_slider_set_max_value", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_slider_set_max_value},
     {"lv_slider_set_min_value", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_slider_set_min_value},
-    {"lv_slider_set_mode", dispatch_ir_archetype_555, (generic_lvgl_func_t)lv_slider_set_mode},
-    {"lv_slider_set_orientation", dispatch_ir_archetype_556, (generic_lvgl_func_t)lv_slider_set_orientation},
+    {"lv_slider_set_mode", dispatch_ir_archetype_554, (generic_lvgl_func_t)lv_slider_set_mode},
+    {"lv_slider_set_orientation", dispatch_ir_archetype_555, (generic_lvgl_func_t)lv_slider_set_orientation},
     {"lv_slider_set_range", dispatch_ir_archetype_42, (generic_lvgl_func_t)lv_slider_set_range},
     {"lv_slider_set_start_value", dispatch_ir_archetype_72, (generic_lvgl_func_t)lv_slider_set_start_value},
     {"lv_slider_set_value", dispatch_ir_archetype_72, (generic_lvgl_func_t)lv_slider_set_value},
-    {"lv_span_get_style", dispatch_ir_archetype_557, (generic_lvgl_func_t)lv_span_get_style},
-    {"lv_span_get_text", dispatch_ir_archetype_558, (generic_lvgl_func_t)lv_span_get_text},
-    {"lv_span_set_text", dispatch_ir_archetype_559, (generic_lvgl_func_t)lv_span_set_text},
-    {"lv_span_set_text_static", dispatch_ir_archetype_559, (generic_lvgl_func_t)lv_span_set_text_static},
+    {"lv_span_get_style", dispatch_ir_archetype_556, (generic_lvgl_func_t)lv_span_get_style},
+    {"lv_span_get_text", dispatch_ir_archetype_557, (generic_lvgl_func_t)lv_span_get_text},
+    {"lv_span_set_text", dispatch_ir_archetype_558, (generic_lvgl_func_t)lv_span_set_text},
+    {"lv_span_set_text_static", dispatch_ir_archetype_558, (generic_lvgl_func_t)lv_span_set_text_static},
     {"lv_span_stack_deinit", dispatch_ir_archetype_1, (generic_lvgl_func_t)lv_span_stack_deinit},
     {"lv_span_stack_init", dispatch_ir_archetype_1, (generic_lvgl_func_t)lv_span_stack_init},
-    {"lv_spangroup_add_span", dispatch_ir_archetype_560, (generic_lvgl_func_t)lv_spangroup_add_span},
+    {"lv_spangroup_add_span", dispatch_ir_archetype_559, (generic_lvgl_func_t)lv_spangroup_add_span},
     {"lv_spangroup_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_spangroup_create},
-    {"lv_spangroup_delete_span", dispatch_ir_archetype_561, (generic_lvgl_func_t)lv_spangroup_delete_span},
-    {"lv_spangroup_get_align", dispatch_ir_archetype_562, (generic_lvgl_func_t)lv_spangroup_get_align},
-    {"lv_spangroup_get_child", dispatch_ir_archetype_563, (generic_lvgl_func_t)lv_spangroup_get_child},
-    {"lv_spangroup_get_expand_height", dispatch_ir_archetype_564, (generic_lvgl_func_t)lv_spangroup_get_expand_height},
-    {"lv_spangroup_get_expand_width", dispatch_ir_archetype_565, (generic_lvgl_func_t)lv_spangroup_get_expand_width},
+    {"lv_spangroup_delete_span", dispatch_ir_archetype_560, (generic_lvgl_func_t)lv_spangroup_delete_span},
+    {"lv_spangroup_get_align", dispatch_ir_archetype_561, (generic_lvgl_func_t)lv_spangroup_get_align},
+    {"lv_spangroup_get_child", dispatch_ir_archetype_562, (generic_lvgl_func_t)lv_spangroup_get_child},
+    {"lv_spangroup_get_expand_height", dispatch_ir_archetype_563, (generic_lvgl_func_t)lv_spangroup_get_expand_height},
+    {"lv_spangroup_get_expand_width", dispatch_ir_archetype_564, (generic_lvgl_func_t)lv_spangroup_get_expand_width},
     {"lv_spangroup_get_indent", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_spangroup_get_indent},
     {"lv_spangroup_get_max_line_height", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_spangroup_get_max_line_height},
     {"lv_spangroup_get_max_lines", dispatch_ir_archetype_36, (generic_lvgl_func_t)lv_spangroup_get_max_lines},
-    {"lv_spangroup_get_mode", dispatch_ir_archetype_566, (generic_lvgl_func_t)lv_spangroup_get_mode},
-    {"lv_spangroup_get_overflow", dispatch_ir_archetype_567, (generic_lvgl_func_t)lv_spangroup_get_overflow},
-    {"lv_spangroup_get_span_by_point", dispatch_ir_archetype_568, (generic_lvgl_func_t)lv_spangroup_get_span_by_point},
-    {"lv_spangroup_get_span_coords", dispatch_ir_archetype_569, (generic_lvgl_func_t)lv_spangroup_get_span_coords},
+    {"lv_spangroup_get_mode", dispatch_ir_archetype_565, (generic_lvgl_func_t)lv_spangroup_get_mode},
+    {"lv_spangroup_get_overflow", dispatch_ir_archetype_566, (generic_lvgl_func_t)lv_spangroup_get_overflow},
+    {"lv_spangroup_get_span_by_point", dispatch_ir_archetype_567, (generic_lvgl_func_t)lv_spangroup_get_span_by_point},
+    {"lv_spangroup_get_span_coords", dispatch_ir_archetype_568, (generic_lvgl_func_t)lv_spangroup_get_span_coords},
     {"lv_spangroup_get_span_count", dispatch_ir_archetype_28, (generic_lvgl_func_t)lv_spangroup_get_span_count},
     {"lv_spangroup_refresh", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_spangroup_refresh},
-    {"lv_spangroup_set_align", dispatch_ir_archetype_570, (generic_lvgl_func_t)lv_spangroup_set_align},
+    {"lv_spangroup_set_align", dispatch_ir_archetype_569, (generic_lvgl_func_t)lv_spangroup_set_align},
     {"lv_spangroup_set_indent", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_spangroup_set_indent},
     {"lv_spangroup_set_max_lines", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_spangroup_set_max_lines},
-    {"lv_spangroup_set_mode", dispatch_ir_archetype_571, (generic_lvgl_func_t)lv_spangroup_set_mode},
-    {"lv_spangroup_set_overflow", dispatch_ir_archetype_572, (generic_lvgl_func_t)lv_spangroup_set_overflow},
-    {"lv_spangroup_set_span_style", dispatch_ir_archetype_573, (generic_lvgl_func_t)lv_spangroup_set_span_style},
-    {"lv_spangroup_set_span_text", dispatch_ir_archetype_574, (generic_lvgl_func_t)lv_spangroup_set_span_text},
-    {"lv_spangroup_set_span_text_static", dispatch_ir_archetype_574, (generic_lvgl_func_t)lv_spangroup_set_span_text_static},
+    {"lv_spangroup_set_mode", dispatch_ir_archetype_570, (generic_lvgl_func_t)lv_spangroup_set_mode},
+    {"lv_spangroup_set_overflow", dispatch_ir_archetype_571, (generic_lvgl_func_t)lv_spangroup_set_overflow},
+    {"lv_spangroup_set_span_style", dispatch_ir_archetype_572, (generic_lvgl_func_t)lv_spangroup_set_span_style},
+    {"lv_spangroup_set_span_text", dispatch_ir_archetype_573, (generic_lvgl_func_t)lv_spangroup_set_span_text},
+    {"lv_spangroup_set_span_text_static", dispatch_ir_archetype_573, (generic_lvgl_func_t)lv_spangroup_set_span_text_static},
     {"lv_spinbox_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_spinbox_create},
     {"lv_spinbox_decrement", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_spinbox_decrement},
     {"lv_spinbox_get_rollover", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_spinbox_get_rollover},
@@ -12365,211 +12346,211 @@ static const FunctionMapping function_registry[] = {
     {"lv_spinner_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_spinner_create},
     {"lv_spinner_set_anim_params", dispatch_ir_archetype_86, (generic_lvgl_func_t)lv_spinner_set_anim_params},
     {"lv_sqr", dispatch_ir_archetype_208, (generic_lvgl_func_t)lv_sqr},
-    {"lv_sqrt", dispatch_ir_archetype_575, (generic_lvgl_func_t)lv_sqrt},
-    {"lv_sqrt32", dispatch_ir_archetype_576, (generic_lvgl_func_t)lv_sqrt32},
-    {"lv_strcat", dispatch_ir_archetype_577, (generic_lvgl_func_t)lv_strcat},
-    {"lv_strchr", dispatch_ir_archetype_578, (generic_lvgl_func_t)lv_strchr},
-    {"lv_strcmp", dispatch_ir_archetype_579, (generic_lvgl_func_t)lv_strcmp},
-    {"lv_strcpy", dispatch_ir_archetype_577, (generic_lvgl_func_t)lv_strcpy},
+    {"lv_sqrt", dispatch_ir_archetype_574, (generic_lvgl_func_t)lv_sqrt},
+    {"lv_sqrt32", dispatch_ir_archetype_575, (generic_lvgl_func_t)lv_sqrt32},
+    {"lv_strcat", dispatch_ir_archetype_576, (generic_lvgl_func_t)lv_strcat},
+    {"lv_strchr", dispatch_ir_archetype_577, (generic_lvgl_func_t)lv_strchr},
+    {"lv_strcmp", dispatch_ir_archetype_578, (generic_lvgl_func_t)lv_strcmp},
+    {"lv_strcpy", dispatch_ir_archetype_576, (generic_lvgl_func_t)lv_strcpy},
     {"lv_strdup", dispatch_ir_archetype_319, (generic_lvgl_func_t)lv_strdup},
-    {"lv_streq", dispatch_ir_archetype_580, (generic_lvgl_func_t)lv_streq},
-    {"lv_strlcpy", dispatch_ir_archetype_581, (generic_lvgl_func_t)lv_strlcpy},
-    {"lv_strlen", dispatch_ir_archetype_582, (generic_lvgl_func_t)lv_strlen},
-    {"lv_strncat", dispatch_ir_archetype_583, (generic_lvgl_func_t)lv_strncat},
-    {"lv_strncmp", dispatch_ir_archetype_584, (generic_lvgl_func_t)lv_strncmp},
-    {"lv_strncpy", dispatch_ir_archetype_583, (generic_lvgl_func_t)lv_strncpy},
-    {"lv_strndup", dispatch_ir_archetype_585, (generic_lvgl_func_t)lv_strndup},
-    {"lv_strnlen", dispatch_ir_archetype_586, (generic_lvgl_func_t)lv_strnlen},
-    {"lv_style_copy", dispatch_ir_archetype_587, (generic_lvgl_func_t)lv_style_copy},
-    {"lv_style_get_num_custom_props", dispatch_ir_archetype_588, (generic_lvgl_func_t)lv_style_get_num_custom_props},
-    {"lv_style_get_prop", dispatch_ir_archetype_589, (generic_lvgl_func_t)lv_style_get_prop},
-    {"lv_style_get_prop_group", dispatch_ir_archetype_590, (generic_lvgl_func_t)lv_style_get_prop_group},
-    {"lv_style_get_prop_inlined", dispatch_ir_archetype_589, (generic_lvgl_func_t)lv_style_get_prop_inlined},
-    {"lv_style_init", dispatch_ir_archetype_473, (generic_lvgl_func_t)lv_style_init},
-    {"lv_style_is_const", dispatch_ir_archetype_591, (generic_lvgl_func_t)lv_style_is_const},
-    {"lv_style_is_empty", dispatch_ir_archetype_591, (generic_lvgl_func_t)lv_style_is_empty},
-    {"lv_style_prop_get_default", dispatch_ir_archetype_592, (generic_lvgl_func_t)lv_style_prop_get_default},
-    {"lv_style_prop_has_flag", dispatch_ir_archetype_593, (generic_lvgl_func_t)lv_style_prop_has_flag},
-    {"lv_style_prop_lookup_flags", dispatch_ir_archetype_594, (generic_lvgl_func_t)lv_style_prop_lookup_flags},
-    {"lv_style_register_prop", dispatch_ir_archetype_595, (generic_lvgl_func_t)lv_style_register_prop},
-    {"lv_style_remove_prop", dispatch_ir_archetype_596, (generic_lvgl_func_t)lv_style_remove_prop},
-    {"lv_style_reset", dispatch_ir_archetype_473, (generic_lvgl_func_t)lv_style_reset},
-    {"lv_style_set_align", dispatch_ir_archetype_597, (generic_lvgl_func_t)lv_style_set_align},
-    {"lv_style_set_anim", dispatch_ir_archetype_598, (generic_lvgl_func_t)lv_style_set_anim},
-    {"lv_style_set_anim_duration", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_anim_duration},
-    {"lv_style_set_arc_color", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_arc_color},
-    {"lv_style_set_arc_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_arc_opa},
-    {"lv_style_set_arc_rounded", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_arc_rounded},
-    {"lv_style_set_arc_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_arc_width},
-    {"lv_style_set_base_dir", dispatch_ir_archetype_604, (generic_lvgl_func_t)lv_style_set_base_dir},
-    {"lv_style_set_bg_color", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_bg_color},
-    {"lv_style_set_bg_grad", dispatch_ir_archetype_605, (generic_lvgl_func_t)lv_style_set_bg_grad},
-    {"lv_style_set_bg_grad_color", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_bg_grad_color},
-    {"lv_style_set_bg_grad_dir", dispatch_ir_archetype_606, (generic_lvgl_func_t)lv_style_set_bg_grad_dir},
-    {"lv_style_set_bg_grad_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_bg_grad_opa},
-    {"lv_style_set_bg_grad_stop", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_bg_grad_stop},
-    {"lv_style_set_bg_image_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_bg_image_opa},
-    {"lv_style_set_bg_image_recolor", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_bg_image_recolor},
-    {"lv_style_set_bg_image_recolor_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_bg_image_recolor_opa},
-    {"lv_style_set_bg_image_tiled", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_bg_image_tiled},
-    {"lv_style_set_bg_main_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_bg_main_opa},
-    {"lv_style_set_bg_main_stop", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_bg_main_stop},
-    {"lv_style_set_bg_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_bg_opa},
-    {"lv_style_set_blend_mode", dispatch_ir_archetype_607, (generic_lvgl_func_t)lv_style_set_blend_mode},
-    {"lv_style_set_border_color", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_border_color},
-    {"lv_style_set_border_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_border_opa},
-    {"lv_style_set_border_post", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_border_post},
-    {"lv_style_set_border_side", dispatch_ir_archetype_608, (generic_lvgl_func_t)lv_style_set_border_side},
-    {"lv_style_set_border_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_border_width},
-    {"lv_style_set_clip_corner", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_clip_corner},
-    {"lv_style_set_color_filter_dsc", dispatch_ir_archetype_609, (generic_lvgl_func_t)lv_style_set_color_filter_dsc},
-    {"lv_style_set_color_filter_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_color_filter_opa},
-    {"lv_style_set_flex_cross_place", dispatch_ir_archetype_610, (generic_lvgl_func_t)lv_style_set_flex_cross_place},
-    {"lv_style_set_flex_flow", dispatch_ir_archetype_611, (generic_lvgl_func_t)lv_style_set_flex_flow},
-    {"lv_style_set_flex_grow", dispatch_ir_archetype_612, (generic_lvgl_func_t)lv_style_set_flex_grow},
-    {"lv_style_set_flex_main_place", dispatch_ir_archetype_610, (generic_lvgl_func_t)lv_style_set_flex_main_place},
-    {"lv_style_set_flex_track_place", dispatch_ir_archetype_610, (generic_lvgl_func_t)lv_style_set_flex_track_place},
-    {"lv_style_set_grid_cell_column_pos", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_grid_cell_column_pos},
-    {"lv_style_set_grid_cell_column_span", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_grid_cell_column_span},
-    {"lv_style_set_grid_cell_row_pos", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_grid_cell_row_pos},
-    {"lv_style_set_grid_cell_row_span", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_grid_cell_row_span},
-    {"lv_style_set_grid_cell_x_align", dispatch_ir_archetype_613, (generic_lvgl_func_t)lv_style_set_grid_cell_x_align},
-    {"lv_style_set_grid_cell_y_align", dispatch_ir_archetype_613, (generic_lvgl_func_t)lv_style_set_grid_cell_y_align},
-    {"lv_style_set_grid_column_align", dispatch_ir_archetype_613, (generic_lvgl_func_t)lv_style_set_grid_column_align},
-    {"lv_style_set_grid_column_dsc_array", dispatch_ir_archetype_614, (generic_lvgl_func_t)lv_style_set_grid_column_dsc_array},
-    {"lv_style_set_grid_row_align", dispatch_ir_archetype_613, (generic_lvgl_func_t)lv_style_set_grid_row_align},
-    {"lv_style_set_grid_row_dsc_array", dispatch_ir_archetype_614, (generic_lvgl_func_t)lv_style_set_grid_row_dsc_array},
-    {"lv_style_set_height", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_height},
-    {"lv_style_set_image_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_image_opa},
-    {"lv_style_set_image_recolor", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_image_recolor},
-    {"lv_style_set_image_recolor_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_image_recolor_opa},
-    {"lv_style_set_layout", dispatch_ir_archetype_615, (generic_lvgl_func_t)lv_style_set_layout},
-    {"lv_style_set_length", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_length},
-    {"lv_style_set_line_color", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_line_color},
-    {"lv_style_set_line_dash_gap", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_line_dash_gap},
-    {"lv_style_set_line_dash_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_line_dash_width},
-    {"lv_style_set_line_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_line_opa},
-    {"lv_style_set_line_rounded", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_line_rounded},
-    {"lv_style_set_line_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_line_width},
-    {"lv_style_set_margin_all", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_margin_all},
-    {"lv_style_set_margin_bottom", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_margin_bottom},
-    {"lv_style_set_margin_hor", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_margin_hor},
-    {"lv_style_set_margin_left", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_margin_left},
-    {"lv_style_set_margin_right", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_margin_right},
-    {"lv_style_set_margin_top", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_margin_top},
-    {"lv_style_set_margin_ver", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_margin_ver},
-    {"lv_style_set_max_height", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_max_height},
-    {"lv_style_set_max_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_max_width},
-    {"lv_style_set_min_height", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_min_height},
-    {"lv_style_set_min_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_min_width},
-    {"lv_style_set_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_opa},
-    {"lv_style_set_opa_layered", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_opa_layered},
-    {"lv_style_set_outline_color", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_outline_color},
-    {"lv_style_set_outline_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_outline_opa},
-    {"lv_style_set_outline_pad", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_outline_pad},
-    {"lv_style_set_outline_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_outline_width},
-    {"lv_style_set_pad_all", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_all},
-    {"lv_style_set_pad_bottom", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_bottom},
-    {"lv_style_set_pad_column", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_column},
-    {"lv_style_set_pad_gap", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_gap},
-    {"lv_style_set_pad_hor", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_hor},
-    {"lv_style_set_pad_left", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_left},
-    {"lv_style_set_pad_radial", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_radial},
-    {"lv_style_set_pad_right", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_right},
-    {"lv_style_set_pad_row", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_row},
-    {"lv_style_set_pad_top", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_top},
-    {"lv_style_set_pad_ver", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_pad_ver},
-    {"lv_style_set_radial_offset", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_radial_offset},
-    {"lv_style_set_radius", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_radius},
-    {"lv_style_set_recolor", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_recolor},
-    {"lv_style_set_recolor_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_recolor_opa},
-    {"lv_style_set_rotary_sensitivity", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_rotary_sensitivity},
-    {"lv_style_set_shadow_color", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_shadow_color},
-    {"lv_style_set_shadow_offset_x", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_shadow_offset_x},
-    {"lv_style_set_shadow_offset_y", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_shadow_offset_y},
-    {"lv_style_set_shadow_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_shadow_opa},
-    {"lv_style_set_shadow_spread", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_shadow_spread},
-    {"lv_style_set_shadow_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_shadow_width},
-    {"lv_style_set_size", dispatch_ir_archetype_616, (generic_lvgl_func_t)lv_style_set_size},
-    {"lv_style_set_text_align", dispatch_ir_archetype_617, (generic_lvgl_func_t)lv_style_set_text_align},
-    {"lv_style_set_text_color", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_text_color},
-    {"lv_style_set_text_decor", dispatch_ir_archetype_618, (generic_lvgl_func_t)lv_style_set_text_decor},
-    {"lv_style_set_text_font", dispatch_ir_archetype_619, (generic_lvgl_func_t)lv_style_set_text_font},
-    {"lv_style_set_text_letter_space", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_text_letter_space},
-    {"lv_style_set_text_line_space", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_text_line_space},
-    {"lv_style_set_text_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_text_opa},
-    {"lv_style_set_text_outline_stroke_color", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_text_outline_stroke_color},
-    {"lv_style_set_text_outline_stroke_opa", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_text_outline_stroke_opa},
-    {"lv_style_set_text_outline_stroke_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_text_outline_stroke_width},
-    {"lv_style_set_transform_height", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_transform_height},
-    {"lv_style_set_transform_pivot_x", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_transform_pivot_x},
-    {"lv_style_set_transform_pivot_y", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_transform_pivot_y},
-    {"lv_style_set_transform_rotation", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_transform_rotation},
-    {"lv_style_set_transform_scale", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_transform_scale},
-    {"lv_style_set_transform_scale_x", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_transform_scale_x},
-    {"lv_style_set_transform_scale_y", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_transform_scale_y},
-    {"lv_style_set_transform_skew_x", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_transform_skew_x},
-    {"lv_style_set_transform_skew_y", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_transform_skew_y},
-    {"lv_style_set_transform_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_transform_width},
-    {"lv_style_set_transition", dispatch_ir_archetype_620, (generic_lvgl_func_t)lv_style_set_transition},
-    {"lv_style_set_translate_radial", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_translate_radial},
-    {"lv_style_set_translate_x", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_translate_x},
-    {"lv_style_set_translate_y", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_translate_y},
-    {"lv_style_set_width", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_width},
-    {"lv_style_set_x", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_x},
-    {"lv_style_set_y", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_y},
-    {"lv_subject_copy_string", dispatch_ir_archetype_621, (generic_lvgl_func_t)lv_subject_copy_string},
-    {"lv_subject_deinit", dispatch_ir_archetype_622, (generic_lvgl_func_t)lv_subject_deinit},
-    {"lv_subject_get_color", dispatch_ir_archetype_623, (generic_lvgl_func_t)lv_subject_get_color},
-    {"lv_subject_get_group_element", dispatch_ir_archetype_624, (generic_lvgl_func_t)lv_subject_get_group_element},
-    {"lv_subject_get_int", dispatch_ir_archetype_625, (generic_lvgl_func_t)lv_subject_get_int},
-    {"lv_subject_get_pointer", dispatch_ir_archetype_626, (generic_lvgl_func_t)lv_subject_get_pointer},
-    {"lv_subject_get_previous_color", dispatch_ir_archetype_623, (generic_lvgl_func_t)lv_subject_get_previous_color},
-    {"lv_subject_get_previous_int", dispatch_ir_archetype_625, (generic_lvgl_func_t)lv_subject_get_previous_int},
-    {"lv_subject_get_previous_pointer", dispatch_ir_archetype_626, (generic_lvgl_func_t)lv_subject_get_previous_pointer},
-    {"lv_subject_get_previous_string", dispatch_ir_archetype_627, (generic_lvgl_func_t)lv_subject_get_previous_string},
-    {"lv_subject_get_string", dispatch_ir_archetype_627, (generic_lvgl_func_t)lv_subject_get_string},
-    {"lv_subject_init_color", dispatch_ir_archetype_628, (generic_lvgl_func_t)lv_subject_init_color},
-    {"lv_subject_init_int", dispatch_ir_archetype_629, (generic_lvgl_func_t)lv_subject_init_int},
-    {"lv_subject_init_string", dispatch_ir_archetype_630, (generic_lvgl_func_t)lv_subject_init_string},
-    {"lv_subject_notify", dispatch_ir_archetype_622, (generic_lvgl_func_t)lv_subject_notify},
-    {"lv_subject_set_color", dispatch_ir_archetype_628, (generic_lvgl_func_t)lv_subject_set_color},
-    {"lv_subject_set_int", dispatch_ir_archetype_629, (generic_lvgl_func_t)lv_subject_set_int},
+    {"lv_streq", dispatch_ir_archetype_579, (generic_lvgl_func_t)lv_streq},
+    {"lv_strlcpy", dispatch_ir_archetype_580, (generic_lvgl_func_t)lv_strlcpy},
+    {"lv_strlen", dispatch_ir_archetype_581, (generic_lvgl_func_t)lv_strlen},
+    {"lv_strncat", dispatch_ir_archetype_582, (generic_lvgl_func_t)lv_strncat},
+    {"lv_strncmp", dispatch_ir_archetype_583, (generic_lvgl_func_t)lv_strncmp},
+    {"lv_strncpy", dispatch_ir_archetype_582, (generic_lvgl_func_t)lv_strncpy},
+    {"lv_strndup", dispatch_ir_archetype_584, (generic_lvgl_func_t)lv_strndup},
+    {"lv_strnlen", dispatch_ir_archetype_585, (generic_lvgl_func_t)lv_strnlen},
+    {"lv_style_copy", dispatch_ir_archetype_586, (generic_lvgl_func_t)lv_style_copy},
+    {"lv_style_get_num_custom_props", dispatch_ir_archetype_587, (generic_lvgl_func_t)lv_style_get_num_custom_props},
+    {"lv_style_get_prop", dispatch_ir_archetype_588, (generic_lvgl_func_t)lv_style_get_prop},
+    {"lv_style_get_prop_group", dispatch_ir_archetype_589, (generic_lvgl_func_t)lv_style_get_prop_group},
+    {"lv_style_get_prop_inlined", dispatch_ir_archetype_588, (generic_lvgl_func_t)lv_style_get_prop_inlined},
+    {"lv_style_init", dispatch_ir_archetype_472, (generic_lvgl_func_t)lv_style_init},
+    {"lv_style_is_const", dispatch_ir_archetype_590, (generic_lvgl_func_t)lv_style_is_const},
+    {"lv_style_is_empty", dispatch_ir_archetype_590, (generic_lvgl_func_t)lv_style_is_empty},
+    {"lv_style_prop_get_default", dispatch_ir_archetype_591, (generic_lvgl_func_t)lv_style_prop_get_default},
+    {"lv_style_prop_has_flag", dispatch_ir_archetype_592, (generic_lvgl_func_t)lv_style_prop_has_flag},
+    {"lv_style_prop_lookup_flags", dispatch_ir_archetype_593, (generic_lvgl_func_t)lv_style_prop_lookup_flags},
+    {"lv_style_register_prop", dispatch_ir_archetype_594, (generic_lvgl_func_t)lv_style_register_prop},
+    {"lv_style_remove_prop", dispatch_ir_archetype_595, (generic_lvgl_func_t)lv_style_remove_prop},
+    {"lv_style_reset", dispatch_ir_archetype_472, (generic_lvgl_func_t)lv_style_reset},
+    {"lv_style_set_align", dispatch_ir_archetype_596, (generic_lvgl_func_t)lv_style_set_align},
+    {"lv_style_set_anim", dispatch_ir_archetype_597, (generic_lvgl_func_t)lv_style_set_anim},
+    {"lv_style_set_anim_duration", dispatch_ir_archetype_598, (generic_lvgl_func_t)lv_style_set_anim_duration},
+    {"lv_style_set_arc_color", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_arc_color},
+    {"lv_style_set_arc_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_arc_opa},
+    {"lv_style_set_arc_rounded", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_arc_rounded},
+    {"lv_style_set_arc_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_arc_width},
+    {"lv_style_set_base_dir", dispatch_ir_archetype_603, (generic_lvgl_func_t)lv_style_set_base_dir},
+    {"lv_style_set_bg_color", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_bg_color},
+    {"lv_style_set_bg_grad", dispatch_ir_archetype_604, (generic_lvgl_func_t)lv_style_set_bg_grad},
+    {"lv_style_set_bg_grad_color", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_bg_grad_color},
+    {"lv_style_set_bg_grad_dir", dispatch_ir_archetype_605, (generic_lvgl_func_t)lv_style_set_bg_grad_dir},
+    {"lv_style_set_bg_grad_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_bg_grad_opa},
+    {"lv_style_set_bg_grad_stop", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_bg_grad_stop},
+    {"lv_style_set_bg_image_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_bg_image_opa},
+    {"lv_style_set_bg_image_recolor", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_bg_image_recolor},
+    {"lv_style_set_bg_image_recolor_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_bg_image_recolor_opa},
+    {"lv_style_set_bg_image_tiled", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_bg_image_tiled},
+    {"lv_style_set_bg_main_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_bg_main_opa},
+    {"lv_style_set_bg_main_stop", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_bg_main_stop},
+    {"lv_style_set_bg_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_bg_opa},
+    {"lv_style_set_blend_mode", dispatch_ir_archetype_606, (generic_lvgl_func_t)lv_style_set_blend_mode},
+    {"lv_style_set_border_color", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_border_color},
+    {"lv_style_set_border_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_border_opa},
+    {"lv_style_set_border_post", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_border_post},
+    {"lv_style_set_border_side", dispatch_ir_archetype_607, (generic_lvgl_func_t)lv_style_set_border_side},
+    {"lv_style_set_border_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_border_width},
+    {"lv_style_set_clip_corner", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_clip_corner},
+    {"lv_style_set_color_filter_dsc", dispatch_ir_archetype_608, (generic_lvgl_func_t)lv_style_set_color_filter_dsc},
+    {"lv_style_set_color_filter_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_color_filter_opa},
+    {"lv_style_set_flex_cross_place", dispatch_ir_archetype_609, (generic_lvgl_func_t)lv_style_set_flex_cross_place},
+    {"lv_style_set_flex_flow", dispatch_ir_archetype_610, (generic_lvgl_func_t)lv_style_set_flex_flow},
+    {"lv_style_set_flex_grow", dispatch_ir_archetype_611, (generic_lvgl_func_t)lv_style_set_flex_grow},
+    {"lv_style_set_flex_main_place", dispatch_ir_archetype_609, (generic_lvgl_func_t)lv_style_set_flex_main_place},
+    {"lv_style_set_flex_track_place", dispatch_ir_archetype_609, (generic_lvgl_func_t)lv_style_set_flex_track_place},
+    {"lv_style_set_grid_cell_column_pos", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_grid_cell_column_pos},
+    {"lv_style_set_grid_cell_column_span", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_grid_cell_column_span},
+    {"lv_style_set_grid_cell_row_pos", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_grid_cell_row_pos},
+    {"lv_style_set_grid_cell_row_span", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_grid_cell_row_span},
+    {"lv_style_set_grid_cell_x_align", dispatch_ir_archetype_612, (generic_lvgl_func_t)lv_style_set_grid_cell_x_align},
+    {"lv_style_set_grid_cell_y_align", dispatch_ir_archetype_612, (generic_lvgl_func_t)lv_style_set_grid_cell_y_align},
+    {"lv_style_set_grid_column_align", dispatch_ir_archetype_612, (generic_lvgl_func_t)lv_style_set_grid_column_align},
+    {"lv_style_set_grid_column_dsc_array", dispatch_ir_archetype_613, (generic_lvgl_func_t)lv_style_set_grid_column_dsc_array},
+    {"lv_style_set_grid_row_align", dispatch_ir_archetype_612, (generic_lvgl_func_t)lv_style_set_grid_row_align},
+    {"lv_style_set_grid_row_dsc_array", dispatch_ir_archetype_613, (generic_lvgl_func_t)lv_style_set_grid_row_dsc_array},
+    {"lv_style_set_height", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_height},
+    {"lv_style_set_image_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_image_opa},
+    {"lv_style_set_image_recolor", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_image_recolor},
+    {"lv_style_set_image_recolor_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_image_recolor_opa},
+    {"lv_style_set_layout", dispatch_ir_archetype_614, (generic_lvgl_func_t)lv_style_set_layout},
+    {"lv_style_set_length", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_length},
+    {"lv_style_set_line_color", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_line_color},
+    {"lv_style_set_line_dash_gap", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_line_dash_gap},
+    {"lv_style_set_line_dash_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_line_dash_width},
+    {"lv_style_set_line_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_line_opa},
+    {"lv_style_set_line_rounded", dispatch_ir_archetype_601, (generic_lvgl_func_t)lv_style_set_line_rounded},
+    {"lv_style_set_line_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_line_width},
+    {"lv_style_set_margin_all", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_margin_all},
+    {"lv_style_set_margin_bottom", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_margin_bottom},
+    {"lv_style_set_margin_hor", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_margin_hor},
+    {"lv_style_set_margin_left", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_margin_left},
+    {"lv_style_set_margin_right", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_margin_right},
+    {"lv_style_set_margin_top", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_margin_top},
+    {"lv_style_set_margin_ver", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_margin_ver},
+    {"lv_style_set_max_height", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_max_height},
+    {"lv_style_set_max_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_max_width},
+    {"lv_style_set_min_height", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_min_height},
+    {"lv_style_set_min_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_min_width},
+    {"lv_style_set_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_opa},
+    {"lv_style_set_opa_layered", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_opa_layered},
+    {"lv_style_set_outline_color", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_outline_color},
+    {"lv_style_set_outline_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_outline_opa},
+    {"lv_style_set_outline_pad", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_outline_pad},
+    {"lv_style_set_outline_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_outline_width},
+    {"lv_style_set_pad_all", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_all},
+    {"lv_style_set_pad_bottom", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_bottom},
+    {"lv_style_set_pad_column", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_column},
+    {"lv_style_set_pad_gap", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_gap},
+    {"lv_style_set_pad_hor", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_hor},
+    {"lv_style_set_pad_left", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_left},
+    {"lv_style_set_pad_radial", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_radial},
+    {"lv_style_set_pad_right", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_right},
+    {"lv_style_set_pad_row", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_row},
+    {"lv_style_set_pad_top", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_top},
+    {"lv_style_set_pad_ver", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_pad_ver},
+    {"lv_style_set_radial_offset", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_radial_offset},
+    {"lv_style_set_radius", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_radius},
+    {"lv_style_set_recolor", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_recolor},
+    {"lv_style_set_recolor_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_recolor_opa},
+    {"lv_style_set_rotary_sensitivity", dispatch_ir_archetype_598, (generic_lvgl_func_t)lv_style_set_rotary_sensitivity},
+    {"lv_style_set_shadow_color", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_shadow_color},
+    {"lv_style_set_shadow_offset_x", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_shadow_offset_x},
+    {"lv_style_set_shadow_offset_y", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_shadow_offset_y},
+    {"lv_style_set_shadow_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_shadow_opa},
+    {"lv_style_set_shadow_spread", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_shadow_spread},
+    {"lv_style_set_shadow_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_shadow_width},
+    {"lv_style_set_size", dispatch_ir_archetype_615, (generic_lvgl_func_t)lv_style_set_size},
+    {"lv_style_set_text_align", dispatch_ir_archetype_616, (generic_lvgl_func_t)lv_style_set_text_align},
+    {"lv_style_set_text_color", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_text_color},
+    {"lv_style_set_text_decor", dispatch_ir_archetype_617, (generic_lvgl_func_t)lv_style_set_text_decor},
+    {"lv_style_set_text_font", dispatch_ir_archetype_618, (generic_lvgl_func_t)lv_style_set_text_font},
+    {"lv_style_set_text_letter_space", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_text_letter_space},
+    {"lv_style_set_text_line_space", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_text_line_space},
+    {"lv_style_set_text_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_text_opa},
+    {"lv_style_set_text_outline_stroke_color", dispatch_ir_archetype_599, (generic_lvgl_func_t)lv_style_set_text_outline_stroke_color},
+    {"lv_style_set_text_outline_stroke_opa", dispatch_ir_archetype_600, (generic_lvgl_func_t)lv_style_set_text_outline_stroke_opa},
+    {"lv_style_set_text_outline_stroke_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_text_outline_stroke_width},
+    {"lv_style_set_transform_height", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_transform_height},
+    {"lv_style_set_transform_pivot_x", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_transform_pivot_x},
+    {"lv_style_set_transform_pivot_y", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_transform_pivot_y},
+    {"lv_style_set_transform_rotation", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_transform_rotation},
+    {"lv_style_set_transform_scale", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_transform_scale},
+    {"lv_style_set_transform_scale_x", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_transform_scale_x},
+    {"lv_style_set_transform_scale_y", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_transform_scale_y},
+    {"lv_style_set_transform_skew_x", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_transform_skew_x},
+    {"lv_style_set_transform_skew_y", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_transform_skew_y},
+    {"lv_style_set_transform_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_transform_width},
+    {"lv_style_set_transition", dispatch_ir_archetype_619, (generic_lvgl_func_t)lv_style_set_transition},
+    {"lv_style_set_translate_radial", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_translate_radial},
+    {"lv_style_set_translate_x", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_translate_x},
+    {"lv_style_set_translate_y", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_translate_y},
+    {"lv_style_set_width", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_width},
+    {"lv_style_set_x", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_x},
+    {"lv_style_set_y", dispatch_ir_archetype_602, (generic_lvgl_func_t)lv_style_set_y},
+    {"lv_subject_copy_string", dispatch_ir_archetype_620, (generic_lvgl_func_t)lv_subject_copy_string},
+    {"lv_subject_deinit", dispatch_ir_archetype_621, (generic_lvgl_func_t)lv_subject_deinit},
+    {"lv_subject_get_color", dispatch_ir_archetype_622, (generic_lvgl_func_t)lv_subject_get_color},
+    {"lv_subject_get_group_element", dispatch_ir_archetype_623, (generic_lvgl_func_t)lv_subject_get_group_element},
+    {"lv_subject_get_int", dispatch_ir_archetype_624, (generic_lvgl_func_t)lv_subject_get_int},
+    {"lv_subject_get_pointer", dispatch_ir_archetype_625, (generic_lvgl_func_t)lv_subject_get_pointer},
+    {"lv_subject_get_previous_color", dispatch_ir_archetype_622, (generic_lvgl_func_t)lv_subject_get_previous_color},
+    {"lv_subject_get_previous_int", dispatch_ir_archetype_624, (generic_lvgl_func_t)lv_subject_get_previous_int},
+    {"lv_subject_get_previous_pointer", dispatch_ir_archetype_625, (generic_lvgl_func_t)lv_subject_get_previous_pointer},
+    {"lv_subject_get_previous_string", dispatch_ir_archetype_626, (generic_lvgl_func_t)lv_subject_get_previous_string},
+    {"lv_subject_get_string", dispatch_ir_archetype_626, (generic_lvgl_func_t)lv_subject_get_string},
+    {"lv_subject_init_color", dispatch_ir_archetype_627, (generic_lvgl_func_t)lv_subject_init_color},
+    {"lv_subject_init_int", dispatch_ir_archetype_628, (generic_lvgl_func_t)lv_subject_init_int},
+    {"lv_subject_init_string", dispatch_ir_archetype_629, (generic_lvgl_func_t)lv_subject_init_string},
+    {"lv_subject_notify", dispatch_ir_archetype_621, (generic_lvgl_func_t)lv_subject_notify},
+    {"lv_subject_set_color", dispatch_ir_archetype_627, (generic_lvgl_func_t)lv_subject_set_color},
+    {"lv_subject_set_int", dispatch_ir_archetype_628, (generic_lvgl_func_t)lv_subject_set_int},
     {"lv_swap_bytes_16", dispatch_ir_archetype_171, (generic_lvgl_func_t)lv_swap_bytes_16},
     {"lv_swap_bytes_32", dispatch_ir_archetype_13, (generic_lvgl_func_t)lv_swap_bytes_32},
     {"lv_switch_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_switch_create},
-    {"lv_switch_get_orientation", dispatch_ir_archetype_631, (generic_lvgl_func_t)lv_switch_get_orientation},
-    {"lv_switch_set_orientation", dispatch_ir_archetype_632, (generic_lvgl_func_t)lv_switch_set_orientation},
-    {"lv_table_clear_cell_ctrl", dispatch_ir_archetype_633, (generic_lvgl_func_t)lv_table_clear_cell_ctrl},
+    {"lv_switch_get_orientation", dispatch_ir_archetype_630, (generic_lvgl_func_t)lv_switch_get_orientation},
+    {"lv_switch_set_orientation", dispatch_ir_archetype_631, (generic_lvgl_func_t)lv_switch_set_orientation},
+    {"lv_table_clear_cell_ctrl", dispatch_ir_archetype_632, (generic_lvgl_func_t)lv_table_clear_cell_ctrl},
     {"lv_table_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_table_create},
-    {"lv_table_get_cell_user_data", dispatch_ir_archetype_634, (generic_lvgl_func_t)lv_table_get_cell_user_data},
-    {"lv_table_get_cell_value", dispatch_ir_archetype_635, (generic_lvgl_func_t)lv_table_get_cell_value},
+    {"lv_table_get_cell_user_data", dispatch_ir_archetype_633, (generic_lvgl_func_t)lv_table_get_cell_user_data},
+    {"lv_table_get_cell_value", dispatch_ir_archetype_634, (generic_lvgl_func_t)lv_table_get_cell_value},
     {"lv_table_get_column_count", dispatch_ir_archetype_28, (generic_lvgl_func_t)lv_table_get_column_count},
-    {"lv_table_get_column_width", dispatch_ir_archetype_636, (generic_lvgl_func_t)lv_table_get_column_width},
+    {"lv_table_get_column_width", dispatch_ir_archetype_635, (generic_lvgl_func_t)lv_table_get_column_width},
     {"lv_table_get_row_count", dispatch_ir_archetype_28, (generic_lvgl_func_t)lv_table_get_row_count},
-    {"lv_table_get_selected_cell", dispatch_ir_archetype_637, (generic_lvgl_func_t)lv_table_get_selected_cell},
-    {"lv_table_has_cell_ctrl", dispatch_ir_archetype_638, (generic_lvgl_func_t)lv_table_has_cell_ctrl},
-    {"lv_table_set_cell_ctrl", dispatch_ir_archetype_633, (generic_lvgl_func_t)lv_table_set_cell_ctrl},
-    {"lv_table_set_cell_value", dispatch_ir_archetype_639, (generic_lvgl_func_t)lv_table_set_cell_value},
+    {"lv_table_get_selected_cell", dispatch_ir_archetype_636, (generic_lvgl_func_t)lv_table_get_selected_cell},
+    {"lv_table_has_cell_ctrl", dispatch_ir_archetype_637, (generic_lvgl_func_t)lv_table_has_cell_ctrl},
+    {"lv_table_set_cell_ctrl", dispatch_ir_archetype_632, (generic_lvgl_func_t)lv_table_set_cell_ctrl},
+    {"lv_table_set_cell_value", dispatch_ir_archetype_638, (generic_lvgl_func_t)lv_table_set_cell_value},
     {"lv_table_set_column_count", dispatch_ir_archetype_31, (generic_lvgl_func_t)lv_table_set_column_count},
-    {"lv_table_set_column_width", dispatch_ir_archetype_640, (generic_lvgl_func_t)lv_table_set_column_width},
+    {"lv_table_set_column_width", dispatch_ir_archetype_639, (generic_lvgl_func_t)lv_table_set_column_width},
     {"lv_table_set_row_count", dispatch_ir_archetype_31, (generic_lvgl_func_t)lv_table_set_row_count},
-    {"lv_table_set_selected_cell", dispatch_ir_archetype_641, (generic_lvgl_func_t)lv_table_set_selected_cell},
-    {"lv_tabview_add_tab", dispatch_ir_archetype_385, (generic_lvgl_func_t)lv_tabview_add_tab},
+    {"lv_table_set_selected_cell", dispatch_ir_archetype_640, (generic_lvgl_func_t)lv_table_set_selected_cell},
+    {"lv_tabview_add_tab", dispatch_ir_archetype_384, (generic_lvgl_func_t)lv_tabview_add_tab},
     {"lv_tabview_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_tabview_create},
     {"lv_tabview_get_content", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_tabview_get_content},
     {"lv_tabview_get_tab_active", dispatch_ir_archetype_28, (generic_lvgl_func_t)lv_tabview_get_tab_active},
     {"lv_tabview_get_tab_bar", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_tabview_get_tab_bar},
     {"lv_tabview_get_tab_count", dispatch_ir_archetype_28, (generic_lvgl_func_t)lv_tabview_get_tab_count},
     {"lv_tabview_rename_tab", dispatch_ir_archetype_377, (generic_lvgl_func_t)lv_tabview_rename_tab},
-    {"lv_tabview_set_active", dispatch_ir_archetype_537, (generic_lvgl_func_t)lv_tabview_set_active},
+    {"lv_tabview_set_active", dispatch_ir_archetype_536, (generic_lvgl_func_t)lv_tabview_set_active},
     {"lv_tabview_set_tab_bar_position", dispatch_ir_archetype_278, (generic_lvgl_func_t)lv_tabview_set_tab_bar_position},
     {"lv_tabview_set_tab_bar_size", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_tabview_set_tab_bar_size},
     {"lv_task_handler", dispatch_ir_archetype_246, (generic_lvgl_func_t)lv_task_handler},
-    {"lv_text_get_size", dispatch_ir_archetype_642, (generic_lvgl_func_t)lv_text_get_size},
-    {"lv_text_get_width", dispatch_ir_archetype_643, (generic_lvgl_func_t)lv_text_get_width},
-    {"lv_text_get_width_with_flags", dispatch_ir_archetype_644, (generic_lvgl_func_t)lv_text_get_width_with_flags},
-    {"lv_text_is_cmd", dispatch_ir_archetype_645, (generic_lvgl_func_t)lv_text_is_cmd},
+    {"lv_text_get_size", dispatch_ir_archetype_641, (generic_lvgl_func_t)lv_text_get_size},
+    {"lv_text_get_width", dispatch_ir_archetype_642, (generic_lvgl_func_t)lv_text_get_width},
+    {"lv_text_get_width_with_flags", dispatch_ir_archetype_643, (generic_lvgl_func_t)lv_text_get_width_with_flags},
+    {"lv_text_is_cmd", dispatch_ir_archetype_644, (generic_lvgl_func_t)lv_text_is_cmd},
     {"lv_textarea_add_char", dispatch_ir_archetype_31, (generic_lvgl_func_t)lv_textarea_add_char},
     {"lv_textarea_add_text", dispatch_ir_archetype_47, (generic_lvgl_func_t)lv_textarea_add_text},
     {"lv_textarea_clear_selection", dispatch_ir_archetype_32, (generic_lvgl_func_t)lv_textarea_clear_selection},
@@ -12594,7 +12575,7 @@ static const FunctionMapping function_registry[] = {
     {"lv_textarea_get_text", dispatch_ir_archetype_142, (generic_lvgl_func_t)lv_textarea_get_text},
     {"lv_textarea_get_text_selection", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_textarea_get_text_selection},
     {"lv_textarea_set_accepted_chars", dispatch_ir_archetype_47, (generic_lvgl_func_t)lv_textarea_set_accepted_chars},
-    {"lv_textarea_set_align", dispatch_ir_archetype_570, (generic_lvgl_func_t)lv_textarea_set_align},
+    {"lv_textarea_set_align", dispatch_ir_archetype_569, (generic_lvgl_func_t)lv_textarea_set_align},
     {"lv_textarea_set_cursor_click_pos", dispatch_ir_archetype_46, (generic_lvgl_func_t)lv_textarea_set_cursor_click_pos},
     {"lv_textarea_set_cursor_pos", dispatch_ir_archetype_40, (generic_lvgl_func_t)lv_textarea_set_cursor_pos},
     {"lv_textarea_set_insert_replace", dispatch_ir_archetype_47, (generic_lvgl_func_t)lv_textarea_set_insert_replace},
@@ -12607,29 +12588,29 @@ static const FunctionMapping function_registry[] = {
     {"lv_textarea_set_text", dispatch_ir_archetype_47, (generic_lvgl_func_t)lv_textarea_set_text},
     {"lv_textarea_set_text_selection", dispatch_ir_archetype_46, (generic_lvgl_func_t)lv_textarea_set_text_selection},
     {"lv_textarea_text_is_selected", dispatch_ir_archetype_26, (generic_lvgl_func_t)lv_textarea_text_is_selected},
-    {"lv_thread_delete", dispatch_ir_archetype_646, (generic_lvgl_func_t)lv_thread_delete},
-    {"lv_thread_sync_delete", dispatch_ir_archetype_647, (generic_lvgl_func_t)lv_thread_sync_delete},
-    {"lv_thread_sync_init", dispatch_ir_archetype_647, (generic_lvgl_func_t)lv_thread_sync_init},
-    {"lv_thread_sync_signal", dispatch_ir_archetype_647, (generic_lvgl_func_t)lv_thread_sync_signal},
-    {"lv_thread_sync_signal_isr", dispatch_ir_archetype_647, (generic_lvgl_func_t)lv_thread_sync_signal_isr},
-    {"lv_thread_sync_wait", dispatch_ir_archetype_647, (generic_lvgl_func_t)lv_thread_sync_wait},
+    {"lv_thread_delete", dispatch_ir_archetype_645, (generic_lvgl_func_t)lv_thread_delete},
+    {"lv_thread_sync_delete", dispatch_ir_archetype_646, (generic_lvgl_func_t)lv_thread_sync_delete},
+    {"lv_thread_sync_init", dispatch_ir_archetype_646, (generic_lvgl_func_t)lv_thread_sync_init},
+    {"lv_thread_sync_signal", dispatch_ir_archetype_646, (generic_lvgl_func_t)lv_thread_sync_signal},
+    {"lv_thread_sync_signal_isr", dispatch_ir_archetype_646, (generic_lvgl_func_t)lv_thread_sync_signal_isr},
+    {"lv_thread_sync_wait", dispatch_ir_archetype_646, (generic_lvgl_func_t)lv_thread_sync_wait},
     {"lv_tick_elaps", dispatch_ir_archetype_13, (generic_lvgl_func_t)lv_tick_elaps},
     {"lv_tick_get", dispatch_ir_archetype_246, (generic_lvgl_func_t)lv_tick_get},
-    {"lv_tick_get_cb", dispatch_ir_archetype_648, (generic_lvgl_func_t)lv_tick_get_cb},
+    {"lv_tick_get_cb", dispatch_ir_archetype_647, (generic_lvgl_func_t)lv_tick_get_cb},
     {"lv_tick_inc", dispatch_ir_archetype_177, (generic_lvgl_func_t)lv_tick_inc},
-    {"lv_tileview_add_tile", dispatch_ir_archetype_649, (generic_lvgl_func_t)lv_tileview_add_tile},
+    {"lv_tileview_add_tile", dispatch_ir_archetype_648, (generic_lvgl_func_t)lv_tileview_add_tile},
     {"lv_tileview_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_tileview_create},
     {"lv_tileview_get_tile_active", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_tileview_get_tile_active},
-    {"lv_tileview_set_tile", dispatch_ir_archetype_650, (generic_lvgl_func_t)lv_tileview_set_tile},
-    {"lv_tileview_set_tile_by_index", dispatch_ir_archetype_651, (generic_lvgl_func_t)lv_tileview_set_tile_by_index},
+    {"lv_tileview_set_tile", dispatch_ir_archetype_649, (generic_lvgl_func_t)lv_tileview_set_tile},
+    {"lv_tileview_set_tile_by_index", dispatch_ir_archetype_650, (generic_lvgl_func_t)lv_tileview_set_tile_by_index},
     {"lv_timer_create_basic", dispatch_ir_archetype_3, (generic_lvgl_func_t)lv_timer_create_basic},
     {"lv_timer_delete", dispatch_ir_archetype_197, (generic_lvgl_func_t)lv_timer_delete},
-    {"lv_timer_enable", dispatch_ir_archetype_413, (generic_lvgl_func_t)lv_timer_enable},
+    {"lv_timer_enable", dispatch_ir_archetype_412, (generic_lvgl_func_t)lv_timer_enable},
     {"lv_timer_get_idle", dispatch_ir_archetype_246, (generic_lvgl_func_t)lv_timer_get_idle},
-    {"lv_timer_get_next", dispatch_ir_archetype_652, (generic_lvgl_func_t)lv_timer_get_next},
-    {"lv_timer_get_paused", dispatch_ir_archetype_653, (generic_lvgl_func_t)lv_timer_get_paused},
+    {"lv_timer_get_next", dispatch_ir_archetype_651, (generic_lvgl_func_t)lv_timer_get_next},
+    {"lv_timer_get_paused", dispatch_ir_archetype_652, (generic_lvgl_func_t)lv_timer_get_paused},
     {"lv_timer_get_time_until_next", dispatch_ir_archetype_246, (generic_lvgl_func_t)lv_timer_get_time_until_next},
-    {"lv_timer_get_user_data", dispatch_ir_archetype_654, (generic_lvgl_func_t)lv_timer_get_user_data},
+    {"lv_timer_get_user_data", dispatch_ir_archetype_653, (generic_lvgl_func_t)lv_timer_get_user_data},
     {"lv_timer_handler", dispatch_ir_archetype_246, (generic_lvgl_func_t)lv_timer_handler},
     {"lv_timer_handler_run_in_period", dispatch_ir_archetype_13, (generic_lvgl_func_t)lv_timer_handler_run_in_period},
     {"lv_timer_pause", dispatch_ir_archetype_197, (generic_lvgl_func_t)lv_timer_pause},
@@ -12637,19 +12618,19 @@ static const FunctionMapping function_registry[] = {
     {"lv_timer_ready", dispatch_ir_archetype_197, (generic_lvgl_func_t)lv_timer_ready},
     {"lv_timer_reset", dispatch_ir_archetype_197, (generic_lvgl_func_t)lv_timer_reset},
     {"lv_timer_resume", dispatch_ir_archetype_197, (generic_lvgl_func_t)lv_timer_resume},
-    {"lv_timer_set_auto_delete", dispatch_ir_archetype_655, (generic_lvgl_func_t)lv_timer_set_auto_delete},
-    {"lv_timer_set_period", dispatch_ir_archetype_656, (generic_lvgl_func_t)lv_timer_set_period},
-    {"lv_timer_set_repeat_count", dispatch_ir_archetype_657, (generic_lvgl_func_t)lv_timer_set_repeat_count},
-    {"lv_tree_node_create", dispatch_ir_archetype_658, (generic_lvgl_func_t)lv_tree_node_create},
-    {"lv_tree_node_delete", dispatch_ir_archetype_659, (generic_lvgl_func_t)lv_tree_node_delete},
-    {"lv_trigo_cos", dispatch_ir_archetype_660, (generic_lvgl_func_t)lv_trigo_cos},
-    {"lv_trigo_sin", dispatch_ir_archetype_660, (generic_lvgl_func_t)lv_trigo_sin},
+    {"lv_timer_set_auto_delete", dispatch_ir_archetype_654, (generic_lvgl_func_t)lv_timer_set_auto_delete},
+    {"lv_timer_set_period", dispatch_ir_archetype_655, (generic_lvgl_func_t)lv_timer_set_period},
+    {"lv_timer_set_repeat_count", dispatch_ir_archetype_656, (generic_lvgl_func_t)lv_timer_set_repeat_count},
+    {"lv_tree_node_create", dispatch_ir_archetype_657, (generic_lvgl_func_t)lv_tree_node_create},
+    {"lv_tree_node_delete", dispatch_ir_archetype_658, (generic_lvgl_func_t)lv_tree_node_delete},
+    {"lv_trigo_cos", dispatch_ir_archetype_659, (generic_lvgl_func_t)lv_trigo_cos},
+    {"lv_trigo_sin", dispatch_ir_archetype_659, (generic_lvgl_func_t)lv_trigo_sin},
     {"lv_unlock", dispatch_ir_archetype_1, (generic_lvgl_func_t)lv_unlock},
-    {"lv_version_info", dispatch_ir_archetype_661, (generic_lvgl_func_t)lv_version_info},
-    {"lv_version_major", dispatch_ir_archetype_662, (generic_lvgl_func_t)lv_version_major},
-    {"lv_version_minor", dispatch_ir_archetype_662, (generic_lvgl_func_t)lv_version_minor},
-    {"lv_version_patch", dispatch_ir_archetype_662, (generic_lvgl_func_t)lv_version_patch},
-    {"lv_win_add_title", dispatch_ir_archetype_385, (generic_lvgl_func_t)lv_win_add_title},
+    {"lv_version_info", dispatch_ir_archetype_660, (generic_lvgl_func_t)lv_version_info},
+    {"lv_version_major", dispatch_ir_archetype_661, (generic_lvgl_func_t)lv_version_major},
+    {"lv_version_minor", dispatch_ir_archetype_661, (generic_lvgl_func_t)lv_version_minor},
+    {"lv_version_patch", dispatch_ir_archetype_661, (generic_lvgl_func_t)lv_version_patch},
+    {"lv_win_add_title", dispatch_ir_archetype_384, (generic_lvgl_func_t)lv_win_add_title},
     {"lv_win_create", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_win_create},
     {"lv_win_get_content", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_win_get_content},
     {"lv_win_get_header", dispatch_ir_archetype_25, (generic_lvgl_func_t)lv_win_get_header},

@@ -21,8 +21,25 @@ static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
 }
 #endif
 
+#define HIGH_DPI
+
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 480
+
+void check_dpi(lv_display_t *disp) {
+    int rw = 0, rh = 0;
+    SDL_GetRendererOutputSize(lv_sdl_window_get_renderer(disp), &rw, &rh);
+    if(rw != DEFAULT_WIDTH) {
+        float widthScale = (float)rw / (float) DEFAULT_WIDTH;
+        float heightScale = (float)rh / (float) DEFAULT_HEIGHT;
+
+        if(widthScale != heightScale) {
+            fprintf(stderr, "WARNING: width scale != height scale\n");
+        }
+
+        SDL_RenderSetScale(lv_sdl_window_get_renderer(disp), widthScale, heightScale);
+    }
+}
 
 int sdl_viewer_init(void) {
     /* initialize lvgl */
@@ -42,7 +59,13 @@ int sdl_viewer_init(void) {
     /* Add a display
     * Use the 'monitor' driver which creates window on PC's monitor to simulate a display*/
 
+#ifndef HIGH_DPI
     lvDisplay = lv_sdl_window_create(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+#else
+    lvDisplay = lv_sdl_window_create(DEFAULT_WIDTH * 2, DEFAULT_HEIGHT * 2);
+    lv_sdl_window_set_zoom(lvDisplay, 2.0);
+#endif
+    
     if (!lvDisplay) {
         // Handle error, perhaps log and return -1
         return -1;
