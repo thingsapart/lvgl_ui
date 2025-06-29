@@ -1,0 +1,13 @@
+- type: led
+  lv_obj_align: [LV_ALIGN_CENTER, -80, 0]
+  lv_led_off: []
+
+- type: led
+  lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+  brightness: 150
+  color: { lv_palette_main: LV_PALETTE_RED }
+
+- type: led
+  lv_obj_align: [LV_ALIGN_CENTER, 80, 0]
+  lv_led_on: []
+

@@ -1,0 +1,13 @@
+[
+  {
+    "id": "@root",
+    "children": [
+      {
+        "type": "label",
+        "id": "@label",
+        "text": "test"
+      }
+    ],
+    "move_foreground": "@label"
+  }
+]

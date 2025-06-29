@@ -1,0 +1,39 @@
+- type: style
+  id: '@style_btn'
+  radius: 10
+  bg_opa: LV_OPA_COVER
+  bg_color: { lv_palette_lighten: [LV_PALETTE_GREY, 2] }
+  bg_grad_color: { lv_palette_main: LV_PALETTE_GREY }
+  bg_grad_dir: LV_GRAD_DIR_VER
+  border_color: '#000000'
+  border_opa: LV_OPA_20
+  border_width: 2
+  text_color: '#000000'
+  //: No support for color_filters?
+
+- type: style
+  id: '@style_button_red'
+  bg_color: { lv_palette_main: LV_PALETTE_RED }
+  bg_grad_color: { lv_palette_lighten: [LV_PALETTE_RED, 3] }
+
+- type: button
+  remove_style_all: []
+  pos: [10, 10]
+  size: [120, 50]
+  add_style: ['@style_btn', LV_PART_MAIN]
+  children:
+    - type: label
+      text: Button
+      center: []
+
+- type: button
+  remove_style_all: []
+  pos: [10, 80]
+  size: [120, 50]
+  add_style: ['@style_btn', LV_PART_MAIN]
+  add_style: ['@style_button_red', LV_PART_MAIN]
+  radius: LV_RADIUS_CIRCLE
+  children:
+    - type: label
+      text: Button 2
+      center: []

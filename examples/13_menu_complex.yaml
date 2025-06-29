@@ -1,0 +1,175 @@
+- type: component
+  id: '@create_text_icon_header'
+  content:
+    init: { lv_menu_cont_create: '$menu_page' }
+    children:
+      # - init: { lv_menu_set_load_page_event: ['@menu', '@_target', '$load_page'] }
+      - type: label
+        text: $text
+        long_mode: LV_LABEL_LONG_MODE_SCROLL_CIRCULAR
+        flex_grow: 1
+      - type: label
+        text: $icon
+        add_flag: LV_OBJ_FLAG_FLEX_IN_NEW_TRACK
+
+- type: component
+  id: '@create_text_icon_line_page_evt'
+  content:
+    init: { lv_menu_cont_create: '$menu_page' }
+    # lv_menu_set_load_page_event: ['@menu', '@_target', '$load_page']
+    children:
+      - init: { lv_menu_set_load_page_event: ['@menu', '@_target', '$load_page'] }
+      - type: label
+        text: $icon
+      - type: label
+        text: $text
+        long_mode: LV_LABEL_LONG_MODE_SCROLL_CIRCULAR
+        flex_grow: 1
+
+- type: component
+  id: '@create_text_icon_line'
+  content:
+    init: { lv_menu_cont_create: '$menu_page' }
+    # lv_menu_set_load_page_event: ['@menu', '@_target', '$load_page']
+    children:
+      # - init: { lv_menu_set_load_page_event: ['@menu', '@_target', '$load_page'] }
+      - type: label
+        text: $icon
+      - type: label
+        text: $text
+        long_mode: LV_LABEL_LONG_MODE_SCROLL_CIRCULAR
+        flex_grow: 1
+
+- type: component
+  id: '@create_text_icon_line_sec'
+  content:
+    init: '$menu_page'
+    children:
+      - type: label
+        text: $icon
+      - type: label
+        text: $text
+        long_mode: LV_LABEL_LONG_MODE_SCROLL_CIRCULAR
+        flex_grow: 1
+
+- type: component
+  id: '@create_slider'
+  content:
+    children:
+      - type: use-view
+        id: '@create_text_icon_header'
+      - type: slider
+        flex_grow: 1
+        range: [$min, $max]
+        value: [$value, LV_ANIM_ON]
+
+- type: component
+  id: '@create_switch'
+  content:
+    children:
+      - type: use-view
+        id: '@create_text_icon_line'
+      - type: switch
+        add_state: LV_STATE_CHECKED
+
+- type: menu
+  id: '@menu'
+  bg_color: { lv_color_darken: [{ lv_obj_get_style_bg_color: ['@menu' , 0] }, 10] }
+  mode_root_back_button: LV_MENU_ROOT_BACK_BUTTON_ENABLED
+  size: [100%, 100%]
+  center: []
+
+  children:
+    - init: { lv_menu_page_create: [NULL] }
+      name: 'mechanics_page'
+      id: 'mechanics_page'
+      pad_hor: { lv_obj_get_style_pad_left: [{ lv_menu_get_main_header: '@menu' }, 0] }
+      children:
+        - init: { lv_menu_separator_create: [] }
+        - init: { lv_menu_section_create: [] }
+          children:
+            - type: label
+              text: PAGE 1
+            - type: use-view
+              context: { icon: LV_SYMBOL_SETTINGS, text: 'Velocity', min: 0, max: 150, value: 120, menu_page: '@mechanics_page' }
+              id: '@create_slider'
+            - type: use-view
+              context: { icon: LV_SYMBOL_SETTINGS, text: 'Acceleration', min: 0, max: 150, value: 50, menu_page: '@mechanics_page' }
+              id: '@create_slider'
+            - type: use-view
+              context: { icon: LV_SYMBOL_SETTINGS, text: 'Weight limit', min: 0, max: 150, value: 80, menu_page: '@mechanics_page' }
+              id: '@create_slider'
+
+    - init: { lv_menu_page_create: [NULL] }
+      name: 'sound_page'
+      id: '@sound_page'
+      pad_hor: { lv_obj_get_style_pad_left: [{ lv_menu_get_main_header: '@menu' }, 0] }
+      children:
+        - init: { lv_menu_separator_create: [] }
+        - init: { lv_menu_section_create: [] }
+          children:
+            - type: label
+              name: label1
+              text: PAGE 1
+            - type: use-view
+              context: { icon: LV_SYMBOL_AUDIO, text: 'Sound', menu_page: '@sound_page' }
+              id: '@create_switch'
+
+    - init: { lv_menu_page_create: [NULL] }
+      name: 'display_page'
+      id: '@display_page'
+      pad_hor: { lv_obj_get_style_pad_left: [{ lv_menu_get_main_header: '@menu' }, 0] }
+      children:
+        - init: { lv_menu_separator_create: [] }
+        - init: { lv_menu_section_create: [] }
+          children:
+            - type: label
+              text: PAGE 1
+            - type: use-view
+              context: { icon: LV_SYMBOL_SETTINGS, text: 'Brightness', min: 0, max: 150, value: 100, menu_page: '@display_page' }
+              id: '@create_slider'
+
+    - init: { lv_menu_page_create: [NULL] }
+      name: 'menu_page'
+      id: 'menu_page'
+      pad_hor: { lv_obj_get_style_pad_left: [{ lv_menu_get_main_header: '@menu' }, 0] }
+      children:
+        - init: { lv_menu_separator_create: [] }
+        - init: { lv_menu_section_create: [] }
+          children:
+            - type: use-view
+              context: { icon: LV_SYMBOL_AUDIO, text: 'Sidebar enable', menu_page: '@menu_page' }
+              id: '@create_switch'
+
+    - init: { lv_menu_page_create: ['!Settings'] }
+      id: '@root_page'
+      name: 'settings_page'
+      pad_hor: { lv_obj_get_style_pad_left: [{ lv_menu_get_main_header: '@menu' }, 0] }
+      children:
+        - init: { lv_menu_section_create: [] }
+          bg_color: '#dddddd'
+          bg_opa: 200
+          children:
+            - type: use-view
+              name: mechanics_entry
+              context: { icon: LV_SYMBOL_SETTINGS, text: 'Mechanics', menu_page: '@_target', load_page: '@mechanics_page' }
+              id: '@create_text_icon_line_page_evt'
+            - type: use-view
+              name: sound_entry
+              context: { icon: LV_SYMBOL_AUDIO, text: 'Sound', menu_page: '@_target', load_page: '@sound_page' }
+              id: '@create_text_icon_line_page_evt'
+            - type: use-view
+              name: display_entry
+              context: { icon: LV_SYMBOL_SETTINGS, text: 'Display', menu_page: '@_target', load_page: '@display_page' }
+              id: '@create_text_icon_line_page_evt'
+        - type: label
+          text: 'Others'
+        - init: { lv_menu_section_create: [] }
+          children:
+            - type: use-view
+              context: { icon: '   ', text: 'About', menu_page: '@_target', load_page: '@display_page' }
+              id: '@create_text_icon_line_page_evt'
+            - type: use-view
+              context: { icon: LV_SYMBOL_SETTINGS, text: 'Menu mode', menu_page: '@_target', load_oage: '@display_page' }
+              id: '@create_text_icon_line'
+  sidebar_page: '@root_page'

@@ -1,0 +1,7 @@
+- type: button
+  pos: [10, 10]
+  size: [120, 50]
+  children:
+    - type: label
+      text: Button
+      center: []

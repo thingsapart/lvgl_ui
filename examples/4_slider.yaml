@@ -1,0 +1,7 @@
+- type: slider
+  id: '@slider'
+  width: 200
+  center: []
+- type: label
+  text: '0'
+  align_to: ['@slider', LV_ALIGN_OUT_TOP_MID, 0, -15]

@@ -1,0 +1,1003 @@
+[
+  {
+    "type": "style",
+    "id": "@debug",
+    "outline_width": 1,
+    "outline_color": "#ffeeff",
+    "outline_opa": 150,
+    "border_width": 1,
+    "border_color": "#ffeeff",
+    "border_opa": 150,
+    "radius": 0
+  },
+  {
+    "type": "style",
+    "id": "@container",
+    "pad_all": 0,
+    "margin_all": 0,
+    "border_width": 0,
+    "pad_row": 3,
+    "pad_column": 5
+  },
+  {
+    "type": "style",
+    "id": "@bar_indicator",
+    "radius": 4
+  },
+  {
+    "type": "style",
+    "id": "@bg_gradient",
+    "bg_opa": 255,
+    "bg_color": "#222222",
+    "bg_grad_color": "#444444",
+    "bg_grad_dir": "LV_GRAD_DIR_HOR"
+  },
+  {
+    "type": "style",
+    "id": "@flex_x",
+    "layout": "LV_LAYOUT_FLEX",
+    "flex_flow": "LV_FLEX_FLOW_ROW"
+  },
+  {
+    "type": "style",
+    "id": "@flex_y",
+    "layout": "LV_LAYOUT_FLEX",
+    "flex_flow": "LV_FLEX_FLOW_COLUMN"
+  },
+  {
+    "type": "style",
+    "id": "@indicator_green",
+    "text_color": "#44ee44"
+  },
+  {
+    "type": "style",
+    "id": "@indicator_yellow",
+    "text_color": "#ffff55"
+  },
+  {
+    "type": "style",
+    "id": "@jog_btn",
+    "pad_all": 5,
+    "pad_bottom": 10,
+    "pad_top": 10,
+    "margin_all": 0,
+    "radius": 2
+  },
+  {
+    "type": "style",
+    "id": "@border_top_btm",
+    "border_width": 1,
+    "border_color": "#ffffff",
+    "border_opa": 50,
+    "border_side": "LV_BORDER_SIDE_TOP_BOTTOM"
+  },
+  {
+    "type": "style",
+    "id": "@border_right",
+    "border_width": 1,
+    "border_color": "#ffffff",
+    "border_opa": 50,
+    "border_side": "LV_BORDER_SIDE_RIGHT"
+  },
+  {
+    "type": "style",
+    "id": "@indicator_light",
+    "border_width": 6,
+    "pad_left": 10,
+    "margin_left": 10,
+    "border_opa": 200,
+    "border_side": "LV_BORDER_SIDE_LEFT"
+  },
+  {
+    "type": "component",
+    "id": "@axis_jog_speed_adjust",
+    "content": {
+      "add_style": [
+        "@flex_x",
+        0
+      ],
+      "add_style": [
+        "@container",
+        0
+      ],
+      "size": [
+        "100%",
+        "LV_SIZE_CONTENT"
+      ],
+      "pad_all": 10,
+      "pad_bottom": 20,
+      "children": [
+        {
+          "type": "label",
+          "text": "$label",
+          "width": 20
+        },
+        {
+          "type": "button",
+          "add_style": [
+            "@jog_btn",
+            0
+          ],
+          "children": [
+            {
+              "type": "label",
+              "text": "$dist_0"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "add_style": [
+            "@jog_btn",
+            0
+          ],
+          "children": [
+            {
+              "type": "label",
+              "text": "$dist_1"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "add_style": [
+            "@jog_btn",
+            0
+          ],
+          "children": [
+            {
+              "type": "label",
+              "text": "$dist_2"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "add_style": [
+            "@jog_btn",
+            0
+          ],
+          "children": [
+            {
+              "type": "label",
+              "text": "$dist_3"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "type": "component",
+    "id": "@axis_pos_display",
+    "content": {
+      "add_style": [
+        "@flex_y",
+        0
+      ],
+      "add_style": [
+        "@container",
+        0
+      ],
+      "size": [
+        "100%",
+        "LV_SIZE_CONTENT"
+      ],
+      "pad_all": 10,
+      "pad_bottom": 18,
+      "border_color": "#ffffff",
+      "border_opa": 40,
+      "margin_all": 2,
+      "named": "$name",
+      "children": [
+        {
+          "add_style": [
+            "@flex_x",
+            0
+          ],
+          "add_style": [
+            "@container",
+            0
+          ],
+          "size": [
+            "100%",
+            "LV_SIZE_CONTENT"
+          ],
+          "children": [
+            {
+              "type": "label",
+              "text": "$axis",
+              "width": "LV_SIZE_CONTENT",
+              "add_style": [
+                "@indicator_light",
+                0
+              ],
+              "border_color": "#55ff55"
+            },
+            {
+              "type": "label",
+              "text": "$wcs_pos",
+              "flex_grow": 1,
+              "add_style": [
+                "@indicator_green",
+                0
+              ],
+              "text_align": "LV_TEXT_ALIGN_RIGHT"
+            }
+          ]
+        },
+        {
+          "add_style": [
+            "@flex_x",
+            0
+          ],
+          "add_style": [
+            "@container",
+            0
+          ],
+          "size": [
+            "100%",
+            "LV_SIZE_CONTENT"
+          ],
+          "children": [
+            {
+              "type": "label",
+              "text": "$abs_pos",
+              "flex_grow": 1,
+              "text_align": "LV_TEXT_ALIGN_RIGHT",
+              "add_style": [
+                "@indicator_yellow",
+                0
+              ]
+            },
+            {
+              "type": "label",
+              "text": "",
+              "width": 14
+            },
+            {
+              "type": "label",
+              "text": "$delta_pos",
+              "text_align": "LV_TEXT_ALIGN_RIGHT",
+              "add_style": [
+                "@indicator_yellow",
+                0
+              ],
+              "flex_grow": 1
+            },
+            {
+              "type": "label",
+              "text": "",
+              "width": 14
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "type": "component",
+    "id": "@feed_rate_scale",
+    "content": {
+      "size": [
+        "100%",
+        "100%"
+      ],
+      "add_style": [
+        "@container",
+        0
+      ],
+      "layout": "LV_LAYOUT_FLEX",
+      "flex_flow": "LV_FLEX_FLOW_ROW",
+      "height": "LV_SIZE_CONTENT",
+      "pad_column": 0,
+      "pad_bottom": "$pad_bottom",
+      "children": [
+        {
+          "layout": "LV_LAYOUT_FLEX",
+          "add_style": [
+            "@container",
+            0
+          ],
+          "flex_flow": "LV_FLEX_FLOW_COLUMN",
+          "width": "100%",
+          "height": "LV_SIZE_CONTENT",
+          "flex_grow": 1,
+          "children": [
+            {
+              "type": "label",
+              "text": "$label",
+              "height": "LV_SIZE_CONTENT",
+              "width": "100%",
+              "add_style": [
+                "@border_top_btm",
+                0
+              ]
+            },
+            {
+              "type": "obj",
+              "cols": [
+                "LV_GRID_CONTENT",
+                "LV_GRID_FR_1"
+              ],
+              "rows": [
+                "LV_GRID_CONTENT"
+              ],
+              "add_style": [
+                "@container",
+                0
+              ],
+              "width": "100%",
+              "height": "LV_SIZE_CONTENT",
+              "children": [
+                {
+                  "type": "label",
+                  "text": "$letter",
+                  "grid_cell": [
+                    "LV_GRID_ALIGN_START",
+                    0,
+                    1,
+                    "LV_GRID_ALIGN_CENTER",
+                    0,
+                    1
+                  ],
+                  "height": "LV_SIZE_CONTENT",
+                  "pad_left": 10
+                },
+                {
+                  "type": "label",
+                  "grid_cell": [
+                    "LV_GRID_ALIGN_END",
+                    1,
+                    1,
+                    "LV_GRID_ALIGN_END",
+                    0,
+                    1
+                  ],
+                  "height": "LV_SIZE_CONTENT",
+                  "text": "1000",
+                  "pad_right": 10
+                }
+              ]
+            },
+            {
+              "layout": "LV_LAYOUT_FLEX",
+              "flex_flow": "LV_FLEX_FLOW_COLUMN",
+              "add_style": [
+                "@container",
+                0
+              ],
+              "width": "100%",
+              "height": "LV_SIZE_CONTENT",
+              "children": [
+                {
+                  "type": "bar",
+                  "width": "100%",
+                  "height": 15,
+                  "margin_left": 15,
+                  "margin_right": 15,
+                  "add_style": [
+                    "@bar_indicator",
+                    "LV_PART_MAIN"
+                  ],
+                  "add_style": [
+                    "@bar_indicator",
+                    "LV_PART_INDICATOR"
+                  ],
+                  "value": [
+                    65,
+                    0
+                  ],
+                  "bg_color": "#5dd555",
+                  "bg_opa": 255
+                },
+                {
+                  "type": "scale",
+                  "width": "100%",
+                  "height": 18,
+                  "margin_left": 15,
+                  "margin_right": 15
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "layout": "LV_LAYOUT_FLEX",
+          "add_style": [
+            "@container",
+            0
+          ],
+          "flex_flow": "LV_FLEX_FLOW_COLUMN",
+          "width": "LV_SIZE_CONTENT",
+          "height": "LV_SIZE_CONTENT",
+          "pad_right": 0,
+          "flex_align": [
+            "LV_FLEX_ALIGN_CENTER",
+            "LV_FLEX_ALIGN_SPACE_AROUND",
+            "LV_FLEX_ALIGN_CENTER"
+          ],
+          "children": [
+            {
+              "type": "label",
+              "text": "$unit",
+              "add_style": [
+                "@border_top_btm",
+                0
+              ]
+            },
+            {
+              "type": "label",
+              "text": "$ovr"
+            },
+            {
+              "type": "label",
+              "text": "100%%"
+            },
+            {
+              "type": "label",
+              "text": "65%%"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "type": "component",
+    "id": "@jog_feed",
+    "content": {
+      "size": [
+        "100%",
+        "100%"
+      ],
+      "add_style": [
+        "@container",
+        0
+      ],
+      "layout": "LV_LAYOUT_FLEX",
+      "flex_flow": "LV_FLEX_FLOW_ROW",
+      "height": "LV_SIZE_CONTENT",
+      "pad_column": 0,
+      "pad_bottom": "$pad_bottom",
+      "children": [
+        {
+          "layout": "LV_LAYOUT_FLEX",
+          "add_style": [
+            "@container",
+            0
+          ],
+          "flex_flow": "LV_FLEX_FLOW_COLUMN",
+          "width": "100%",
+          "height": "LV_SIZE_CONTENT",
+          "flex_grow": 1,
+          "children": [
+            {
+              "type": "label",
+              "text": "$label",
+              "height": "LV_SIZE_CONTENT",
+              "width": "100%",
+              "add_style": [
+                "@border_top_btm",
+                0
+              ]
+            },
+            {
+              "type": "obj",
+              "cols": [
+                35,
+                45,
+                20,
+                40
+              ],
+              "rows": [
+                "LV_GRID_CONTENT"
+              ],
+              "add_style": [
+                "@container",
+                0
+              ],
+              "width": "100%",
+              "height": "LV_SIZE_CONTENT",
+              "pad_left": 10,
+              "children": [
+                {
+                  "type": "label",
+                  "text": "XY",
+                  "grid_cell": [
+                    "LV_GRID_ALIGN_START",
+                    0,
+                    1,
+                    "LV_GRID_ALIGN_START",
+                    0,
+                    1
+                  ],
+                  "height": "LV_SIZE_CONTENT"
+                },
+                {
+                  "type": "label",
+                  "grid_cell": [
+                    "LV_GRID_ALIGN_START",
+                    1,
+                    1,
+                    "LV_GRID_ALIGN_START",
+                    0,
+                    1
+                  ],
+                  "height": "LV_SIZE_CONTENT",
+                  "text": "10",
+                  "pad_right": 10,
+                  "add_style": [
+                    "@border_right",
+                    0
+                  ],
+                  "add_style": [
+                    "@indicator_yellow",
+                    0
+                  ]
+                },
+                {
+                  "type": "label",
+                  "text": "Z",
+                  "grid_cell": [
+                    "LV_GRID_ALIGN_START",
+                    2,
+                    1,
+                    "LV_GRID_ALIGN_START",
+                    0,
+                    1
+                  ],
+                  "height": "LV_SIZE_CONTENT"
+                },
+                {
+                  "type": "label",
+                  "grid_cell": [
+                    "LV_GRID_ALIGN_START",
+                    3,
+                    1,
+                    "LV_GRID_ALIGN_START",
+                    0,
+                    1
+                  ],
+                  "height": "LV_SIZE_CONTENT",
+                  "text": " 5",
+                  "add_style": [
+                    "@indicator_yellow",
+                    0
+                  ],
+                  "add_event_cb": [
+                    "@btn_clicked",
+                    "LV_EVENT_CLICKED",
+                    null
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "layout": "LV_LAYOUT_FLEX",
+          "add_style": [
+            "@container",
+            0
+          ],
+          "flex_flow": "LV_FLEX_FLOW_COLUMN",
+          "width": "LV_SIZE_CONTENT",
+          "height": "LV_SIZE_CONTENT",
+          "pad_right": 0,
+          "children": [
+            {
+              "type": "label",
+              "text": "$unit",
+              "add_style": [
+                "@border_top_btm",
+                0
+              ]
+            },
+            {
+              "type": "label",
+              "text": "$ovr"
+            },
+            {
+              "type": "label",
+              "text": "100%%"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "type": "style",
+    "id": "@action_button",
+    "size": [
+      45,
+      45
+    ],
+    "bg_color": "#1f95f6",
+    "radius": "LV_RADIUS_CIRCLE"
+  },
+  {
+    "type": "component",
+    "id": "@nav_action_button",
+    "content": {
+      "type": "dropdown",
+      "add_style": [
+        "@action_button",
+        0
+      ],
+      "options": " Jog\n Probe\n Status\n X\n y\n Z\n Off",
+      "lv_obj_align": [
+        "LV_ALIGN_BOTTOM_LEFT",
+        20,
+        -10
+      ],
+      "add_flag": "LV_OBJ_FLAG_FLOATING",
+      "lv_dropdown_set_text": "!",
+      "symbol": null,
+      "move_foreground": [],
+      "children": [
+        {
+          "init": {
+            "lv_dropdown_get_list": []
+          },
+          "min_width": 200
+        }
+      ]
+    }
+  },
+  {
+    "type": "component",
+    "id": "@jog_action_button",
+    "content": {
+      "type": "dropdown",
+      "options": " Home\n Zero\n G54\n G55\n G56\n G57\n G58",
+      "add_style": [
+        "@action_button",
+        0
+      ],
+      "lv_obj_align": [
+        "LV_ALIGN_BOTTOM_LEFT",
+        90,
+        -10
+      ],
+      "add_flag": "LV_OBJ_FLAG_FLOATING",
+      "lv_dropdown_set_text": "!",
+      "symbol": null,
+      "move_foreground": [],
+      "named": "jog_action_button",
+      "children": [
+        {
+          "init": {
+            "lv_dropdown_get_list": []
+          },
+          "min_width": 200
+        }
+      ]
+    }
+  },
+  {
+    "type": "component",
+    "id": "@xyz_axis_pos_display",
+    "content": {
+      "layout": "LV_LAYOUT_FLEX",
+      "flex_flow": "LV_FLEX_FLOW_COLUMN",
+      "add_style": [
+        "@container",
+        0
+      ],
+      "radius": 0,
+      "size": [
+        "100%",
+        "100%"
+      ],
+      "children": [
+        {
+          "type": "use-view",
+          "id": "@axis_pos_display",
+          "context": {
+            "axis": "X",
+            "wcs_pos": "11.000",
+            "abs_pos": "51.000",
+            "delta_pos": "2.125",
+            "name": "axis_pos_x"
+          }
+        },
+        {
+          "type": "use-view",
+          "id": "@axis_pos_display",
+          "context": {
+            "axis": "Y",
+            "wcs_pos": "22.000",
+            "abs_pos": "72.000",
+            "delta_pos": "-12.125",
+            "name": "axis_pos_y"
+          }
+        },
+        {
+          "type": "use-view",
+          "id": "@axis_pos_display",
+          "context": {
+            "axis": "Z",
+            "wcs_pos": "1.000",
+            "abs_pos": "1.000",
+            "delta_pos": "0.125",
+            "name": "axis_pos_z"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "type": "component",
+    "id": "@jog_view",
+    "content": {
+      "layout": "LV_LAYOUT_FLEX",
+      "flex_flow": "LV_FLEX_FLOW_ROW",
+      "add_style": [
+        "@container",
+        0
+      ],
+      "size": [
+        "100%",
+        320
+      ],
+      "named": "main",
+      "children": [
+        {
+          "layout": "LV_LAYOUT_FLEX",
+          "flex_flow": "LV_FLEX_FLOW_COLUMN",
+          "add_style": [
+            "@container",
+            0
+          ],
+          "height": "100%",
+          "flex_grow": 60,
+          "border_side": "LV_BORDER_SIDE_RIGHT",
+          "border_width": 2,
+          "radius": 0,
+          "border_color": "#ffffff",
+          "border_opa": 90,
+          "children": [
+            {
+              "type": "use-view",
+              "id": "@xyz_axis_pos_display",
+              "id": "@axis_jog_speed_adjust",
+              "context": {
+                "label": "X/Y",
+                "dist_0": "0.05mm",
+                "dist_1": "0.1mm",
+                "dist_2": "1.0mm",
+                "dist_3": "10mm"
+              },
+              "id": "@axis_jog_speed_adjust",
+              "context": {
+                "label": "Z",
+                "dist_0": "0.05mm",
+                "dist_1": "0.1mm",
+                "dist_2": "1.0mm",
+                "dist_3": "5.0mm"
+              }
+            }
+          ]
+        },
+        {
+          "layout": "LV_LAYOUT_FLEX",
+          "flex_flow": "LV_FLEX_FLOW_COLUMN",
+          "add_style": [
+            "@container",
+            0
+          ],
+          "height": "100%",
+          "flex_grow": 45,
+          "pad_top": 5,
+          "children": [
+            {
+              "type": "use-view",
+              "id": "@feed_rate_scale",
+              "context": {
+                "unit": "MM/MIN",
+                "label": "FEED",
+                "letter": "F",
+                "ovr": "Feed Ovr",
+                "pad_bottom": 12
+              }
+            },
+            {
+              "type": "use-view",
+              "id": "@feed_rate_scale",
+              "context": {
+                "unit": "/MIN",
+                "label": "SPEED",
+                "letter": "S",
+                "ovr": "Speed Ovr",
+                "pad_bottom": 12
+              }
+            },
+            {
+              "type": "use-view",
+              "id": "@jog_feed",
+              "context": {
+                "unit": "MM",
+                "label": "JOG",
+                "ovr": "Jog Ovr",
+                "pad_bottom": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "type": "component",
+    "id": "@btn_label",
+    "content": {
+      "type": "button",
+      "children": [
+        {
+          "type": "label",
+          "text": "$text"
+        }
+      ]
+    },
+    "add_style": [
+      "@container",
+      0
+    ],
+    "cols": [
+      "LV_GRID_CONTENT",
+      "LV_GRID_FR_1"
+    ],
+    "rows": [
+      "100%"
+    ],
+    "size": [
+      "100%",
+      "100%"
+    ],
+    "pad_row": 0,
+    "pad_column": 0,
+    "children": [
+      {
+        "type": "list",
+        "add_style": [
+          "@container",
+          0
+        ],
+        "grid_cell": [
+          "LV_GRID_ALIGN_START",
+          0,
+          1,
+          "LV_GRID_ALIGN_CENTER",
+          0,
+          1
+        ],
+        "width": 0,
+        "height": "100%",
+        "add_text": "   Nav",
+        "add_button": [
+          "",
+          " Jog"
+        ],
+        "add_button": [
+          "",
+          " Probe"
+        ],
+        "add_button": [
+          "",
+          " Status"
+        ],
+        "add_text": "   Machine",
+        "add_button": [
+          "",
+          " Jog X"
+        ],
+        "add_button": [
+          "",
+          " Jog Y"
+        ],
+        "add_button": [
+          "",
+          " Jog Z"
+        ],
+        "add_button": [
+          "",
+          " Jog OFF"
+        ]
+      },
+      {
+        "type": "use-view",
+        "id": "@jog_view",
+        "do": {
+          "grid_cell": [
+            "LV_GRID_ALIGN_START",
+            1,
+            1,
+            "LV_GRID_ALIGN_CENTER",
+            0,
+            1
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "type": "tileview",
+    "add_style": [
+      "@container",
+      0
+    ],
+    "size": [
+      "100%",
+      "100%"
+    ],
+    "pad_row": 0,
+    "pad_column": 0,
+    "children": [
+      {
+        "init": {
+          "lv_tileview_add_tile": [
+            0,
+            0,
+            "LV_DIR_RIGHT"
+          ]
+        }
+      },
+      {
+        "init": {
+          "lv_tileview_add_tile": [
+            0,
+            0,
+            "LV_DIR_RIGHT"
+          ]
+        },
+        "add_style": [
+          "@container",
+          0
+        ],
+        "bg_color": "#ff0000",
+        "bg_opa": "LV_OPA_COVER",
+        "children": [
+          {
+            "type": "label",
+            "center": [],
+            "text": "Scroll right"
+          }
+        ]
+      },
+      {
+        "init": {
+          "lv_tileview_add_tile": [
+            1,
+            0,
+            "LV_DIR_LEFT"
+          ]
+        },
+        "add_style": [
+          "@container",
+          0
+        ],
+        "children": [
+          {
+            "type": "label",
+            "text": "TEST"
+          },
+          {
+            "type": "use-view",
+            "id": "@jog_view"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "label",
+    "id": "@nav_action_button",
+    "name": "s_nav_action_button"
+  },
+  {
+    "type": "use-view",
+    "id": "@jog_action_button"
+  }
+]

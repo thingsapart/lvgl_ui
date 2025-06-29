@@ -1,0 +1,11 @@
+- type: style
+  id: '@style'
+  radius: 5
+  bg_opa: LV_OPA_COVER
+  bg_color: { lv_palette_lighten: [LV_PALETTE_GREY, 1] }
+  outline_width: 2
+  outline_color: { lv_palette_main: LV_PALETTE_BLUE }
+  outline_pad: 8
+
+- add_style: ['@style', LV_PART_MAIN]
+  center: []
