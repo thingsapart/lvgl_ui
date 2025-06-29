@@ -134,6 +134,17 @@ int main(int argc, char* argv[]) {
         return_code = 1;
         goto cleanup;
     }
+
+    // If a temporary file was used for YAML conversion, it has now been read into memory.
+    // We can delete the file immediately.
+    if (temp_json_path[0] != '\0') {
+        printf("Cleaning up temporary file: %s\n", temp_json_path);
+        remove(temp_json_path);
+        // Mark the path as handled so the final cleanup step doesn't try to remove it again
+        // in case of a later error.
+        temp_json_path[0] = '\0';
+    }
+
     ui_spec_json = cJSON_Parse(ui_spec_content);
     if (!ui_spec_json) {
         fprintf(stderr, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
@@ -214,9 +225,9 @@ cleanup:
     if(api_spec_content) free(api_spec_content);
     if(ui_spec_content) free(ui_spec_content);
 
-    // Clean up temporary file if it was created
+    // Clean up temporary file if it was created but not handled yet (e.g., due to an early error)
     if (temp_json_path[0] != '\0') {
-        printf("Cleaning up temporary file: %s\n", temp_json_path);
+        printf("Cleaning up temporary file (final check): %s\n", temp_json_path);
         remove(temp_json_path);
     }
 
