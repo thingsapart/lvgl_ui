@@ -1,0 +1,8 @@
+# Tests a key with an explicit empty array `[]` as its value.
+- type: button
+  pos: [10, 10]
+  size: [120, 50]
+  remove_style_all: []
+  children:
+    - type: label
+      text: A label inside button w/o styles

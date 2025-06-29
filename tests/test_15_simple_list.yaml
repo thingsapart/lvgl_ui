@@ -1,0 +1,10 @@
+# UI Test: A list with text headers and clickable icon buttons.
+- type: list
+  size: [180, 220]
+  center: []
+  children:
+    - init: { lv_list_add_text: [File] }
+    - init: { lv_list_add_button: [LV_SYMBOL_FILE, New] }
+    - init: { lv_list_add_button: [LV_SYMBOL_SAVE, Save] }
+    - init: { lv_list_add_text: [Actions] }
+    - init: { lv_list_add_button: [LV_SYMBOL_CLOSE, Close] }

@@ -1,0 +1,16 @@
+# Tests multiple levels of nested indentation.
+- type: obj
+  size: [100%, 100%]
+  children:
+    - type: obj
+      size: [250, 200]
+      pos: [50, 50]
+      children:
+        - type: label
+          text: Level 2
+        - type: obj
+          size: [100, 80]
+          pos: [50, 50]
+          children:
+            - type: label
+              text: Level 3

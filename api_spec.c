@@ -13,16 +13,6 @@ static PropertyDefinition global_func_prop_def;
 static char global_func_setter_name[128];
 static char global_func_arg_type[64];
 
-// Unused global static variables removed:
-// static PropertyDefinition global_prop_def_from_root;
-// static char global_prop_name_buf[128];
-// static char global_prop_c_type_buf[64];
-// static char global_prop_setter_buf[128];
-// static char global_prop_obj_setter_prefix_buf[128];
-// static char global_prop_widget_type_hint_buf[64];
-// static char global_prop_part_default_buf[64];
-// static char global_prop_state_default_buf[64];
-
 // New static variables for method-derived properties
 static PropertyDefinition method_prop_def;
 static char method_setter_name[128];
@@ -33,6 +23,8 @@ static void free_function_arg_list(FunctionArg* head);
 static void free_function_definition_list(FunctionMapNode* head);
 // Pass ApiSpec to allow enum lookup for function arguments
 static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node, const ApiSpec* spec_for_enum_lookup);
+static char* strip_comments_and_trim_quotes(const char* input);
+
 
 static void free_function_arg_list(FunctionArg* head) {
     FunctionArg* current = head;
@@ -111,12 +103,6 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             pd->c_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(prop_detail_json, "type"))); // Use "type" from JSON
             pd->widget_type_hint = safe_strdup(def_name);
             pd->obj_setter_prefix = NULL;
-
-            // cJSON* style_args_item = cJSON_GetObjectItem(prop_detail_json, "style_args");
-            // pd->num_style_args = 0; // Field removed from struct
-            // pd->style_part_default = NULL; // Field removed from struct
-            // pd->style_state_default = NULL; // Field removed from struct
-
             pd->is_style_prop = cJSON_IsTrue(cJSON_GetObjectItem(prop_detail_json, "is_style_prop"));
             pd->func_args = NULL; // Initialize new field
             pd->expected_enum_type = NULL; // Initialize new field
@@ -131,8 +117,6 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             *current_prop_list_node = (struct PropertyDefinitionNode*)calloc(1, sizeof(struct PropertyDefinitionNode));
             if (!*current_prop_list_node) {
                 free(pd->name); free(pd->setter); free(pd->c_type); free(pd->widget_type_hint);
-                // free(pd->style_part_default); // Field removed
-                // free(pd->style_state_default); // Field removed
                 free(pd->expected_enum_type);
                 // func_args not owned by pd here
                 free(pd);
@@ -172,13 +156,11 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
                     if (cJSON_IsString(arg_json_item)) {
                         fa->type = safe_strdup(arg_json_item->valuestring);
                     } else if (cJSON_IsObject(arg_json_item)) {
-                        // Assuming format like {"type": "lv_align_t", "name": "align_val", "expected_enum_type": "lv_align_t"}
                         fa->type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "type")));
                         fa->name = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "name")));
                         fa->expected_enum_type = safe_strdup(cJSON_GetStringValue(cJSON_GetObjectItem(arg_json_item, "expected_enum_type")));
                     }
 
-                    // If expected_enum_type is still NULL, try to infer it from the type if it matches a known enum
                     if (!fa->expected_enum_type && fa->type && spec_for_enum_lookup && spec_for_enum_lookup->enums) {
                          if (cJSON_GetObjectItem(spec_for_enum_lookup->enums, fa->type)) {
                             fa->expected_enum_type = safe_strdup(fa->type);
@@ -330,8 +312,6 @@ static void free_property_definition_list(PropertyDefinitionNode* head) {
             free(current->prop->widget_type_hint);
             free(current->prop->obj_setter_prefix);
             free(current->prop->expected_enum_type);
-            // func_args are not deep-copied for PropertyDefinition, so not freed here to avoid double-free.
-            // They are owned by the global FunctionDefinition or method FunctionDefinition.
             free(current->prop);
         }
         free(current);
@@ -504,7 +484,7 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
        while (func_node) {
            if (func_node->name && strcmp(func_node->name, constructed_name) == 0) {
                memset(&global_func_prop_def, 0, sizeof(PropertyDefinition));
-               strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name) - 1);
+               strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name)-1);
                global_func_setter_name[sizeof(global_func_setter_name)-1] = '\0';
 
                global_func_prop_def.name = (char*)prop_name;
@@ -700,19 +680,6 @@ bool api_spec_find_constant_value(const ApiSpec* spec, const char* const_name, l
     return false;
 }
 
-/**
- * @brief Helper to clean up a string constant value.
- *
- * This function takes a string, typically from the "constants" section of the spec,
- * and performs the following operations:
- * 1. Strips C-style block (`/* ... * /`) and line (`// ...`) comments.
- * 2. Trims leading and trailing whitespace.
- * 3. If the resulting string is enclosed in double quotes, it removes them.
- *
- * @param input The raw string value of the constant.
- * @return A new, heap-allocated string with the cleaned value. The caller must free this string.
- *         Returns NULL if the input is NULL or memory allocation fails.
- */
 static char* strip_comments_and_trim_quotes(const char* input) {
     if (!input) return NULL;
     char* buffer = strdup(input);

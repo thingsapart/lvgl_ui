@@ -1,0 +1,26 @@
+# UI Test: A simple login form with text areas and a button.
+- type: obj
+  layout: LV_LAYOUT_FLEX
+  flex_flow: LV_FLEX_FLOW_COLUMN
+  size: [240, 300]
+  center: []
+  pad_all: 10
+  pad_gap: 10
+  children:
+    - type: label
+      text: Username
+    - type: textarea
+      one_line: true
+      placeholder_text: "Enter username..."
+    - type: label
+      text: Password
+    - type: textarea
+      one_line: true
+      password_mode: true
+      placeholder_text: "Enter password..."
+    - type: button
+      flex_grow: 1
+      children:
+        - type: label
+          text: Login
+          center: []

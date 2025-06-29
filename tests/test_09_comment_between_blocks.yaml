@@ -1,0 +1,7 @@
+# Tests that comments between a parent and its indented block are handled correctly.
+- type: obj
+  size: [100, 100]
+  children:
+    # This comment should not break the parent-child relationship.
+    - type: label
+      text: Hello

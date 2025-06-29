@@ -1,0 +1,18 @@
+# UI Test: A group of checkboxes for multiple selections.
+- type: obj
+  layout: LV_LAYOUT_FLEX
+  flex_flow: LV_FLEX_FLOW_COLUMN
+  center: []
+  size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+  pad_all: 10
+  pad_gap: 10
+  children:
+    - type: label
+      text: Select toppings:
+    - type: checkbox
+      text: Extra Cheese
+    - type: checkbox
+      text: Pepperoni
+      add_state: LV_STATE_CHECKED
+    - type: checkbox
+      text: Mushrooms

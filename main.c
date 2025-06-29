@@ -14,6 +14,7 @@
 #include "lvgl_renderer.h"
 #include "viewer/sdl_viewer.h"
 #include "c_gen/lvgl_dispatch.h"
+#include "yaml_parser.h" // ADDED: Include the new YAML parser
 
 // For getpid() to create unique temporary filenames
 #ifdef _WIN32
@@ -31,11 +32,12 @@ void print_usage(const char* prog_name);
 // --- Main Application ---
 
 void print_usage(const char* prog_name) {
-    fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json|yaml> [--codegen <backends>]\n", prog_name);
+    fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json|yaml> [--codegen <backends>] [--debug_out <modules>]\n", prog_name);
     fprintf(stderr, "  <backends> is a comma-separated list of code generation backends.\n");
     fprintf(stderr, "  Available backends: ir_print, ir_debug_print, c_code, lvgl_render\n");
     fprintf(stderr, "  If --codegen is not specified, 'ir_print' is run by default.\n");
-    fprintf(stderr, "  If a .yaml file is provided, 'yq' must be installed to convert it to JSON.\n");
+    fprintf(stderr, "  <modules> is a comma-separated list of debug modules to enable (e.g., 'GENERATOR,RENDERER' or 'ALL').\n");
+    fprintf(stderr, "  This is an alternative to the LVGL_DEBUG_MODULES environment variable.\n");
 }
 
 void render_abort(const char *msg) {
@@ -46,8 +48,6 @@ void render_abort(const char *msg) {
 
 
 int main(int argc, char* argv[]) {
-    debug_log_init();
-
     // --- Resource Declarations for robust cleanup ---
     int return_code = 0;
     char* api_spec_content = NULL;
@@ -57,12 +57,12 @@ int main(int argc, char* argv[]) {
     ApiSpec* api_spec = NULL;
     IRRoot* ir_root = NULL;
     char* backend_list_copy = NULL;
-    char temp_json_path[256] = {0}; // Will hold path to temporary JSON file
 
     // --- 1. Argument Parsing ---
     const char* api_spec_path = NULL;
     const char* ui_spec_path = NULL;
     const char* codegen_list_str = "ir_print"; // Default backend
+    const char* debug_out_str = NULL;          // For --debug_out flag
 
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--codegen") == 0) {
@@ -70,6 +70,14 @@ int main(int argc, char* argv[]) {
                 codegen_list_str = argv[++i];
             } else {
                 fprintf(stderr, "Error: --codegen option requires an argument.\n");
+                print_usage(argv[0]);
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--debug_out") == 0) {
+            if (i + 1 < argc) {
+                debug_out_str = argv[++i];
+            } else {
+                fprintf(stderr, "Error: --debug_out option requires an argument.\n");
                 print_usage(argv[0]);
                 return 1;
             }
@@ -84,37 +92,19 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // Initialize logging system first from ENV, then from command line
+    debug_log_init();
+    if (debug_out_str) {
+        debug_log_parse_modules_str(debug_out_str);
+    }
+
     if (!api_spec_path || !ui_spec_path) {
         print_usage(argv[0]);
         return 1;
     }
 
-    // --- 1.5. YAML to JSON conversion (if necessary) ---
-    const char* ui_spec_to_load = ui_spec_path;
-    const char* extension = strrchr(ui_spec_path, '.');
 
-    if (extension && (strcmp(extension, ".yaml") == 0 || strcmp(extension, ".yml") == 0)) {
-        printf("YAML file detected: '%s'. Converting with 'yq'...\n", ui_spec_path);
-
-        snprintf(temp_json_path, sizeof(temp_json_path), "__temp_ui_%d.json", getpid());
-
-        char command[1024];
-        snprintf(command, sizeof(command), "yq e -o json \"%s\" > \"%s\"", ui_spec_path, temp_json_path);
-
-        printf("Executing: %s\n", command);
-        int ret = system(command);
-
-        if (ret != 0) {
-            fprintf(stderr, "Error: 'yq' command failed. Is 'yq' installed and in your PATH?\n");
-            remove(temp_json_path); // Attempt to clean up potentially empty/partial file
-            return_code = 1;
-            goto cleanup;
-        }
-        ui_spec_to_load = temp_json_path;
-    }
-
-
-    // --- 2. File Loading & JSON Parsing ---
+    // --- 2. File Loading & JSON/YAML Parsing ---
     api_spec_content = read_file(api_spec_path);
     if (!api_spec_content) {
         fprintf(stderr, "Error reading API spec file: %s\n", api_spec_path);
@@ -128,29 +118,40 @@ int main(int argc, char* argv[]) {
         goto cleanup;
     }
 
-    ui_spec_content = read_file(ui_spec_to_load);
+    ui_spec_content = read_file(ui_spec_path);
     if (!ui_spec_content) {
-        fprintf(stderr, "Error reading UI spec file: %s\n", ui_spec_to_load);
+        fprintf(stderr, "Error reading UI spec file: %s\n", ui_spec_path);
         return_code = 1;
         goto cleanup;
     }
 
-    // If a temporary file was used for YAML conversion, it has now been read into memory.
-    // We can delete the file immediately.
-    if (temp_json_path[0] != '\0') {
-        printf("Cleaning up temporary file: %s\n", temp_json_path);
-        remove(temp_json_path);
-        // Mark the path as handled so the final cleanup step doesn't try to remove it again
-        // in case of a later error.
-        temp_json_path[0] = '\0';
+    const char* extension = strrchr(ui_spec_path, '.');
+    if (extension && (strcmp(extension, ".yaml") == 0 || strcmp(extension, ".yml") == 0)) {
+        printf("YAML file detected: '%s'. Parsing with built-in parser...\n", ui_spec_path);
+        char* error_msg = NULL;
+        ui_spec_json = yaml_to_cjson(ui_spec_content, &error_msg);
+
+        char *out  = cJSON_Print(ui_spec_json);
+        printf("YAML -> JSON:\n\n%s\n\n", out);
+        free(out);
+        printf("------------------------------\n");
+
+        if (error_msg) {
+            fprintf(stderr, "%s\n", error_msg);
+            free(error_msg);
+            return_code = 1;
+            goto cleanup;
+        }
+    } else {
+        // Assume JSON for any other file type
+        ui_spec_json = cJSON_Parse(ui_spec_content);
+        if (!ui_spec_json) {
+            fprintf(stderr, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
+            return_code = 1;
+            goto cleanup;
+        }
     }
 
-    ui_spec_json = cJSON_Parse(ui_spec_content);
-    if (!ui_spec_json) {
-        fprintf(stderr, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
-        return_code = 1;
-        goto cleanup;
-    }
 
     // --- 3. IR Generation ---
     api_spec = api_spec_parse(api_spec_json);
@@ -224,12 +225,6 @@ cleanup:
     if(ui_spec_json) cJSON_Delete(ui_spec_json);
     if(api_spec_content) free(api_spec_content);
     if(ui_spec_content) free(ui_spec_content);
-
-    // Clean up temporary file if it was created but not handled yet (e.g., due to an early error)
-    if (temp_json_path[0] != '\0') {
-        printf("Cleaning up temporary file (final check): %s\n", temp_json_path);
-        remove(temp_json_path);
-    }
 
     return return_code;
 }

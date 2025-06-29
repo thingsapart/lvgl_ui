@@ -9,7 +9,6 @@
   border_opa: LV_OPA_20
   border_width: 2
   text_color: '#000000'
-  //: No support for color_filters?
 
 - type: style
   id: '@style_button_red'

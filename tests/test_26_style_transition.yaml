@@ -1,0 +1,15 @@
+# A style with a transition that changes background color on press.
+- type: style
+  id: '@trans_style'
+  transition: { props: [LV_STYLE_BG_COLOR], path: lv_anim_path_linear, time: 200, delay: 0, user_data: NULL }
+
+- type: button
+  size: [120, 50]
+  center: []
+  add_style: ['@trans_style', 0]
+  bg_color: { lv_palette_main: LV_PALETTE_BLUE }
+  style_bg_color: [{ lv_palette_main: LV_PALETTE_RED }, LV_STATE_PRESSED]
+  children:
+    - type: label
+      text: Press Me
+      center: []

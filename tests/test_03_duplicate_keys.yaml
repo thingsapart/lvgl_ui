@@ -1,0 +1,15 @@
+# Tests duplicate keys, essential for properties like 'add_style'.
+- type: style
+  id: '@style1'
+  bg_color: '#ff0000'
+
+- type: style
+  id: '@style2'
+  border_width: 2
+  border_color: '#0000ff'
+
+- type: obj
+  size: [100, 50]
+  center: []
+  add_style: ['@style1', 0]
+  add_style: ['@style2', 0] # This is the duplicate key.

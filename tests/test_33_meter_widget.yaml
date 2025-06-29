@@ -1,0 +1,11 @@
+# A meter/gauge widget with a scale and a needle indicator.
+- type: meter
+  id: '@my_meter'
+  size: [200, 200]
+  center: []
+  children:
+    - init: { lv_meter_add_scale: [] }
+      set_scale_ticks: [41, 2, 10, { lv_palette_main: LV_PALETTE_GREY }]
+      set_scale_major_ticks: [8, 4, 15, { lv_color_hex: 0x000000 }, 10]
+    - init: { lv_meter_add_needle_line: ['@my_meter', '@_scale', 4, { lv_palette_main: LV_PALETTE_GREY }, -10] }
+      set_indicator_value: 30

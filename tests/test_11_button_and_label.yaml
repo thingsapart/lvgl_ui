@@ -1,0 +1,8 @@
+# UI Test: A standard clickable button with a centered label.
+- type: button
+  size: [120, 50]
+  center: []
+  children:
+    - type: label
+      text: Click Me
+      center: []

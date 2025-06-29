@@ -1,0 +1,4 @@
+# UI Test: A simple dropdown (select) menu.
+- type: dropdown
+  pos: [20, 20]
+  options: "Apple\nBanana\nOrange\nCherry\nGrape"

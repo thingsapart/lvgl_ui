@@ -1,0 +1,12 @@
+# Tests comments and varied whitespace to ensure parser robustness.
+
+# This is a full-line comment.
+-   type: label # This is an end-of-line comment.
+    text: '             Leading and trailing space             '
+    outline_color: '#ff0000'
+    outline_width: 1
+    # The next line is intentionally commented out.
+    # align: LV_ALIGN_CENTER
+    pos: [ 20, 20 ]
+
+# There are empty lines above and below this comment.

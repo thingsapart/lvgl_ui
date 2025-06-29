@@ -1,0 +1,12 @@
+# This file tests whitespace and comment handling.
+
+- type: style # A style object
+  id: '@style_with_comments'
+  # The color should be parsed as '#aabbcc', not as an empty string.
+  bg_color: '#aabbcc'  # A hex color value.
+
+# An empty line should be ignored here.
+
+- type: label
+  center: []
+  text: This is a test.

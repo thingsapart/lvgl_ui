@@ -1,0 +1,4 @@
+# Displaying an image (assumes LV_IMG_DECLARE(my_image_asset) was done elsewhere).
+- type: img
+  src: 'my_image_asset'
+  center: []

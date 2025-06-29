@@ -1,0 +1,9 @@
+# An object using local styles (e.g., style_bg_color) instead of a shared style object.
+- type: obj
+  size: [150, 100]
+  center: []
+  radius: 10
+  style_bg_color: [{ lv_palette_main: LV_PALETTE_GREEN }, 0]
+  style_bg_opa: [LV_OPA_COVER, 0]
+  style_border_width: [2, 0]
+  style_border_color: [{ lv_palette_darken: [LV_PALETTE_GREEN, 3] }, 0]

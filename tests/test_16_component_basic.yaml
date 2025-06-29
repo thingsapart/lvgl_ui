@@ -1,0 +1,22 @@
+# UI Test: Defines and uses a simple component.
+- type: component
+  id: '@icon_button'
+  content:
+    type: button
+    size: [50, 50]
+    children:
+      - type: label
+        text: $icon # Context variable
+        center: []
+
+- type: use-view
+  id: '@icon_button'
+  pos: [10, 10]
+  context:
+    icon: LV_SYMBOL_PLAY
+
+- type: use-view
+  id: '@icon_button'
+  pos: [70, 10]
+  context:
+    icon: LV_SYMBOL_PAUSE

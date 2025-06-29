@@ -1,0 +1,5 @@
+# UI Test: A simple progress bar.
+- type: bar
+  size: [250, 20]
+  center: []
+  value: [66, LV_ANIM_ON]

@@ -1,0 +1,19 @@
+# A tabview with three tabs, each containing a different simple widget.
+- init: { lv_tabview_create: [parent, LV_DIR_TOP, 50] }
+  size: [250, 180]
+  center: []
+  children:
+    - init: { lv_tabview_add_tab: ['Tab 1'] }
+      children:
+        - type: label
+          text: 'Content of Tab 1'
+          center: []
+    - init: { lv_tabview_add_tab: ['Tab 2'] }
+      children:
+        - type: slider
+          width: 150
+          center: []
+    - init: { lv_tabview_add_tab: ['Tab 3'] }
+      children:
+        - type: switch
+          center: []

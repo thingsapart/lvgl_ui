@@ -1,0 +1,26 @@
+# A component for a "card" that takes a title, an icon, and a value.
+- type: component
+  id: '@info_card'
+  content:
+    layout: LV_LAYOUT_FLEX
+    flex_flow: LV_FLEX_FLOW_COLUMN
+    size: [150, LV_SIZE_CONTENT]
+    pad_all: 10
+    radius: 5
+    bg_color: { lv_palette_lighten: [LV_PALETTE_GREY, 2] }
+    children:
+      - type: label
+        text: $title
+      - type: label
+        text: $icon
+        style_text_font: ['@font_large', 0] # Assumes a large font is registered
+      - type: label
+        text: $value
+
+- type: use-view
+  id: '@info_card'
+  pos: [10, 10]
+  context:
+    title: 'Temperature'
+    icon: LV_SYMBOL_EDIT # Placeholder for a real symbol
+    value: '23.5 C'

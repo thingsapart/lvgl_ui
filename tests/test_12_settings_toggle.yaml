@@ -1,0 +1,12 @@
+# UI Test: A common settings pattern with a label and a switch.
+- type: obj
+  size: [300, 100]
+  layout: LV_LAYOUT_FLEX
+  flex_flow: LV_FLEX_FLOW_ROW
+  flex_align: [LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+  center: []
+  children:
+    - type: label
+      text: Enable Dark Mode
+    - type: switch
+      add_state: LV_STATE_CHECKED

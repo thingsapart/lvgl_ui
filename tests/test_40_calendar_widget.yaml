@@ -1,0 +1,5 @@
+# A calendar widget with today's date highlighted and a specific date shown.
+- type: calendar
+  center: []
+  today_date: [2024, 7, 15]
+  shown_date: [2024, 7, 1]

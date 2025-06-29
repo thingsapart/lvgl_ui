@@ -333,23 +333,18 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             }
 
             if (context_val_json) {
-                // If the context value is a string, it could be a C variable name (for $parent, etc.)
-                // or a registry reference ("@foo"). In these cases, we create a direct registry reference.
                 if (cJSON_IsString(context_val_json)) {
                     const char* val_str = context_val_json->valuestring;
-                    // Check if the value is a known C variable or an @-reference
                     if (registry_get_c_type_for_id(ctx->registry, val_str)) {
                         return ir_new_expr_registry_ref(val_str, registry_get_c_type_for_id(ctx->registry, val_str));
                     }
                 }
-                // Otherwise, the context value is just another piece of JSON to be unmarshaled.
                 return unmarshal_value(ctx, (cJSON*)context_val_json, ui_context, expected_c_type);
             }
             generator_warning("Context variable '%s' not found.", s);
             return ir_new_expr_context_var(var_name, "unknown");
         }
 
-        // Check for bitwise OR operator
         if (strchr(s, '|')) {
             long final_val = 0;
             char* temp_str = strdup(s);

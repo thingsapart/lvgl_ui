@@ -1,0 +1,6 @@
+# A perpetually spinning loading indicator.
+- type: spinner
+  size: [80, 80]
+  center: []
+  arc_length: 60
+  spin_time: 1000

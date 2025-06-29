@@ -1,0 +1,11 @@
+# Tests the shorthand syntax where a list item and its first key are on the same line.
+- type: obj
+  children:
+    - type: label
+      text: First child
+    - type: button
+      pos: [0, 40]
+      children:
+        - type: label
+          text: Second child
+  size: [100%, 100%]

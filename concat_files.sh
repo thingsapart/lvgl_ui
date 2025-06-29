@@ -58,7 +58,28 @@ else
 fi
 
 # The final mandatory closing line.
-FINAL_MESSAGE="\nPlease print out whole files. Don't give me just the section that has changed, do not omit parts with comments.\n"
+# FINAL_MESSAGE="\nPlease print out whole files. Don\'t give me just the section that has changed, do not omit parts with comments.\n"
+
+FINAL_MESSAGE='
+Please print out whole files. Do not give me just the section that has changed, do not omit parts with comments.
+
+NOTE:
+
+Format every file output the following way: start with a ">> {filename}" followed by a markdown code block and end with "<< end".
+
+EG:
+
+"
+>> tests/test_20_something_to_test.yaml
+```
+# Test something here
+...
+```
+<< end
+"
+'
+
+echo "FINAL: $FINAL_MESSAGE"
 
 # Concatenate all file contents into a single variable.
 # This is done in a subshell, and its stdout is captured by the variable.

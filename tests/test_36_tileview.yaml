@@ -1,0 +1,14 @@
+# A 2x1 tileview that allows horizontal scrolling between two screens.
+- type: tileview
+  size: [100%, 100%]
+  children:
+    - init: { lv_tileview_add_tile: [0, 0, LV_DIR_RIGHT] }
+      children:
+        - type: label
+          text: 'Tile 1: Swipe Right'
+          center: []
+    - init: { lv_tileview_add_tile: [1, 0, LV_DIR_LEFT] }
+      children:
+        - type: label
+          text: 'Tile 2: Swipe Left'
+          center: []

@@ -1,0 +1,25 @@
+# A vertical flex container whose children are horizontal flex containers (a common pattern).
+- type: obj
+  layout: LV_LAYOUT_FLEX
+  flex_flow: LV_FLEX_FLOW_COLUMN
+  size: [250, 150]
+  pad_all: 5
+  pad_gap: 5
+  center: []
+  children:
+    - type: obj # First row
+      layout: LV_LAYOUT_FLEX
+      flex_flow: LV_FLEX_FLOW_ROW
+      width: 100%
+      flex_grow: 1
+      children:
+        - type: button
+          flex_grow: 1
+    - type: obj # Second row
+      layout: LV_LAYOUT_FLEX
+      flex_flow: LV_FLEX_FLOW_ROW
+      width: 100%
+      flex_grow: 1
+      children:
+        - type: slider
+          flex_grow: 1

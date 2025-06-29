@@ -1,0 +1,27 @@
+# A container with a flex layout (row) and children with different `flex_grow` properties.
+- type: obj
+  size: [300, 80]
+  center: []
+  layout: LV_LAYOUT_FLEX
+  flex_flow: LV_FLEX_FLOW_ROW
+  pad_all: 5
+  pad_gap: 5
+  children:
+    - type: button
+      flex_grow: 1 # Takes 1 part of the space
+      children:
+        - type: label
+          text: '1'
+          center: []
+    - type: button
+      flex_grow: 2 # Takes 2 parts of the space
+      children:
+        - type: label
+          text: '2'
+          center: []
+    - type: button
+      flex_grow: 1 # Takes 1 part of the space
+      children:
+        - type: label
+          text: '1'
+          center: []

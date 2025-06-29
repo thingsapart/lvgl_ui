@@ -1,0 +1,15 @@
+# A keyboard that automatically targets a text area.
+- type: obj
+  layout: LV_LAYOUT_FLEX
+  flex_flow: LV_FLEX_FLOW_COLUMN
+  size: [300, 250]
+  center: []
+  children:
+    - type: textarea
+      id: '@ta'
+      width: 100%
+      one_line: false
+    - type: keyboard
+      width: 100%
+      flex_grow: 1
+      textarea: '@ta'

@@ -1,0 +1,18 @@
+[
+    {
+        "type": "style",
+        "id": "@style",
+        "radius": "LV_RADIUS_CIRCLE",
+        "align": "LV_ALIGN_CENTER"
+    },
+    {
+        "type": "button",
+        "add_style": ["@style", "LV_PART_MAIN | LV_STATE_DEFAULT"],
+        "children": [
+            {
+                "type": "label",
+                "text": "Styled Round Button"
+            }
+        ]
+    }
+]

@@ -25,9 +25,12 @@ typedef enum {
 } DebugLogModule;
 
 // Function to initialize the logging system
-// Reads LVGL_DEBUG_MODULES environment variable (comma-separated module names, e.g., "CODEGEN,RENDERER", or "ALL")
-// If not set, all logging is disabled by default.
+// Reads LVGL_DEBUG_MODULES environment variable.
 void debug_log_init(void);
+
+// Parses a comma-separated string of module names and enables them.
+// Can be called after debug_log_init() to add more modules from other sources (e.g., command line).
+void debug_log_parse_modules_str(const char* modules_str);
 
 // Function to enable logging for a specific module
 void debug_log_enable_module(DebugLogModule module);

@@ -1,0 +1,8 @@
+# Tests nested indentation with a 'children' block.
+- type: obj
+  size: [200, 100]
+  center: []
+  children:
+    - type: label
+      text: Child Label
+      center: []
