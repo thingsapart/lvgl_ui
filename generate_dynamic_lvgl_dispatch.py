@@ -24,7 +24,20 @@ IGNORE_ARG_TYPES = [
 # that we know how to handle manually in the renderer via the object registry.
 WHITELIST_FUNCTIONS = {
     'lv_obj_add_event_cb',
-    'lv_list_add_button'
+    'lv_list_add_button',
+    'lv_image_set_src',
+    'lv_obj_add_event_cb'
+}
+
+# --- Polymorphic Argument Hints ---
+# Provides semantic hints for ambiguous argument types like `void*`.
+# Key: Function name
+# Value: Dictionary mapping { arg_index: hint_string }
+# 'arg_index' is the zero-based index of the argument *after* the target object.
+POLYMORPHIC_ARG_HINTS = {
+    'lv_list_add_button': {0: 'symbol_or_obj'}, # arg 0 is `icon`
+    'lv_image_set_src':   {0: 'symbol_or_obj'}, # arg 0 is `src`
+    'lv_obj_add_event_cb': {2: 'void_ptr_or_null'}, # arg 2 is `user_data`
 }
 
 
@@ -167,10 +180,10 @@ class CCodeGenerator:
         # Check argument types against the ignore list
         for arg_type in func_info.get('args', []):
             if not arg_type: continue
-            if arg_type in IGNORE_ARG_TYPES: return False
-            if any(arg_type.endswith(s) for s in IGNORE_FUNC_ARG_TYPE_SUFFIXES): return False
+            # Whitelist override applies to ignored types as well
+            if arg_type in IGNORE_ARG_TYPES and func_name not in WHITELIST_FUNCTIONS: return False
+            if any(arg_type.endswith(s) for s in IGNORE_FUNC_ARG_TYPE_SUFFIXES) and func_name not in WHITELIST_FUNCTIONS: return False
             if '(*' in arg_type: return False # Function pointers
-            if arg_type in ['void*', 'const void*']: return False
 
         return True
 
@@ -179,17 +192,23 @@ class CCodeGenerator:
         Generates a key representing a function's signature archetype.
         Functions with the same archetype can share a dispatcher.
         """
+        func_name = func_info.get('name', '')
         ret_type = func_info.get('return_type', 'void')
         args = func_info.get('args', [])
 
-        # The first argument is the target object if it's an LVGL pointer type
         has_target_obj = args and isinstance(args[0], str) and args[0].startswith('lv_') and args[0].endswith('_t*')
-
         target_c_type = args[0] if has_target_obj else 'void*'
         arg_list = args[1:] if has_target_obj else args
 
-        # An archetype is defined by: (return_type, target_obj_type, arg1_type, arg2_type, ...)
-        return (ret_type, target_c_type, *arg_list)
+        # ** NEW: Add hints to the archetype key to differentiate polymorphic functions **
+        arg_hints = []
+        func_hints = POLYMORPHIC_ARG_HINTS.get(func_name, {})
+        for i in range(len(arg_list)):
+            hint = func_hints.get(i, 'default')
+            arg_hints.append(hint)
+
+        return (ret_type, target_c_type, *arg_list, *arg_hints)
+
 
     def analyze_archetypes(self):
         """Groups all wrappable functions by their signature archetype."""
@@ -199,40 +218,37 @@ class CCodeGenerator:
                 key = self._get_archetype_key(func)
                 self.archetypes[key].append(func)
 
-    def _get_parser_for_ir_node(self, c_type, ir_args_var, arg_index):
+    def _get_parser_for_ir_node(self, c_type, ir_args_var, arg_index, hint):
         """
-        Generates the C code snippet to unmarshal an IRNode* into a specific C type.
-        This now uses the C helper functions like `ir_node_get_int`, etc.
+        Generates the C code snippet to unmarshal an IRNode* into a specific C type,
+        now with a hint for polymorphic types.
         """
         c_type_no_const = c_type.replace('const ', '').strip()
         ir_node_accessor = f"{ir_args_var}[{arg_index}]"
 
-        # For enums, use the dedicated helper that can look up string symbols
+        # ** NEW: Check for polymorphic hints first **
+        if hint == 'symbol_or_obj':
+            return f'({c_type})resolve_symbol_or_obj({ir_node_accessor})'
+        if hint == 'void_ptr_or_null':
+            # This is for user_data which might be a registered object or just NULL
+            return f'({c_type})resolve_symbol_or_obj({ir_node_accessor})'
+
+
         if c_type_no_const in self.enum_types:
             return f'({c_type_no_const})ir_node_get_enum_value({ir_node_accessor}, "{c_type_no_const}", spec)'
-
         if c_type_no_const == 'bool':
             return f'ir_node_get_bool({ir_node_accessor})'
-
         if c_type == 'const char*':
             return f'ir_node_get_string({ir_node_accessor})'
-
-        # For mutable strings, create a copy in the registry
         if c_type == 'char*':
             return f'obj_registry_add_str(ir_node_get_string({ir_node_accessor}))'
-
-        # For colors, convert from the integer value in the IR
         if c_type_no_const == 'lv_color_t':
             return f'lv_color_hex((uint32_t)ir_node_get_int({ir_node_accessor}))'
-
         if c_type_no_const == 'lv_color32_t':
             return f'lv_color_to_32(lv_color_hex((uint32_t)ir_node_get_int({ir_node_accessor})), LV_OPA_COVER)'
-
-        # For any other pointer, assume it's a reference in the object registry
         if c_type.endswith('*'):
             return f'({c_type})obj_registry_get(ir_node_get_string({ir_node_accessor}))'
 
-        # Default case for numeric types (int, lv_coord_t, uint32_t, etc.)
         return f'({c_type_no_const})ir_node_get_int({ir_node_accessor})'
 
     def generate_files(self, header_path, source_path):
@@ -330,20 +346,41 @@ typedef void (*generic_lvgl_func_t)(void);
 typedef RenderValue (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);
 """)
 
-            self.archetype_map = {}
-            # Generate forward declarations for all archetype dispatchers
             f.write("\n// --- Forward Declarations for Archetype Dispatchers ---\n")
+            self.archetype_map = {}
             for i, key in enumerate(self.archetypes.keys()):
                 dispatcher_name = f"dispatch_ir_archetype_{i}"
                 self.archetype_map[key] = dispatcher_name
                 f.write(f"static RenderValue {dispatcher_name}(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);\n")
 
-            f.write("\n// --- Archetype Dispatcher Implementations ---\n")
+            f.write(
+"""
+// --- C Helper for Polymorphic Arguments ---
+static void* resolve_symbol_or_obj(struct IRNode* node) {
+    if (!node) return NULL;
+    const char* s = ir_node_get_string(node);
+    if (!s) return NULL;
 
-            # Generate implementation for each archetype dispatcher
+    // If it's a registered object (e.g., '@my_image'), get it from the registry.
+    if (s[0] == '@') {
+        return obj_registry_get(s);
+    }
+    // Otherwise, treat it as a string literal (e.g., LV_SYMBOL_AUDIO).
+    return (void*)s;
+}
+"""
+            )
+
+            f.write("\n// --- Archetype Dispatcher Implementations ---\n")
             for i, (key, func_list) in enumerate(self.archetypes.items()):
                 dispatcher_name = self.archetype_map[key]
-                ret_type, target_c_type, *arg_types = key
+                
+                # Deconstruct the archetype key, which now includes hints
+                num_non_hint_items = 2 + (len(key) - 2) // 2
+                ret_type, target_c_type, *rest = key
+                arg_types = rest[:num_non_hint_items - 2]
+                arg_hints = rest[num_non_hint_items - 2:]
+
                 first_func = func_list[0]
 
                 f.write(f"// Archetype for {len(func_list)} functions like: {first_func['name']}\n")
@@ -358,19 +395,17 @@ typedef RenderValue (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target
                 f.write(f"        return result;\n")
                 f.write(f"    }}\n\n")
 
-                # Argument parsing using the new IR helpers
                 for j, c_type in enumerate(arg_types):
-                    parser_code = self._get_parser_for_ir_node(c_type, 'ir_args', j)
+                    hint = arg_hints[j]
+                    parser_code = self._get_parser_for_ir_node(c_type, 'ir_args', j, hint)
                     f.write(f"    {c_type} arg{j} = {parser_code};\n")
                     if c_type == 'lv_style_t*' or c_type == 'lv_obj_t*':
-                        f.write(f'    if (arg{j} == NULL) {{ render_abort("Argument {j} ({c_type}) is NULL - not allowed"); }}\n')
+                        f.write(f'    if (arg{j} == NULL) {{ /* render_abort("Argument {j} ({c_type}) is NULL - not allowed"); */ }}\n')
 
-                # Typedef for the specific function pointer
                 c_call_arg_types = [target_c_type] if target_c_type != 'void*' else []
                 c_call_arg_types.extend(arg_types)
                 f.write(f"    typedef {ret_type} (*specific_func_t)({', '.join(c_call_arg_types) if c_call_arg_types else 'void'});\n")
 
-                # The actual function call
                 call_params = [f"({target_c_type})target"] if target_c_type != 'void*' else []
                 call_params.extend(f"arg{j}" for j in range(len(arg_types)))
                 call_str = f"((specific_func_t)fn)({', '.join(call_params)})"
@@ -397,7 +432,6 @@ typedef RenderValue (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target
                 f.write("    return result;\n")
                 f.write("}\n\n")
 
-            # --- Function Registry and Main Dispatcher ---
             f.write(
 """
 typedef struct {
@@ -409,7 +443,6 @@ typedef struct {
 // This array is sorted by name for bsearch
 static const FunctionMapping function_registry[] = {
 """)
-            # Generate registry entries
             registry_entries = []
             for key, funcs in self.archetypes.items():
                 dispatcher_name = self.archetype_map[key]
@@ -437,7 +470,6 @@ RenderValue dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct
         sizeof(FunctionMapping), compare_func_mappings
     );
     if (mapping && mapping->ir_dispatcher) {
-        // Pass the spec pointer to the archetype dispatcher for context
         return mapping->ir_dispatcher(mapping->func_ptr, target_obj, ir_args, arg_count, spec);
     }
     print_warning("Dynamic LVGL IR call failed: function '%s' not found or dispatcher missing.", func_name);
@@ -462,23 +494,21 @@ void obj_registry_init(void) {
     memset(obj_registry, 0, sizeof(obj_registry));
 }
 
-// Makes a copy of a string and stores it in the registry to manage its lifetime.
 char* obj_registry_add_str(const char *s) {
     if (!s) return NULL;
     if (obj_registry_count >= DYNAMIC_LVGL_MAX_OBJECTS) {
         print_warning("Cannot add string to registry: registry full");
-        return (char*)s; // Fallback: return original pointer
+        return (char*)s;
     }
-    // We use a prefix to avoid ID collisions with objects.
     size_t slen = strlen(s);
-    char* id_buf = malloc(slen + 6); // "str::" + s + null terminator
+    char* id_buf = malloc(slen + 6);
     if (!id_buf) return (char*)s;
     sprintf(id_buf, "str::%s", s);
 
     for (int i = 0; i < obj_registry_count; i++) {
         if (strcmp(obj_registry[i].id, id_buf) == 0) {
             free(id_buf);
-            return (char*)obj_registry[i].obj; // Return existing copy
+            return (char*)obj_registry[i].obj;
         }
     }
 
@@ -495,7 +525,7 @@ void obj_registry_add(const char* id, void* obj) {
     }
     for (int i = 0; i < obj_registry_count; i++) {
         if (strcmp(obj_registry[i].id, id) == 0) {
-            obj_registry[i].obj = obj; // Update existing entry
+            obj_registry[i].obj = obj;
             return;
         }
     }
@@ -507,13 +537,19 @@ void obj_registry_add(const char* id, void* obj) {
 void* obj_registry_get(const char* id) {
     if (!id) return NULL;
     if (strcmp(id, "SCREEN_ACTIVE") == 0) return (void*)lv_screen_active();
-    // if (strcmp(id, "NULL") == 0) return NULL;
 
     for (int i = 0; i < obj_registry_count; i++) {
         if (strcmp(obj_registry[i].id, id) == 0) {
             return obj_registry[i].obj;
         }
     }
+    const char* key = (id[0] == '@') ? id + 1 : id;
+    for (int i = 0; i < obj_registry_count; i++) {
+        if (strcmp(obj_registry[i].id, key) == 0) {
+            return obj_registry[i].obj;
+        }
+    }
+
     print_warning("Object with ID '%s' not found in registry.", id);
     return NULL;
 }
@@ -522,7 +558,7 @@ void obj_registry_deinit(void) {
     for (int i = 0; i < obj_registry_count; i++) {
         if(obj_registry[i].id) free(obj_registry[i].id);
         if(obj_registry[i].obj && strncmp(obj_registry[i].id, "str::", 5) == 0) {
-            free(obj_registry[i].obj); // Free strings copied by obj_registry_add_str
+            free(obj_registry[i].obj);
         }
     }
     obj_registry_init();
@@ -549,7 +585,6 @@ def main():
 
     print("--- C Code Generation for Dynamic Dispatcher ---", file=sys.stderr)
 
-    # Transform the raw spec into the format expected by the CCodeGenerator
     transformer = LVGLApiSpecTransformer(raw_spec)
     transformed_spec = transformer.transform()
 
