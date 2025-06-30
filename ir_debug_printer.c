@@ -18,6 +18,7 @@ static const char* get_ir_node_type_str(int type) {
         case IR_NODE_COMPONENT_DEF: return "IR_NODE_COMPONENT_DEF";
         case IR_NODE_PROPERTY: return "IR_NODE_PROPERTY";
         case IR_NODE_WITH_BLOCK: return "IR_NODE_WITH_BLOCK";
+        case IR_NODE_WARNING: return "IR_NODE_WARNING";
         case IR_EXPR_LITERAL: return "IR_EXPR_LITERAL";
         case IR_EXPR_ENUM: return "IR_EXPR_ENUM";
         case IR_EXPR_FUNCTION_CALL: return "IR_EXPR_FUNCTION_CALL";
@@ -142,6 +143,10 @@ static void debug_print_object_list(IRObject* head, int indent_level) {
             while(op_node) {
                 if(op_node->op_node->type == IR_NODE_OBJECT) {
                     debug_print_object_list((IRObject*)op_node->op_node, indent_level + 2);
+                } else if (op_node->op_node->type == IR_NODE_WARNING) {
+                    debug_print_indent(indent_level + 2);
+                    IRWarning* warn = (IRWarning*)op_node->op_node;
+                    printf("[%s] message=\"%s\"\n", get_ir_node_type_str(warn->base.type), warn->message);
                 } else {
                     debug_print_expr((IRExpr*)op_node->op_node, indent_level + 2);
                 }

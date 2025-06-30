@@ -158,6 +158,13 @@ IRWithBlock* ir_new_with_block(IRExpr* target, IRExprNode* calls, IRObject* chil
     return wb;
 }
 
+IRWarning* ir_new_warning(const char* message) {
+    IRWarning* warn = calloc(1, sizeof(IRWarning));
+    warn->base.type = IR_NODE_WARNING;
+    warn->message = safe_strdup(message);
+    return warn;
+}
+
 
 // --- List Management ---
 #define IMPLEMENT_LIST_ADD(func_name, node_type, list_head_type) \
@@ -336,6 +343,11 @@ void ir_free(IRNode* node) {
             free_expr(wb->target_expr);
             free_expr_list(wb->setup_calls);
             ir_free((IRNode*)wb->children_root);
+            break;
+        }
+        case IR_NODE_WARNING: { // NEW
+            IRWarning* warn = (IRWarning*)node;
+            free(warn->message);
             break;
         }
         case IR_EXPR_LITERAL:

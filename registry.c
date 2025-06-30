@@ -2,8 +2,12 @@
 #include <stdlib.h> // For malloc, calloc, free, NULL
 #include <string.h> // For strdup, strcmp
 #include <stdio.h> // For perror, fprintf, stderr
-#include "utils.h" // For render_abort
+#include "utils.h" // For render_abort, print_warning
 #include "debug_log.h"
+
+// --- Global Configuration (from main.c) ---
+extern bool g_strict_mode;
+extern bool g_strict_registry_mode;
 
 // --- Implementation ---
 
@@ -60,6 +64,19 @@ void registry_free(Registry* reg) {
     free(reg);
 }
 
+
+static void registry_dump_keys(const Registry* reg, FILE* stream) {
+    fprintf(stream, "      Available keys: [ ");
+    bool first = true;
+    for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
+        if (!first) fprintf(stream, ", ");
+        fprintf(stream, "'@%s'", node->id);
+        first = false;
+    }
+    fprintf(stream, " ]\n");
+}
+
+
 // --- Pointer Registration ---
 
 void registry_add_pointer(Registry* reg, void* ptr, const char* id, const char* json_type, const char* c_type) {
@@ -90,7 +107,16 @@ void* registry_get_pointer(const Registry* reg, const char* id, const char* type
         }
     }
 
-	print_warning("Pointer \"@%s\" has not been found in the registry", id);
+    char error_buf[256];
+    snprintf(error_buf, sizeof(error_buf), "Reference Error: Object with ID '@%s' not found in the registry.", key);
+
+    if (g_strict_mode || g_strict_registry_mode) {
+        render_abort(error_buf);
+    } else {
+        print_warning("%s", error_buf);
+        print_hint("Did you mean one of these?");
+        registry_dump_keys(reg, stderr);
+    }
 
     return NULL;
 }

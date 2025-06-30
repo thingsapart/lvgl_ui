@@ -118,6 +118,10 @@ static void print_object_list(IRObject* head, int indent_level) {
                 if (op_node->op_node->type == IR_NODE_OBJECT) {
                     // This is a child object definition, recursively print it.
                     print_object_list((IRObject*)op_node->op_node, indent_level + 1);
+                } else if (op_node->op_node->type == IR_NODE_WARNING) {
+                    IRWarning* warn = (IRWarning*)op_node->op_node;
+                    print_indent(indent_level + 1);
+                    printf("[HINT] %s\n", warn->message);
                 } else {
                     // This is an expression (e.g., a setup call).
                     print_indent(indent_level + 1);

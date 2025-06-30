@@ -242,6 +242,10 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             while(op_node) {
                 if (op_node->op_node->type == IR_NODE_OBJECT) {
                     print_object_list((IRObject*)op_node->op_node, indent_level + 1, current->c_name, map);
+                } else if (op_node->op_node->type == IR_NODE_WARNING) {
+                    IRWarning* warn = (IRWarning*)op_node->op_node;
+                    print_indent(indent_level + 1);
+                    printf("// [GENERATOR HINT] %s\n", warn->message);
                 } else {
                     print_indent(indent_level + 1);
                     print_expr((IRExpr*)op_node->op_node, parent_c_name, map, false);

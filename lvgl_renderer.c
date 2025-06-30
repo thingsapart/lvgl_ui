@@ -204,6 +204,9 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
             if (op_node->op_node->type == IR_NODE_OBJECT) {
                 // It's a child object. Recursively render it.
                 render_single_object(spec, (IRObject*)op_node->op_node, registry);
+            } else if (op_node->op_node->type == IR_NODE_WARNING) {
+                IRWarning* warn = (IRWarning*)op_node->op_node;
+                print_hint("%s", warn->message);
             } else {
                 // It's an expression (a setup call). Evaluate it.
                 if (debug_c_code) {

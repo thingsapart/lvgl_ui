@@ -121,6 +121,10 @@ bool api_spec_is_enum_member(const ApiSpec* spec, const char* enum_name, const c
 // Finds the integer value of a named enum member.
 bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_name, const char* member_name, long* out_value);
 
+// NEW: Finds the symbolic name of an enum member by its integer value.
+// Returns a const char* to the symbol name if found, otherwise NULL. The returned string is owned by the cJSON object and should not be freed.
+const char* api_spec_find_enum_symbol_by_value(const ApiSpec* spec, const char* enum_type_name, long value);
+
 
 // Checks if a string is a member of any enum type defined in the spec.
 bool api_spec_is_global_enum_member(const ApiSpec* spec, const char* member_name);

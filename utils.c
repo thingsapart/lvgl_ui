@@ -182,7 +182,17 @@ long ir_node_get_enum_value(struct IRNode* node, const char* expected_enum_c_typ
 void print_warning(const char *msg, ...) {
     va_list args;
     va_start(args, msg);
-    fprintf(stderr, "[WARNING] ");
+    fprintf(stderr, ANSI_BOLD_LIGHT_RED "[WARNING] " ANSI_RESET);
+
+    vfprintf(stderr, msg, args);
+    va_end(args);
+    fprintf(stderr, "\n");
+}
+
+void print_hint(const char *msg, ...) {
+    va_list args;
+    va_start(args, msg);
+    fprintf(stderr, ANSI_BOLD_LIGHT_BLUE "[HINT] " ANSI_RESET);
 
     vfprintf(stderr, msg, args);
     va_end(args);

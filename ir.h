@@ -20,6 +20,7 @@ typedef struct IRNode {
         IR_NODE_ROOT,
         IR_NODE_OBJECT, // Represents a widget or a style object
         IR_NODE_COMPONENT_DEF,
+        IR_NODE_WARNING, // NEW: Represents a non-fatal warning or hint
 
         // Property-related nodes
         IR_NODE_PROPERTY, // Now primarily for key-value pairs like 'use-view' context
@@ -119,6 +120,12 @@ typedef struct {
 
 // --- High-Level UI Constructs ---
 
+// NEW: A node to carry a warning or hint message
+typedef struct {
+    IRNode base;
+    char* message;
+} IRWarning;
+
 // A property on an object (e.g., width: 100)
 typedef struct IRProperty {
     IRNode base;
@@ -138,7 +145,7 @@ typedef struct IRWithBlock {
 
 // A node in the ordered list of operations for an IRObject
 typedef struct IROperationNode {
-    IRNode* op_node; // Can be an IRObject (for a child) or an IRExpr (for a setup call)
+    IRNode* op_node; // Can be an IRObject (for a child), an IRExpr (for a setup call), or an IRWarning
     struct IROperationNode* next;
 } IROperationNode;
 
@@ -191,6 +198,7 @@ IRObject* ir_new_object(const char* c_name, const char* json_type, const char* c
 IRComponent* ir_new_component_def(const char* id, IRObject* root_widget);
 IRProperty* ir_new_property(const char* name, IRExpr* value);
 IRWithBlock* ir_new_with_block(IRExpr* target, IRExprNode* calls, IRObject* children);
+IRWarning* ir_new_warning(const char* message); // NEW
 
 // --- List management helpers ---
 void ir_expr_list_add(IRExprNode** head, IRExpr* expr);

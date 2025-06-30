@@ -166,4 +166,4 @@
             - type: use-view
               context: { icon: LV_SYMBOL_SETTINGS, text: 'Menu mode', menu_page: '@_target', load_oage: '@display_page' }
               id: '@create_text_icon_line'
-  sidebar_page: '@root_page'
+  sidebar_page: '@rooto_page'

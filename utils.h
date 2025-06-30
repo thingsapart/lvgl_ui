@@ -13,6 +13,12 @@ char* read_file(const char* filename);
   #define _eprintf fprintf
 #endif
 
+#define ANSI_BOLD_RED "\x1b[1;31m"
+#define ANSI_BOLD_LIGHT_BLUE "\033[1;94m"
+#define ANSI_BOLD_LIGHT_RED "\033[1;91m"
+
+#define ANSI_RESET    "\x1b[0m"
+
 // Converts a C type string (e.g., "lv_label_t*", "lv_btn_t*")
 // into the simplified object type string used by api_spec_find_property
 // (e.g., "label", "button"). Defaults to "obj".
@@ -37,5 +43,8 @@ extern void render_abort(const char *msg);
 
 // Shows a warning.
 void print_warning(const char *msg, ...);
+
+// Shows a hint.
+void print_hint(const char *msg, ...);
 
 #endif // UTILS_H

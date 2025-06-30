@@ -816,3 +816,34 @@ const FunctionDefinition* api_spec_find_function(const ApiSpec* spec, const char
 
     return NULL; // Function not found
 }
+
+const char* api_spec_find_enum_symbol_by_value(const ApiSpec* spec, const char* enum_type_name, long value) {
+    if (!spec || !spec->enums || !enum_type_name) {
+        return NULL;
+    }
+    const cJSON* enum_type_obj = cJSON_GetObjectItemCaseSensitive(spec->enums, enum_type_name);
+    if (!cJSON_IsObject(enum_type_obj)) {
+        return NULL;
+    }
+
+    cJSON* member = NULL;
+    cJSON_ArrayForEach(member, enum_type_obj) {
+        long member_val = -1;
+        bool parsed = false;
+        if (cJSON_IsString(member) && member->valuestring) {
+            char* endptr;
+            member_val = strtol(member->valuestring, &endptr, 0);
+            if (*endptr == '\0' && endptr != member->valuestring) {
+                parsed = true;
+            }
+        } else if (cJSON_IsNumber(member)) {
+            member_val = (long)member->valuedouble;
+            parsed = true;
+        }
+        if (parsed && member_val == value) {
+            return member->string; // The key of the member is its symbolic name
+        }
+    }
+
+    return NULL; // Not found
+}

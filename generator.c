@@ -10,6 +10,9 @@
 #include <ctype.h>
 #include <stdarg.h>
 
+// --- Global Configuration (from main.c) ---
+extern bool g_strict_mode;
+
 // --- Generation Context ---
 typedef struct {
     const ApiSpec* api_spec;
@@ -19,7 +22,7 @@ typedef struct {
 
 // --- Forward Declarations ---
 static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* parent_c_name, const cJSON* ui_context);
-static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type, const char* parent_c_name, const char* target_c_name);
+static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type, const char* parent_c_name, const char* target_c_name, IRObject* ir_obj_for_warnings);
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
 static void process_and_validate_call(GenContext* ctx, const char* func_name, IRExprNode** args_list_ptr);
@@ -28,16 +31,6 @@ static int count_cjson_array(cJSON* array_json);
 static int count_function_args(const FunctionArg* head);
 static bool types_compatible(const char* expected, const char* actual);
 
-
-// --- Warning & Error Reporting ---
-static void generator_warning(const char* format, ...) {
-    fprintf(stderr, "Generator Warning: ");
-    va_list args;
-    va_start(args, format);
-    vfprintf(stderr, format, args);
-    va_end(args);
-    fprintf(stderr, "\n");
-}
 
 // --- Main Entry Point ---
 
@@ -72,7 +65,8 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
                     registry_add_component(ctx.registry, id_item->valuestring, content_item);
                     DEBUG_LOG(LOG_MODULE_GENERATOR, "Registered component: %s", id_item->valuestring);
                 } else {
-                    generator_warning("Found 'component' with missing 'id' or 'content'.");
+                    // This is a generator-level problem, so a simple warning is fine.
+                    print_warning("Found 'component' with missing 'id' or 'content'.");
                 }
             }
         }
@@ -117,12 +111,12 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     if (strcmp(json_type_str, "use-view") == 0) {
         cJSON* id_item = cJSON_GetObjectItem(obj_json, "id");
         if (!id_item || !cJSON_IsString(id_item)) {
-            generator_warning("'use-view' requires a string 'id'.");
+            print_warning("'use-view' requires a string 'id'.");
             return NULL;
         }
         const cJSON* component_content = registry_get_component(ctx->registry, id_item->valuestring);
         if (!component_content) {
-            generator_warning("Component '%s' not found for 'use-view'.", id_item->valuestring);
+            print_warning("Component '%s' not found for 'use-view'.", id_item->valuestring);
             return NULL;
         }
 
@@ -212,50 +206,53 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     registry_add_generated_var(ctx->registry, ir_obj->c_name, ir_obj->c_name, ir_obj->c_type);
 
     if (init_item) {
-        // --- NEW: Handle `init` block with the same logic as regular properties ---
         if (cJSON_IsObject(init_item) && init_item->child) {
             const char* func_name = init_item->child->string;
             cJSON* user_args_json = init_item->child;
 
             const FunctionDefinition* func_def = api_spec_find_function(ctx->api_spec, func_name);
             if (!func_def) {
-                generator_warning("In 'init' block, could not find function definition for '%s'.", func_name);
-            } else {
-                const FunctionArg* first_expected_arg = func_def->args_head;
-                bool func_expects_target = (first_expected_arg && first_expected_arg->type && strstr(first_expected_arg->type, "_t*"));
-                int expected_argc = count_function_args(func_def->args_head);
-                int user_argc = cJSON_IsArray(user_args_json) ? count_cjson_array(user_args_json) : (cJSON_IsNull(user_args_json) ? 0 : 1);
-
-
-                bool prepend_target = (func_expects_target && user_argc == expected_argc - 1);
-
-                IRExprNode* final_args = NULL;
-                const FunctionArg* expected_arg_list_for_user = func_def->args_head;
-
-                if (prepend_target) {
-                    ir_expr_list_add(&final_args, ir_new_expr_registry_ref(parent_c_name, first_expected_arg->type));
-                    if (expected_arg_list_for_user) expected_arg_list_for_user = expected_arg_list_for_user->next;
-                }
-
-                if (cJSON_IsArray(user_args_json)) {
-                    cJSON* val_item = user_args_json->child;
-                    while(val_item) {
-                        const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
-                        ir_expr_list_add(&final_args, unmarshal_value(ctx, val_item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name));
-                        if (expected_arg_list_for_user) expected_arg_list_for_user = expected_arg_list_for_user->next;
-                        val_item = val_item->next;
-                    }
-                } else if (!cJSON_IsNull(user_args_json)) {
-                    const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
-                    ir_expr_list_add(&final_args, unmarshal_value(ctx, user_args_json, new_scope_context, expected_type, parent_c_name, ir_obj->c_name));
-                }
-
-                process_and_validate_call(ctx, func_name, &final_args);
-                const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, func_name);
-                ir_obj->constructor_expr = ir_new_expr_func_call(func_name, final_args, ret_type);
+                char err_buf[256];
+                snprintf(err_buf, sizeof(err_buf), "In 'init' block for '%s', could not find function definition for '%s'.", ir_obj->c_name, func_name);
+                render_abort(err_buf);
             }
+
+            const FunctionArg* first_expected_arg = func_def->args_head;
+            bool func_expects_target = (first_expected_arg && first_expected_arg->type && strstr(first_expected_arg->type, "_t*"));
+            int expected_argc = count_function_args(func_def->args_head);
+            int user_argc = cJSON_IsArray(user_args_json) ? count_cjson_array(user_args_json) : (cJSON_IsNull(user_args_json) ? 0 : 1);
+
+            bool prepend_target = (func_expects_target && user_argc == expected_argc - 1);
+
+            IRExprNode* final_args = NULL;
+            const FunctionArg* expected_arg_list_for_user = func_def->args_head;
+
+            if (prepend_target) {
+                ir_expr_list_add(&final_args, ir_new_expr_registry_ref(parent_c_name, first_expected_arg->type));
+                if (expected_arg_list_for_user) expected_arg_list_for_user = expected_arg_list_for_user->next;
+            }
+
+            if (cJSON_IsArray(user_args_json)) {
+                cJSON* val_item = user_args_json->child;
+                while(val_item) {
+                    const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
+                    ir_expr_list_add(&final_args, unmarshal_value(ctx, val_item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name, ir_obj));
+                    if (expected_arg_list_for_user) expected_arg_list_for_user = expected_arg_list_for_user->next;
+                    val_item = val_item->next;
+                }
+            } else if (!cJSON_IsNull(user_args_json)) {
+                const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
+                ir_expr_list_add(&final_args, unmarshal_value(ctx, user_args_json, new_scope_context, expected_type, parent_c_name, ir_obj->c_name, ir_obj));
+            }
+
+            process_and_validate_call(ctx, func_name, &final_args);
+            const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, func_name);
+            ir_obj->constructor_expr = ir_new_expr_func_call(func_name, final_args, ret_type);
+
         } else {
-             ir_obj->constructor_expr = unmarshal_value(ctx, init_item, new_scope_context, object_c_type, parent_c_name, ir_obj->c_name);
+            char err_buf[512];
+            snprintf(err_buf, sizeof(err_buf), "The 'init' property for object with type '%s' and id '%s' must be a map containing a function call (e.g., { lv_obj_create: [parent] }), but a different type was found.", json_type_str, registered_id_from_json ? registered_id_from_json : "N/A");
+            render_abort(err_buf);
         }
     } else {
         // No 'init' block; use the default create/init function for the type.
@@ -310,14 +307,18 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, ir_obj->json_type, key);
             const char* func_name = (prop_def && prop_def->setter) ? prop_def->setter : (api_spec_has_function(ctx->api_spec, key) ? key : NULL);
             if (!func_name) {
-                generator_warning("Could not resolve property/method '%s' for type '%s'.", key, ir_obj->json_type);
+                char warning_msg[256];
+                snprintf(warning_msg, sizeof(warning_msg), "Could not resolve property/method '%s' for type '%s'.", key, ir_obj->json_type);
+                ir_operation_list_add(&ir_obj->operations, (IRNode*)ir_new_warning(warning_msg));
                 item = item->next;
                 continue;
             }
 
             const FunctionDefinition* func_def = api_spec_find_function(ctx->api_spec, func_name);
             if (!func_def) {
-                generator_warning("Could not find function definition for '%s'.", func_name);
+                 char warning_msg[256];
+                snprintf(warning_msg, sizeof(warning_msg), "Could not find function definition for '%s'.", func_name);
+                ir_operation_list_add(&ir_obj->operations, (IRNode*)ir_new_warning(warning_msg));
                 item = item->next;
                 continue;
             }
@@ -341,13 +342,13 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                 cJSON* val_item = item->child;
                 while(val_item) {
                     const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
-                    ir_expr_list_add(&final_args, unmarshal_value(ctx, val_item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name));
+                    ir_expr_list_add(&final_args, unmarshal_value(ctx, val_item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name, ir_obj));
                     if (expected_arg_list_for_user) expected_arg_list_for_user = expected_arg_list_for_user->next;
                     val_item = val_item->next;
                 }
             } else {
                  const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
-                 ir_expr_list_add(&final_args, unmarshal_value(ctx, item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name));
+                 ir_expr_list_add(&final_args, unmarshal_value(ctx, item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name, ir_obj));
             }
 
             process_and_validate_call(ctx, func_name, &final_args);
@@ -366,7 +367,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
 // --- Value Unmarshaler ---
 
-static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type, const char* parent_c_name, const char* target_c_name) {
+static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type, const char* parent_c_name, const char* target_c_name, IRObject* ir_obj_for_warnings) {
     if (!value) return ir_new_expr_literal("NULL", "void*");
     if (cJSON_IsNull(value)) return ir_new_expr_literal("NULL", "void*");
 
@@ -382,7 +383,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
                 const char* parent_type = registry_get_c_type_for_id(ctx->registry, parent_c_name);
                 return ir_new_expr_registry_ref(parent_c_name, parent_type ? parent_type : "lv_obj_t*");
             } else {
-                 generator_warning("Using '@_target' in a context where the parent is not available.");
+                if (ir_obj_for_warnings) {
+                    ir_operation_list_add(&ir_obj_for_warnings->operations, (IRNode*)ir_new_warning("Using '@_target' in a context where the parent is not available."));
+                }
                 return ir_new_expr_literal("NULL", "void*");
             }
         }
@@ -392,7 +395,9 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
                 const char* target_type = registry_get_c_type_for_id(ctx->registry, target_c_name);
                 return ir_new_expr_registry_ref(target_c_name, target_type ? target_type : "lv_obj_t*");
             } else {
-                generator_warning("Using '@_parent' in a context where the current object is not yet defined.");
+                if (ir_obj_for_warnings) {
+                    ir_operation_list_add(&ir_obj_for_warnings->operations, (IRNode*)ir_new_warning("Using '@_parent' in a context where the current object is not yet defined."));
+                }
                 return ir_new_expr_literal("NULL", "void*");
             }
         }
@@ -409,9 +414,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             if (context_val_json) {
                 // Recursively unmarshal the value found in the context.
                 // Pass the same scope (parent/target) down, as the context variable is just a substitution.
-                return unmarshal_value(ctx, (cJSON*)context_val_json, ui_context, expected_c_type, parent_c_name, target_c_name);
+                return unmarshal_value(ctx, (cJSON*)context_val_json, ui_context, expected_c_type, parent_c_name, target_c_name, ir_obj_for_warnings);
             }
-            generator_warning("Context variable '%s' not found.", s);
+            if (ir_obj_for_warnings) {
+                char warning_msg[128];
+                snprintf(warning_msg, sizeof(warning_msg), "Context variable '%s' not found.", s);
+                ir_operation_list_add(&ir_obj_for_warnings->operations, (IRNode*)ir_new_warning(warning_msg));
+            }
             return ir_new_expr_context_var(var_name, "unknown");
         }
 
@@ -445,7 +454,11 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
                     if (found) {
                         final_val |= part_val;
                     } else {
-                        generator_warning("Could not resolve part '%s' of OR-expression '%s'", token, s);
+                        if (ir_obj_for_warnings) {
+                            char warning_msg[256];
+                            snprintf(warning_msg, sizeof(warning_msg), "Could not resolve part '%s' of OR-expression '%s'", token, s);
+                            ir_operation_list_add(&ir_obj_for_warnings->operations, (IRNode*)ir_new_warning(warning_msg));
+                        }
                         error = true;
                         break;
                     }
@@ -536,6 +549,18 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
                 type_str = expected_c_type;
             }
         }
+        if (ir_obj_for_warnings && expected_c_type) {
+            const cJSON* enum_type_json = cJSON_GetObjectItem(ctx->api_spec->enums, expected_c_type);
+            if (enum_type_json) { // It's an enum type
+                long int_val = (long)value->valuedouble;
+                const char* symbol = api_spec_find_enum_symbol_by_value(ctx->api_spec, expected_c_type, int_val);
+                if (symbol) {
+                    char warning_msg[256];
+                    snprintf(warning_msg, sizeof(warning_msg), "For a '%s' argument, you provided the integer '%ld'. For clarity, consider using the symbolic name '%s' instead.", expected_c_type, int_val, symbol);
+                    ir_operation_list_add(&ir_obj_for_warnings->operations, (IRNode*)ir_new_warning(warning_msg));
+                }
+            }
+        }
         return ir_new_expr_literal(buf, type_str);
     }
     if (cJSON_IsBool(value)) {
@@ -545,7 +570,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         IRExprNode* elements = NULL;
         cJSON* elem_json;
         cJSON_ArrayForEach(elem_json, value) {
-            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, "unknown", parent_c_name, target_c_name));
+            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, "unknown", parent_c_name, target_c_name, ir_obj_for_warnings));
         }
         return ir_new_expr_array(elements, "array");
     }
@@ -564,10 +589,10 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
                         expected_type = expected_arg_list->type;
                         expected_arg_list = expected_arg_list->next;
                     }
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context, expected_type, parent_c_name, target_c_name));
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context, expected_type, parent_c_name, target_c_name, ir_obj_for_warnings));
                 }
             } else {
-                 ir_expr_list_add(&args_list, unmarshal_value(ctx, func_item, ui_context, "unknown", parent_c_name, target_c_name));
+                 ir_expr_list_add(&args_list, unmarshal_value(ctx, func_item, ui_context, "unknown", parent_c_name, target_c_name, ir_obj_for_warnings));
             }
             process_and_validate_call(ctx, func_name, &args_list);
             return ir_new_expr_func_call(func_name, args_list, ret_type);
@@ -645,7 +670,8 @@ static bool types_compatible(const char* expected, const char* actual) {
 static void process_and_validate_call(GenContext* ctx, const char* func_name, IRExprNode** args_list_ptr) {
     const FunctionDefinition* func_def = api_spec_find_function(ctx->api_spec, func_name);
     if (!func_def) {
-        generator_warning("Cannot validate call to unknown function '%s'.", func_name);
+        // This should have been caught earlier, but as a safeguard.
+        print_warning("Cannot validate call to unknown function '%s'.", func_name);
         return;
     }
 
@@ -670,7 +696,12 @@ static void process_and_validate_call(GenContext* ctx, const char* func_name, IR
     }
 
     if (actual_argc != expected_argc) {
-        generator_warning("Argument count mismatch for '%s'. Expected %d, got %d.", func_name, expected_argc, actual_argc);
+        if (g_strict_mode) {
+             char err_buf[256];
+             snprintf(err_buf, sizeof(err_buf), "Strict mode failure: Argument count mismatch for '%s'. Expected %d, got %d.", func_name, expected_argc, actual_argc);
+             render_abort(err_buf);
+        }
+        // In non-strict mode, implicit argument handling is a feature, so no warning is issued.
         return;
     }
 
@@ -683,8 +714,9 @@ static void process_and_validate_call(GenContext* ctx, const char* func_name, IR
              continue;
         }
         if (!types_compatible(expected_arg->type, actual_arg_node->expr->c_type)) {
-            generator_warning("Type mismatch for argument %d of '%s'. Expected '%s', but got '%s'.",
-                i, func_name, expected_arg->type, actual_arg_node->expr->c_type);
+            // Type mismatches are hints, not errors, as the unmarshaler can get it wrong.
+            // print_warning("Type mismatch for argument %d of '%s'. Expected '%s', but got '%s'.",
+            //     i, func_name, expected_arg->type, actual_arg_node->expr->c_type);
         }
         actual_arg_node = actual_arg_node->next;
         expected_arg = expected_arg->next;

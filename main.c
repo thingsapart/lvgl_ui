@@ -24,6 +24,10 @@
 #include <unistd.h>
 #endif
 
+// --- Global Configuration ---
+bool g_strict_mode = false;
+bool g_strict_registry_mode = false;
+
 
 // --- Function Declarations ---
 void print_usage(const char* prog_name);
@@ -32,16 +36,18 @@ void print_usage(const char* prog_name);
 // --- Main Application ---
 
 void print_usage(const char* prog_name) {
-    fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json|yaml> [--codegen <backends>] [--debug_out <modules>]\n", prog_name);
+    fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json|yaml> [--codegen <backends>] [--debug_out <modules>] [--strict] [--strict-registry]\n", prog_name);
     fprintf(stderr, "  <backends> is a comma-separated list of code generation backends.\n");
-    fprintf(stderr, "  Available backends: ir_print, ir_debug_print, c_code, lvgl_render\n");
-    fprintf(stderr, "  If --codegen is not specified, 'ir_print' is run by default.\n");
+    fprintf(stderr, "    Available: ir_print, ir_debug_print, c_code, lvgl_render\n");
+    fprintf(stderr, "    Default: ir_print\n");
     fprintf(stderr, "  <modules> is a comma-separated list of debug modules to enable (e.g., 'GENERATOR,RENDERER' or 'ALL').\n");
-    fprintf(stderr, "  This is an alternative to the LVGL_DEBUG_MODULES environment variable.\n");
+    fprintf(stderr, "    This is an alternative to the LVGL_DEBUG_MODULES environment variable.\n");
+    fprintf(stderr, "  --strict: Enables strict mode. Fails on argument count mismatches and unresolved registry references.\n");
+    fprintf(stderr, "  --strict-registry: Fails only on unresolved registry references.\n");
 }
 
 void render_abort(const char *msg) {
-    fprintf(stderr, "FATAL ERROR: %s\n", msg);
+    fprintf(stderr, ANSI_BOLD_RED "\nFATAL ERROR: %s\n\n" ANSI_RESET, msg);
     fflush(stderr);
     exit(1);
 }
@@ -81,6 +87,10 @@ int main(int argc, char* argv[]) {
                 print_usage(argv[0]);
                 return 1;
             }
+        } else if (strcmp(argv[i], "--strict") == 0) {
+            g_strict_mode = true;
+        } else if (strcmp(argv[i], "--strict-registry") == 0) {
+            g_strict_registry_mode = true;
         } else if (!api_spec_path) {
             api_spec_path = argv[i];
         } else if (!ui_spec_path) {
@@ -96,6 +106,12 @@ int main(int argc, char* argv[]) {
     debug_log_init();
     if (debug_out_str) {
         debug_log_parse_modules_str(debug_out_str);
+    }
+    if (g_strict_mode) {
+        printf("--- Strict mode enabled ---\n");
+    }
+    if (g_strict_registry_mode && !g_strict_mode) {
+        printf("--- Strict registry mode enabled ---\n");
     }
 
     if (!api_spec_path || !ui_spec_path) {
@@ -222,7 +238,6 @@ cleanup:
     if(ir_root) ir_free((IRNode*)ir_root);
     if(api_spec) api_spec_free(api_spec);
     if(api_spec_json) cJSON_Delete(api_spec_json);
-    if(ui_spec_json) cJSON_Delete(ui_spec_json);
     if(api_spec_content) free(api_spec_content);
     if(ui_spec_content) free(ui_spec_content);
 
