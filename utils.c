@@ -88,6 +88,38 @@ char* unescape_c_string(const char* input, size_t* out_len) {
                     }
                     break;
                 }
+                case 'u': {
+                    // Expect 4 hex digits, e.g., \uF00C
+                    if (i + 4 < input_len) {
+                        int d1 = hex_digit_to_val(input[i + 1]);
+                        int d2 = hex_digit_to_val(input[i + 2]);
+                        int d3 = hex_digit_to_val(input[i + 3]);
+                        int d4 = hex_digit_to_val(input[i + 4]);
+                        if (d1 != -1 && d2 != -1 && d3 != -1 && d4 != -1) {
+                            unsigned int codepoint = (d1 << 12) | (d2 << 8) | (d3 << 4) | d4;
+
+                            // Encode codepoint as UTF-8
+                            if (codepoint < 0x80) {
+                                output[j++] = (char)codepoint;
+                            } else if (codepoint < 0x800) {
+                                output[j++] = 0xC0 | (codepoint >> 6);
+                                output[j++] = 0x80 | (codepoint & 0x3F);
+                            } else if (codepoint < 0x10000) {
+                                output[j++] = 0xE0 | (codepoint >> 12);
+                                output[j++] = 0x80 | ((codepoint >> 6) & 0x3F);
+                                output[j++] = 0x80 | (codepoint & 0x3F);
+                            } else if (codepoint < 0x110000) {
+                                output[j++] = 0xF0 | (codepoint >> 18);
+                                output[j++] = 0x80 | ((codepoint >> 12) & 0x3F);
+                                output[j++] = 0x80 | ((codepoint >> 6) & 0x3F);
+                                output[j++] = 0x80 | (codepoint & 0x3F);
+                            }
+                            i += 4; // Move index past the 4 hex digits.
+                            break;  // We're done with this escape sequence.
+                        }
+                    }
+                    // If not a valid \uXXXX sequence, fall through to default.
+                }
                 default:
                     // Unrecognized escape sequence, just copy the character
                     output[j++] = input[i];
@@ -183,7 +215,7 @@ long ir_node_get_enum_value(struct IRNode* node, const char* expected_enum_c_typ
 void print_warning(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    fprintf(stderr, ANSI_BOLD_LIGHT_RED "[WARNING] " ANSI_RESET);
+    fprintf(stderr, ANSI_BOLD_RED "[WARNING] " ANSI_RESET);
     vfprintf(stderr, format, args);
     va_end(args);
     fprintf(stderr, "\n");
@@ -192,7 +224,7 @@ void print_warning(const char *format, ...) {
 void print_hint(const char* format, ...) {
     va_list args;
     va_start(args, format);
-    fprintf(stderr, ANSI_BOLD_LIGHT_BLUE "[HINT] " ANSI_RESET);
+    fprintf(stderr, ANSI_YELLOW "[HINT] " ANSI_RESET);
     vfprintf(stderr, format, args);
     va_end(args);
     fprintf(stderr, "\n");

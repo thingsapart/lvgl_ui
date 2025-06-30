@@ -6,7 +6,9 @@
 #include <strings.h> // For strcasecmp
 
 // Array to keep track of enabled modules. Initialized to false.
+
 static bool enabled_modules[LOG_MODULE_COUNT] = {
+#ifdef __DEV_MODE__
   true,        // LOG_MODULE_NONE
   false,       // LOG_MODULE_MAIN
   false,       // LOG_MODULE_API_SPEC
@@ -18,6 +20,9 @@ static bool enabled_modules[LOG_MODULE_COUNT] = {
   true,        // LOG_MODULE_DISPATCH
   true,        // LOG_MODULE_UTILS
   true,        // LOG_MODULE_SDL_VIEWER
+#else
+  false
+#endif
 };
 
 // String names for modules, corresponding to the DebugLogModule enum
