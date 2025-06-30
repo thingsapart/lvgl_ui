@@ -662,19 +662,21 @@ bool api_spec_find_constant_value(const ApiSpec* spec, const char* const_name, l
     }
 
     if (cJSON_IsString(const_json) && const_json->valuestring) {
+        // Use the helper to get a clean string without comments or quotes.
+        char* clean_val = strip_comments_and_trim_quotes(const_json->valuestring);
+        if (!clean_val) return false;
+
         char* endptr;
-        const char* str_val = const_json->valuestring;
+        long val = strtol(clean_val, &endptr, 0); // Use base 0 for auto-detection (e.g., 0x)
 
-        while (*str_val && !isdigit((unsigned char)*str_val) && *str_val != '-' && *str_val != '+') {
-            str_val++;
-        }
-
-        long val = strtol(str_val, &endptr, 0);
-
-        if (endptr != str_val) {
+        // The parse is successful only if the entire string was a valid number.
+        bool success = (*endptr == '\0' && endptr != clean_val);
+        if (success) {
             *out_value = val;
-            return true;
         }
+
+        free(clean_val);
+        return success;
     }
 
     return false;

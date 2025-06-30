@@ -391,15 +391,8 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             }
         }
 
-        // Check for numeric constants FIRST. This handles cases like LV_RADIUS_CIRCLE="0x7FFF"
-        long const_val;
-        if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
-            char buf[32];
-            snprintf(buf, sizeof(buf), "%ld", const_val);
-            return ir_new_expr_literal(buf, "int");
-        }
-
-        // THEN check for string constants like LV_SYMBOL_*
+        // ** CORRECTED CONSTANT LOOKUP ORDER **
+        // Check for string constants like LV_SYMBOL_* FIRST.
         char* const_str_val = api_spec_find_constant_string(ctx->api_spec, s);
         if (const_str_val) {
             size_t unescaped_len = 0;
@@ -408,6 +401,14 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             free(const_str_val);
             free(unescaped_val);
             return expr;
+        }
+
+        // Then check for numeric constants. This prevents string symbols from being misidentified as numbers.
+        long const_val;
+        if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%ld", const_val);
+            return ir_new_expr_literal(buf, "int");
         }
 
         size_t len = strlen(s);

@@ -18,6 +18,16 @@ IGNORE_ARG_TYPES = [
     "lv_style_value_t", "lv_ll_t*", "lv_indev_t*", "ellipsis"
 ]
 
+# --- Whitelist Configuration ---
+# Functions in this set will be wrapped even if they would normally be ignored.
+# This is useful for functions with complex arguments (like `void*` or callbacks)
+# that we know how to handle manually in the renderer via the object registry.
+WHITELIST_FUNCTIONS = {
+    'lv_obj_add_event_cb',
+    'lv_list_add_button'
+}
+
+
 class LVGLApiSpecTransformer:
     """
     Transforms the raw lv_def.json spec into a more convenient format
@@ -144,6 +154,10 @@ class CCodeGenerator:
         func_name = func_info.get('name', '')
         if not func_name:
             return False
+
+        # First, check if the function is explicitly whitelisted. This overrides all other checks.
+        if func_name in WHITELIST_FUNCTIONS:
+            return True
 
         if func_name.startswith('lv_theme_'): return False
         if any(func_name.startswith(p) for p in IGNORE_FUNC_PREFIXES): return False
