@@ -2,6 +2,7 @@
   id: '@create_text_icon_header'
   content:
     init: { lv_menu_cont_create: '$menu_page' }
+    width: 100%
     children:
       # - init: { lv_menu_set_load_page_event: ['@menu', '@_target', '$load_page'] }
       - type: label
@@ -43,7 +44,7 @@
 - type: component
   id: '@create_text_icon_line_sec'
   content:
-    init: '$menu_page'
+    init: { lv_menu_cont_create: '$menu_page' }
     children:
       - type: label
         text: $icon
@@ -55,9 +56,9 @@
 - type: component
   id: '@create_slider'
   content:
+    type: use-view
+    id: '@create_text_icon_header'
     children:
-      - type: use-view
-        id: '@create_text_icon_header'
       - type: slider
         flex_grow: 1
         range: [$min, $max]
@@ -66,9 +67,9 @@
 - type: component
   id: '@create_switch'
   content:
+    type: use-view
+    id: '@create_text_icon_line_sec'
     children:
-      - type: use-view
-        id: '@create_text_icon_line'
       - type: switch
         add_state: LV_STATE_CHECKED
 
@@ -88,8 +89,6 @@
         - init: { lv_menu_separator_create: [] }
         - init: { lv_menu_section_create: [] }
           children:
-            - type: label
-              text: PAGE 1
             - type: use-view
               context: { icon: LV_SYMBOL_SETTINGS, text: 'Velocity', min: 0, max: 150, value: 120, menu_page: '@mechanics_page' }
               id: '@create_slider'
@@ -108,11 +107,8 @@
         - init: { lv_menu_separator_create: [] }
         - init: { lv_menu_section_create: [] }
           children:
-            - type: label
-              name: label1
-              text: PAGE 1
             - type: use-view
-              context: { icon: LV_SYMBOL_AUDIO, text: 'Sound', menu_page: '@sound_page' }
+              context: { icon: LV_SYMBOL_AUDIO, text: 'Sound', menu_page: '@_target' }
               id: '@create_switch'
 
     - init: { lv_menu_page_create: [NULL] }
@@ -123,8 +119,6 @@
         - init: { lv_menu_separator_create: [] }
         - init: { lv_menu_section_create: [] }
           children:
-            - type: label
-              text: PAGE 1
             - type: use-view
               context: { icon: LV_SYMBOL_SETTINGS, text: 'Brightness', min: 0, max: 150, value: 100, menu_page: '@display_page' }
               id: '@create_slider'

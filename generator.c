@@ -131,7 +131,30 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         cJSON_ArrayForEach(prop_item, obj_json) {
             const char* key = prop_item->string;
             if (strncmp(key, "//", 2) == 0) continue;
+
+            // --- NEW: Handle `children` as a special case for `use-view` ---
+            if (strcmp(key, "children") == 0) {
+                if (cJSON_IsArray(prop_item)) {
+                    // Find or create the children array in the component's content
+                    cJSON* merged_children = cJSON_GetObjectItem(merged_json, "children");
+                    if (!merged_children) {
+                        merged_children = cJSON_CreateArray();
+                        cJSON_AddItemToObject(merged_json, "children", merged_children);
+                    }
+                    if (cJSON_IsArray(merged_children)) {
+                        // Append the use-view's children to the component's children
+                        cJSON* child_to_add;
+                        cJSON_ArrayForEach(child_to_add, prop_item) {
+                            cJSON_AddItemToArray(merged_children, cJSON_Duplicate(child_to_add, true));
+                        }
+                    }
+                }
+                continue; // Skip the default property-merging logic
+            }
+            
             if (strcmp(key, "type") == 0 || strcmp(key, "id") == 0 || strcmp(key, "context") == 0) continue;
+            
+            // Default behavior: override property in the component
             if (cJSON_HasObjectItem(merged_json, key)) {
                 cJSON_ReplaceItemInObject(merged_json, key, cJSON_Duplicate(prop_item, true));
             } else {
@@ -189,10 +212,51 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     registry_add_generated_var(ctx->registry, ir_obj->c_name, ir_obj->c_name, ir_obj->c_type);
 
     if (init_item) {
-        // When an 'init' block is provided, we trust the user to specify the full constructor call.
-        // We do not prepend any implicit parent arguments.
-        // The unmarshal function will resolve any references like '@_parent' from the provided scope.
-        ir_obj->constructor_expr = unmarshal_value(ctx, init_item, new_scope_context, object_c_type, parent_c_name, ir_obj->c_name);
+        // --- NEW: Handle `init` block with the same logic as regular properties ---
+        if (cJSON_IsObject(init_item) && init_item->child) {
+            const char* func_name = init_item->child->string;
+            cJSON* user_args_json = init_item->child;
+
+            const FunctionDefinition* func_def = api_spec_find_function(ctx->api_spec, func_name);
+            if (!func_def) {
+                generator_warning("In 'init' block, could not find function definition for '%s'.", func_name);
+            } else {
+                const FunctionArg* first_expected_arg = func_def->args_head;
+                bool func_expects_target = (first_expected_arg && first_expected_arg->type && strstr(first_expected_arg->type, "_t*"));
+                int expected_argc = count_function_args(func_def->args_head);
+                int user_argc = cJSON_IsArray(user_args_json) ? count_cjson_array(user_args_json) : (cJSON_IsNull(user_args_json) ? 0 : 1);
+
+
+                bool prepend_target = (func_expects_target && user_argc == expected_argc - 1);
+
+                IRExprNode* final_args = NULL;
+                const FunctionArg* expected_arg_list_for_user = func_def->args_head;
+
+                if (prepend_target) {
+                    ir_expr_list_add(&final_args, ir_new_expr_registry_ref(parent_c_name, first_expected_arg->type));
+                    if (expected_arg_list_for_user) expected_arg_list_for_user = expected_arg_list_for_user->next;
+                }
+
+                if (cJSON_IsArray(user_args_json)) {
+                    cJSON* val_item = user_args_json->child;
+                    while(val_item) {
+                        const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
+                        ir_expr_list_add(&final_args, unmarshal_value(ctx, val_item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name));
+                        if (expected_arg_list_for_user) expected_arg_list_for_user = expected_arg_list_for_user->next;
+                        val_item = val_item->next;
+                    }
+                } else if (!cJSON_IsNull(user_args_json)) {
+                    const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
+                    ir_expr_list_add(&final_args, unmarshal_value(ctx, user_args_json, new_scope_context, expected_type, parent_c_name, ir_obj->c_name));
+                }
+
+                process_and_validate_call(ctx, func_name, &final_args);
+                const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, func_name);
+                ir_obj->constructor_expr = ir_new_expr_func_call(func_name, final_args, ret_type);
+            }
+        } else {
+             ir_obj->constructor_expr = unmarshal_value(ctx, init_item, new_scope_context, object_c_type, parent_c_name, ir_obj->c_name);
+        }
     } else {
         // No 'init' block; use the default create/init function for the type.
         const char* create_func = NULL;
@@ -561,7 +625,7 @@ static bool types_compatible(const char* expected, const char* actual) {
 
 
     // Handle integer type variations
-    const char* int_types[] = {"int", "int32_t", "uint32_t", "lv_coord_t", "lv_style_selector_t", "lv_opa_t"};
+    const char* int_types[] = {"int", "int32_t", "uint32_t", "lv_coord_t", "lv_style_selector_t", "lv_opa_t", "bool", "lv_anim_enable_t"};
     int num_int_types = sizeof(int_types) / sizeof(char*);
     bool expected_is_int = false;
     bool actual_is_int = false;
@@ -596,10 +660,12 @@ static void process_and_validate_call(GenContext* ctx, const char* func_name, IR
         last_expected_arg = a;
     }
 
+    // --- FIX 2A: Handle implicit style selector argument ---
     if (strncmp(func_name, "lv_obj_set_style_", 17) == 0 && actual_argc == expected_argc - 1) {
         if (last_expected_arg && strcmp(last_expected_arg->type, "lv_style_selector_t") == 0) {
+            // Append the missing default selector '0' to the argument list
             ir_expr_list_add(args_list_ptr, ir_new_expr_literal("0", "lv_style_selector_t"));
-            actual_argc++;
+            actual_argc++; // Update the count to reflect the added argument
         }
     }
 

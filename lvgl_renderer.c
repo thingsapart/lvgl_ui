@@ -187,6 +187,9 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
     // Register the newly created object so it can be found by subsequent calls.
     // This happens BEFORE operations are processed.
     registry_add_pointer(registry, c_obj, current_obj->c_name, current_obj->json_type, current_obj->c_type);
+    // Add the C-name to the C-side registry as well, so it can be resolved by the dispatcher.
+    obj_registry_add(current_obj->c_name, c_obj);
+
     if (current_obj->registered_id) {
          registry_add_pointer(registry, c_obj, current_obj->registered_id, current_obj->json_type, current_obj->c_type);
          obj_registry_add(current_obj->registered_id, c_obj);
