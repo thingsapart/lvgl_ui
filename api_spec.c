@@ -23,7 +23,43 @@ static void free_function_arg_list(FunctionArg* head);
 static void free_function_definition_list(FunctionMapNode* head);
 // Pass ApiSpec to allow enum lookup for function arguments
 static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def_json_node, const ApiSpec* spec_for_enum_lookup);
-static char* strip_comments_and_trim_quotes(const char* input);
+static char* strip_comments_and_trim(const char* input);
+
+
+// Helper to clean up a constant value string from the JSON spec.
+// It removes C-style comments and trims leading/trailing whitespace.
+// The caller is responsible for freeing the returned string.
+static char* strip_comments_and_trim(const char* input) {
+    if (!input) return NULL;
+    char* buffer = strdup(input);
+    if (!buffer) return NULL;
+
+    // Find and terminate at comments
+    char* comment_start = strstr(buffer, "/*");
+    if (comment_start) {
+        *comment_start = '\0';
+    }
+    comment_start = strstr(buffer, "//");
+    if (comment_start) {
+        *comment_start = '\0';
+    }
+
+    // Trim trailing whitespace
+    char* end = buffer + strlen(buffer) - 1;
+    while (end >= buffer && isspace((unsigned char)*end)) {
+        *end-- = '\0';
+    }
+
+    // Trim leading whitespace
+    char* start = buffer;
+    while (*start && isspace((unsigned char)*start)) {
+        start++;
+    }
+
+    char* result = strdup(start);
+    free(buffer);
+    return result;
+}
 
 
 static void free_function_arg_list(FunctionArg* head) {
@@ -662,9 +698,15 @@ bool api_spec_find_constant_value(const ApiSpec* spec, const char* const_name, l
     }
 
     if (cJSON_IsString(const_json) && const_json->valuestring) {
-        // Use the helper to get a clean string without comments or quotes.
-        char* clean_val = strip_comments_and_trim_quotes(const_json->valuestring);
+        // Use the helper to get a clean string without comments.
+        char* clean_val = strip_comments_and_trim(const_json->valuestring);
         if (!clean_val) return false;
+
+        // A numeric constant should NOT be in quotes. If it is, it's a string constant.
+        if (clean_val[0] == '"') {
+            free(clean_val);
+            return false;
+        }
 
         char* endptr;
         long val = strtol(clean_val, &endptr, 0); // Use base 0 for auto-detection (e.g., 0x)
@@ -682,45 +724,6 @@ bool api_spec_find_constant_value(const ApiSpec* spec, const char* const_name, l
     return false;
 }
 
-static char* strip_comments_and_trim_quotes(const char* input) {
-    if (!input) return NULL;
-    char* buffer = strdup(input);
-    if (!buffer) return NULL;
-
-    // Find and terminate at comments
-    char* comment_start = strstr(buffer, "/*");
-    if (comment_start) {
-        *comment_start = '\0';
-    }
-    comment_start = strstr(buffer, "//");
-    if (comment_start) {
-        *comment_start = '\0';
-    }
-
-    // Trim trailing whitespace
-    char* end = buffer + strlen(buffer) - 1;
-    while (end >= buffer && isspace((unsigned char)*end)) {
-        *end-- = '\0';
-    }
-
-    // Trim leading whitespace
-    char* start = buffer;
-    while (*start && isspace((unsigned char)*start)) {
-        start++;
-    }
-
-    // Un-quote if the result is surrounded by quotes
-    size_t len = strlen(start);
-    if (len >= 2 && start[0] == '"' && start[len - 1] == '"') {
-        start[len - 1] = '\0'; // Nuke the last quote
-        start++;               // Move pointer past the first quote
-    }
-
-    char* result = strdup(start);
-    free(buffer);
-    return result;
-}
-
 char* api_spec_find_constant_string(const ApiSpec* spec, const char* const_name) {
     if (!spec || !spec->constants || !const_name) {
         return NULL;
@@ -730,7 +733,23 @@ char* api_spec_find_constant_string(const ApiSpec* spec, const char* const_name)
         return NULL;
     }
 
-    return strip_comments_and_trim_quotes(const_json->valuestring);
+    // Use the helper to get a clean string without comments.
+    char* clean_val = strip_comments_and_trim(const_json->valuestring);
+    if (!clean_val) return NULL;
+
+    size_t len = strlen(clean_val);
+    // A string constant MUST be enclosed in quotes.
+    if (len >= 2 && clean_val[0] == '"' && clean_val[len - 1] == '"') {
+        // It's a string literal. Remove the outer quotes and return the content.
+        clean_val[len - 1] = '\0'; // Nuke the last quote
+        char* result = strdup(clean_val + 1);
+        free(clean_val);
+        return result;
+    }
+
+    // This is not a string literal, so we fail the lookup.
+    free(clean_val);
+    return NULL;
 }
 
 bool api_spec_has_function(const ApiSpec* spec, const char* func_name) {
