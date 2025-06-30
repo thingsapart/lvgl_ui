@@ -19,7 +19,7 @@ typedef struct {
 
 // --- Forward Declarations ---
 static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* parent_c_name, const cJSON* ui_context);
-static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type);
+static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type, const char* parent_c_name, const char* target_c_name);
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
 static void process_and_validate_call(GenContext* ctx, const char* func_name, IRExprNode** args_list_ptr);
@@ -145,8 +145,10 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         cJSON* local_context = cJSON_GetObjectItem(obj_json, "context");
         if (local_context) merge_json_objects(new_context, local_context);
 
-        cJSON_AddItemToObject(new_context, "$parent", cJSON_CreateString(parent_c_name));
+        // This recursive call handles the component instantiation.
+        // It passes the correct parent and the newly created context.
         IRObject* generated_obj = parse_object(ctx, merged_json, parent_c_name, new_context);
+
         cJSON_Delete(merged_json);
         cJSON_Delete(new_context);
         return generated_obj;
@@ -159,7 +161,6 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     if (local_context && cJSON_IsObject(local_context)) {
         merge_json_objects(new_scope_context, local_context);
     }
-    cJSON_AddItemToObject(new_scope_context, "$parent", cJSON_CreateString(parent_c_name));
 
     cJSON* init_item = cJSON_GetObjectItem(obj_json, "init");
     cJSON* id_item = cJSON_GetObjectItem(obj_json, "id");
@@ -167,7 +168,6 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     if (id_item && cJSON_IsString(id_item)) registered_id_from_json = id_item->valuestring;
 
     char* c_name = generate_unique_var_name(ctx, registered_id_from_json ? registered_id_from_json : json_type_str);
-    cJSON_AddItemToObject(new_scope_context, "$current_obj", cJSON_CreateString(c_name));
 
     const char* object_c_type = "lv_obj_t*";
     const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, json_type_str);
@@ -185,39 +185,29 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     if (clean_id && clean_id[0] == '@') clean_id++;
     IRObject* ir_obj = ir_new_object(c_name, json_type_str, object_c_type, clean_id);
 
+    // Register the variable name now so it can be self-referenced by @_parent
+    registry_add_generated_var(ctx->registry, ir_obj->c_name, ir_obj->c_name, ir_obj->c_type);
+
     if (init_item) {
-        IRExpr* init_expr = unmarshal_value(ctx, init_item, new_scope_context, object_c_type);
-        if (init_expr->base.type == IR_EXPR_FUNCTION_CALL) {
-             IRExprFunctionCall* call = (IRExprFunctionCall*)init_expr;
-             const FunctionDefinition* init_func_def = api_spec_find_function(ctx->api_spec, call->func_name);
-             if (init_func_def && init_func_def->args_head) {
-                 const FunctionArg* first_arg_def = init_func_def->args_head;
-                 bool takes_parent = (first_arg_def && first_arg_def->type && strstr(first_arg_def->type, "_t*"));
-                 bool user_provided_parent = false;
-                 if (takes_parent && call->args && call->args->expr && types_compatible(first_arg_def->type, call->args->expr->c_type)) {
-                     user_provided_parent = true;
-                 }
-                 if (takes_parent && !user_provided_parent) {
-                     IRExprNode* parent_arg_node = calloc(1, sizeof(IRExprNode));
-                     parent_arg_node->expr = ir_new_expr_registry_ref(parent_c_name, first_arg_def->type);
-                     parent_arg_node->next = call->args;
-                     call->args = parent_arg_node;
-                 }
-             }
-        }
-        ir_obj->constructor_expr = init_expr;
+        // When an 'init' block is provided, we trust the user to specify the full constructor call.
+        // We do not prepend any implicit parent arguments.
+        // The unmarshal function will resolve any references like '@_parent' from the provided scope.
+        ir_obj->constructor_expr = unmarshal_value(ctx, init_item, new_scope_context, object_c_type, parent_c_name, ir_obj->c_name);
     } else {
+        // No 'init' block; use the default create/init function for the type.
         const char* create_func = NULL;
         if (widget_def && widget_def->create) create_func = widget_def->create;
         else if (strcmp(json_type_str, "obj") == 0) create_func = "lv_obj_create";
 
         if (create_func) {
+            // Implicit constructors always take the parent as the first argument.
             IRExprNode* args = NULL;
             ir_expr_list_add(&args, ir_new_expr_registry_ref(parent_c_name, "lv_obj_t*"));
             const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, create_func);
             ir_obj->constructor_expr = ir_new_expr_func_call(create_func, args, ret_type);
             process_and_validate_call(ctx, create_func, &((IRExprFunctionCall*)ir_obj->constructor_expr)->args);
         } else if (widget_def && widget_def->init_func) {
+            // Handle non-widget objects like styles that have an init func but no create func.
             IRExprNode* init_args = NULL;
             ir_expr_list_add(&init_args, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
             IRExpr* init_call = ir_new_expr_func_call(widget_def->init_func, init_args, "void");
@@ -233,7 +223,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         IRExpr* reg_call_expr = ir_new_expr_runtime_reg_add(id_for_runtime, obj_ref_expr);
         ir_operation_list_add(&ir_obj->operations, (IRNode*)reg_call_expr);
     }
-    registry_add_generated_var(ctx->registry, c_name, ir_obj->c_name, ir_obj->c_type);
+    
 
     cJSON* item = obj_json->child;
     while(item) {
@@ -287,13 +277,13 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                 cJSON* val_item = item->child;
                 while(val_item) {
                     const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
-                    ir_expr_list_add(&final_args, unmarshal_value(ctx, val_item, new_scope_context, expected_type));
+                    ir_expr_list_add(&final_args, unmarshal_value(ctx, val_item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name));
                     if (expected_arg_list_for_user) expected_arg_list_for_user = expected_arg_list_for_user->next;
                     val_item = val_item->next;
                 }
             } else {
                  const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
-                 ir_expr_list_add(&final_args, unmarshal_value(ctx, item, new_scope_context, expected_type));
+                 ir_expr_list_add(&final_args, unmarshal_value(ctx, item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name));
             }
 
             process_and_validate_call(ctx, func_name, &final_args);
@@ -312,34 +302,50 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
 // --- Value Unmarshaler ---
 
-static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type) {
+static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type, const char* parent_c_name, const char* target_c_name) {
     if (!value) return ir_new_expr_literal("NULL", "void*");
     if (cJSON_IsNull(value)) return ir_new_expr_literal("NULL", "void*");
 
     if (cJSON_IsString(value)) {
         const char* s = value->valuestring;
 
+        // ** ADDED: Handle @_target and @_parent special identifiers **
+        if (strcmp(s, "@_target") == 0) {
+            // Resolve @_target to the PARENT object of the current scope.
+            // This is because in a `use-view` context, the user often means
+            // "the object this component is being added to".
+            if (parent_c_name) {
+                const char* parent_type = registry_get_c_type_for_id(ctx->registry, parent_c_name);
+                return ir_new_expr_registry_ref(parent_c_name, parent_type ? parent_type : "lv_obj_t*");
+            } else {
+                 generator_warning("Using '@_target' in a context where the parent is not available.");
+                return ir_new_expr_literal("NULL", "void*");
+            }
+        }
+        if (strcmp(s, "@_parent") == 0) {
+            // Resolve @_parent to the object being defined (the "target" of the current operations).
+            if (target_c_name) {
+                const char* target_type = registry_get_c_type_for_id(ctx->registry, target_c_name);
+                return ir_new_expr_registry_ref(target_c_name, target_type ? target_type : "lv_obj_t*");
+            } else {
+                generator_warning("Using '@_parent' in a context where the current object is not yet defined.");
+                return ir_new_expr_literal("NULL", "void*");
+            }
+        }
+
+
         if (s[0] == '$') {
             const char* var_name = s + 1;
             const cJSON* context_val_json = NULL;
 
-            // Unified lookup for all context variables
-            char context_key[256];
-            if (strcmp(var_name, "parent") == 0 || strcmp(var_name, "current_obj") == 0) {
-                 snprintf(context_key, sizeof(context_key), "$%s", var_name);
-                 context_val_json = cJSON_GetObjectItem(ui_context, context_key);
-            } else if (ui_context && cJSON_IsObject(ui_context)) {
+            if (ui_context && cJSON_IsObject(ui_context)) {
                  context_val_json = cJSON_GetObjectItem(ui_context, var_name);
             }
 
             if (context_val_json) {
-                if (cJSON_IsString(context_val_json)) {
-                    const char* val_str = context_val_json->valuestring;
-                    if (registry_get_c_type_for_id(ctx->registry, val_str)) {
-                        return ir_new_expr_registry_ref(val_str, registry_get_c_type_for_id(ctx->registry, val_str));
-                    }
-                }
-                return unmarshal_value(ctx, (cJSON*)context_val_json, ui_context, expected_c_type);
+                // Recursively unmarshal the value found in the context.
+                // Pass the same scope (parent/target) down, as the context variable is just a substitution.
+                return unmarshal_value(ctx, (cJSON*)context_val_json, ui_context, expected_c_type, parent_c_name, target_c_name);
             }
             generator_warning("Context variable '%s' not found.", s);
             return ir_new_expr_context_var(var_name, "unknown");
@@ -391,8 +397,6 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             }
         }
 
-        // ** CORRECTED CONSTANT LOOKUP ORDER **
-        // Check for string constants like LV_SYMBOL_* FIRST.
         char* const_str_val = api_spec_find_constant_string(ctx->api_spec, s);
         if (const_str_val) {
             size_t unescaped_len = 0;
@@ -403,7 +407,6 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             return expr;
         }
 
-        // Then check for numeric constants. This prevents string symbols from being misidentified as numbers.
         long const_val;
         if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
             char buf[32];
@@ -478,7 +481,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         IRExprNode* elements = NULL;
         cJSON* elem_json;
         cJSON_ArrayForEach(elem_json, value) {
-            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, "unknown"));
+            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, "unknown", parent_c_name, target_c_name));
         }
         return ir_new_expr_array(elements, "array");
     }
@@ -497,10 +500,10 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
                         expected_type = expected_arg_list->type;
                         expected_arg_list = expected_arg_list->next;
                     }
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context, expected_type));
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context, expected_type, parent_c_name, target_c_name));
                 }
             } else {
-                 ir_expr_list_add(&args_list, unmarshal_value(ctx, func_item, ui_context, "unknown"));
+                 ir_expr_list_add(&args_list, unmarshal_value(ctx, func_item, ui_context, "unknown", parent_c_name, target_c_name));
             }
             process_and_validate_call(ctx, func_name, &args_list);
             return ir_new_expr_func_call(func_name, args_list, ret_type);
