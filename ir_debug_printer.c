@@ -53,7 +53,7 @@ static void debug_print_expr(IRExpr* expr, int indent_level) {
             printf("value=\"%s\"\n", ((IRExprStaticString*)expr)->value);
             break;
         case IR_EXPR_ENUM:
-            printf("symbol=%s\n", ((IRExprEnum*)expr)->symbol);
+            printf("symbol=%s value=%ld\n", ((IRExprEnum*)expr)->symbol,  ((IRExprEnum*)expr)->value);
             break;
         case IR_EXPR_REGISTRY_REF:
             printf("name=%s\n", ((IRExprRegistryRef*)expr)->name);

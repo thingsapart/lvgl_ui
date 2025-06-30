@@ -1,0 +1,12 @@
+# Note: align_to seems broken when using SDL with zoom.
+- type: slider
+  id: '@slider'
+  width: 200
+  outline_width: 2
+  outline_color: '#ff0000'
+  outline_opa: 138
+  center: []
+- type: label
+  text: '0'
+  # The align_to below seems broken on SDL with zoom.
+  align_to: ['@slider', LV_ALIGN_TOP_MID, 0, -25]
