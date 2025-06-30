@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils.h"
+#include <limits.h>
 
 char* read_file(const char* filename) {
     FILE* f = fopen(filename, "rb");
@@ -179,22 +180,65 @@ long ir_node_get_enum_value(struct IRNode* node, const char* expected_enum_c_typ
     }
 }
 
-void print_warning(const char *msg, ...) {
+void print_warning(const char *format, ...) {
     va_list args;
-    va_start(args, msg);
+    va_start(args, format);
     fprintf(stderr, ANSI_BOLD_LIGHT_RED "[WARNING] " ANSI_RESET);
-
-    vfprintf(stderr, msg, args);
+    vfprintf(stderr, format, args);
     va_end(args);
     fprintf(stderr, "\n");
 }
 
-void print_hint(const char *msg, ...) {
+void print_hint(const char* format, ...) {
     va_list args;
-    va_start(args, msg);
+    va_start(args, format);
     fprintf(stderr, ANSI_BOLD_LIGHT_BLUE "[HINT] " ANSI_RESET);
-
-    vfprintf(stderr, msg, args);
+    vfprintf(stderr, format, args);
     va_end(args);
     fprintf(stderr, "\n");
+}
+
+static int min3(int a, int b, int c) {
+    int m = a;
+    if (b < m) m = b;
+    if (c < m) m = c;
+    return m;
+}
+
+int levenshtein_distance(const char *s1, const char *s2) {
+    if (!s1) return s2 ? strlen(s2) : 0;
+    if (!s2) return s1 ? strlen(s1) : 0;
+
+    int len1 = strlen(s1);
+    int len2 = strlen(s2);
+
+    // Use two rows to optimize space from O(n*m) to O(m)
+    int *v0 = malloc((len2 + 1) * sizeof(int));
+    int *v1 = malloc((len2 + 1) * sizeof(int));
+    if (!v0 || !v1) {
+        if (v0) free(v0);
+        if (v1) free(v1);
+        return INT_MAX; // Indicate error
+    }
+
+    for (int i = 0; i <= len2; i++) {
+        v0[i] = i;
+    }
+
+    for (int i = 0; i < len1; i++) {
+        v1[0] = i + 1;
+        for (int j = 0; j < len2; j++) {
+            int cost = (s1[i] == s2[j]) ? 0 : 1;
+            v1[j + 1] = min3(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+        }
+        // Copy v1 to v0 for the next iteration
+        int *temp = v0;
+        v0 = v1;
+        v1 = temp;
+    }
+
+    int distance = v0[len2];
+    free(v0);
+    free(v1);
+    return distance;
 }

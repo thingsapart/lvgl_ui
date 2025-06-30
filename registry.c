@@ -2,12 +2,29 @@
 #include <stdlib.h> // For malloc, calloc, free, NULL
 #include <string.h> // For strdup, strcmp
 #include <stdio.h> // For perror, fprintf, stderr
-#include "utils.h" // For render_abort, print_warning
+#include "utils.h" // For render_abort, print_warning, levenshtein_distance
 #include "debug_log.h"
 
 // --- Global Configuration (from main.c) ---
 extern bool g_strict_mode;
 extern bool g_strict_registry_mode;
+
+// --- Data structure for sorting suggestions ---
+typedef struct {
+    const char* key;
+    int distance;
+} Suggestion;
+
+// --- qsort comparison function ---
+static int compare_suggestions(const void *a, const void *b) {
+    const Suggestion *sug_a = (const Suggestion *)a;
+    const Suggestion *sug_b = (const Suggestion *)b;
+    return sug_a->distance - sug_b->distance;
+}
+
+// --- Forward Declarations ---
+static void registry_dump_suggestions(const Registry* reg, const char* misspelled_key);
+
 
 // --- Implementation ---
 
@@ -64,16 +81,61 @@ void registry_free(Registry* reg) {
     free(reg);
 }
 
+static void registry_dump_suggestions(const Registry* reg, const char* misspelled_key) {
+    if (!reg || !misspelled_key) return;
 
-static void registry_dump_keys(const Registry* reg, FILE* stream) {
-    fprintf(stream, "      Available keys: [ ");
-    bool first = true;
+    // Count the number of keys to allocate memory for suggestions
+    int key_count = 0;
     for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
-        if (!first) fprintf(stream, ", ");
-        fprintf(stream, "'@%s'", node->id);
-        first = false;
+        key_count++;
     }
-    fprintf(stream, " ]\n");
+
+    if (key_count == 0) {
+        print_hint("Registry is empty, no suggestions available.");
+        return;
+    }
+
+    // Allocate memory for suggestions
+    Suggestion* suggestions = (Suggestion*)malloc(key_count * sizeof(Suggestion));
+    if (!suggestions) {
+        // Fallback to a simple unsorted dump if malloc fails
+        print_hint("Could not allocate memory for suggestions, dumping unsorted keys:");
+        fprintf(stderr, "      [ ");
+        bool first = true;
+        for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
+            if (!first) fprintf(stderr, ", ");
+            fprintf(stderr, "'@%s'", node->id);
+            first = false;
+        }
+        fprintf(stderr, " ]\n");
+        return;
+    }
+
+    // Populate the suggestions array
+    int i = 0;
+    for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
+        suggestions[i].key = node->id;
+        suggestions[i].distance = levenshtein_distance(misspelled_key, node->id);
+        i++;
+    }
+
+    // Sort the suggestions by Levenshtein distance
+    qsort(suggestions, key_count, sizeof(Suggestion), compare_suggestions);
+
+    // Print the sorted suggestions
+    print_hint("Did you mean one of these? (Sorted by similarity)");
+    fprintf(stderr, "      [ ");
+    // int suggestions_to_show = (key_count < 10) ? key_count : 10;
+    int suggestions_to_show = key_count;
+    for (i = 0; i < suggestions_to_show; i++) {
+        if (i > 0) fprintf(stderr, ", ");
+        fprintf(stderr, "'@%s'", suggestions[i].key);
+    }
+    if (key_count > suggestions_to_show) fprintf(stderr, ", ...");
+    fprintf(stderr, " ]\n");
+
+    // Free the temporary array
+    free(suggestions);
 }
 
 
@@ -108,14 +170,13 @@ void* registry_get_pointer(const Registry* reg, const char* id, const char* type
     }
 
     char error_buf[256];
-    snprintf(error_buf, sizeof(error_buf), "Reference Error: Object with ID '@%s' not found in the registry.", key);
+    snprintf(error_buf, sizeof(error_buf), "Reference Error: Object with ID '%s' not found in the registry.", id);
 
     if (g_strict_mode || g_strict_registry_mode) {
         render_abort(error_buf);
     } else {
         print_warning("%s", error_buf);
-        print_hint("Did you mean one of these?");
-        registry_dump_keys(reg, stderr);
+        registry_dump_suggestions(reg, key);
     }
 
     return NULL;
