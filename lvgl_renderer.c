@@ -67,6 +67,10 @@ static void debug_print_expr_as_c(IRExpr* expr, Registry* registry, FILE* stream
             fprintf(stream, "%s", ((IRExprRegistryRef*)expr)->name);
             break;
         }
+        case IR_EXPR_RAW_POINTER: {
+             fprintf(stream, "(void*)%p", ((IRExprRawPointer*)expr)->ptr);
+             break;
+        }
         case IR_EXPR_CONTEXT_VAR:
              fprintf(stream, "/* CONTEXT_VAR: %s */", ((IRExprContextVar*)expr)->name);
             break;
@@ -296,93 +300,89 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
                 evaluate_expression(spec, registry, n->expr, &evaluated_args[i++]);
             }
 
-            // 2. Repackage the concrete values into temporary IR_EXPR_LITERAL nodes
-            //    that `dynamic_lvgl_call_ir` and its helpers can understand.
-            IRNode** temp_ir_args = arg_count > 0 ? calloc(arg_count, sizeof(IRNode*)) : NULL;
-            if (arg_count > 0 && !temp_ir_args) render_abort("Failed to alloc temp_ir_args");
-
-            IRExprLiteral* literal_nodes = arg_count > 0 ? calloc(arg_count, sizeof(IRExprLiteral)) : NULL;
-            if(arg_count > 0 && !literal_nodes) render_abort("Failed to alloc literal_nodes");
-
-            char** str_buffers = calloc(arg_count, sizeof(char*));
-            if(arg_count > 0 && !str_buffers) render_abort("Failed to alloc str_buffers");
-
-
+            // 2. Repackage the concrete values into temporary IR nodes that the dispatcher can understand.
+            // This is the key part of the fix: we now create IR_EXPR_RAW_POINTER for intermediate pointers.
+            IRExprNode* temp_ir_args_head = NULL;
             for (i = 0; i < arg_count; i++) {
-                literal_nodes[i].base.base.type = IR_EXPR_LITERAL;
-                temp_ir_args[i] = (IRNode*)&literal_nodes[i];
-                str_buffers[i] = malloc(32); // Buffer for converting numbers to strings
-                if(!str_buffers[i]) render_abort("Failed to alloc str_buffer");
-
+                IRExpr* temp_expr = NULL;
                 switch (evaluated_args[i].type) {
-                    case RENDER_VAL_TYPE_INT:
-                        literal_nodes[i].is_string = false;
-                        snprintf(str_buffers[i], 32, "%ld", (long)evaluated_args[i].as.i_val);
-                        literal_nodes[i].value = str_buffers[i];
+                    case RENDER_VAL_TYPE_INT: {
+                        char buf[32];
+                        snprintf(buf, sizeof(buf), "%ld", (long)evaluated_args[i].as.i_val);
+                        temp_expr = ir_new_expr_literal(buf, "int");
                         break;
+                    }
                     case RENDER_VAL_TYPE_BOOL:
-                        literal_nodes[i].is_string = false;
-                        snprintf(str_buffers[i], 32, "%d", evaluated_args[i].as.b_val);
-                        literal_nodes[i].value = str_buffers[i];
+                        temp_expr = ir_new_expr_literal(evaluated_args[i].as.b_val ? "true" : "false", "bool");
                         break;
-                    case RENDER_VAL_TYPE_COLOR: // Pass color as its integer representation
-                        literal_nodes[i].is_string = false;
-                        snprintf(str_buffers[i], 32, "%u", lv_color_to_u32(evaluated_args[i].as.color_val));
-                        literal_nodes[i].value = str_buffers[i];
+                    case RENDER_VAL_TYPE_COLOR: {
+                        char buf[32];
+                        snprintf(buf, sizeof(buf), "%u", lv_color_to_u32(evaluated_args[i].as.color_val));
+                        temp_expr = ir_new_expr_literal(buf, "lv_color_t");
                         break;
+                    }
                     case RENDER_VAL_TYPE_STRING:
-                        literal_nodes[i].is_string = true;
-                        literal_nodes[i].value = (char*)evaluated_args[i].as.s_val;
+                        temp_expr = ir_new_expr_literal(evaluated_args[i].as.s_val, "const char*");
+                        ((IRExprLiteral*)temp_expr)->is_string = true;
                         break;
                     case RENDER_VAL_TYPE_POINTER:
                     case RENDER_VAL_TYPE_NULL: {
-                         if (evaluated_args[i].as.p_val == NULL) {
-                            literal_nodes[i].is_string = true;
-                            literal_nodes[i].value = "NULL";
+                        void* ptr = evaluated_args[i].as.p_val;
+                        const char* id = registry_get_id_from_pointer(registry, ptr);
+                        if (id) {
+                             // If the pointer is registered, pass its ID so it can be looked up again.
+                            temp_expr = ir_new_expr_literal(id, "void*");
+                            ((IRExprLiteral*)temp_expr)->is_string = true;
                         } else {
-                            // It's a pointer to an object. We need to find its ID to pass to the dispatcher.
-                            const char* id = registry_get_id_from_pointer(registry, evaluated_args[i].as.p_val);
-                            if (id) {
-                                literal_nodes[i].is_string = true;
-                                literal_nodes[i].value = (char*)id;
-                            } else {
-                                print_warning("Could not find registry ID for pointer arg %p in call to %s. Passing NULL.", evaluated_args[i].as.p_val, call->func_name);
-                                literal_nodes[i].is_string = true;
-                                literal_nodes[i].value = "NULL";
-                            }
+                            // If the pointer is not registered, it's an intermediate result.
+                            // Pass the raw pointer value directly.
+                            temp_expr = ir_new_expr_raw_pointer(ptr, "void*");
                         }
                         break;
                     }
                 }
+                if (temp_expr) {
+                    ir_expr_list_add(&temp_ir_args_head, temp_expr);
+                }
             }
 
-            // 3. Determine target and final arguments for the dispatcher
+            // 3. Create a C-style array of IRNode* for the dispatcher from the linked list.
+            IRNode** final_ir_args_array = arg_count > 0 ? calloc(arg_count, sizeof(IRNode*)) : NULL;
+            if (arg_count > 0 && !final_ir_args_array) render_abort("Failed to alloc final_ir_args_array");
+
+            i = 0;
+            IRExprNode* current_arg_node = temp_ir_args_head;
+            while(current_arg_node) {
+                final_ir_args_array[i++] = (IRNode*)current_arg_node->expr;
+                current_arg_node = current_arg_node->next;
+            }
+
+            // 4. Determine target and final arguments for the dispatcher
             void* target_obj = NULL;
-            IRNode** final_ir_args = NULL;
-            int final_arg_count = 0;
+            IRNode** dispatcher_args = NULL;
+            int dispatcher_arg_count = 0;
 
             const FunctionArg* f_args = api_spec_get_function_args_by_name(spec, call->func_name);
             bool first_arg_is_target = f_args && f_args->type && (strstr(f_args->type, "_t*") != NULL);
 
             if (first_arg_is_target && arg_count > 0) {
                 target_obj = evaluated_args[0].as.p_val;
-                final_ir_args = (arg_count > 1) ? &temp_ir_args[1] : NULL;
-                final_arg_count = arg_count - 1;
+                dispatcher_args = (arg_count > 1) ? &final_ir_args_array[1] : NULL;
+                dispatcher_arg_count = arg_count - 1;
             } else {
                 target_obj = NULL;
-                final_ir_args = temp_ir_args;
-                final_arg_count = arg_count;
+                dispatcher_args = final_ir_args_array;
+                dispatcher_arg_count = arg_count;
             }
 
-            // 4. Dispatch the call
-            *out_val = dynamic_lvgl_call_ir(call->func_name, target_obj, final_ir_args, final_arg_count, spec);
+            // 5. Dispatch the call
+            *out_val = dynamic_lvgl_call_ir(call->func_name, target_obj, dispatcher_args, dispatcher_arg_count, spec);
 
-            // 5. Cleanup
+            // 6. Cleanup
             free(evaluated_args);
-            for(i=0; i<arg_count; i++) free(str_buffers[i]);
-            free(str_buffers);
-            free(literal_nodes);
-            free(temp_ir_args);
+            // Free the temporary IR expression list we created
+            ir_expr_list_add(&temp_ir_args_head, NULL); // Hack to call ir_free on the list
+            free(final_ir_args_array);
             return;
         }
 

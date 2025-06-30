@@ -107,6 +107,14 @@ IRExpr* ir_new_expr_runtime_reg_add(const char* id, IRExpr* object_expr) {
     return (IRExpr*)reg;
 }
 
+IRExpr* ir_new_expr_raw_pointer(void* ptr, const char* c_type) {
+    IRExprRawPointer* raw_ptr = calloc(1, sizeof(IRExprRawPointer));
+    raw_ptr->base.base.type = IR_EXPR_RAW_POINTER;
+    raw_ptr->base.c_type = safe_strdup(c_type);
+    raw_ptr->ptr = ptr;
+    return (IRExpr*)raw_ptr;
+}
+
 // --- Factory functions for High-Level Constructs ---
 
 IRRoot* ir_new_root() {
@@ -212,6 +220,7 @@ static void free_expr(IRExpr* expr) {
         case IR_EXPR_ENUM: free(((IRExprEnum*)expr)->symbol); break;
         case IR_EXPR_REGISTRY_REF: free(((IRExprRegistryRef*)expr)->name); break;
         case IR_EXPR_CONTEXT_VAR: free(((IRExprContextVar*)expr)->name); break;
+        case IR_EXPR_RAW_POINTER: /* ptr is not owned, do nothing */ break;
         case IR_EXPR_FUNCTION_CALL: {
             IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
             free(call->func_name);
@@ -337,6 +346,7 @@ void ir_free(IRNode* node) {
         case IR_EXPR_FUNCTION_CALL:
         case IR_EXPR_ARRAY:
         case IR_EXPR_RUNTIME_REG_ADD:
+        case IR_EXPR_RAW_POINTER:
             free_expr((IRExpr*)node);
             return; // free_expr already frees the node itself.
         default: break;

@@ -247,7 +247,8 @@ class CCodeGenerator:
         if c_type_no_const == 'lv_color32_t':
             return f'lv_color_to_32(lv_color_hex((uint32_t)ir_node_get_int({ir_node_accessor})), LV_OPA_COVER)'
         if c_type.endswith('*'):
-            return f'({c_type})obj_registry_get(ir_node_get_string({ir_node_accessor}))'
+            # **MODIFIED**: Use the new robust pointer unmarshaler
+            return f'({c_type})unmarshal_ir_pointer({ir_node_accessor})'
 
         return f'({c_type_no_const})ir_node_get_int({ir_node_accessor})'
 
@@ -355,9 +356,29 @@ typedef RenderValue (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target
 
             f.write(
 """
-// --- C Helper for Polymorphic Arguments ---
+// --- C Helpers for Argument Unmarshaling ---
+
+// Converts an IRNode into a pointer. It handles three cases:
+// 1. A raw pointer from an intermediate function call result (IR_EXPR_RAW_POINTER).
+// 2. A string ID for a registered object (IR_EXPR_LITERAL with is_string=true).
+// 3. A direct reference to a registered object (IR_EXPR_REGISTRY_REF).
+static void* unmarshal_ir_pointer(struct IRNode* node) {
+    if (!node) return NULL;
+    if (node->type == IR_EXPR_RAW_POINTER) {
+        return ((IRExprRawPointer*)node)->ptr;
+    }
+    const char* id = ir_node_get_string(node);
+    if (!id) return NULL;
+    return obj_registry_get(id);
+}
+
 static void* resolve_symbol_or_obj(struct IRNode* node) {
     if (!node) return NULL;
+    // First, check if it's a raw pointer (e.g., from a 'user_data' that's already a pointer)
+    if (node->type == IR_EXPR_RAW_POINTER) {
+        return ((IRExprRawPointer*)node)->ptr;
+    }
+
     const char* s = ir_node_get_string(node);
     if (!s) return NULL;
 
@@ -388,7 +409,7 @@ static void* resolve_symbol_or_obj(struct IRNode* node) {
                 f.write(f"    RenderValue result; result.type = RENDER_VAL_TYPE_NULL; result.as.p_val = NULL;\n")
 
                 if target_c_type != 'void*':
-                    f.write(f'    if (target == NULL) {{ render_abort("Argument 0 (target) is NULL - not allowed"); }}\n')
+                    f.write(f'    if (target == NULL) {{ print_warning("Argument 0 (target) for %s is NULL - not allowed", "{first_func["name"]}"); return result; }}\n')
                 num_expected_args = len(arg_types)
                 f.write(f"    if (arg_count != {num_expected_args}) {{\n")
                 f.write(f"        print_warning(\"IR call to {first_func['name']}-like function: expected {num_expected_args} args, got %d\", arg_count);\n")
@@ -400,7 +421,7 @@ static void* resolve_symbol_or_obj(struct IRNode* node) {
                     parser_code = self._get_parser_for_ir_node(c_type, 'ir_args', j, hint)
                     f.write(f"    {c_type} arg{j} = {parser_code};\n")
                     if c_type == 'lv_style_t*' or c_type == 'lv_obj_t*':
-                        f.write(f'    if (arg{j} == NULL) {{ /* render_abort("Argument {j} ({c_type}) is NULL - not allowed"); */ }}\n')
+                        f.write(f'    if (arg{j} == NULL) {{ /* print_warning("Argument {j} ({c_type}) for {first_func["name"]} is NULL"); */ }}\n')
 
                 c_call_arg_types = [target_c_type] if target_c_type != 'void*' else []
                 c_call_arg_types.extend(arg_types)
@@ -537,6 +558,7 @@ void obj_registry_add(const char* id, void* obj) {
 void* obj_registry_get(const char* id) {
     if (!id) return NULL;
     if (strcmp(id, "SCREEN_ACTIVE") == 0) return (void*)lv_screen_active();
+    if (strcmp(id, "NULL") == 0) return NULL;
 
     for (int i = 0; i < obj_registry_count; i++) {
         if (strcmp(obj_registry[i].id, id) == 0) {
@@ -573,8 +595,13 @@ def main():
     arg_parser.add_argument("--source-out", default="lvgl_dispatch.c", help="Output path for the generated C source file.")
     args = arg_parser.parse_args()
 
+    # ADDED: Debug print to show the script is running.
+    print(f"--- C Code Generation for Dynamic Dispatcher ---", file=sys.stderr)
+
     try:
         with open(args.api_spec_path, 'r', encoding='utf-8') as f:
+            # ADDED: Debug print
+            print(f"Loading API spec from: {args.api_spec_path}", file=sys.stderr)
             raw_spec = json.load(f)
     except FileNotFoundError:
         print(f"Error: API spec file not found at '{args.api_spec_path}'", file=sys.stderr)
@@ -582,8 +609,6 @@ def main():
     except json.JSONDecodeError as e:
         print(f"Error: Could not decode JSON from '{args.api_spec_path}': {e}", file=sys.stderr)
         sys.exit(1)
-
-    print("--- C Code Generation for Dynamic Dispatcher ---", file=sys.stderr)
 
     transformer = LVGLApiSpecTransformer(raw_spec)
     transformed_spec = transformer.transform()

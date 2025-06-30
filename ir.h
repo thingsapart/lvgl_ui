@@ -33,7 +33,8 @@ typedef struct IRNode {
         IR_EXPR_REGISTRY_REF, // @name
         IR_EXPR_CONTEXT_VAR,  // $name
         IR_EXPR_STATIC_STRING, // !string
-        IR_EXPR_RUNTIME_REG_ADD
+        IR_EXPR_RUNTIME_REG_ADD,
+        IR_EXPR_RAW_POINTER   // NEW: For renderer's internal use
     } type;
 } IRNode;
 
@@ -107,6 +108,14 @@ typedef struct {
     IRExpr* object_expr; // Expression for the object pointer (usually a RegistryRef)
 } IRExprRuntimeRegAdd;
 
+// NEW: Represents a raw, unevaluated pointer value.
+// This is used internally by the renderer to pass intermediate results
+// from nested function calls to the dispatcher.
+typedef struct {
+    IRExpr base;
+    void* ptr;
+} IRExprRawPointer;
+
 
 // --- High-Level UI Constructs ---
 
@@ -174,6 +183,7 @@ IRExpr* ir_new_expr_array(IRExprNode* elements, const char* array_c_type);
 IRExpr* ir_new_expr_registry_ref(const char* name, const char* c_type);
 IRExpr* ir_new_expr_context_var(const char* name, const char* c_type);
 IRExpr* ir_new_expr_runtime_reg_add(const char* id, IRExpr* object_expr);
+IRExpr* ir_new_expr_raw_pointer(void* ptr, const char* c_type);
 
 // --- Factory functions for High-Level Constructs ---
 IRRoot* ir_new_root();
