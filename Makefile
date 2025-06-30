@@ -44,7 +44,7 @@ DYNAMIC_LVGL_CFLAGS ?= -DENABLE_IR_INPUTS # Default to only IR inputs
 CFLAGS += $(DYNAMIC_LVGL_CFLAGS)
 
 # Removed viewer/sdl_viewer.c for now to bypass SDL dependency for core generator testing
-SOURCES = main.c api_spec.c ir.c registry.c generator.c ir_printer.c ir_debug_printer.c c_code_printer.c utils.c debug_log.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c lvgl_renderer.c yaml_parser.c
+SOURCES = main.c api_spec.c ir.c registry.c generator.c ir_printer.c ir_debug_printer.c c_code_printer.c utils.c debug_log.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c lvgl_renderer.c yaml_parser.c warning_printer.c
 OBJECTS = $(SOURCES:.c=.o)
 
 # Main target rule now depends on the LVGL library

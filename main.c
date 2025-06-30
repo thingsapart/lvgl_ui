@@ -14,7 +14,8 @@
 #include "lvgl_renderer.h"
 #include "viewer/sdl_viewer.h"
 #include "c_gen/lvgl_dispatch.h"
-#include "yaml_parser.h" // ADDED: Include the new YAML parser
+#include "yaml_parser.h"
+#include "warning_printer.h"
 
 // For getpid() to create unique temporary filenames
 #ifdef _WIN32
@@ -23,6 +24,7 @@
 #else
 #include <unistd.h>
 #endif
+
 
 // --- Global Configuration ---
 bool g_strict_mode = false;
@@ -231,6 +233,9 @@ int main(int argc, char* argv[]) {
         }
         backend_name = strtok(NULL, ",");
     }
+
+    // --- 4.5. Run Warning Summary Backend ---
+    warning_print_backend(ir_root);
 
 cleanup:
     // --- 5. Cleanup ---
