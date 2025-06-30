@@ -1,0 +1,14 @@
+# Note: align_to seems broken when using SDL with zoom.
+- type: obj
+  remove_style_all: []
+  layout: LV_LAYOUT_FLEX
+  flex_flow: LV_FLEX_FLOW_COLUMN
+  flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+  center: []
+  width: 100%
+  children:
+    - type: label
+      text: '0'
+    - type: slider
+      id: '@slider'
+      width: 200
