@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
+#include "utils.h"
 
 // Helper to safely strdup, returning NULL if input is NULL
 static char* safe_strdup(const char* s) {
@@ -848,3 +850,51 @@ const char* api_spec_find_enum_symbol_by_value(const ApiSpec* spec, const char* 
     return NULL; // Not found
 }
 
+const char* api_spec_suggest_property(const ApiSpec* spec, const char* type_name, const char* misspelled_prop) {
+    static char best_match[128] = {0}; // Static buffer to return pointer to
+    int min_dist = INT_MAX;
+    best_match[0] = '\0';
+
+    const char* current_type_to_check = type_name;
+    while (current_type_to_check != NULL && current_type_to_check[0] != '\0') {
+        const WidgetDefinition* widget_def = api_spec_find_widget(spec, current_type_to_check);
+        if (widget_def) {
+            // Check properties
+            PropertyDefinitionNode* p_node = widget_def->properties;
+            while(p_node) {
+                if (p_node->prop && p_node->prop->name) {
+                    int dist = levenshtein_distance(misspelled_prop, p_node->prop->name);
+                    if (dist < min_dist) {
+                        min_dist = dist;
+                        strncpy(best_match, p_node->prop->name, sizeof(best_match) - 1);
+                        best_match[sizeof(best_match) - 1] = '\0';
+                    }
+                }
+                p_node = p_node->next;
+            }
+            // Check methods
+            FunctionMapNode* m_node = widget_def->methods;
+            while(m_node) {
+                if (m_node->name) {
+                    int dist = levenshtein_distance(misspelled_prop, m_node->name);
+                    if (dist < min_dist) {
+                        min_dist = dist;
+                        strncpy(best_match, m_node->name, sizeof(best_match) - 1);
+                        best_match[sizeof(best_match) - 1] = '\0';
+                    }
+                }
+                m_node = m_node->next;
+            }
+            current_type_to_check = widget_def->inherits;
+        } else {
+            break;
+        }
+    }
+    
+    // Suggest only if the match is reasonably close (e.g., distance < 4)
+    if (min_dist < 4) {
+        return best_match;
+    }
+
+    return NULL;
+}

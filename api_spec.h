@@ -95,6 +95,10 @@ const WidgetDefinition* api_spec_find_widget(const ApiSpec* spec, const char* wi
 // Returns NULL if the property is not found for that type.
 const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char* type_name, const char* prop_name);
 
+// Suggests a valid property name based on a misspelled one using Levenshtein distance.
+// Returns a pointer to a static buffer containing the suggestion, or NULL if no good match is found.
+const char* api_spec_suggest_property(const ApiSpec* spec, const char* type_name, const char* misspelled_prop);
+
 // Retrieves the raw cJSON object for constants.
 const cJSON* api_spec_get_constants(const ApiSpec* spec);
 
@@ -149,7 +153,7 @@ bool api_spec_has_function(const ApiSpec* spec, const char* func_name);
 
 // Finds the integer value of a specific enum member within a given enum type.
 // Returns true if found and out_value is set, false otherwise.
-bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_type_name, const char* member_name, long* out_value);
+bool api_spec_find_enum_value(const ApiSpec* spec, const char* enum_name, const char* member_name, long* out_value);
 //
 // Finds a function definition in the API spec.
 const FunctionDefinition* api_spec_find_function(const ApiSpec* spec, const char* func_name);

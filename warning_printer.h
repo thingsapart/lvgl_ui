@@ -2,6 +2,7 @@
 #define WARNING_PRINTER_H
 
 #include "ir.h"
+#include "api_spec.h"
 
 /**
  * @brief A backend that traverses the IR tree and prints a summary of all

@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
         backend_name = strtok(NULL, ",");
     }
 
-    // --- 4.5. Run Warning Summary Backend ---
+    // --- 4.5. Run Warning Summary Backend (Always runs last) ---
     warning_print_backend(ir_root);
 
 cleanup:
