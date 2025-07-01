@@ -25,10 +25,9 @@ typedef struct {
 } ParserState;
 
 // --- Forward Declarations ---
-static cJSON *parse_value_string(const char *str);
+static cJSON *parse_value(const char **p_str, ParserState *state);
 static void parse_line(ParserState *state, int line_idx);
 static void set_error(ParserState *state, const char *format, ...);
-static cJSON* parse_flow_collection(const char **p_str, ParserState *state);
 
 
 // --- cJSON Helper ---
@@ -92,143 +91,108 @@ static void split_lines(ParserState *state, const char *yaml_content) {
 
 // --- Value Parser ---
 
-// Fully recursive flow collection parser.
-static cJSON* parse_flow_collection(const char **p_str, ParserState *state) {
+// This is now the main recursive parsing function. It takes a pointer-to-a-pointer
+// to the string and advances it as it consumes tokens.
+static cJSON* parse_value(const char **p_str, ParserState *state) {
     const char *ptr = *p_str;
-    char start_char = *ptr;
-    char end_char = (start_char == '[') ? ']' : '}';
-    cJSON *root = (start_char == '[') ? cJSON_CreateArray() : cJSON_CreateObject();
+    while(isspace((unsigned char)*ptr)) ptr++;
 
-    ptr++; // Skip '[' or '{'
+    // 1. Handle flow collections recursively
+    if (*ptr == '[' || *ptr == '{') {
+        char start_char = *ptr;
+        char end_char = (start_char == '[') ? ']' : '}';
+        cJSON *root = (start_char == '[') ? cJSON_CreateArray() : cJSON_CreateObject();
+        
+        ptr++; // Skip '[' or '{'
 
-    while (*ptr && *ptr != end_char) {
-        // Trim leading space for the next item
-        while (isspace((unsigned char)*ptr)) ptr++;
-        if (*ptr == end_char || *ptr == '\0') break;
+        while (*ptr) {
+            while (isspace((unsigned char)*ptr)) ptr++;
+            if (*ptr == end_char || *ptr == '\0') break;
 
-        // Check for nested collection
-        if (*ptr == '[' || *ptr == '{') {
-            cJSON *nested_item = parse_flow_collection(&ptr, state);
             if (cJSON_IsArray(root)) {
-                cJSON_AddItemToArray(root, nested_item);
-            } else {
-                set_error(state, "Invalid nested collection in a flow-style object.");
-                cJSON_Delete(root);
-                return cJSON_CreateNull();
-            }
-        } else {
-            // It's a scalar value or a key-value pair
-            const char *item_start = ptr;
-            int quote_level = 0;
-
-            // Find end of the scalar item
-            while (*ptr) {
-                if (*ptr == '"') quote_level = !quote_level;
-                if (quote_level == 0 && (*ptr == ',' || *ptr == ':' || *ptr == end_char)) break;
-                ptr++;
-            }
-
-            char* item_str = strndup(item_start, ptr - item_start);
-            char* trimmed_item_str = trim_whitespace(item_str);
-
-            if (cJSON_IsObject(root)) {
-                if (*ptr != ':') {
-                    set_error(state, "Expected ':' in flow-style object map.");
-                    free(item_str);
+                 cJSON_AddItemToArray(root, parse_value(&ptr, state));
+            } else { // Object
+                cJSON* key_node = parse_value(&ptr, state);
+                if (!cJSON_IsString(key_node)) {
+                    set_error(state, "Invalid key in flow-style map");
+                    cJSON_Delete(key_node);
                     cJSON_Delete(root);
                     return cJSON_CreateNull();
                 }
-                char *key = trimmed_item_str;
-                ptr++; // Move past ':'
-
-                // Find the value part
-                const char *val_start = ptr;
-                int val_collection_level = 0;
-                quote_level = 0;
-                while (*ptr) {
-                    if (quote_level == 0) {
-                        if (*ptr == '[' || *ptr == '{') val_collection_level++;
-                        if (*ptr == ']' || *ptr == '}') val_collection_level--;
-                    }
-                    if (*ptr == '"') quote_level = !quote_level;
-                    if (val_collection_level < 0) break;
-                    if (val_collection_level == 0 && (*ptr == ',' || *ptr == end_char)) break;
-                    ptr++;
+                while(isspace((unsigned char)*ptr)) ptr++;
+                if (*ptr != ':') {
+                    set_error(state, "Expected ':' in flow-style map");
+                    cJSON_Delete(key_node);
+                    cJSON_Delete(root);
+                    return cJSON_CreateNull();
                 }
-                char *val_str = strndup(val_start, ptr - val_start);
-                cJSON* val_node = parse_value_string(val_str);
-                cjson_add_item_to_object_with_duplicates(root, key, val_node);
-                free(val_str);
-
-            } else { // Array
-                cJSON_AddItemToArray(root, parse_value_string(trimmed_item_str));
+                ptr++; // Skip ':'
+                cjson_add_item_to_object_with_duplicates(root, key_node->valuestring, parse_value(&ptr, state));
+                cJSON_Delete(key_node);
             }
 
-            free(item_str);
+            while(isspace((unsigned char)*ptr)) ptr++;
+            if (*ptr == ',') ptr++;
+            else if (*ptr != end_char) {
+                set_error(state, "Expected ',' or '%c' in flow collection", end_char);
+                cJSON_Delete(root);
+                return cJSON_CreateNull();
+            }
         }
+        if (*ptr == end_char) ptr++;
+        *p_str = ptr;
+        return root;
+    }
 
-        // Move to the next item
-        while (isspace((unsigned char)*ptr)) ptr++;
-        if (*ptr == ',') {
+    // 2. Handle quoted strings
+    if (*ptr == '"' || *ptr == '\'') {
+        char quote = *ptr;
+        ptr++;
+        const char* start = ptr;
+        while (*ptr && *ptr != quote) {
+            if (*ptr == '\\') ptr++; // Skip escaped char
             ptr++;
-        } else if (*ptr != end_char) {
-            set_error(state, "Expected ',' or '%c' in flow collection.", end_char);
-            cJSON_Delete(root);
-            return cJSON_CreateNull();
         }
-    }
-
-    if (*ptr == end_char) ptr++; // Consume final ']' or '}'
-    *p_str = ptr;
-    return root;
-}
-
-
-static cJSON* parse_value_string(const char *str) {
-    char* value_str = trim_whitespace(strdup(str));
-    if (!value_str) return cJSON_CreateNull();
-    if (!*value_str) {
-        free(value_str);
-        return cJSON_CreateNull();
-    }
-    
-    char* end = value_str + strlen(value_str) - 1;
-    
-    if ((*value_str == '[' && *end == ']') || (*value_str == '{' && *end == '}')) {
-        const char *p = value_str;
-        // The state is not fully available here, but we pass NULL as this is a sub-parse
-        cJSON* node = parse_flow_collection(&p, NULL); 
-        free(value_str);
+        char* val = strndup(start, ptr - start);
+        if (*ptr == quote) ptr++;
+        *p_str = ptr;
+        cJSON* node = cJSON_CreateString(val);
+        free(val);
         return node;
     }
 
-    // 2. Handle specific keywords
-    if (strcmp(value_str, "null") == 0) { free(value_str); return cJSON_CreateNull(); }
-    if (strcmp(value_str, "true") == 0) { free(value_str); return cJSON_CreateTrue(); }
-    if (strcmp(value_str, "false") == 0) { free(value_str); return cJSON_CreateFalse(); }
-
-    // 3. Handle quoted strings
-    if ((*value_str == '\'' && *end == '\'') || (*value_str == '"' && *end == '"')) {
-        *end = '\0';
-        cJSON* item = cJSON_CreateString(value_str + 1);
-        free(value_str);
-        return item;
+    // 3. Handle unquoted scalars
+    const char* start = ptr;
+    while (*ptr && *ptr != ',' && *ptr != ']' && *ptr != '}' && *ptr != ':') {
+        ptr++;
     }
+    char* val = strndup(start, ptr - start);
+    char* trimmed_val = trim_whitespace(val);
+    *p_str = ptr;
 
-    // 4. Try to parse as a number. Only if the ENTIRE string is a number.
+    if (strcmp(trimmed_val, "null") == 0) { free(val); return cJSON_CreateNull(); }
+    if (strcmp(trimmed_val, "true") == 0) { free(val); return cJSON_CreateTrue(); }
+    if (strcmp(trimmed_val, "false") == 0) { free(val); return cJSON_CreateFalse(); }
+    
     char* endptr;
-    double num = strtod(value_str, &endptr);
-    if (*endptr == '\0' && endptr != value_str) {
-        free(value_str);
+    double num = strtod(trimmed_val, &endptr);
+    if (*endptr == '\0' && endptr != trimmed_val) {
+        free(val);
         return cJSON_CreateNumber(num);
     }
-    
-    // 5. If all else fails, it's an unquoted string.
-    // This will correctly handle "LV_ALIGN_CENTER", "#FF0000", "50%", etc.
-    cJSON* item = cJSON_CreateString(value_str);
-    free(value_str);
-    return item;
+
+    cJSON* node = cJSON_CreateString(trimmed_val);
+    free(val);
+    return node;
 }
+
+
+// A simple wrapper to start the recursive parsing process.
+static cJSON* parse_value_string(const char *str, ParserState* state) {
+    const char *p = str;
+    return parse_value(&p, state);
+}
+
 
 // --- Parser State Management ---
 
@@ -283,8 +247,6 @@ void parse_line(ParserState *state, int line_idx) {
 
     cJSON *parent = state->stack[state->stack_top].node;
 
-    // This block handles both list items (`- key: val`) and regular items (`  key: val`).
-    // It's responsible for splitting the key from the value+comment part.
     char *item_content = content;
     if (*content == '-') {
         if (!cJSON_IsArray(parent)) {
@@ -295,10 +257,9 @@ void parse_line(ParserState *state, int line_idx) {
         cJSON *new_obj = cJSON_CreateObject();
         cJSON_AddItemToArray(parent, new_obj);
         push_stack(state, new_obj, indent);
-        parent = new_obj; // The new parent for this line's content is the new object.
+        parent = new_obj;
         item_content = trim_whitespace(content + 1);
         
-        // If the line was only "-", there's nothing more to process.
         if (*item_content == '\0') {
             return;
         }
@@ -310,7 +271,6 @@ void parse_line(ParserState *state, int line_idx) {
         }
     }
 
-    // Now, `item_content` holds the `key: value # comment` part, and `parent` is correct.
     char *colon = strchr(item_content, ':');
     if (!colon) {
         set_error(state, "Invalid item (missing ':'). Content: '%s'", item_content);
@@ -320,7 +280,6 @@ void parse_line(ParserState *state, int line_idx) {
     char *key = trim_whitespace(item_content);
     char *val_str = colon + 1;
 
-    // ** CORRECTED COMMENT HANDLING FOR INLINE VALUES **
     bool in_single_quotes = false;
     bool in_double_quotes = false;
     char *p = val_str;
@@ -328,7 +287,7 @@ void parse_line(ParserState *state, int line_idx) {
         if (*p == '\'' && !in_double_quotes) in_single_quotes = !in_single_quotes;
         else if (*p == '"' && !in_single_quotes) in_double_quotes = !in_double_quotes;
         else if (*p == '#' && !in_single_quotes && !in_double_quotes) {
-            *p = '\0'; // Truncate the string at the unquoted comment
+            *p = '\0';
             break;
         }
         p++;
@@ -336,7 +295,6 @@ void parse_line(ParserState *state, int line_idx) {
     char *trimmed_val_str = trim_whitespace(val_str);
 
     if (*trimmed_val_str == '\0') {
-        // --- Smart Lookahead for Block Content ---
         int next_content_indent = -1;
         char* next_content_start = NULL;
         for (int j = line_idx + 1; j < state->num_lines; j++) {
@@ -348,7 +306,7 @@ void parse_line(ParserState *state, int line_idx) {
             char* current_content = trim_whitespace(temp_line + current_indent);
             
             if (*current_content == '\0' || *current_content == '#') {
-                continue; // Skip empty/comment line
+                continue;
             }
             next_content_indent = current_indent;
             next_content_start = current_content;
@@ -370,7 +328,7 @@ void parse_line(ParserState *state, int line_idx) {
             cjson_add_item_to_object_with_duplicates(parent, key, cJSON_CreateNull());
         }
     } else {
-        cJSON *val_node = parse_value_string(trimmed_val_str);
+        cJSON *val_node = parse_value_string(trimmed_val_str, state);
         cjson_add_item_to_object_with_duplicates(parent, key, val_node);
     }
 }

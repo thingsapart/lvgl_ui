@@ -16,6 +16,7 @@
 #include "c_gen/lvgl_dispatch.h"
 #include "yaml_parser.h"
 #include "warning_printer.h"
+#include "registry.h" // Include for registry management
 
 // For getpid() to create unique temporary filenames
 #ifdef _WIN32
@@ -65,6 +66,7 @@ int main(int argc, char* argv[]) {
     ApiSpec* api_spec = NULL;
     IRRoot* ir_root = NULL;
     char* backend_list_copy = NULL;
+    Registry* renderer_registry = NULL; // Moved registry for renderer here
 
     // --- 1. Argument Parsing ---
     const char* api_spec_path = NULL;
@@ -216,8 +218,11 @@ int main(int argc, char* argv[]) {
                 goto cleanup;
             }
 
+            // Create the registry that will live for the duration of the renderer
+            renderer_registry = registry_create();
+
             // Render the IR onto the created screen.
-            lvgl_render_backend(ir_root, api_spec, parent_screen);
+            lvgl_render_backend(ir_root, api_spec, parent_screen, renderer_registry);
 
             // Enter the main rendering loop. This will block until the user closes the window.
             printf("Starting SDL viewer loop. Close the window to exit.\n");
@@ -239,6 +244,7 @@ int main(int argc, char* argv[]) {
 
 cleanup:
     // --- 5. Cleanup ---
+    if(renderer_registry) registry_free(renderer_registry);
     if(backend_list_copy) free(backend_list_copy);
     if(ir_root) ir_free((IRNode*)ir_root);
     if(api_spec) api_spec_free(api_spec);

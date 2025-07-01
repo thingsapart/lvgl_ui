@@ -15,17 +15,16 @@ static void debug_print_expr_as_c(IRExpr* expr, Registry* registry, FILE* stream
 
 // --- Main Backend Entry Point ---
 
-void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent) {
-    if (!root || !api_spec || !parent) {
+void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent, Registry* registry) {
+    if (!root || !api_spec || !parent || !registry) {
         DEBUG_LOG(LOG_MODULE_RENDERER, "Error: lvgl_render_backend called with NULL arguments.");
         return;
     }
 
-    // Use a single registry for the entire rendering process.
-    Registry* registry = registry_create();
-    obj_registry_init(); // Also init the C-side registry.
+    // Initialize the C-side dispatcher's own registry
+    obj_registry_init();
 
-    // Add the top-level parent widget to the registry so it can be referenced as "parent"
+    // Add the top-level parent widget to both registries so it can be referenced.
     registry_add_pointer(registry, parent, "parent", "obj", "lv_obj_t*");
     obj_registry_add("parent", parent);
 
@@ -33,8 +32,7 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent) {
     render_object_list(api_spec, root->root_objects, registry);
     DEBUG_LOG(LOG_MODULE_RENDERER, "LVGL render backend finished.");
 
-    registry_free(registry);
-    // The C-side registry should be de-inited by the caller (e.g., main) after the loop ends.
+    // Note: The registry is NOT freed here. Its lifecycle is now managed by the caller (main).
 }
 
 // --- Debugging Helper ---
@@ -98,7 +96,7 @@ static void debug_print_expr_as_c(IRExpr* expr, Registry* registry, FILE* stream
             break;
         }
         case IR_EXPR_ARRAY: {
-            fprintf(stream, "(%p) => { ", ((IRExprArray*)expr)->static_array_ptr);
+            fprintf(stream, "{ ");
             IRExprNode* elem_node = ((IRExprArray*)expr)->elements;
             bool first = true;
             while(elem_node) {
@@ -332,9 +330,6 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             
             out_val->type = RENDER_VAL_TYPE_POINTER;
             out_val->as.p_val = c_array;
-
-	    printf("OUT ARR >> %p\n", c_array);
-
             return;
         }
 
