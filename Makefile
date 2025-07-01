@@ -28,7 +28,8 @@ TARGET = lvgl_ui_generator
 
 # Python script for generating lvgl_dispatch.c and .h
 API_SPEC_GENERATOR_PY = ./generate_dynamic_lvgl_dispatch.py
-API_SPEC_JSON = ./data/lv_def.json # Input for the generator script
+LV_DEF_JSON = ./data/lv_def.json
+API_SPEC_JSON = ./api_spec.json 
 DYNAMIC_LVGL_H = ./c_gen/lvgl_dispatch.h
 DYNAMIC_LVGL_C = ./c_gen/lvgl_dispatch.c
 DYNAMIC_LVGL_O = $(DYNAMIC_LVGL_C:.c=.o)
@@ -63,8 +64,12 @@ $(DYNAMIC_LVGL_H) $(DYNAMIC_LVGL_C): $(API_SPEC_GENERATOR_PY) $(API_SPEC_JSON)
 	@echo "Generating $(DYNAMIC_LVGL_H) and $(DYNAMIC_LVGL_C) with consolidation mode: $(CONSOLIDATION_MODE)"
 	python3 $(API_SPEC_GENERATOR_PY) $(API_SPEC_JSON) \
 		--header-out $(DYNAMIC_LVGL_H) \
-		--source-out $(DYNAMIC_LVGL_C)
+		--source-out $(DYNAMIC_LVGL_C) \
 		#--consolidation-mode $(CONSOLIDATION_MODE) \
+
+$(API_SPEC_SON) : ./generate_api_spec.py $(LV_DEF_JSON)
+	@echo "Generating $(DYNAMIC_LVGL_H) and $(DYNAMIC_LVGL_C) with consolidation mode: $(CONSOLIDATION_MODE)"
+	python3 ./generate_api_spec.py ./data/lv_def.json --lvgl-conf $(LV_CONF_PATH) > $(API_SPEC_SON)
 
 # Ensure generated files are created before objects that depend on them are compiled.
 # Specifically, main.o or any other .o that might include dynamic_lvgl.h

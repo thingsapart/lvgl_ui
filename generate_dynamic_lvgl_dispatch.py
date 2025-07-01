@@ -3,6 +3,10 @@ import re
 import sys
 import argparse
 from collections import defaultdict
+import os
+import shutil
+import subprocess
+import tempfile
 
 # --- Configuration for Function Wrapping ---
 # These lists help filter out functions that are complex, unsafe, or undesirable
@@ -39,97 +43,6 @@ POLYMORPHIC_ARG_HINTS = {
     'lv_image_set_src':   {0: 'symbol_or_obj'}, # arg 0 is `src`
     'lv_obj_add_event_cb': {2: 'void_ptr_or_null'}, # arg 2 is `user_data`
 }
-
-
-class LVGLApiSpecTransformer:
-    """
-    Transforms the raw lv_def.json spec into a more convenient format
-    for the CCodeGenerator, primarily by converting the 'enums' list
-    into a dictionary.
-    """
-
-    def __init__(self, raw_spec):
-        self.raw_spec = raw_spec
-        self.transformed_spec = {}
-
-    def _get_type_str(self, type_info):
-        """Recursively builds a string representation of a C type from lv_def.json format."""
-        if not type_info: return "void*"
-        if type_info.get('json_type') == 'ret_type':
-            return self._get_type_str(type_info.get('type'))
-        if type_info.get('name') == 'void' and 'pointer' not in type_info.get('json_type', ''):
-            return "void"
-
-        suffix = ""
-        current = type_info
-        while current.get('json_type') == 'pointer':
-            suffix += '*'
-            current = current.get('type', {})
-
-        base_name = current.get('name') or current.get('type', {}).get('name') or "void"
-        if base_name == "anonymous": base_name = "void"
-
-        base_name = base_name.replace(" const", "").strip()
-        if "const " in base_name and suffix:
-            base_name = base_name.replace("const ", "")
-            return f"const {base_name}{suffix}".strip()
-
-        return f"{base_name}{suffix}".strip()
-
-    def transform(self):
-        """Performs the transformation."""
-        # Copy over sections that don't need transformation
-        self.transformed_spec['constants'] = self.raw_spec.get('constants', {})
-        self.transformed_spec['objects'] = self.raw_spec.get('objects', {})
-        self.transformed_spec['widgets'] = self.raw_spec.get('widgets', {})
-
-        # Transform 'enums' from a list of objects to a dictionary
-        enums_dict = {}
-        for enum_obj in self.raw_spec.get('enums', []):
-            if isinstance(enum_obj, dict) and 'name' in enum_obj and 'members' in enum_obj:
-                enum_name = enum_obj['name']
-                members_dict = {
-                    member['name']: member['value']
-                    for member in enum_obj.get('members', [])
-                    if 'name' in member and 'value' in member
-                }
-                enums_dict[enum_name] = members_dict
-        self.transformed_spec['enums'] = enums_dict
-
-        # Transform 'functions' from list to dict and simplify signatures
-        functions_dict = {}
-        for func_obj in self.raw_spec.get('functions', []):
-            if not isinstance(func_obj, dict): continue
-            func_name = func_obj.get('name')
-            if not func_name: continue
-
-            ret_type = self._get_type_str(func_obj.get('type'))
-
-            args_list = []
-            args_spec = func_obj.get('args')
-            if args_spec:
-                is_void_arg = len(args_spec) == 1 and self._get_type_str(args_spec[0].get('type')) == 'void'
-                if not is_void_arg:
-                    args_list = [self._get_type_str(arg.get('type')) for arg in args_spec]
-
-            functions_dict[func_name] = {"return_type": ret_type, "args": args_list}
-
-        # Handle aliases like "lv_btn_create": "lv_button_create"
-        # This is a simplification; a full implementation might need to copy arg data.
-        # For now, we assume the CCodeGenerator will look up the final function name.
-        raw_funcs = self.raw_spec.get('functions', [])
-        for func_obj in raw_funcs:
-             if isinstance(func_obj, dict):
-                 func_name = func_obj.get('name')
-                 if func_name and func_obj.get(func_name) and isinstance(func_obj[func_name], str):
-                     alias_target = func_obj[func_name]
-                     if alias_target in functions_dict:
-                         functions_dict[func_name] = functions_dict[alias_target]
-
-
-        self.transformed_spec['functions'] = functions_dict
-
-        return self.transformed_spec
 
 
 class CCodeGenerator:
@@ -590,19 +503,17 @@ void obj_registry_deinit(void) {
 def main():
     """Main entry point for the script."""
     arg_parser = argparse.ArgumentParser(description="Generate a dynamic LVGL dispatcher from an API specification.")
-    arg_parser.add_argument("api_spec_path", help="Path to the raw lv_def.json API spec file.")
+    arg_parser.add_argument("api_spec_path", help="Path to the processed api_spec.json file.")
     arg_parser.add_argument("--header-out", default="lvgl_dispatch.h", help="Output path for the generated C header file.")
     arg_parser.add_argument("--source-out", default="lvgl_dispatch.c", help="Output path for the generated C source file.")
     args = arg_parser.parse_args()
 
-    # ADDED: Debug print to show the script is running.
     print(f"--- C Code Generation for Dynamic Dispatcher ---", file=sys.stderr)
 
     try:
         with open(args.api_spec_path, 'r', encoding='utf-8') as f:
-            # ADDED: Debug print
             print(f"Loading API spec from: {args.api_spec_path}", file=sys.stderr)
-            raw_spec = json.load(f)
+            api_spec = json.load(f)
     except FileNotFoundError:
         print(f"Error: API spec file not found at '{args.api_spec_path}'", file=sys.stderr)
         sys.exit(1)
@@ -610,10 +521,7 @@ def main():
         print(f"Error: Could not decode JSON from '{args.api_spec_path}': {e}", file=sys.stderr)
         sys.exit(1)
 
-    transformer = LVGLApiSpecTransformer(raw_spec)
-    transformed_spec = transformer.transform()
-
-    generator = CCodeGenerator(transformed_spec)
+    generator = CCodeGenerator(api_spec)
 
     print("Analyzing function archetypes...", file=sys.stderr)
     generator.analyze_archetypes()
