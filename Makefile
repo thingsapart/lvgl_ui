@@ -58,6 +58,11 @@ $(LVGL_LIB):
 	@echo "LVGL library not found or out of date. Building it..."
 	./build_lvgl.sh
 
+$(API_SPEC_JSON) : ./generate_api_spec.py $(LV_DEF_JSON)
+	@echo "Generating $(DYNAMIC_LVGL_H) and $(DYNAMIC_LVGL_C) with consolidation mode: $(CONSOLIDATION_MODE)"
+	python3 ./generate_api_spec.py ./data/lv_def.json --lvgl-conf $(LV_CONF_PATH) > $(API_SPEC_JSON)
+
+
 # Rule to generate dynamic_lvgl.h and dynamic_lvgl.c
 # These files depend on the Python script and the api_spec.json
 $(DYNAMIC_LVGL_H) $(DYNAMIC_LVGL_C): $(API_SPEC_GENERATOR_PY) $(API_SPEC_JSON)
@@ -66,11 +71,6 @@ $(DYNAMIC_LVGL_H) $(DYNAMIC_LVGL_C): $(API_SPEC_GENERATOR_PY) $(API_SPEC_JSON)
 		--header-out $(DYNAMIC_LVGL_H) \
 		--source-out $(DYNAMIC_LVGL_C) \
 		#--consolidation-mode $(CONSOLIDATION_MODE) \
-
-$(API_SPEC_SON) : ./generate_api_spec.py $(LV_DEF_JSON)
-	@echo "Generating $(DYNAMIC_LVGL_H) and $(DYNAMIC_LVGL_C) with consolidation mode: $(CONSOLIDATION_MODE)"
-	python3 ./generate_api_spec.py ./data/lv_def.json --lvgl-conf $(LV_CONF_PATH) > $(API_SPEC_SON)
-
 # Ensure generated files are created before objects that depend on them are compiled.
 # Specifically, main.o or any other .o that might include dynamic_lvgl.h
 # and the dynamic_lvgl.o itself.
