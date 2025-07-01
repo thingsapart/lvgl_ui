@@ -30,7 +30,8 @@ WHITELIST_FUNCTIONS = {
     'lv_obj_add_event_cb',
     'lv_list_add_button',
     'lv_image_set_src',
-    'lv_obj_add_event_cb'
+    'lv_obj_add_event_cb',
+    'lv_dropdown_set_symbol'
 }
 
 # --- Polymorphic Argument Hints ---
