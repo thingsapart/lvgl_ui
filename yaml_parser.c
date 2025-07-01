@@ -28,6 +28,8 @@ typedef struct {
 static cJSON *parse_value_string(const char *str);
 static void parse_line(ParserState *state, int line_idx);
 static void set_error(ParserState *state, const char *format, ...);
+static cJSON* parse_flow_collection(const char **p_str, ParserState *state);
+
 
 // --- cJSON Helper ---
 
@@ -90,59 +92,93 @@ static void split_lines(ParserState *state, const char *yaml_content) {
 
 // --- Value Parser ---
 
-// Very simple flow collection parser. Not fully YAML compliant, but handles the examples.
-static cJSON *parse_flow_collection(const char **p_str) {
+// Fully recursive flow collection parser.
+static cJSON* parse_flow_collection(const char **p_str, ParserState *state) {
     const char *ptr = *p_str;
     char start_char = *ptr;
     char end_char = (start_char == '[') ? ']' : '}';
     cJSON *root = (start_char == '[') ? cJSON_CreateArray() : cJSON_CreateObject();
 
     ptr++; // Skip '[' or '{'
-    *p_str = ptr; // Update position
 
     while (*ptr && *ptr != end_char) {
+        // Trim leading space for the next item
         while (isspace((unsigned char)*ptr)) ptr++;
         if (*ptr == end_char || *ptr == '\0') break;
 
-        const char *item_start = ptr;
-        int collection_level = 0;
-        int quote_level = 0;
-
-        // Find end of current item (handling nested collections)
-        while (*ptr) {
-            if (quote_level == 0) {
-                 if (*ptr == '[' || *ptr == '{') collection_level++;
-                 if (*ptr == ']' || *ptr == '}') collection_level--;
+        // Check for nested collection
+        if (*ptr == '[' || *ptr == '{') {
+            cJSON *nested_item = parse_flow_collection(&ptr, state);
+            if (cJSON_IsArray(root)) {
+                cJSON_AddItemToArray(root, nested_item);
+            } else {
+                set_error(state, "Invalid nested collection in a flow-style object.");
+                cJSON_Delete(root);
+                return cJSON_CreateNull();
             }
-            if (*ptr == '"') quote_level = !quote_level;
+        } else {
+            // It's a scalar value or a key-value pair
+            const char *item_start = ptr;
+            int quote_level = 0;
 
-            if (collection_level < 0) break; // End of our collection
-            if (collection_level == 0 && (*ptr == ',' || *ptr == end_char)) break;
-            ptr++;
-        }
-        
-        char *item_str = strndup(item_start, ptr - item_start);
-        char *trimmed_item = trim_whitespace(item_str);
+            // Find end of the scalar item
+            while (*ptr) {
+                if (*ptr == '"') quote_level = !quote_level;
+                if (quote_level == 0 && (*ptr == ',' || *ptr == ':' || *ptr == end_char)) break;
+                ptr++;
+            }
 
-        if (cJSON_IsObject(root)) {
-            char *colon = strchr(trimmed_item, ':');
-            if (colon) {
-                *colon = '\0';
-                char *key = trim_whitespace(trimmed_item);
-                char *val_str = trim_whitespace(colon + 1);
-                cJSON *val_node = parse_value_string(val_str);
+            char* item_str = strndup(item_start, ptr - item_start);
+            char* trimmed_item_str = trim_whitespace(item_str);
+
+            if (cJSON_IsObject(root)) {
+                if (*ptr != ':') {
+                    set_error(state, "Expected ':' in flow-style object map.");
+                    free(item_str);
+                    cJSON_Delete(root);
+                    return cJSON_CreateNull();
+                }
+                char *key = trimmed_item_str;
+                ptr++; // Move past ':'
+
+                // Find the value part
+                const char *val_start = ptr;
+                int val_collection_level = 0;
+                quote_level = 0;
+                while (*ptr) {
+                    if (quote_level == 0) {
+                        if (*ptr == '[' || *ptr == '{') val_collection_level++;
+                        if (*ptr == ']' || *ptr == '}') val_collection_level--;
+                    }
+                    if (*ptr == '"') quote_level = !quote_level;
+                    if (val_collection_level < 0) break;
+                    if (val_collection_level == 0 && (*ptr == ',' || *ptr == end_char)) break;
+                    ptr++;
+                }
+                char *val_str = strndup(val_start, ptr - val_start);
+                cJSON* val_node = parse_value_string(val_str);
                 cjson_add_item_to_object_with_duplicates(root, key, val_node);
+                free(val_str);
+
+            } else { // Array
+                cJSON_AddItemToArray(root, parse_value_string(trimmed_item_str));
             }
-        } else { // Array
-             cJSON_AddItemToArray(root, parse_value_string(trimmed_item));
+
+            free(item_str);
         }
 
-        free(item_str);
-
-        if (*ptr == ',') ptr++;
+        // Move to the next item
+        while (isspace((unsigned char)*ptr)) ptr++;
+        if (*ptr == ',') {
+            ptr++;
+        } else if (*ptr != end_char) {
+            set_error(state, "Expected ',' or '%c' in flow collection.", end_char);
+            cJSON_Delete(root);
+            return cJSON_CreateNull();
+        }
     }
 
-    if (*ptr == end_char) ptr++;
+    if (*ptr == end_char) ptr++; // Consume final ']' or '}'
     *p_str = ptr;
     return root;
 }
@@ -157,15 +193,11 @@ static cJSON* parse_value_string(const char *str) {
     }
     
     char* end = value_str + strlen(value_str) - 1;
-
-    // 1. Handle flow collections recursively
-    if (*value_str == '[' && *end == ']') {
-        cJSON* node = parse_flow_collection(&str); 
-        free(value_str);
-        return node;
-    }
-    if (*value_str == '{' && *end == '}') {
-        cJSON* node = parse_flow_collection(&str);
+    
+    if ((*value_str == '[' && *end == ']') || (*value_str == '{' && *end == '}')) {
+        const char *p = value_str;
+        // The state is not fully available here, but we pass NULL as this is a sub-parse
+        cJSON* node = parse_flow_collection(&p, NULL); 
         free(value_str);
         return node;
     }
@@ -217,16 +249,18 @@ static void pop_stack(ParserState *state) {
 }
 
 static void set_error(ParserState *state, const char *format, ...) {
-    if (state->error && *state->error) return; // Don't overwrite first error
+    if (state && state->error && *state->error) return; // Don't overwrite first error
     char buffer[256];
     va_list args;
     va_start(args, format);
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    char *err_str = malloc(strlen(buffer) + 32);
-    sprintf(err_str, "YAML Error on line %d: %s", state->line_num, buffer);
-    *state->error = err_str;
+    if (state && state->error) {
+        char *err_str = malloc(strlen(buffer) + 32);
+        sprintf(err_str, "YAML Error on line %d: %s", state->line_num, buffer);
+        *state->error = err_str;
+    }
 }
 
 // --- Main Parsing Logic ---

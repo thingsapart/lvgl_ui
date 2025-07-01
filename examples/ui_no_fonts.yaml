@@ -60,7 +60,7 @@
   radius: 2
 
 - type: style
-  id: '@border_top_btm'
+  id: '@border_top_btn'
   border_width: 1
   border_color: '#ffffff'
   border_opa: 50
@@ -201,7 +201,7 @@
             height: LV_SIZE_CONTENT
             width: 100%
             # text_font: '@font_kode_20'
-            add_style: ['@border_top_btm', 0]
+            add_style: ['@border_top_btn', 0]
           - type: obj # grid
             grid_dsc_array: [[LV_GRID_CONTENT, LV_GRID_FR_1, LV_GRID_TEMPLATE_LAST], [LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST]]
             add_style: ['@container', 0]
@@ -255,7 +255,7 @@
           - type: label
             text: $unit
             # text_font: '@font_kode_20'
-            add_style: ['@border_top_btm', 0]
+            add_style: ['@border_top_btn', 0]
           - type: label
             text: $ovr
           - type: label
@@ -287,10 +287,11 @@
             height: LV_SIZE_CONTENT
             width: 100%
             # text_font: '@font_kode_20'
-            add_style: ['@border_top_btm', 0]
+            add_style: ['@border_top_btn', 0]
           - type: obj # grid
-            cols: [35, 45, 20 , 40]
-            rows: [LV_GRID_CONTENT]
+            # cols: [35, 45, 20 , 40]
+            # rows: [LV_GRID_CONTENT]
+            grid_dsc_arry: [35, 45, 20 , 40, LV_GRID_TEMPLATE_LAST], [LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST]]
             add_style: ['@container', 0]
             width: 100%
             height: LV_SIZE_CONTENT
@@ -333,7 +334,7 @@
           - type: label
             text: $unit
             # text_font: '@font_kode_20'
-            add_style: ['@border_top_btm', 0]
+            add_style: ['@border_top_btn', 0]
           - type: label
             text: $ovr
           - type: label
@@ -499,8 +500,9 @@
 
 # - type: grid
   add_style: ['@container', 0]
-  cols: [LV_GRID_CONTENT, LV_GRID_FR_1]
-  rows: [100%]
+  # cols: [LV_GRID_CONTENT, LV_GRID_FR_1]
+  # rows: [100%]
+  grid_dsc_array: [[LV_GRID_CONTENT, LV_GRID_FR_1, LV_GRID_TEMPLATE_LAST], [100%, LV_GRID_TEMPLATE_LAST]]
   size: [100%, 100%]
   pad_row: 0
   pad_column: 0

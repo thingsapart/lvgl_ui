@@ -53,7 +53,7 @@ static void debug_print_expr(IRExpr* expr, int indent_level) {
             printf("value=\"%s\"\n", ((IRExprStaticString*)expr)->value);
             break;
         case IR_EXPR_ENUM:
-            printf("symbol=%s value=%ld\n", ((IRExprEnum*)expr)->symbol,  ((IRExprEnum*)expr)->value);
+            printf("symbol=%s\n", ((IRExprEnum*)expr)->symbol);
             break;
         case IR_EXPR_REGISTRY_REF:
             printf("name=%s\n", ((IRExprRegistryRef*)expr)->name);
@@ -70,10 +70,28 @@ static void debug_print_expr(IRExpr* expr, int indent_level) {
             break;
         }
         case IR_EXPR_ARRAY: {
-            printf("\n");
+            IRExprArray* arr = (IRExprArray*)expr;
+            printf("ptr=%p\n", (void*)arr);
             debug_print_indent(indent_level + 1);
             printf("[ELEMENTS]\n");
-            debug_print_expr_list(((IRExprArray*)expr)->elements, indent_level + 2);
+
+            IRExprNode* current = arr->elements;
+            if (!current) {
+                debug_print_indent(indent_level + 2);
+                printf("(empty)\n");
+            } else {
+                int count = 0;
+                const int max_elements_to_print = 50;
+                while (current && count < max_elements_to_print) {
+                    debug_print_expr(current->expr, indent_level + 2);
+                    current = current->next;
+                    count++;
+                }
+                if (current) { // If the loop was cut short
+                    debug_print_indent(indent_level + 2);
+                    printf("...\n");
+                }
+            }
             break;
         }
         case IR_EXPR_RUNTIME_REG_ADD: {

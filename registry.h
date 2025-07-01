@@ -2,6 +2,7 @@
 #define REGISTRY_H
 
 #include <cJSON/cJSON.h>
+#include "lvgl.h" // For lv_coord_t etc.
 
 // --- Data structures for pointer and string registration ---
 typedef struct PointerRegistryNode {
@@ -16,6 +17,11 @@ typedef struct StringRegistryNode {
     char* value;
     struct StringRegistryNode* next;
 } StringRegistryNode;
+
+typedef struct StaticArrayRegistryNode {
+    void* ptr;
+    struct StaticArrayRegistryNode* next;
+} StaticArrayRegistryNode;
 
 // Forward declaration for Registry to be used in ComponentRegistryNode etc. if needed
 // struct Registry; // Not strictly needed here as they are just members
@@ -64,6 +70,10 @@ const char* registry_get_id_from_pointer(const Registry* reg, const void* ptr);
 // --- String Registry ---
 const char *registry_add_str(Registry* reg, const char *value);
 
+// --- Static Array Registry ---
+void registry_add_static_array(Registry* reg, void* ptr);
+
+
 // --- Registry struct ---
 // This is the full definition of the Registry.
 struct Registry {
@@ -71,6 +81,7 @@ struct Registry {
     VarRegistryNode* generated_vars;
     PointerRegistryNode* pointers;
     StringRegistryNode* strings;
+    StaticArrayRegistryNode* static_arrays;
 };
 
 #endif // REGISTRY_H

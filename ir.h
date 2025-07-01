@@ -88,6 +88,7 @@ typedef struct {
 typedef struct {
     IRExpr base;
     IRExprNode* elements; // Linked list of element expressions
+    void* static_array_ptr; // Cached pointer for the renderer
 } IRExprArray;
 
 // Reference to a registered object: @name

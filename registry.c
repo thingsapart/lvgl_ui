@@ -78,6 +78,16 @@ void registry_free(Registry* reg) {
         current_str_node = next_str_node;
     }
 
+    StaticArrayRegistryNode* current_arr_node = reg->static_arrays;
+    while (current_arr_node) {
+        StaticArrayRegistryNode* next_arr_node = current_arr_node->next;
+        if (current_arr_node->ptr) {
+            free(current_arr_node->ptr);
+        }
+        free(current_arr_node);
+        current_arr_node = next_arr_node;
+    }
+
     free(reg);
 }
 
@@ -125,8 +135,7 @@ static void registry_dump_suggestions(const Registry* reg, const char* misspelle
     // Print the sorted suggestions
     print_hint("Did you mean one of these? (Sorted by similarity)");
     fprintf(stderr, "      [ ");
-    // int suggestions_to_show = (key_count < 10) ? key_count : 10;
-    int suggestions_to_show = key_count;
+    int suggestions_to_show = (key_count < 10) ? key_count : 10;
     for (i = 0; i < suggestions_to_show; i++) {
         if (i > 0) fprintf(stderr, ", ");
         fprintf(stderr, "'@%s'", suggestions[i].key);
@@ -275,4 +284,13 @@ const char* registry_get_c_type_for_id(const Registry* reg, const char* name) {
         if (strcmp(node->id, key) == 0) return node->c_type;
     }
     return NULL; // Not found
+}
+
+void registry_add_static_array(Registry* reg, void* ptr) {
+    if (!reg || !ptr) return;
+    StaticArrayRegistryNode* new_node = malloc(sizeof(StaticArrayRegistryNode));
+    if (!new_node) render_abort("Failed to allocate static array node");
+    new_node->ptr = ptr;
+    new_node->next = reg->static_arrays;
+    reg->static_arrays = new_node;
 }

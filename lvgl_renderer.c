@@ -98,7 +98,7 @@ static void debug_print_expr_as_c(IRExpr* expr, Registry* registry, FILE* stream
             break;
         }
         case IR_EXPR_ARRAY: {
-            fprintf(stream, "{ ");
+            fprintf(stream, "(%p) => { ", ((IRExprArray*)expr)->static_array_ptr);
             IRExprNode* elem_node = ((IRExprArray*)expr)->elements;
             bool first = true;
             while(elem_node) {
@@ -284,6 +284,57 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             if (!out_val->as.p_val) {
                  DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Registry reference '%s' resolved to NULL.", name);
             }
+            return;
+        }
+
+        case IR_EXPR_ARRAY: {
+            IRExprArray* arr = (IRExprArray*)expr;
+            if (arr->static_array_ptr) {
+                out_val->type = RENDER_VAL_TYPE_POINTER;
+                out_val->as.p_val = arr->static_array_ptr;
+                return;
+            }
+
+            int element_count = 0;
+            for (IRExprNode* n = arr->elements; n; n=n->next) element_count++;
+            
+            char* base_type = get_array_base_type(arr->base.c_type);
+            size_t element_size = 0;
+
+            if(strcmp(base_type, "lv_coord_t") == 0) element_size = sizeof(lv_coord_t);
+            else if(strcmp(base_type, "int32_t") == 0) element_size = sizeof(int32_t);
+            else if(strcmp(base_type, "int") == 0) element_size = sizeof(int);
+            else {
+                char err_buf[256];
+                snprintf(err_buf, sizeof(err_buf), "Unsupported array base type for renderer: %s", base_type);
+                render_abort(err_buf);
+            }
+            free(base_type);
+
+            void* c_array = malloc(element_count * element_size);
+            if (!c_array) render_abort("Failed to allocate memory for static array.");
+
+            int i = 0;
+            for (IRExprNode* n = arr->elements; n; n=n->next) {
+                RenderValue elem_val;
+                evaluate_expression(spec, registry, n->expr, &elem_val);
+                // Assuming all array elements resolve to integers for now.
+                if (elem_val.type == RENDER_VAL_TYPE_INT) {
+                    if (element_size == sizeof(lv_coord_t)) ((lv_coord_t*)c_array)[i] = (lv_coord_t)elem_val.as.i_val;
+                    else if (element_size == sizeof(int32_t)) ((int32_t*)c_array)[i] = (int32_t)elem_val.as.i_val;
+                    else if (element_size == sizeof(int)) ((int*)c_array)[i] = (int)elem_val.as.i_val;
+                }
+                i++;
+            }
+            
+            arr->static_array_ptr = c_array;
+            registry_add_static_array(registry, c_array);
+            
+            out_val->type = RENDER_VAL_TYPE_POINTER;
+            out_val->as.p_val = c_array;
+
+	    printf("OUT ARR >> %p\n", c_array);
+
             return;
         }
 

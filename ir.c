@@ -79,6 +79,7 @@ IRExpr* ir_new_expr_array(IRExprNode* elements, const char* array_c_type) {
     arr->base.base.type = IR_EXPR_ARRAY;
     arr->base.c_type = safe_strdup(array_c_type);
     arr->elements = elements;
+    arr->static_array_ptr = NULL; // Initialize cached pointer
     return (IRExpr*)arr;
 }
 
@@ -234,7 +235,13 @@ static void free_expr(IRExpr* expr) {
             free_expr_list(call->args);
             break;
         }
-        case IR_EXPR_ARRAY: free_expr_list(((IRExprArray*)expr)->elements); break;
+        case IR_EXPR_ARRAY: {
+            IRExprArray* arr = (IRExprArray*)expr;
+            // Note: static_array_ptr is owned by the registry, not the IR.
+            // So we DO NOT free it here.
+            free_expr_list(arr->elements);
+            break;
+        }
         case IR_EXPR_RUNTIME_REG_ADD: {
             IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
             free(reg->id);
