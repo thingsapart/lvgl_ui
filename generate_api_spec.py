@@ -101,6 +101,7 @@ class LVGLApiParser:
             if enum.get('name'):
                 self.result['enums'][enum['name']] = members
             else:
+                print("!!", enum, members)
                 self.result['constants'].update(members)
 
         for macro in self.spec.get('macros', []):
