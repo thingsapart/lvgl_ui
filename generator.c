@@ -326,19 +326,19 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             const FunctionArg* first_expected_arg = func_def->args_head;
             bool func_expects_target = (first_expected_arg && first_expected_arg->type && strstr(first_expected_arg->type, "_t*"));
             int expected_argc = count_function_args(func_def->args_head);
-            int user_argc = cJSON_IsArray(item) ? count_cjson_array(item) : 1;
-
-            bool prepend_target = (func_expects_target && user_argc < expected_argc);
+            const FunctionArg* single_arg_after_target = (func_expects_target && expected_argc == 2) ? func_def->args_head->next : ((!func_expects_target && expected_argc == 1) ? func_def->args_head : NULL);
+            bool expects_single_array = single_arg_after_target && strstr(single_arg_after_target->type, "*");
 
             IRExprNode* final_args = NULL;
             const FunctionArg* expected_arg_list_for_user = func_def->args_head;
-
-            if (prepend_target) {
+            
+            if (func_expects_target) {
                 ir_expr_list_add(&final_args, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
                 if (expected_arg_list_for_user) expected_arg_list_for_user = expected_arg_list_for_user->next;
             }
 
-            if (cJSON_IsArray(item)) {
+            if (cJSON_IsArray(item) && !expects_single_array) {
+                // Case 1: JSON array is a list of multiple arguments
                 cJSON* val_item = item->child;
                 while(val_item) {
                     const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
@@ -347,6 +347,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                     val_item = val_item->next;
                 }
             } else {
+                 // Case 2: JSON value is a single argument (which could be a JSON array if expects_single_array is true)
                  const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
                  ir_expr_list_add(&final_args, unmarshal_value(ctx, item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name, ir_obj));
             }
@@ -374,11 +375,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
     if (cJSON_IsString(value)) {
         const char* s = value->valuestring;
 
-        // ** ADDED: Handle @_target and @_parent special identifiers **
         if (strcmp(s, "@_target") == 0) {
-            // Resolve @_target to the PARENT object of the current scope.
-            // This is because in a `use-view` context, the user often means
-            // "the object this component is being added to".
             if (parent_c_name) {
                 const char* parent_type = registry_get_c_type_for_id(ctx->registry, parent_c_name);
                 return ir_new_expr_registry_ref(parent_c_name, parent_type ? parent_type : "lv_obj_t*");
@@ -390,7 +387,6 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             }
         }
         if (strcmp(s, "@_parent") == 0) {
-            // Resolve @_parent to the object being defined (the "target" of the current operations).
             if (target_c_name) {
                 const char* target_type = registry_get_c_type_for_id(ctx->registry, target_c_name);
                 return ir_new_expr_registry_ref(target_c_name, target_type ? target_type : "lv_obj_t*");
@@ -412,8 +408,6 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             }
 
             if (context_val_json) {
-                // Recursively unmarshal the value found in the context.
-                // Pass the same scope (parent/target) down, as the context variable is just a substitution.
                 return unmarshal_value(ctx, (cJSON*)context_val_json, ui_context, expected_c_type, parent_c_name, target_c_name, ir_obj_for_warnings);
             }
             if (ir_obj_for_warnings) {
@@ -567,12 +561,14 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         return ir_new_expr_literal(cJSON_IsTrue(value) ? "true" : "false", "bool");
     }
     if (cJSON_IsArray(value)) {
+        char* base_type = get_array_base_type(expected_c_type);
         IRExprNode* elements = NULL;
         cJSON* elem_json;
         cJSON_ArrayForEach(elem_json, value) {
-            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, "unknown", parent_c_name, target_c_name, ir_obj_for_warnings));
+            ir_expr_list_add(&elements, unmarshal_value(ctx, elem_json, ui_context, base_type, parent_c_name, target_c_name, ir_obj_for_warnings));
         }
-        return ir_new_expr_array(elements, "array");
+        free(base_type);
+        return ir_new_expr_array(elements, (char*)expected_c_type);
     }
     if (cJSON_IsObject(value)) {
         cJSON* func_item = value->child;

@@ -162,10 +162,13 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, 
             break;
         }
         case IR_EXPR_ARRAY: {
-            // Assumes usage in an initializer context, e.g. int arr[] = { ... };
-            printf("{ ");
-            print_expr_list(((IRExprArray*)expr)->elements, parent_c_name, map);
+            IRExprArray* arr = (IRExprArray*)expr;
+            // Get base type from array type like "const lv_coord_t*"
+            char* base_type = get_array_base_type(arr->base.c_type);
+            printf("(%s[]){ ", base_type ? base_type : "void*" );
+            print_expr_list(arr->elements, parent_c_name, map);
             printf(" }");
+            free(base_type);
             break;
         }
         case IR_EXPR_RUNTIME_REG_ADD: {

@@ -203,8 +203,7 @@
             # text_font: '@font_kode_20'
             add_style: ['@border_top_btm', 0]
           - type: obj # grid
-            cols: [LV_GRID_CONTENT, LV_GRID_FR_1]
-            rows: [LV_GRID_CONTENT]
+            grid_dsc_array: [[LV_GRID_CONTENT, LV_GRID_FR_1, LV_GRID_TEMPLATE_LAST], [LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST]]
             add_style: ['@container', 0]
             width: 100%
             height: LV_SIZE_CONTENT

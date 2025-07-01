@@ -847,3 +847,4 @@ const char* api_spec_find_enum_symbol_by_value(const ApiSpec* spec, const char* 
 
     return NULL; // Not found
 }
+

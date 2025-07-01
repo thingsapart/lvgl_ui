@@ -274,3 +274,39 @@ int levenshtein_distance(const char *s1, const char *s2) {
     free(v1);
     return distance;
 }
+
+// extracts the base type from a c array/pointer type string.
+// e.g., "const lv_coord_t*" -> "lv_coord_t"
+// e.g., "char **" -> "char*"
+// the caller must free the returned string.
+char* get_array_base_type(const char* array_c_type) {
+    if (!array_c_type) return strdup("unknown");
+
+    char* type_copy = strdup(array_c_type);
+    
+    // Find the last '*' or '['
+    char* last_ptr = strrchr(type_copy, '*');
+    char* last_bracket = strrchr(type_copy, '[');
+    char* split_at = (last_ptr > last_bracket) ? last_ptr : last_bracket;
+    
+    if (split_at) {
+        *split_at = '\0'; // Terminate the string at the pointer/array symbol
+    }
+    
+    // Trim trailing whitespace
+    char* end = type_copy + strlen(type_copy) - 1;
+    while (end >= type_copy && isspace((unsigned char)*end)) {
+        *end-- = '\0';
+    }
+
+    // Trim leading "const"
+    char* start = type_copy;
+    if (strncmp(start, "const ", 6) == 0) {
+        start += 6;
+    }
+    
+    char* result = strdup(start);
+    free(type_copy);
+    return result;
+}
+

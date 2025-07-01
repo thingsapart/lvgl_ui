@@ -53,5 +53,10 @@ void print_warning(const char *format, ...);
 // Shows a formatted hint for best practices.
 void print_hint(const char* format, ...);
 
+// extracts the base type from a c array/pointer type string.
+// e.g., "const lv_coord_t*" -> "lv_coord_t"
+// e.g., "char **" -> "char*"
+// the caller must free the returned string.
+char* get_array_base_type(const char* array_c_type);
 
 #endif // UTILS_H
