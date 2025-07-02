@@ -4,6 +4,7 @@
 #include "registry.h"
 #include "utils.h"
 #include <stdlib.h>
+#include "viewer/view_inspector.h"
 
 
 // --- Forward Declarations ---
@@ -181,6 +182,13 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
     if (!c_obj && current_obj->constructor_expr) {
         DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Constructor for '%s' returned NULL.", current_obj->c_name);
     }
+
+    // *** INSPECTOR INTEGRATION ***
+    // Notify the inspector of the newly created live object.
+    if (c_obj) {
+        view_inspector_set_object_pointer((IRNode*)current_obj, c_obj);
+    }
+    // ***************************
 
     // Register the newly created object so it can be found by subsequent calls.
     // This happens BEFORE operations are processed.

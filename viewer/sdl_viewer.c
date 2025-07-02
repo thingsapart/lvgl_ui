@@ -21,7 +21,7 @@ static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
 }
 #endif
 
-#define HIGH_DPI
+// #define HIGH_DPI
 
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 480

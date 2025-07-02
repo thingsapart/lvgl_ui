@@ -18,5 +18,7 @@ void sdl_viewer_loop(void);
 // Deinitialize SDL and LVGL
 void sdl_viewer_deinit(void);
 
+#define HIGH_DPI
+
 #endif // SDL_VIEWER_H
 

@@ -13,6 +13,7 @@
 #include "c_code_printer.h"
 #include "lvgl_renderer.h"
 #include "viewer/sdl_viewer.h"
+#include "viewer/view_inspector.h"
 #include "c_gen/lvgl_dispatch.h"
 #include "yaml_parser.h"
 #include "warning_printer.h"
@@ -210,19 +211,40 @@ int main(int argc, char* argv[]) {
                 goto cleanup;
             }
 
-            lv_obj_t* parent_screen = sdl_viewer_create_main_screen();
-            if (!parent_screen) {
+            lv_obj_t* screen = sdl_viewer_create_main_screen();
+            if (!screen) {
                 fprintf(stderr, "FATAL: Failed to create main screen.\n");
                 sdl_viewer_deinit();
                 return_code = 1;
                 goto cleanup;
             }
 
+            // Create the two-pane layout for preview and inspector
+            lv_obj_t* main_container = lv_obj_create(screen);
+            lv_obj_set_size(main_container, lv_pct(100), lv_pct(100));
+            lv_obj_set_flex_flow(main_container, LV_FLEX_FLOW_ROW);
+            lv_obj_center(main_container);
+
+            lv_obj_t* preview_panel = lv_obj_create(main_container);
+            lv_obj_set_flex_grow(preview_panel, 1);
+            lv_obj_set_height(preview_panel, lv_pct(100));
+            lv_obj_set_style_pad_all(preview_panel, 0, 0);
+            lv_obj_set_style_border_width(preview_panel, 0, 0);
+
+            lv_obj_t* inspector_panel = lv_obj_create(main_container);
+            lv_obj_set_width(inspector_panel, 350);
+            lv_obj_set_height(inspector_panel, lv_pct(100));
+            lv_obj_set_style_pad_all(inspector_panel, 0, 0);
+            lv_obj_set_style_border_width(inspector_panel, 0, 0);
+
+            // Init the inspector UI inside its panel, passing the IR root and API spec
+            view_inspector_init(inspector_panel, ir_root, api_spec);
+
             // Create the registry that will live for the duration of the renderer
             renderer_registry = registry_create();
 
-            // Render the IR onto the created screen.
-            lvgl_render_backend(ir_root, api_spec, parent_screen, renderer_registry);
+            // Render the IR onto the PREVIEW PANEL.
+            lvgl_render_backend(ir_root, api_spec, preview_panel, renderer_registry);
 
             // Enter the main rendering loop. This will block until the user closes the window.
             printf("Starting SDL viewer loop. Close the window to exit.\n");

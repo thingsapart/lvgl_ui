@@ -1,0 +1,14 @@
+- type: obj
+  size: [100%, 100%]
+  grid_dsc_array: [[100%, LV_GRID_TEMPLATE_LAST], [150, 150, LV_GRID_TEMPLATE_LAST]]
+  children:
+    - type: button
+      grid_cell: [LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1]
+      children: 
+        - type: label
+          text: Btn 1
+    - type: button
+      grid_cell: [LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1]
+      children: 
+        - type: label
+          text: Btn 2
