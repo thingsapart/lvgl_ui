@@ -18,8 +18,8 @@ PREDEFINED_FILES=(
   "data/lv_def_sample.json"
   "*.c"
   "*.h"
-  "viewwer/sdl_viewer.c"
-  "viewwer/sdl_viewer.h"
+  "viewer/*.c"
+  "viewer/*.h"
   "generate_dynamic_lvgl_dispatch.py"
 )
 

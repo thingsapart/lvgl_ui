@@ -226,6 +226,7 @@ int main(int argc, char* argv[]) {
             lv_obj_center(main_container);
 
             lv_obj_t* preview_panel = lv_obj_create(main_container);
+            lv_obj_set_width(preview_panel, lv_pct(100)); // <-- FIX: Give the panel a base width.
             lv_obj_set_flex_grow(preview_panel, 1);
             lv_obj_set_height(preview_panel, lv_pct(100));
             lv_obj_set_style_pad_all(preview_panel, 0, 0);
@@ -272,7 +273,6 @@ cleanup:
     if(api_spec) api_spec_free(api_spec);
     if(api_spec_json) cJSON_Delete(api_spec_json);
     if(api_spec_content) free(api_spec_content);
-    if(ui_spec_content) free(ui_spec_content);
 
     return return_code;
 }

@@ -89,7 +89,7 @@ static void get_node_display_name(InspectorTreeNode* node, char* buf, size_t buf
         if (obj->registered_id) {
             snprintf(id_buf, sizeof(id_buf), "@%s/", obj->registered_id);
         }
-        snprintf(name_buf, sizeof(name_buf), "%s %s%s", obj->json_type, id_buf, obj->c_name);
+        snprintf(name_buf, sizeof(name_buf), " %s :: %s%s", obj->json_type, id_buf, obj->c_name);
 
     } else if (node->ir_node->type == IR_EXPR_FUNCTION_CALL) {
         snprintf(name_buf, sizeof(name_buf), "%s()", ((IRExprFunctionCall*)node->ir_node)->func_name);
@@ -101,16 +101,21 @@ static void get_node_display_name(InspectorTreeNode* node, char* buf, size_t buf
 
     const char* expand_char = "";
     if (node->children_head) {
-        expand_char = node->expanded ? LV_SYMBOL_MINUS : LV_SYMBOL_PLUS;
+        expand_char = node->expanded ? LV_SYMBOL_MINUS "  " : LV_SYMBOL_PLUS "  ";
     }
 
     // Create indent string
     char indent_str[128] = {0};
+    size_t indent_len = (size_t)node->depth * 8;
     if (node->depth > 0) {
-        memset(indent_str, ' ', (size_t)node->depth * 4);
+        // Prevent buffer overflow
+        if (indent_len >= sizeof(indent_str)) {
+            indent_len = sizeof(indent_str) - 1;
+        }
+        memset(indent_str, ' ', indent_len);
     }
     
-    snprintf(buf, buf_size, "%s%s %s %s",
+    snprintf(buf, buf_size, "%s %s %s %s",
              indent_str, expand_char, get_node_type_icon_str(node->ir_node), name_buf);
 }
 
@@ -300,7 +305,7 @@ static const char* flex_flow_to_str(lv_flex_flow_t flow) {
         case LV_FLEX_FLOW_ROW_WRAP: return "Row Wrap";
         case LV_FLEX_FLOW_COLUMN_WRAP: return "Column Wrap";
         case LV_FLEX_FLOW_ROW_REVERSE: return "Row Reverse";
-        case LV_FLEX_FLOW_COLUMN_REVERSE: return "Column Reverse";
+        case LV_FLEX_FLOW_COLUMN_REVERSE: return "Column Wrap Reverse";
         case LV_FLEX_FLOW_ROW_WRAP_REVERSE: return "Row Wrap Reverse";
         case LV_FLEX_FLOW_COLUMN_WRAP_REVERSE: return "Column Wrap Reverse";
         default: return "Unknown";
@@ -436,7 +441,9 @@ void view_inspector_init(lv_obj_t* parent, IRRoot* ir_root, ApiSpec* api_spec) {
     lv_obj_set_flex_grow(ctx.tree_table, 1);
     lv_obj_set_width(ctx.tree_table, lv_pct(100));
     lv_table_set_column_count(ctx.tree_table, 1);
-    lv_table_set_col_width(ctx.tree_table, 0, lv_pct(100));
+
+    lv_obj_update_layout(ctx.tree_table);
+    lv_table_set_col_width(ctx.tree_table, 0,  lv_obj_get_content_width(ctx.tree_table));
 
     // --- Create Property View (Bottom Pane) ---
     ctx.prop_table = lv_table_create(parent);
