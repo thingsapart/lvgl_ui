@@ -59,19 +59,21 @@ static void sprint_expr_value(IRExpr* expr, char* buf, size_t buf_size);
 
 // --- Helper Functions ---
 static const char* get_node_type_icon_str(IRNode* node) {
-    if (!node) return LV_SYMBOL_DUMMY;
     switch(node->type) {
         case IR_NODE_OBJECT: {
             IRObject* obj = (IRObject*)node;
             if (strcmp(obj->json_type, "style") == 0) return LV_SYMBOL_TINT;
+            if (strcmp(obj->json_type, "style") == 0) return LV_SYMBOL_COPY;
             if (strcmp(obj->json_type, "use-view") == 0) return LV_SYMBOL_PASTE;
             return LV_SYMBOL_FILE;
+            return LV_SYMBOL_DRIVE;
         }
-        case IR_NODE_COMPONENT_DEF: return LV_SYMBOL_DRIVE;
-        case IR_EXPR_FUNCTION_CALL: return LV_SYMBOL_PLAY;
+        case IR_NODE_COMPONENT_DEF: return LV_SYMBOL_FILE;
+        case IR_EXPR_FUNCTION_CALL: return LV_SYMBOL_DOWNLOAD;
+        case IR_NODE_PROPERTY: return LV_SYMBOL_EDIT;
         case IR_NODE_WARNING: return LV_SYMBOL_WARNING;
-        case IR_EXPR_ARRAY: return LV_SYMBOL_LIST;
-        default: return LV_SYMBOL_BULLET;
+        case IR_EXPR_REGISTRY_REF: return LV_SYMBOL_SD_CARD;
+        default: return LV_SYMBOL_DIRECTORY;
     }
 }
 
