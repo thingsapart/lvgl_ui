@@ -20,6 +20,7 @@ typedef enum {
     LOG_MODULE_DISPATCH,
     LOG_MODULE_UTILS,
     LOG_MODULE_SDL_VIEWER,
+    LOG_MODULE_DATABINDING,
     // Add new modules above this line
     LOG_MODULE_COUNT     // Keep this last for array sizing and iteration bounds
 } DebugLogModule;

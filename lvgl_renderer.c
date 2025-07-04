@@ -1,5 +1,6 @@
 #include "lvgl_renderer.h"
 #include "c_gen/lvgl_dispatch.h"
+#include "data_binding.h"
 #include "debug_log.h"
 #include "registry.h"
 #include "utils.h"
@@ -12,6 +13,7 @@ static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry
 static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry* registry);
 static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr, RenderValue* out_val);
 static void debug_print_expr_as_c(IRExpr* expr, Registry* registry, FILE* stream);
+static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* registry, IRExprArray* arr, uint32_t* out_count);
 
 
 // --- Main Backend Entry Point ---
@@ -24,6 +26,7 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent, Regi
 
     // Initialize the C-side dispatcher's own registry
     obj_registry_init();
+    data_binding_init(); // Initialize the data binding system
 
     // Add the top-level parent widget to both registries so it can be referenced.
     registry_add_pointer(registry, parent, "parent", "obj", "lv_obj_t*");
@@ -213,6 +216,17 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
             } else if (op_node->op_node->type == IR_NODE_WARNING) {
                 IRWarning* warn = (IRWarning*)op_node->op_node;
                 print_hint("%s", warn->message);
+            } else if (op_node->op_node->type == IR_NODE_OBSERVER) {
+                IRObserver* obs = (IRObserver*)op_node->op_node;
+                data_binding_add_observer(obs->state_name, c_obj, obs->update_type, obs->format_string);
+            } else if (op_node->op_node->type == IR_NODE_ACTION) {
+                IRAction* act = (IRAction*)op_node->op_node;
+                binding_value_t* cycle_values = NULL;
+                uint32_t cycle_count = 0;
+                if (act->action_type == ACTION_TYPE_CYCLE && act->data_expr && act->data_expr->base.type == IR_EXPR_ARRAY) {
+                    cycle_values = evaluate_binding_array_expr(spec, registry, (IRExprArray*)act->data_expr, &cycle_count);
+                }
+                data_binding_add_action(c_obj, act->action_name, act->action_type, cycle_values, cycle_count);
             } else {
                 // It's an expression (a setup call). Evaluate it.
                 if (debug_c_code) {
@@ -241,6 +255,42 @@ static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry
 
 
 // --- Recursive Expression Evaluator ---
+static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* registry, IRExprArray* arr, uint32_t* out_count) {
+    int count = 0;
+    for (IRExprNode* n = arr->elements; n; n = n->next) count++;
+    *out_count = count;
+
+    if (count == 0) return NULL;
+
+    binding_value_t* result_array = calloc(count, sizeof(binding_value_t));
+    if (!result_array) render_abort("Failed to allocate binding_value_t array");
+
+    int i = 0;
+    for (IRExprNode* n = arr->elements; n; n = n->next, i++) {
+        if (n->expr->base.type == IR_EXPR_LITERAL) {
+            IRExprLiteral* lit = (IRExprLiteral*)n->expr;
+            if (lit->is_string) {
+                result_array[i].type = BINDING_TYPE_STRING;
+                result_array[i].as.s_val = lit->value; // Assumes persistent string from IR
+            } else {
+                if (strcmp(lit->value, "true") == 0) {
+                    result_array[i].type = BINDING_TYPE_BOOL;
+                    result_array[i].as.b_val = true;
+                } else if (strcmp(lit->value, "false") == 0) {
+                    result_array[i].type = BINDING_TYPE_BOOL;
+                    result_array[i].as.b_val = false;
+                } else if (strchr(lit->value, '.')) {
+                    result_array[i].type = BINDING_TYPE_FLOAT;
+                    result_array[i].as.f_val = strtof(lit->value, NULL);
+                } else {
+                    result_array[i].type = BINDING_TYPE_INT;
+                    result_array[i].as.i_val = strtol(lit->value, NULL, 0);
+                }
+            }
+        }
+    }
+    return result_array;
+}
 
 static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr, RenderValue* out_val) {
     if (!expr) {

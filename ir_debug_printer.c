@@ -8,6 +8,8 @@ static void debug_print_expr(IRExpr* expr, int indent_level);
 static void debug_print_expr_list(IRExprNode* head, int indent_level);
 static void debug_print_object_list(IRObject* head, int indent_level);
 static void debug_print_with_block_list(IRWithBlock* head, int indent_level);
+static void debug_print_node(IRNode* node, int indent_level);
+
 
 // --- Helper Functions ---
 
@@ -19,6 +21,8 @@ static const char* get_ir_node_type_str(int type) {
         case IR_NODE_PROPERTY: return "IR_NODE_PROPERTY";
         case IR_NODE_WITH_BLOCK: return "IR_NODE_WITH_BLOCK";
         case IR_NODE_WARNING: return "IR_NODE_WARNING";
+        case IR_NODE_OBSERVER: return "IR_NODE_OBSERVER";
+        case IR_NODE_ACTION: return "IR_NODE_ACTION";
         case IR_EXPR_LITERAL: return "IR_EXPR_LITERAL";
         case IR_EXPR_ENUM: return "IR_EXPR_ENUM";
         case IR_EXPR_FUNCTION_CALL: return "IR_EXPR_FUNCTION_CALL";
@@ -36,33 +40,41 @@ static void debug_print_indent(int level) {
 }
 
 static void debug_print_expr(IRExpr* expr, int indent_level) {
-    if (!expr) {
+    debug_print_node((IRNode*)expr, indent_level);
+}
+
+
+static void debug_print_node(IRNode* node, int indent_level) {
+    if (!node) {
         debug_print_indent(indent_level);
-        printf("[NULL_EXPR]\n");
+        printf("[NULL_NODE]\n");
         return;
     }
 
     debug_print_indent(indent_level);
-    printf("[%s] type: <%s> ", get_ir_node_type_str(expr->base.type), expr->c_type ? expr->c_type : "null");
+    printf("[%s] ", get_ir_node_type_str(node->type));
+    if (node->type >= IR_EXPR_LITERAL) {
+         printf("type: <%s> ", ((IRExpr*)node)->c_type ? ((IRExpr*)node)->c_type : "null");
+    }
 
-    switch(expr->base.type) {
+    switch(node->type) {
         case IR_EXPR_LITERAL:
-            printf("value=%s is_string=%s\n", ((IRExprLiteral*)expr)->value, ((IRExprLiteral*)expr)->is_string ? "true" : "false");
+            printf("value=%s is_string=%s\n", ((IRExprLiteral*)node)->value, ((IRExprLiteral*)node)->is_string ? "true" : "false");
             break;
         case IR_EXPR_STATIC_STRING:
-            printf("value=\"%s\"\n", ((IRExprStaticString*)expr)->value);
+            printf("value=\"%s\"\n", ((IRExprStaticString*)node)->value);
             break;
         case IR_EXPR_ENUM:
-            printf("symbol=%s\n", ((IRExprEnum*)expr)->symbol);
+            printf("symbol=%s\n", ((IRExprEnum*)node)->symbol);
             break;
         case IR_EXPR_REGISTRY_REF:
-            printf("name=%s\n", ((IRExprRegistryRef*)expr)->name);
+            printf("name=%s\n", ((IRExprRegistryRef*)node)->name);
             break;
         case IR_EXPR_CONTEXT_VAR:
-            printf("name=$%s\n", ((IRExprContextVar*)expr)->name);
+            printf("name=$%s\n", ((IRExprContextVar*)node)->name);
             break;
         case IR_EXPR_FUNCTION_CALL: {
-            IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
+            IRExprFunctionCall* call = (IRExprFunctionCall*)node;
             printf("func_name=\"%s\"\n", call->func_name);
             debug_print_indent(indent_level + 1);
             printf("[ARGS]\n");
@@ -70,36 +82,42 @@ static void debug_print_expr(IRExpr* expr, int indent_level) {
             break;
         }
         case IR_EXPR_ARRAY: {
-            IRExprArray* arr = (IRExprArray*)expr;
+            IRExprArray* arr = (IRExprArray*)node;
             printf("ptr=%p\n", (void*)arr);
             debug_print_indent(indent_level + 1);
             printf("[ELEMENTS]\n");
-
-            IRExprNode* current = arr->elements;
-            if (!current) {
-                debug_print_indent(indent_level + 2);
-                printf("(empty)\n");
-            } else {
-                int count = 0;
-                const int max_elements_to_print = 50;
-                while (current && count < max_elements_to_print) {
-                    debug_print_expr(current->expr, indent_level + 2);
-                    current = current->next;
-                    count++;
-                }
-                if (current) { // If the loop was cut short
-                    debug_print_indent(indent_level + 2);
-                    printf("...\n");
-                }
-            }
+            debug_print_expr_list(arr->elements, indent_level + 2);
             break;
         }
         case IR_EXPR_RUNTIME_REG_ADD: {
-            IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
+            IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)node;
             printf("id=\"%s\"\n", reg->id);
             debug_print_indent(indent_level + 1);
             printf("[OBJECT_EXPR]\n");
             debug_print_expr(reg->object_expr, indent_level + 2);
+            break;
+        }
+        case IR_NODE_OBJECT: {
+            debug_print_object_list((IRObject*)node, indent_level);
+            return; // Avoid double printing
+        }
+        case IR_NODE_WARNING: {
+             printf("message=\"%s\"\n", ((IRWarning*)node)->message);
+             break;
+        }
+        case IR_NODE_OBSERVER: {
+            IRObserver* obs = (IRObserver*)node;
+            printf("state=\"%s\" type=%d format=\"%s\"\n", obs->state_name, obs->update_type, obs->format_string ? obs->format_string : "N/A");
+            break;
+        }
+        case IR_NODE_ACTION: {
+            IRAction* act = (IRAction*)node;
+            printf("name=\"%s\" type=%d\n", act->action_name, act->action_type);
+            if (act->data_expr) {
+                debug_print_indent(indent_level + 1);
+                printf("[DATA_EXPR]\n");
+                debug_print_expr(act->data_expr, indent_level + 2);
+            }
             break;
         }
         default:
@@ -107,6 +125,7 @@ static void debug_print_expr(IRExpr* expr, int indent_level) {
             break;
     }
 }
+
 
 static void debug_print_expr_list(IRExprNode* head, int indent_level) {
     if (!head) {
@@ -159,15 +178,7 @@ static void debug_print_object_list(IRObject* head, int indent_level) {
             printf("[OPERATIONS]\n");
             IROperationNode* op_node = current->operations;
             while(op_node) {
-                if(op_node->op_node->type == IR_NODE_OBJECT) {
-                    debug_print_object_list((IRObject*)op_node->op_node, indent_level + 2);
-                } else if (op_node->op_node->type == IR_NODE_WARNING) {
-                    debug_print_indent(indent_level + 2);
-                    IRWarning* warn = (IRWarning*)op_node->op_node;
-                    printf("[%s] message=\"%s\"\n", get_ir_node_type_str(warn->base.type), warn->message);
-                } else {
-                    debug_print_expr((IRExpr*)op_node->op_node, indent_level + 2);
-                }
+                debug_print_node(op_node->op_node, indent_level + 2);
                 op_node = op_node->next;
             }
         }

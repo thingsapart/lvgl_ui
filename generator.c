@@ -303,6 +303,58 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                     if(child_obj) ir_operation_list_add(&ir_obj->operations, (IRNode*)child_obj);
                 }
             }
+        } else if (strcmp(key, "observes") == 0) {
+            if (cJSON_IsObject(item)) {
+                cJSON* obs_item;
+                cJSON_ArrayForEach(obs_item, item) {
+                    const char* state_name = obs_item->string;
+                    char* format_str = NULL;
+                    observer_update_type_t update_type;
+                    if (strcmp(ir_obj->json_type, "label") == 0) update_type = OBSERVER_TYPE_LABEL_TEXT;
+                    else if (strcmp(ir_obj->json_type, "switch") == 0) update_type = OBSERVER_TYPE_SWITCH_STATE;
+                    else if (strcmp(ir_obj->json_type, "slider") == 0) update_type = OBSERVER_TYPE_SLIDER_VALUE;
+                    else {
+                        print_warning("Widget type '%s' not supported for 'observes'.", ir_obj->json_type);
+                        continue;
+                    }
+
+                    if (cJSON_IsObject(obs_item) && obs_item->child) {
+                        format_str = cJSON_GetStringValue(obs_item->child);
+                    } else if (cJSON_IsString(obs_item)) {
+                        format_str = obs_item->valuestring;
+                    }
+                    
+                    ir_operation_list_add(&ir_obj->operations, (IRNode*)ir_new_observer(state_name, update_type, format_str));
+                }
+            }
+        } else if (strcmp(key, "action") == 0) {
+            if (cJSON_IsObject(item)) {
+                cJSON* act_item;
+                cJSON_ArrayForEach(act_item, item) {
+                    const char* action_name = act_item->string;
+                    action_type_t action_type;
+                    IRExpr* data_expr = NULL;
+
+                    if (cJSON_IsString(act_item)) {
+                        if (strcmp(act_item->valuestring, "trigger") == 0) action_type = ACTION_TYPE_TRIGGER;
+                        else if (strcmp(act_item->valuestring, "toggle") == 0) action_type = ACTION_TYPE_TOGGLE;
+                        else {
+                             print_warning("Unknown action type string '%s' for action '%s'.", act_item->valuestring, action_name);
+                             continue;
+                        }
+                    } else if (cJSON_IsArray(act_item)) {
+                        action_type = ACTION_TYPE_CYCLE;
+                        // Use unmarshal to get an IRExprArray, but the type hint is tricky.
+                        // We need an array of binding_value_t, which is not a standard C type.
+                        // We will pass "binding_value_t*" as a hint.
+                        data_expr = unmarshal_value(ctx, act_item, new_scope_context, "binding_value_t*", parent_c_name, ir_obj->c_name, ir_obj);
+                    } else {
+                         print_warning("Unsupported action config for action '%s'.", action_name);
+                         continue;
+                    }
+                    ir_operation_list_add(&ir_obj->operations, (IRNode*)ir_new_action(action_name, action_type, data_expr));
+                }
+            }
         } else {
             const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, ir_obj->json_type, key);
             const char* func_name = (prop_def && prop_def->setter) ? prop_def->setter : (api_spec_has_function(ctx->api_spec, key) ? key : NULL);
