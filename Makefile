@@ -82,7 +82,7 @@ main.o: $(DYNAMIC_LVGL_H)
 all: $(TARGET)
 
 run: $(TARGET)
-	./$(TARGET) ./api_spec.json ./ui.json
+	./$(TARGET) $(API_SPEC_JSON) ./ui.json
 
 # --- CNC Example Targets ---
 TARGET_CNC_RENDERED = ex_cnc/ex_cnc_rendered
@@ -94,7 +94,17 @@ $(TARGET_CNC_RENDERED): $(OBJECTS) $(LVGL_LIB) ex_cnc/cnc_app.o ex_cnc/cnc_main_
 
 TARGET_CNC_NATIVE = ex_cnc/ex_cnc_native
 ex_cnc_native: $(TARGET_CNC_NATIVE)
-$(TARGET_CNC_NATIVE): $(OBJECTS) $(LVGL_LIB) ex_cnc/cnc_app.o ex_cnc/cnc_main_native.o
+C_GEN_DIR = ./c_gen
+GENERATED_UI_SOURCE = $(C_GEN_DIR)/create_ui.c
+GENERATED_UI_HEADER = $(C_GEN_DIR)/create_ui.h
+GENERATED_UI_OBJ = $(GENERATED_UI_SOURCE:.c=.o)
+EX_CNC_UI_YAML = ex_cnc/cnc_ui.yaml
+$(GENERATED_UI_SOURCE) $(GENERATED_UI_HEADER): $(EX_CNC_UI_YAML) $(TARGET)
+	@echo "--- Generating C code from ui.yaml ---"
+	@mkdir -p $(C_GEN_DIR)
+	./$(TARGET) $(API_SPEC_JSON) $(EX_CNC_UI_YAML) --codegen c_code > $(GENERATED_UI_SOURCE)
+	@echo "// Generated header\n#ifndef CREATE_UI_H\n#define CREATE_UI_H\n#include \"lvgl.h\"\nvoid create_ui(lv_obj_t* parent);\n#endif" > $(GENERATED_UI_HEADER)
+$(TARGET_CNC_NATIVE): $(OBJECTS) $(LVGL_LIB) ex_cnc/cnc_app.o ex_cnc/cnc_main_native.o $(GENERATED_UI_OBJ)
 	@echo "\n--- Delegating to CNC Example Makefile (Native) ---\n"
 	# $(MAKE) -C ex_cnc all
 	$(CC) $(CFLAGS) -o ex_cnc/cnc_app_live $^ $(LIBS)
@@ -113,5 +123,5 @@ ex_cnc/cnc_main_native.o: ex_cnc/cnc_main.c
 clean:
 	@rm -f $(OBJECTS) $(TARGET) $(DYNAMIC_LVGL_H) $(DYNAMIC_LVGL_C) $(DYNAMIC_LVGL_O)
 	@# rm -rf $(LVGL_BUILD_DIR)
-	@rm -f $(TARGET_CNC_NATIVE) $(TARGET_CNC_RENDERED)
+	@rm -f $(TARGET_CNC_NATIVE) $(TARGET_CNC_RENDERED) $(GENERATED_UI_OBJ)
 

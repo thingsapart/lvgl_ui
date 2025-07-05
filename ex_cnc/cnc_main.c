@@ -75,14 +75,16 @@ static void cnc_action_handler(const char* action_name, binding_value_t value) {
 /**
  * @brief Simulates the CNC machine running and updates its state periodically.
  */
+size_t g_ticks = 0;
 static void cnc_tick(void) {
-    printf(".");
-
     if (g_cnc_state.status != STATUS_RUNNING) return;
 
-    g_cnc_state.x += 0.25f;
-    g_cnc_state.y += 0.10f;
-    g_cnc_state.z = 5.0f * sinf(g_cnc_state.x / 10.0f);
+    // Simple circle - 1 degree per tick.
+    const int ticks_per_rev = 360;
+    const float theta = (g_ticks++ % ticks_per_rev) / (ticks_per_rev / 360.0f) / 180.0f * M_PI;
+    g_cnc_state.x = 50.0f * cosf(theta);
+    g_cnc_state.y = 50.0f * sinf(theta);
+    g_cnc_state.z = 50.f * (theta / (2.0 * M_PI));
 
     data_binding_notify_state_changed("position|x", (binding_value_t){.type = BINDING_TYPE_FLOAT, .as.f_val = g_cnc_state.x});
     data_binding_notify_state_changed("position|y", (binding_value_t){.type = BINDING_TYPE_FLOAT, .as.f_val = g_cnc_state.y});

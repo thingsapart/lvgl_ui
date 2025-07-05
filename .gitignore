@@ -1,7 +1,8 @@
 lvgl_ui_generator
 
 # Ignore auto-generated files, examples commited for reference.
-c_gen/lvgl_dispatch.c
+c_gen/lvgl_dispatch.*
+c_gen/create_ui.*
 data/lv_def.json
 
 .*.swp
