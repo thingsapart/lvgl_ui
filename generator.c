@@ -319,7 +319,12 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                     }
 
                     if (cJSON_IsObject(obs_item) && obs_item->child) {
-                        format_str = cJSON_GetStringValue(obs_item->child);
+                        // Handles { float: "%8.3f" } or { bool: null }
+                        if (cJSON_IsNull(obs_item->child)) {
+                            format_str = NULL;
+                        } else {
+                            format_str = cJSON_GetStringValue(obs_item->child);
+                        }
                     } else if (cJSON_IsString(obs_item)) {
                         format_str = obs_item->valuestring;
                     }
@@ -344,9 +349,6 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                         }
                     } else if (cJSON_IsArray(act_item)) {
                         action_type = ACTION_TYPE_CYCLE;
-                        // Use unmarshal to get an IRExprArray, but the type hint is tricky.
-                        // We need an array of binding_value_t, which is not a standard C type.
-                        // We will pass "binding_value_t*" as a hint.
                         data_expr = unmarshal_value(ctx, act_item, new_scope_context, "binding_value_t*", parent_c_name, ir_obj->c_name, ir_obj);
                     } else {
                          print_warning("Unsupported action config for action '%s'.", action_name);

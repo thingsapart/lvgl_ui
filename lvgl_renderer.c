@@ -26,7 +26,7 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent, Regi
 
     // Initialize the C-side dispatcher's own registry
     obj_registry_init();
-    data_binding_init(); // Initialize the data binding system
+    // data_binding_init(); // Removed: Let main initialize the data binding system
 
     // Add the top-level parent widget to both registries so it can be referenced.
     registry_add_pointer(registry, parent, "parent", "obj", "lv_obj_t*");
@@ -210,32 +210,32 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
         if (debug_c_code) fprintf(stderr, "[RENDERER C-CODE]\n");
         IROperationNode* op_node = current_obj->operations;
         while(op_node) {
-            if (op_node->op_node->type == IR_NODE_OBJECT) {
-                // It's a child object. Recursively render it.
-                render_single_object(spec, (IRObject*)op_node->op_node, registry);
-            } else if (op_node->op_node->type == IR_NODE_WARNING) {
-                IRWarning* warn = (IRWarning*)op_node->op_node;
-                print_hint("%s", warn->message);
-            } else if (op_node->op_node->type == IR_NODE_OBSERVER) {
-                IRObserver* obs = (IRObserver*)op_node->op_node;
+            IRNode* node = op_node->op_node;
+            if (node->type == IR_NODE_OBJECT) {
+                render_single_object(spec, (IRObject*)node, registry);
+            } else if (node->type == IR_NODE_WARNING) {
+                print_hint("%s", ((IRWarning*)node)->message);
+            } else if (node->type == IR_NODE_OBSERVER) {
+                IRObserver* obs = (IRObserver*)node;
                 data_binding_add_observer(obs->state_name, c_obj, obs->update_type, obs->format_string);
-            } else if (op_node->op_node->type == IR_NODE_ACTION) {
-                IRAction* act = (IRAction*)op_node->op_node;
+            } else if (node->type == IR_NODE_ACTION) {
+                IRAction* act = (IRAction*)node;
                 binding_value_t* cycle_values = NULL;
                 uint32_t cycle_count = 0;
                 if (act->action_type == ACTION_TYPE_CYCLE && act->data_expr && act->data_expr->base.type == IR_EXPR_ARRAY) {
                     cycle_values = evaluate_binding_array_expr(spec, registry, (IRExprArray*)act->data_expr, &cycle_count);
                 }
                 data_binding_add_action(c_obj, act->action_name, act->action_type, cycle_values, cycle_count);
-            } else {
-                // It's an expression (a setup call). Evaluate it.
+            }
+            else {
+                // It's an expression (a setup call or runtime registration). Evaluate it.
                 if (debug_c_code) {
                     fprintf(stderr, "[RENDERER C-CODE]     ");
-                    debug_print_expr_as_c((IRExpr*)op_node->op_node, registry, stderr);
+                    debug_print_expr_as_c((IRExpr*)node, registry, stderr);
                     fprintf(stderr, ";\n");
                 }
                 RenderValue ignored_result;
-                evaluate_expression(spec, registry, (IRExpr*)op_node->op_node, &ignored_result);
+                evaluate_expression(spec, registry, (IRExpr*)node, &ignored_result);
             }
             op_node = op_node->next;
         }

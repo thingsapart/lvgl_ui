@@ -12,24 +12,15 @@
 #include "viewer/sdl_viewer.h"
 #include "viewer/view_inspector.h"
 #include "c_gen/lvgl_dispatch.h"
-#include "data_binding.h"
+#include "c_gen/data_binding.h"
 #include "yaml_parser.h"
 #include "warning_printer.h"
 #include "registry.h"
 #include "cnc_app.h"
 
-bool g_strict_registry_mode = false;
-bool g_strict_mode = false;
-
 static void cnc_tick_timer_cb(lv_timer_t* timer) {
     (void)timer;
     cnc_app_tick();
-}
-
-void render_abort(const char *msg) {
-    fprintf(stderr, ANSI_BOLD_RED "\nFATAL ERROR: %s\n\n" ANSI_RESET, msg);
-    fflush(stderr);
-    exit(1);
 }
 
 int main(int argc, char* argv[]) {
@@ -92,6 +83,9 @@ int main(int argc, char* argv[]) {
     // --- Renderer and App Logic ---
     renderer_registry = registry_create();
     
+    // **FIX**: Register the required font pointer before rendering
+    registry_add_pointer(renderer_registry, (void*)&lv_font_montserrat_20, "montserrat_20", "font", "lv_font_t*");
+
     // This call initializes the UI, the data_binding module, and the object registry
     lvgl_render_backend(ir_root, api_spec, screen, renderer_registry);
     
