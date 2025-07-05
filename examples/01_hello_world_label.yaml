@@ -1,6 +1,7 @@
-- init: { lv_screen_active: [] }
-  bg_color: [ { lv_color_hex: 0x003a57 }]
+- bg_color: { lv_color_hex: 0x003a57 }
   text_color: '#ffffff'
-- type: label
-  text: Hello World
-  lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+  size: [100%, 100%]
+  children:
+    - type: label
+      text: Hello World
+      lv_obj_align: [LV_ALIGN_CENTER, 0, 0]

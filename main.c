@@ -36,9 +36,6 @@ bool g_strict_registry_mode = false;
 
 // --- Function Declarations ---
 void print_usage(const char* prog_name);
-static void sample_action_handler(const char* action_name, binding_value_t value);
-static lv_timer_t* data_update_timer;
-static void data_updater_timer_cb(lv_timer_t* timer);
 
 
 // --- Main Application ---
@@ -247,16 +244,9 @@ int main(int argc, char* argv[]) {
 
             // Create the registry that will live for the duration of the renderer
             renderer_registry = registry_create();
-            
-            // Render the IR onto the PREVIEW PANEL. This now also inits data_binding.
+
+            // Render the IR onto the PREVIEW PANEL.
             lvgl_render_backend(ir_root, api_spec, preview_panel, renderer_registry);
-            
-            // Register our sample action handler
-            data_binding_register_action_handler(sample_action_handler);
-
-            // Create a timer to simulate model changes
-            data_update_timer = lv_timer_create(data_updater_timer_cb, 50, NULL);
-
 
             // Enter the main rendering loop. This will block until the user closes the window.
             printf("Starting SDL viewer loop. Close the window to exit.\n");
@@ -286,57 +276,4 @@ cleanup:
     if(api_spec_content) free(api_spec_content);
 
     return return_code;
-}
-
-
-// --- Sample data binding and state management for lvgl_render ---
-
-// 1. A simple "model" for our application state
-static struct {
-    float x_pos;
-    float y_pos;
-    bool spindle_on;
-    int feed_override;
-} g_app_state = { 0.0, 0.0, false, 100 };
-
-// 2. The single action handler function
-static void sample_action_handler(const char* action_name, binding_value_t value) {
-    printf("Action Received: name='%s', type=%d, ", action_name, value.type);
-    switch(value.type) {
-        case BINDING_TYPE_INT: printf("value=%d\n", value.as.i_val); break;
-        case BINDING_TYPE_BOOL: printf("value=%s\n", value.as.b_val ? "true" : "false"); break;
-        case BINDING_TYPE_FLOAT: printf("value=%f\n", value.as.f_val); break;
-        default: printf("value=(null)\n"); break;
-    }
-
-    if (strcmp(action_name, "spindle_enable") == 0) {
-        g_app_state.spindle_on = value.as.b_val;
-        // Also notify the UI in case other widgets are observing this state
-        data_binding_notify_state_changed("spindle_on", value);
-    } 
-    else if (strcmp(action_name, "feed_override") == 0) {
-        g_app_state.feed_override = value.as.i_val;
-        // The button's label is observing this state, so we must notify
-        data_binding_notify_state_changed("feed_override", value);
-    }
-    else if (strcmp(action_name, "position::home") == 0) {
-        g_app_state.x_pos = 0.0;
-        g_app_state.y_pos = 0.0;
-        // The position labels will be updated by the timer callback
-    }
-}
-
-// 3. A timer to simulate the model changing from an external source
-static void data_updater_timer_cb(lv_timer_t* timer) {
-    (void)timer; // Unused
-    
-    // Update state
-    g_app_state.x_pos += 0.13f;
-    g_app_state.y_pos -= 0.07f;
-    if (g_app_state.x_pos > 1000.0) g_app_state.x_pos = -200.0;
-    if (g_app_state.y_pos < -1000.0) g_app_state.y_pos = 200.0;
-    
-    // Notify the UI of the changes
-    data_binding_notify_state_changed("position::absolute::x", (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val = g_app_state.x_pos});
-    data_binding_notify_state_changed("position::absolute::y", (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val = g_app_state.y_pos});
 }
