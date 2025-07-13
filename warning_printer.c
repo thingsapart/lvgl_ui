@@ -62,17 +62,17 @@ static void process_object_for_warnings(IRObject* obj, IRObject** path, int dept
                 IRWarning* warn = (IRWarning*)op->op_node;
 
                 // Print the path to the object containing the warning
-                printf("  Path: ");
+                fprintf(stderr, "  Path: ");
                 for (int i = 0; i <= depth; ++i) {
                     const char* name = get_object_display_name(path[i]);
                     // Add '@' prefix back for registered IDs for clarity
                     if (path[i]->registered_id && path[i]->registered_id[0] != '\0') {
-                        printf("@%s%s", name, (i < depth) ? " -> " : "");
+                        fprintf(stderr, "@%s%s", name, (i < depth) ? " -> " : "");
                     } else {
-                        printf("%s%s", name, (i < depth) ? " -> " : "");
+                        fprintf(stderr, "%s%s", name, (i < depth) ? " -> " : "");
                     }
                 }
-                printf("\n");
+                fprintf(stderr, "\n");
 
                 // Print the warning/hint message itself
                 if (strstr(warn->message, "consider using") || strstr(warn->message, "For clarity")) {
@@ -101,7 +101,7 @@ void warning_print_backend(IRRoot* root) {
         return;
     }
 
-    printf("\n--- Summary of Generator Hints and Warnings ---\n");
+    fprintf(stderr, "\n--- Summary of Generator Hints and Warnings ---\n");
     IRObject* path[MAX_PATH_DEPTH] = {0};
 
     // Iterate through the top-level (root) objects
@@ -109,5 +109,5 @@ void warning_print_backend(IRRoot* root) {
         process_object_for_warnings(current, path, 0);
     }
 
-    printf("-------------------------------------------\n\n");
+    fprintf(stderr, "-------------------------------------------\n\n");
 }

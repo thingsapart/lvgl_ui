@@ -114,10 +114,10 @@ int main(int argc, char* argv[]) {
         debug_log_parse_modules_str(debug_out_str);
     }
     if (g_strict_mode) {
-        printf("--- Strict mode enabled ---\n");
+        DEBUG_LOG(LOG_MODULE_MAIN, "--- Strict mode enabled ---\n");
     }
     if (g_strict_registry_mode && !g_strict_mode) {
-        printf("--- Strict registry mode enabled ---\n");
+        DEBUG_LOG(LOG_MODULE_MAIN, "--- Strict registry mode enabled ---\n");
     }
 
     if (!api_spec_path || !ui_spec_path) {
@@ -149,14 +149,14 @@ int main(int argc, char* argv[]) {
 
     const char* extension = strrchr(ui_spec_path, '.');
     if (extension && (strcmp(extension, ".yaml") == 0 || strcmp(extension, ".yml") == 0)) {
-        printf("YAML file detected: '%s'. Parsing with built-in parser...\n", ui_spec_path);
+        DEBUG_LOG(LOG_MODULE_MAIN, "YAML file detected: '%s'. Parsing with built-in parser...\n", ui_spec_path);
         char* error_msg = NULL;
         ui_spec_json = yaml_to_cjson(ui_spec_content, &error_msg);
 
         char *out  = cJSON_Print(ui_spec_json);
-        printf("YAML -> JSON:\n\n%s\n\n", out);
+        DEBUG_LOG(LOG_MODULE_MAIN, "YAML -> JSON:\n\n%s\n\n", out);
         free(out);
-        printf("------------------------------\n");
+        DEBUG_LOG(LOG_MODULE_MAIN, "------------------------------\n");
 
         if (error_msg) {
             fprintf(stderr, "%s\n", error_msg);
@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
         // Assume JSON for any other file type
         ui_spec_json = cJSON_Parse(ui_spec_content);
         if (!ui_spec_json) {
-            fprintf(stderr, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
+            DEBUG_LOG(LOG_MODULE_MAIN, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
             return_code = 1;
             goto cleanup;
         }
@@ -249,14 +249,14 @@ int main(int argc, char* argv[]) {
             lvgl_render_backend(ir_root, api_spec, preview_panel, renderer_registry);
 
             // Enter the main rendering loop. This will block until the user closes the window.
-            printf("Starting SDL viewer loop. Close the window to exit.\n");
+            DEBUG_LOG(LOG_MODULE_MAIN, "Starting SDL viewer loop. Close the window to exit.\n");
             sdl_viewer_loop();
 
             // Clean up resources used by the runtime renderer
             obj_registry_deinit();
             sdl_viewer_deinit();
 
-            printf("SDL viewer exited.\n");
+            DEBUG_LOG(LOG_MODULE_MAIN, "SDL viewer exited.\n");
         } else {
             fprintf(stderr, "Warning: Unknown codegen backend '%s'.\n", backend_name);
         }

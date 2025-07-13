@@ -132,9 +132,8 @@ int main(int argc, char* argv[]) {
     // --- Option B: Static Compiled Mode ---
     printf("--- Running CNC Example in STATIC COMPILED mode ---\n");
     // This function is declared because it's in a separate, generated C file.
-    void cnc_ui_create(lv_obj_t* parent);
-    cnc_ui_create(screen);
 
+    create_ui(screen);
 #else
     #error "No build mode defined. Please compile with -DCNC_LIVE_RENDER_MODE or -DCNC_STATIC_BUILD_MODE"
 #endif
