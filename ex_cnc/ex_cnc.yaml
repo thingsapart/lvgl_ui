@@ -1,0 +1,73 @@
+# Example CNC interface using the new data-binding features.
+# To run:
+# ./lvgl_ui_generator data/api_spec.json ex_cnc.yaml --codegen lvgl_render
+
+- type: obj
+  id: '@main_container'
+  width: lv_pct(100)
+  height: lv_pct(100)
+  flex_flow: LV_FLEX_FLOW_COLUMN
+  flex_main_place: LV_FLEX_ALIGN_SPACE_AROUND
+  children:
+    - type: label
+      text: "CNC Position"
+
+    # --- Position Readouts ---
+    - type: obj
+      id: '@position_panel'
+      width: lv_pct(90)
+      align: LV_ALIGN_CENTER
+      flex_flow: LV_FLEX_FLOW_ROW
+      flex_main_place: LV_FLEX_ALIGN_SPACE_AROUND
+      flex_cross_place: LV_FLEX_ALIGN_CENTER
+      children:
+        - type: label
+          id: '@label_x_pos'
+          text: "X: +000.000"
+          observes:
+            position::absolute::x: { float: "X: %+08.3f" }
+
+        - type: label
+          id: '@label_y_pos'
+          text: "Y: +000.000"
+          observes:
+            position::absolute::y: { float: "Y: %+08.3f" }
+
+    # --- Actions Panel ---
+    - type: obj
+      id: '@actions_panel'
+      width: lv_pct(90)
+      align: LV_ALIGN_CENTER
+      flex_flow: LV_FLEX_FLOW_ROW
+      flex_main_place: LV_FLEX_ALIGN_SPACE_EVENLY
+      flex_cross_place: LV_FLEX_ALIGN_CENTER
+      children:
+        # Trigger action
+        - type: button
+          action:
+            position::home: "trigger"
+          children:
+            - type: label
+              text: "Home"
+              
+        # Toggle action
+        - type: switch
+          id: '@switch_spindle'
+          action:
+            spindle_enable: "toggle"
+          observes:
+            # This makes the switch reflect the actual state, not just user input.
+            # If the model changes spindle_on externally, the switch will update.
+            spindle_on: { bool: null }
+        
+        # Cycle action
+        - type: button
+          id: '@btn_feed_override'
+          action:
+            feed_override: [100, 50, 125, 150, 25]
+          children:
+            - type: label
+              # The label's text observes the same state variable the button affects.
+              observes:
+                feed_override: { int: "Feed: %d%%" }
+

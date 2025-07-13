@@ -15,6 +15,7 @@
 #include "viewer/sdl_viewer.h"
 #include "viewer/view_inspector.h"
 #include "c_gen/lvgl_dispatch.h"
+#include "data_binding.h"
 #include "yaml_parser.h"
 #include "warning_printer.h"
 #include "registry.h" // Include for registry management

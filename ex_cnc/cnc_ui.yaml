@@ -1,0 +1,133 @@
+# Simple CNC interface
+
+- type: style
+  id: @debug
+  bg_color: '#ff0088'
+  bg_opa: 100
+
+- type: style
+  id: @container
+  pad_all: 0
+  margin_all: 0
+  border_width: 0
+  outline_width: 0
+
+- size: [100%, 100%]
+  id: "@main_container"
+  add_style: ['@container', 0]
+  layout: LV_LAYOUT_FLEX
+  flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+  flex_flow: LV_FLEX_FLOW_COLUMN
+  children:
+    - layout: LV_LAYOUT_FLEX
+      id: "@top_container"
+      add_style: ['@container', 0]
+      width: 100%
+      flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+      flex_flow: LV_FLEX_FLOW_ROW
+      flex_grow: 1
+      children:
+        - layout: LV_LAYOUT_FLEX
+          id: "@left_top_panel"
+          add_style: ['@container', 0]
+          flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+          flex_flow: LV_FLEX_FLOW_COLUMN
+          flex_grow: 1
+          height: 100%
+          min_idth: 200
+          children:
+            - type: obj
+              width: "100%"
+              margin_top: 15
+              flex_flow: LV_FLEX_FLOW_ROW
+              flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+              add_style: ['@container', 0]
+              pad_all: 10
+              radius: 5
+              children:
+                - type: label
+                  text: "STATUS: IDLE"
+                  observes:
+                    program|status: { string: "STATUS: %s" }
+                - type: label
+                  margin_left: 20
+                  text: "X: +000.00"
+                  observes:
+                    position|x: { float: "X: %+07.2f" }
+                - type: label
+                  margin_left: 20
+                  text: "Y: +000.00"
+                  observes:
+                    position|y: { float: "Y: %+07.2f" }
+                - type: label
+                  margin_left: 20
+                  text: "Z: +000.00"
+                  observes:
+                    position|z: { float: "Z: %+07.2f" }
+        - layout: LV_LAYOUT_FLEX
+          id: "@right_top_panel"
+          add_style: ['@container', 0]
+          width: 150
+          height: 100%
+          flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+          flex_flow: LV_FLEX_FLOW_COLUMN
+          children:
+            - type: obj
+              height: "100%"
+              margin_top: 15
+              flex_flow: LV_FLEX_FLOW_ROW_WRAP
+              flex_align: [LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+              style_pad_all: 10
+              style_radius: 5
+              add_style: ['@container', 0]
+              children:
+                # Spindle Switch (Two-way binding)
+                - type: switch
+                  bg_color: "#1e5a87"
+                  observes:
+                    spindle|is_on: { bool: null }
+                  action:
+                    spindle|toggle: "toggle"
+                - type: label
+                  text: "Spindle"
+
+                # Feed Override Button (Cycle action)
+                - type: button
+                  action:
+                    feedrate|override: [50, 90, 100, 110, 125]
+                  children:
+                    - type: label
+                      text: "Feed: 100"
+                      observes:
+                        feedrate|override: { int: "Feed: %d%%" }
+
+    - layout: LV_LAYOUT_FLEX
+      id: "@bottom_container"
+      bg_color: '#22ff44'
+      width: 100%
+      height: 100
+      flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+      flex_flow: LV_FLEX_FLOW_ROW
+      children:
+        # Control Buttons (Trigger actions)
+        - type: button
+          margin_left: 40
+          action:
+            program|run: "trigger"
+          children:
+            - type: label
+              text: "RUN"
+        - type: button
+          action:
+            program|pause: "trigger"
+          children:
+            - type: label
+              text: "PAUSE"
+        - type: button
+          action:
+            program|stop: "trigger"
+          children:
+            - type: label
+              text: "STOP"
+
+

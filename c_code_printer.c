@@ -55,6 +55,7 @@ static void id_map_free(IdMapNode* map_head) {
 // --- Forward Declarations ---
 static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, bool pass_by_ref_for_struct);
 static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* map);
+static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* map);
 
 
 // --- Printing Helpers ---
@@ -163,12 +164,36 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, 
         }
         case IR_EXPR_ARRAY: {
             IRExprArray* arr = (IRExprArray*)expr;
-            // Get base type from array type like "const lv_coord_t*"
-            char* base_type = get_array_base_type(arr->base.c_type);
-            printf("(%s[]){ ", base_type ? base_type : "void*" );
-            print_expr_list(arr->elements, parent_c_name, map);
+            if (strcmp(arr->base.c_type, "binding_value_t*") == 0) {
+                 printf("(const binding_value_t[]) { ");
+                 for (IRExprNode* n = arr->elements; n; n = n->next) {
+                    printf("{ ");
+                    if (n->expr->base.type == IR_EXPR_LITERAL) {
+                        IRExprLiteral* lit = (IRExprLiteral*)n->expr;
+                        if (lit->is_string) {
+                            printf(".type=BINDING_TYPE_STRING, .as.s_val=");
+                            print_expr(n->expr, parent_c_name, map, false);
+                        } else {
+                            if (strcmp(lit->value, "true") == 0 || strcmp(lit->value, "false") == 0) {
+                                printf(".type=BINDING_TYPE_BOOL, .as.b_val=%s", lit->value);
+                            } else if (strchr(lit->value, '.')) {
+                                printf(".type=BINDING_TYPE_FLOAT, .as.f_val=%s", lit->value);
+                            } else {
+                                printf(".type=BINDING_TYPE_INT, .as.i_val=%s", lit->value);
+                            }
+                        }
+                    }
+                    printf(" }");
+                    if (n->next) printf(", ");
+                 }
+            } else {
+                // Original logic for primitive arrays
+                char* base_type = get_array_base_type(arr->base.c_type);
+                printf("(%s[]){ ", base_type ? base_type : "void*" );
+                print_expr_list(arr->elements, parent_c_name, map);
+                free(base_type);
+            }
             printf(" }");
-            free(base_type);
             break;
         }
         case IR_EXPR_RUNTIME_REG_ADD: {
@@ -181,6 +206,53 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, 
         }
         default:
             printf("/* UNKNOWN_EXPR */");
+            break;
+    }
+}
+
+static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* map) {
+    if (!node) return;
+    print_indent(indent_level);
+    switch(node->type) {
+        case IR_NODE_OBJECT:
+            print_object_list((IRObject*)node, indent_level, target_c_name, map);
+            break;
+        case IR_NODE_WARNING:
+            printf("// [GENERATOR HINT] %s\n", ((IRWarning*)node)->message);
+            break;
+        case IR_NODE_OBSERVER: {
+            IRObserver* obs = (IRObserver*)node;
+            printf("data_binding_add_observer(\"%s\", %s, %d, \"%s\");\n",
+                   obs->state_name,
+                   target_c_name,
+                   obs->update_type,
+                   obs->format_string ? obs->format_string : "");
+            break;
+        }
+        case IR_NODE_ACTION: {
+            IRAction* act = (IRAction*)node;
+            printf("data_binding_add_action(%s, \"%s\", %d, ",
+                   target_c_name,
+                   act->action_name,
+                   act->action_type);
+            if (act->data_expr) {
+                print_expr(act->data_expr, parent_c_name, map, false);
+                // Also need to print the count
+                if (act->data_expr->base.type == IR_EXPR_ARRAY) {
+                    int count = 0;
+                    for (IRExprNode* n = ((IRExprArray*)act->data_expr)->elements; n; n = n->next) count++;
+                    printf(", %d", count);
+                }
+            } else {
+                printf("NULL, 0");
+            }
+            printf(");\n");
+            break;
+        }
+        default:
+            // Must be an expression
+            print_expr((IRExpr*)node, parent_c_name, map, false);
+            printf(";\n");
             break;
     }
 }
@@ -243,17 +315,7 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             printf("\n");
             IROperationNode* op_node = current->operations;
             while(op_node) {
-                if (op_node->op_node->type == IR_NODE_OBJECT) {
-                    print_object_list((IRObject*)op_node->op_node, indent_level + 1, current->c_name, map);
-                } else if (op_node->op_node->type == IR_NODE_WARNING) {
-                    IRWarning* warn = (IRWarning*)op_node->op_node;
-                    print_indent(indent_level + 1);
-                    printf("// [GENERATOR HINT] %s\n", warn->message);
-                } else {
-                    print_indent(indent_level + 1);
-                    print_expr((IRExpr*)op_node->op_node, parent_c_name, map, false);
-                    printf(";\n");
-                }
+                print_node(op_node->op_node, indent_level + 1, parent_c_name, current->c_name, map);
                 op_node = op_node->next;
             }
         }
@@ -269,7 +331,8 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
 
     printf("/* AUTO-GENERATED by the 'c_code' backend */\n\n");
     printf("#include \"lvgl.h\"\n");
-    printf("#include \"c_gen/lvgl_dispatch.h\" // For obj_registry_add\n\n");
+    printf("#include \"c_gen/lvgl_dispatch.h\" // For obj_registry_add\n");
+    printf("#include \"c_gen/data_binding.h\"\n\n");
     printf("void create_ui(lv_obj_t* parent) {\n");
 
     IdMapNode* id_map = NULL;

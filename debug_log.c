@@ -20,6 +20,7 @@ static bool enabled_modules[LOG_MODULE_COUNT] = {
   true,        // LOG_MODULE_DISPATCH
   true,        // LOG_MODULE_UTILS
   true,        // LOG_MODULE_SDL_VIEWER
+  true,        // LOG_MODULE_DATABINDING
 #else
   false
 #endif
@@ -38,6 +39,7 @@ static const char* module_names[LOG_MODULE_COUNT] = {
     "DISPATCH",  // LOG_MODULE_DISPATCH
     "UTILS",     // LOG_MODULE_UTILS
     "SDLVIEWER", // LOG_MODULE_SDL_VIEWER
+    "DATABINDING", // LOG_MODULE_DATABINDING
 };
 
 // Helper function to get the string name of a module

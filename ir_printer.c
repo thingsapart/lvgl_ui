@@ -8,6 +8,7 @@ static void print_expr(IRExpr* expr);
 static void print_expr_list(IRExprNode* head, int indent_level);
 static void print_object_list(IRObject* head, int indent_level);
 static void print_with_block_list(IRWithBlock* head, int indent_level);
+static void print_node(IRNode* node, int indent_level);
 
 // --- Helper Functions ---
 
@@ -82,12 +83,49 @@ static void print_expr(IRExpr* expr) {
     }
 }
 
+static void print_node(IRNode* node, int indent_level) {
+     print_indent(indent_level);
+     if (!node) {
+        printf("NULL_NODE\n");
+        return;
+     }
+
+     switch(node->type) {
+        case IR_NODE_OBJECT:
+            print_object_list((IRObject*)node, indent_level);
+            break;
+        case IR_NODE_WARNING:
+            printf("[HINT] %s\n", ((IRWarning*)node)->message);
+            break;
+        case IR_NODE_OBSERVER: {
+            IRObserver* obs = (IRObserver*)node;
+            printf("observes(\"%s\", type=%d, format=\"%s\")\n", obs->state_name, obs->update_type, obs->format_string ? obs->format_string : "");
+            break;
+        }
+        case IR_NODE_ACTION: {
+            IRAction* act = (IRAction*)node;
+            printf("action(\"%s\", type=%d, data=", act->action_name, act->action_type);
+            if(act->data_expr) {
+                print_expr(act->data_expr);
+            } else {
+                printf("NULL");
+            }
+            printf(")\n");
+            break;
+        }
+        default:
+            // Must be an expression type
+            print_expr((IRExpr*)node);
+            printf("\n");
+            break;
+     }
+}
+
+
 static void print_expr_list(IRExprNode* head, int indent_level) {
     IRExprNode* current = head;
     while(current) {
-        print_indent(indent_level);
-        print_expr(current->expr);
-        printf("\n");
+        print_node((IRNode*)current->expr, indent_level);
         current = current->next;
     }
 }
@@ -115,19 +153,7 @@ static void print_object_list(IRObject* head, int indent_level) {
         if (current->operations) {
             IROperationNode* op_node = current->operations;
             while (op_node) {
-                if (op_node->op_node->type == IR_NODE_OBJECT) {
-                    // This is a child object definition, recursively print it.
-                    print_object_list((IRObject*)op_node->op_node, indent_level + 1);
-                } else if (op_node->op_node->type == IR_NODE_WARNING) {
-                    IRWarning* warn = (IRWarning*)op_node->op_node;
-                    print_indent(indent_level + 1);
-                    printf("[HINT] %s\n", warn->message);
-                } else {
-                    // This is an expression (e.g., a setup call).
-                    print_indent(indent_level + 1);
-                    print_expr((IRExpr*)op_node->op_node);
-                    printf("\n");
-                }
+                print_node(op_node->op_node, indent_level + 1);
                 op_node = op_node->next;
             }
         }

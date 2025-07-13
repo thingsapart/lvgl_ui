@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h> // For size_t
+#include "data_binding.h" // For enums
 
 // Forward declarations
 struct IRNode;
@@ -12,6 +13,8 @@ struct IRProperty;
 struct IRObject;
 struct IRWithBlock;
 struct IRComponent;
+struct IRObserver;
+struct IRAction;
 
 // --- Base IR Node ---
 typedef struct IRNode {
@@ -25,6 +28,8 @@ typedef struct IRNode {
         // Property-related nodes
         IR_NODE_PROPERTY, // Now primarily for key-value pairs like 'use-view' context
         IR_NODE_WITH_BLOCK,
+        IR_NODE_OBSERVER,
+        IR_NODE_ACTION,
 
         // Expression nodes
         IR_EXPR_LITERAL,
@@ -127,6 +132,23 @@ typedef struct {
     char* message;
 } IRWarning;
 
+// Data binding: Observer
+typedef struct IRObserver {
+    IRNode base;
+    char* state_name;
+    observer_update_type_t update_type;
+    char* format_string;
+} IRObserver;
+
+// Data binding: Action
+typedef struct IRAction {
+    IRNode base;
+    char* action_name;
+    action_type_t action_type;
+    IRExpr* data_expr; // For cycle lists or slider configs
+} IRAction;
+
+
 // A property on an object (e.g., width: 100)
 typedef struct IRProperty {
     IRNode base;
@@ -146,7 +168,7 @@ typedef struct IRWithBlock {
 
 // A node in the ordered list of operations for an IRObject
 typedef struct IROperationNode {
-    IRNode* op_node; // Can be an IRObject (for a child), an IRExpr (for a setup call), or an IRWarning
+    IRNode* op_node; // Can be an IRObject (child), IRExpr (setup call), IRWarning, IRObserver, IRAction
     struct IROperationNode* next;
 } IROperationNode;
 
@@ -199,7 +221,9 @@ IRObject* ir_new_object(const char* c_name, const char* json_type, const char* c
 IRComponent* ir_new_component_def(const char* id, IRObject* root_widget);
 IRProperty* ir_new_property(const char* name, IRExpr* value);
 IRWithBlock* ir_new_with_block(IRExpr* target, IRExprNode* calls, IRObject* children);
-IRWarning* ir_new_warning(const char* message); // NEW
+IRWarning* ir_new_warning(const char* message);
+IRObserver* ir_new_observer(const char* state_name, observer_update_type_t update_type, const char* format);
+IRAction* ir_new_action(const char* action_name, action_type_t action_type, IRExpr* data);
 
 // --- List management helpers ---
 void ir_expr_list_add(IRExprNode** head, IRExpr* expr);

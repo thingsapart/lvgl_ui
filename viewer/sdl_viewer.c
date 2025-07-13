@@ -23,7 +23,7 @@ static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
 
 // #define HIGH_DPI
 
-#define DEFAULT_WIDTH 800
+#define DEFAULT_WIDTH 1024
 #define DEFAULT_HEIGHT 480
 
 void check_dpi(lv_display_t *disp) {
