@@ -762,6 +762,31 @@ static void process_and_validate_call(GenContext* ctx, const char* func_name, IR
         expected_argc++;
         last_expected_arg = a;
     }
+    
+    // The number of user-provided arguments is the actual count minus 1 if the
+    // function expects a target object (which we add implicitly).
+    bool func_expects_target = (func_def->args_head && func_def->args_head->type && strstr(func_def->args_head->type, "_t*"));
+    int user_provided_argc = func_expects_target ? (actual_argc - 1) : actual_argc;
+
+    // Handle zero-argument functions like lv_obj_center() robustly.
+    // If the function expects 0 user args, but some were given, just ignore them.
+    if (expected_argc > 0 && func_expects_target && (expected_argc - 1 == 0) && user_provided_argc > 0) {
+        // The function only expects a target object, but the user gave more args.
+        // This happens with `center: null` instead of `center: []`.
+        // We trim the extra arguments.
+        IRExprNode* current = (*args_list_ptr)->next;
+        (*args_list_ptr)->next = NULL; // Keep only the first (target) arg.
+        
+        // Free the ignored arguments to prevent memory leaks.
+        while (current) {
+            IRExprNode* temp = current->next;
+            ir_free((IRNode*)current->expr);
+            free(current);
+            current = temp;
+        }
+        actual_argc = 1; // Correct the count
+    }
+
 
     // --- FIX 2A: Handle implicit style selector argument ---
     if (strncmp(func_name, "lv_obj_set_style_", 17) == 0 && actual_argc == expected_argc - 1) {
@@ -830,4 +855,3 @@ static char* generate_unique_var_name(GenContext* ctx, const char* base_name) {
     snprintf(final_name, strlen(sanitized_base) + 16, "%s_%d", sanitized_base, ctx->var_counter++);
     return final_name;
 }
-

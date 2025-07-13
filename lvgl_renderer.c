@@ -198,7 +198,10 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
     }
 
     if (!c_obj && current_obj->constructor_expr) {
-        DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Constructor for '%s' returned NULL.", current_obj->c_name);
+        // Don't warn about NULL constructors for "void" type objects, which are just function calls.
+        if (strcmp(current_obj->c_type, "void") != 0) {
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Constructor for '%s' returned NULL.", current_obj->c_name);
+        }
     }
 
     // *** INSPECTOR INTEGRATION ***
@@ -405,6 +408,19 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             out_val->as.p_val = c_array;
             return;
         }
+        
+        case IR_EXPR_RUNTIME_REG_ADD: {
+            IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
+            RenderValue obj_to_reg;
+            evaluate_expression(spec, registry, reg->object_expr, &obj_to_reg);
+            if (obj_to_reg.type == RENDER_VAL_TYPE_POINTER) {
+                // We're already in the renderer, so just add to the C-side registry.
+                // The main registry was populated when the object was created.
+                obj_registry_add(reg->id, obj_to_reg.as.p_val);
+            }
+            out_val->type = RENDER_VAL_TYPE_NULL;
+            return;
+        }
 
         case IR_EXPR_FUNCTION_CALL: {
             IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
@@ -517,4 +533,3 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             return;
     }
 }
-
