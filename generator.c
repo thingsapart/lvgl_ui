@@ -188,13 +188,24 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
     const char* object_c_type = "lv_obj_t*";
     const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, json_type_str);
+    char derived_c_type[256] = {0}; // Buffer for pointer type
+
     if (init_item && cJSON_IsObject(init_item) && init_item->child) {
         object_c_type = api_spec_get_function_return_type(ctx->api_spec, init_item->child->string);
     } else if (widget_def) {
         if (widget_def->create) {
             object_c_type = api_spec_get_function_return_type(ctx->api_spec, widget_def->create);
         } else if (widget_def->c_type) {
-            object_c_type = widget_def->c_type;
+            // Check if it's an object with an init function (and not a create function)
+            bool is_init_object = (widget_def->init_func != NULL && widget_def->create == NULL);
+            if (is_init_object && strchr(widget_def->c_type, '*') == NULL) {
+                // It's a struct type like "lv_style_t", and it has an init func.
+                // We need to treat it as a pointer because we will heap-allocate it.
+                snprintf(derived_c_type, sizeof(derived_c_type), "%s*", widget_def->c_type);
+                object_c_type = derived_c_type;
+            } else {
+                object_c_type = widget_def->c_type;
+            }
         }
     }
 
@@ -268,7 +279,23 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             ir_obj->constructor_expr = ir_new_expr_func_call(create_func, args, ret_type);
             process_and_validate_call(ctx, create_func, &((IRExprFunctionCall*)ir_obj->constructor_expr)->args);
         } else if (widget_def && widget_def->init_func) {
-            // Handle non-widget objects like styles that have an init func but no create func.
+            // It's an init-style object (e.g., style). We must heap-allocate it.
+            // 1. The constructor is a malloc call.
+            char sizeof_arg_buf[256];
+            char* base_type = get_array_base_type(ir_obj->c_type); // e.g. "lv_style_t*" -> "lv_style_t"
+            if(base_type) {
+                snprintf(sizeof_arg_buf, sizeof(sizeof_arg_buf), "sizeof(%s)", base_type);
+                free(base_type);
+            } else {
+                snprintf(sizeof_arg_buf, sizeof(sizeof_arg_buf), "0 /* Error: could not get base type for %s */", ir_obj->c_type);
+            }
+
+            IRExprNode* malloc_args = NULL;
+            ir_expr_list_add(&malloc_args, ir_new_expr_literal(sizeof_arg_buf, "size_t"));
+            // The C printer will need to handle the cast from void*
+            ir_obj->constructor_expr = ir_new_expr_func_call("malloc", malloc_args, ir_obj->c_type);
+
+            // 2. The lv_style_init call becomes a regular operation.
             IRExprNode* init_args = NULL;
             ir_expr_list_add(&init_args, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
             IRExpr* init_call = ir_new_expr_func_call(widget_def->init_func, init_args, "void");
@@ -803,3 +830,4 @@ static char* generate_unique_var_name(GenContext* ctx, const char* base_name) {
     snprintf(final_name, strlen(sanitized_base) + 16, "%s_%d", sanitized_base, ctx->var_counter++);
     return final_name;
 }
+

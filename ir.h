@@ -242,3 +242,4 @@ intptr_t ir_node_get_int(IRNode* node);
 bool ir_node_get_bool(IRNode* node);
 
 #endif // IR_H
+
