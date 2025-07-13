@@ -212,16 +212,17 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, 
 
 static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* map) {
     if (!node) return;
-    print_indent(indent_level);
     switch(node->type) {
         case IR_NODE_OBJECT:
             print_object_list((IRObject*)node, indent_level, target_c_name, map);
             break;
         case IR_NODE_WARNING:
+            print_indent(indent_level);
             printf("// [GENERATOR HINT] %s\n", ((IRWarning*)node)->message);
             break;
         case IR_NODE_OBSERVER: {
             IRObserver* obs = (IRObserver*)node;
+            print_indent(indent_level);
             printf("data_binding_add_observer(\"%s\", %s, %d, \"%s\");\n",
                    obs->state_name,
                    target_c_name,
@@ -231,6 +232,7 @@ static void print_node(IRNode* node, int indent_level, const char* parent_c_name
         }
         case IR_NODE_ACTION: {
             IRAction* act = (IRAction*)node;
+            print_indent(indent_level);
             printf("data_binding_add_action(%s, \"%s\", %d, ",
                    target_c_name,
                    act->action_name,
@@ -251,6 +253,7 @@ static void print_node(IRNode* node, int indent_level, const char* parent_c_name
         }
         default:
             // Must be an expression
+            print_indent(indent_level);
             print_expr((IRExpr*)node, parent_c_name, map, false);
             printf(";\n");
             break;
@@ -287,41 +290,56 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
     for (IRObject* current = head; current; current = current->next) {
         if(strncmp(current->json_type, "//", 2) == 0) continue; // Skip comment objects
 
+        bool is_top_level = (indent_level == 1);
+        int content_indent = is_top_level ? indent_level : (indent_level + 1);
+
         print_indent(indent_level);
         printf("// %s: %s (%s)\n", current->registered_id ? current->registered_id : "unnamed", current->c_name, current->json_type);
-        print_indent(indent_level);
-        printf("do {\n");
-
-        print_indent(indent_level + 1);
-        bool is_pointer = (current->c_type && strchr(current->c_type, '*') != NULL);
-        if (is_pointer) {
-            printf("%s %s = NULL;\n", current->c_type, current->c_name);
-        } else {
-            printf("%s %s;\n", current->c_type, current->c_name);
+        
+        if (!is_top_level) {
+            print_indent(indent_level);
+            printf("do {\n");
         }
 
-        if (current->constructor_expr) {
-            print_indent(indent_level + 1);
-            if (is_pointer) {
-                printf("%s = ", current->c_name);
+        print_indent(content_indent);
+        bool is_pointer = (current->c_type && strchr(current->c_type, '*') != NULL);
+        if (is_pointer) {
+            // All pointer types get declared.
+            // If there is a constructor, they are initialized on the same line.
+            // Otherwise, they are initialized to NULL.
+            printf("%s %s = ", current->c_type, current->c_name);
+            if (current->constructor_expr) {
+                print_expr(current->constructor_expr, parent_c_name, map, false);
+            } else {
+                printf("NULL");
             }
-            // For non-pointers, the expression is an init function that takes a reference,
-            // so we don't assign it. e.g. lv_style_init(&style_0);
-            print_expr(current->constructor_expr, parent_c_name, map, false);
-            printf(";\n");
+             printf(";\n");
+        } else {
+            // Non-pointer types (structs on stack). These shouldn't have value-returning constructors.
+            printf("%s %s;\n", current->c_type, current->c_name);
+            if (current->constructor_expr) {
+                // The constructor must be a void function like `lv_style_init(&style_0)`
+                print_indent(content_indent);
+                print_expr(current->constructor_expr, parent_c_name, map, false);
+                printf(";\n");
+            }
         }
 
         if (current->operations) {
             printf("\n");
             IROperationNode* op_node = current->operations;
             while(op_node) {
-                print_node(op_node->op_node, indent_level + 1, parent_c_name, current->c_name, map);
+                print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, map);
                 op_node = op_node->next;
             }
         }
 
-        print_indent(indent_level);
-        printf("} while (0);\n\n");
+        if (!is_top_level) {
+            print_indent(indent_level);
+            printf("} while (0);\n\n");
+        } else {
+            printf("\n");
+        }
     }
 }
 
@@ -349,3 +367,4 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
     printf("}\n");
     id_map_free(id_map);
 }
+

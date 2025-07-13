@@ -157,33 +157,51 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
 
     // 1. Create the object by executing its constructor expression
     if (current_obj->constructor_expr) {
-        if (debug_c_code) {
-            bool is_pointer = (current_obj->c_type && strchr(current_obj->c_type, '*') != NULL);
-            fprintf(stderr, "[RENDERER C-CODE]     ");
-            if (is_pointer) {
-                fprintf(stderr, "%s = ", current_obj->c_name);
+        bool is_malloc_constructor = false;
+        if (current_obj->constructor_expr->base.type == IR_EXPR_FUNCTION_CALL) {
+            if (strcmp(((IRExprFunctionCall*)current_obj->constructor_expr)->func_name, "malloc") == 0) {
+                is_malloc_constructor = true;
             }
-            debug_print_expr_as_c(current_obj->constructor_expr, registry, stderr);
-            fprintf(stderr, ";\n");
         }
-        evaluate_expression(spec, registry, current_obj->constructor_expr, &constructor_result);
-        if(constructor_result.type == RENDER_VAL_TYPE_POINTER) {
-            c_obj = constructor_result.as.p_val;
-        }
-    }
 
-    // Handle non-pointer types like lv_style_t which are stack-allocated by the C-backend
-    // but must be heap-allocated for the dynamic renderer.
-    if (!c_obj && current_obj->c_type && strchr(current_obj->c_type, '*') == NULL) {
-        DEBUG_LOG(LOG_MODULE_RENDERER, "Allocating heap memory for non-pointer type '%s'", current_obj->c_type);
-        if (strcmp(current_obj->c_type, "lv_style_t") == 0) {
-            c_obj = malloc(sizeof(lv_style_t));
-            if (!c_obj) render_abort("Failed to malloc lv_style_t");
+        if (is_malloc_constructor) {
+            // Special handling for malloc: execute it directly instead of using the LVGL dispatcher.
+            // We determine *what* to malloc based on the object's C type.
+            if (strcmp(current_obj->c_type, "lv_style_t*") == 0) {
+                c_obj = malloc(sizeof(lv_style_t));
+                if (!c_obj) render_abort("Failed to malloc lv_style_t for renderer");
+                if (debug_c_code) {
+                     fprintf(stderr, "[RENDERER C-CODE]     %s = (%s)malloc(sizeof(%s));\n",
+                        current_obj->c_name, "lv_style_t*", "lv_style_t");
+                }
+            } else {
+                 char err_buf[256];
+                 snprintf(err_buf, sizeof(err_buf), "Renderer Error: Don't know how to handle 'malloc' for type '%s'", current_obj->c_type);
+                 render_abort(err_buf);
+            }
+        } else {
+            // For all other constructors, use the regular dispatcher.
+            if (debug_c_code) {
+                bool is_pointer = (current_obj->c_type && strchr(current_obj->c_type, '*') != NULL);
+                fprintf(stderr, "[RENDERER C-CODE]     ");
+                if (is_pointer) {
+                    fprintf(stderr, "%s = ", current_obj->c_name);
+                }
+                debug_print_expr_as_c(current_obj->constructor_expr, registry, stderr);
+                fprintf(stderr, ";\n");
+            }
+            evaluate_expression(spec, registry, current_obj->constructor_expr, &constructor_result);
+            if(constructor_result.type == RENDER_VAL_TYPE_POINTER) {
+                c_obj = constructor_result.as.p_val;
+            }
         }
     }
 
     if (!c_obj && current_obj->constructor_expr) {
-        DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Constructor for '%s' returned NULL.", current_obj->c_name);
+        // Don't warn about NULL constructors for "void" type objects, which are just function calls.
+        if (strcmp(current_obj->c_type, "void") != 0) {
+            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Constructor for '%s' returned NULL.", current_obj->c_name);
+        }
     }
 
     // *** INSPECTOR INTEGRATION ***
@@ -388,6 +406,19 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             
             out_val->type = RENDER_VAL_TYPE_POINTER;
             out_val->as.p_val = c_array;
+            return;
+        }
+        
+        case IR_EXPR_RUNTIME_REG_ADD: {
+            IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
+            RenderValue obj_to_reg;
+            evaluate_expression(spec, registry, reg->object_expr, &obj_to_reg);
+            if (obj_to_reg.type == RENDER_VAL_TYPE_POINTER) {
+                // We're already in the renderer, so just add to the C-side registry.
+                // The main registry was populated when the object was created.
+                obj_registry_add(reg->id, obj_to_reg.as.p_val);
+            }
+            out_val->type = RENDER_VAL_TYPE_NULL;
             return;
         }
 

@@ -188,13 +188,24 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
     const char* object_c_type = "lv_obj_t*";
     const WidgetDefinition* widget_def = api_spec_find_widget(ctx->api_spec, json_type_str);
+    char derived_c_type[256] = {0}; // Buffer for pointer type
+
     if (init_item && cJSON_IsObject(init_item) && init_item->child) {
         object_c_type = api_spec_get_function_return_type(ctx->api_spec, init_item->child->string);
     } else if (widget_def) {
         if (widget_def->create) {
             object_c_type = api_spec_get_function_return_type(ctx->api_spec, widget_def->create);
         } else if (widget_def->c_type) {
-            object_c_type = widget_def->c_type;
+            // Check if it's an object with an init function (and not a create function)
+            bool is_init_object = (widget_def->init_func != NULL && widget_def->create == NULL);
+            if (is_init_object && strchr(widget_def->c_type, '*') == NULL) {
+                // It's a struct type like "lv_style_t", and it has an init func.
+                // We need to treat it as a pointer because we will heap-allocate it.
+                snprintf(derived_c_type, sizeof(derived_c_type), "%s*", widget_def->c_type);
+                object_c_type = derived_c_type;
+            } else {
+                object_c_type = widget_def->c_type;
+            }
         }
     }
 
@@ -268,7 +279,23 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             ir_obj->constructor_expr = ir_new_expr_func_call(create_func, args, ret_type);
             process_and_validate_call(ctx, create_func, &((IRExprFunctionCall*)ir_obj->constructor_expr)->args);
         } else if (widget_def && widget_def->init_func) {
-            // Handle non-widget objects like styles that have an init func but no create func.
+            // It's an init-style object (e.g., style). We must heap-allocate it.
+            // 1. The constructor is a malloc call.
+            char sizeof_arg_buf[256];
+            char* base_type = get_array_base_type(ir_obj->c_type); // e.g. "lv_style_t*" -> "lv_style_t"
+            if(base_type) {
+                snprintf(sizeof_arg_buf, sizeof(sizeof_arg_buf), "sizeof(%s)", base_type);
+                free(base_type);
+            } else {
+                snprintf(sizeof_arg_buf, sizeof(sizeof_arg_buf), "0 /* Error: could not get base type for %s */", ir_obj->c_type);
+            }
+
+            IRExprNode* malloc_args = NULL;
+            ir_expr_list_add(&malloc_args, ir_new_expr_literal(sizeof_arg_buf, "size_t"));
+            // The C printer will need to handle the cast from void*
+            ir_obj->constructor_expr = ir_new_expr_func_call("malloc", malloc_args, ir_obj->c_type);
+
+            // 2. The lv_style_init call becomes a regular operation.
             IRExprNode* init_args = NULL;
             ir_expr_list_add(&init_args, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
             IRExpr* init_call = ir_new_expr_func_call(widget_def->init_func, init_args, "void");
@@ -735,6 +762,31 @@ static void process_and_validate_call(GenContext* ctx, const char* func_name, IR
         expected_argc++;
         last_expected_arg = a;
     }
+    
+    // The number of user-provided arguments is the actual count minus 1 if the
+    // function expects a target object (which we add implicitly).
+    bool func_expects_target = (func_def->args_head && func_def->args_head->type && strstr(func_def->args_head->type, "_t*"));
+    int user_provided_argc = func_expects_target ? (actual_argc - 1) : actual_argc;
+
+    // Handle zero-argument functions like lv_obj_center() robustly.
+    // If the function expects 0 user args, but some were given, just ignore them.
+    if (expected_argc > 0 && func_expects_target && (expected_argc - 1 == 0) && user_provided_argc > 0) {
+        // The function only expects a target object, but the user gave more args.
+        // This happens with `center: null` instead of `center: []`.
+        // We trim the extra arguments.
+        IRExprNode* current = (*args_list_ptr)->next;
+        (*args_list_ptr)->next = NULL; // Keep only the first (target) arg.
+        
+        // Free the ignored arguments to prevent memory leaks.
+        while (current) {
+            IRExprNode* temp = current->next;
+            ir_free((IRNode*)current->expr);
+            free(current);
+            current = temp;
+        }
+        actual_argc = 1; // Correct the count
+    }
+
 
     // --- FIX 2A: Handle implicit style selector argument ---
     if (strncmp(func_name, "lv_obj_set_style_", 17) == 0 && actual_argc == expected_argc - 1) {

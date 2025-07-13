@@ -211,3 +211,4 @@ void ir_print_backend(IRRoot* root, const ApiSpec* api_spec) {
         printf("(No root objects)\n");
     }
 }
+
