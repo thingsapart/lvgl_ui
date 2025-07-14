@@ -1,9 +1,0 @@
-# A simple 2x3 table with custom column widths and populated cells.
-- type: table
-  size: [240, 100]
-  center: []
-  col_width: [60]
-  set_cell_value: [0, 0, 'Header 1']
-  set_cell_value: [0, 1, 'Header 2']
-  set_cell_value: [1, 0, 'Cell 1']
-  set_cell_value: [1, 1, 'Cell 2']

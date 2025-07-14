@@ -1,5 +1,5 @@
 - type: dropdown
   lv_obj_align: [LV_ALIGN_TOP_LEFT, 10, 10]
-  options: "New project\nNew file\nSave\nSave as ...\nOpen project\nRecent projects\nPreferences\nExit"
-  text: Menu
-  selected_highlight: false
+  lv_dropdown_set_options: ["New project\nNew file\nSave\nSave as ...\nOpen project\nRecent projects\nPreferences\nExit"]
+  lv_dropdown_set_text: "Menu"
+  lv_dropdown_set_selected_highlight: [false]

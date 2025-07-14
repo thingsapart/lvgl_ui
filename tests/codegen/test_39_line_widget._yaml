@@ -1,0 +1,4 @@
+# Drawing a simple zig-zag line.
+- type: line
+  lv_line_set_points: [[{x: 5, y: 5}, {x: 70, y: 70}, {x: 120, y: 10}, {x: 180, y: 60}, {x: 230, y: 10}], 5]
+  lv_line_set_y_invert: true

@@ -7,5 +7,6 @@
   outline_color: { lv_palette_main: LV_PALETTE_BLUE }
   outline_pad: 8
 
-- add_style: ['@style', LV_PART_MAIN]
+- type: obj
+  add_style: ['@style', LV_PART_MAIN]
   center: []

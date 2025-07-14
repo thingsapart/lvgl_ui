@@ -6,7 +6,6 @@
   border_width: 2
   border_color: { lv_palette_main: LV_PALETTE_BLUE }
   pad_all: 10
-
   text_color: { lv_palette_main: LV_PALETTE_BLUE }
   text_letter_space: 5
   text_line_space: 20

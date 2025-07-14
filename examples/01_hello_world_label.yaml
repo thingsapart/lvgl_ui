@@ -1,5 +1,6 @@
-- bg_color: { lv_color_hex: 0x003a57 }
-  text_color: '#ffffff'
+- type: obj
+  style_bg_color: [{ lv_color_hex: 0x003a57 }, 0]
+  style_text_color: ['#ffffff', 0]
   size: [100%, 100%]
   children:
     - type: label

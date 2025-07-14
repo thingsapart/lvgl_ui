@@ -12071,6 +12071,51 @@
         "lv_anim_enable_t"
       ]
     },
+    "lv_snapshot_create_draw_buf": {
+      "return_type": "lv_draw_buf_t*",
+      "args": [
+        "lv_obj_t*",
+        "lv_color_format_t"
+      ]
+    },
+    "lv_snapshot_free": {
+      "return_type": "void",
+      "args": [
+        "lv_image_dsc_t*"
+      ]
+    },
+    "lv_snapshot_reshape_draw_buf": {
+      "return_type": "lv_result_t",
+      "args": [
+        "lv_obj_t*",
+        "lv_draw_buf_t*"
+      ]
+    },
+    "lv_snapshot_take": {
+      "return_type": "lv_draw_buf_t*",
+      "args": [
+        "lv_obj_t*",
+        "lv_color_format_t"
+      ]
+    },
+    "lv_snapshot_take_to_buf": {
+      "return_type": "lv_result_t",
+      "args": [
+        "lv_obj_t*",
+        "lv_color_format_t",
+        "lv_image_dsc_t*",
+        "void*",
+        "uint32_t"
+      ]
+    },
+    "lv_snapshot_take_to_draw_buf": {
+      "return_type": "lv_result_t",
+      "args": [
+        "lv_obj_t*",
+        "lv_color_format_t",
+        "lv_draw_buf_t*"
+      ]
+    },
     "lv_snprintf": {
       "return_type": "int",
       "args": [

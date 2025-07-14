@@ -1,0 +1,11 @@
+- type: style
+  id: '@canvas_style'
+  bg_color: '#ffffff'
+  bg_opa: LV_OPA_COVER
+
+- type: canvas
+  add_style: ['@canvas_style', 0]
+  lv_canvas_set_buffer: [NULL, 150, 100, LV_COLOR_FORMAT_NATIVE]
+  center: []
+  lv_canvas_fill_bg: [{ lv_palette_main: LV_PALETTE_GREY }, LV_OPA_50]
+  lv_canvas_draw_rect: [5, 5, 50, 30, { radius: 5, bg_color: { lv_palette_main: LV_PALETTE_RED } }]

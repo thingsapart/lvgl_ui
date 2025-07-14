@@ -1,0 +1,7 @@
+
+--- Summary of Generator Hints and Warnings ---
+  Path: [REDACTED]
+[1;31m[WARNING] [0mWidget type 'non_existent_widget' not found in API spec. Falling back to a generic 'obj'.
+
+-------------------------------------------
+

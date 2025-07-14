@@ -1,0 +1,3 @@
+- type: label
+  text: "Hello, LVGL!"
+  lv_obj_align: [LV_ALIGN_CENTER, 0, 0]

@@ -223,8 +223,7 @@ static void set_error(ParserState *state, const char *format, ...) {
 void parse_line(ParserState *state, int line_idx) {
     state->line_num = line_idx + 1;
     char original_line[YAML_PARSER_MAX_LINE_LEN];
-    strncpy(original_line, state->lines[line_idx], YAML_PARSER_MAX_LINE_LEN - 1);
-    original_line[YAML_PARSER_MAX_LINE_LEN - 1] = '\0';
+    snprintf(original_line, sizeof(original_line), "%s", state->lines[line_idx]);
     
     int indent = get_indent(original_line);
     char* content = trim_whitespace(original_line + indent);
@@ -307,9 +306,8 @@ void parse_line(ParserState *state, int line_idx) {
         for (int j = line_idx + 1; j < state->num_lines; j++) {
             // Make a copy of the line to safely trim it
             char next_line_copy[YAML_PARSER_MAX_LINE_LEN];
-            strncpy(next_line_copy, state->lines[j], sizeof(next_line_copy) - 1);
-            next_line_copy[sizeof(next_line_copy) - 1] = '\0';
-
+            snprintf(next_line_copy, sizeof(next_line_copy), "%s", state->lines[j]);
+            
             int current_indent = get_indent(next_line_copy);
             char* current_content = trim_whitespace(next_line_copy + current_indent);
 
@@ -366,8 +364,7 @@ cJSON* yaml_to_cjson(const char* yaml_content, char** error_message) {
 
     for (int i = 0; i < state.num_lines; i++) {
         char temp_line[YAML_PARSER_MAX_LINE_LEN];
-        strncpy(temp_line, state.lines[i], sizeof(temp_line) - 1);
-        temp_line[sizeof(temp_line) - 1] = '\0';
+        snprintf(temp_line, sizeof(temp_line), "%s", state.lines[i]);
         char* content = trim_whitespace(temp_line);
         if (*content == '\0' || *content == '#') continue;
 

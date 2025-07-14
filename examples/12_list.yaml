@@ -1,19 +1,18 @@
 - type: list
   size: [180, 220]
   center: []
-
   children:
-    - init: { lv_list_add_text: [File] }
-    - init: { lv_list_add_button: [LV_SYMBOL_FILE, New] }
-    - init: { lv_list_add_button: [LV_SYMBOL_DIRECTORY, Open] }
-    - init: { lv_list_add_button: [LV_SYMBOL_SAVE, Save] }
-    - init: { lv_list_add_button: [LV_SYMBOL_CLOSE, Delete] }
-    - init: { lv_list_add_button: [LV_SYMBOL_EDIT, Edit] }
-    - init: { lv_list_add_text: [Connectivity] }
-    - init: { lv_list_add_button: [LV_SYMBOL_BLUETOOTH, Bluetooth] }
-    - init: { lv_list_add_button: [LV_SYMBOL_GPS, Navigation] }
-    - init: { lv_list_add_button: [LV_SYMBOL_USB, USB] }
-    - init: { lv_list_add_button: [LV_SYMBOL_BATTERY_FULL, Battery] }
-    - init: { lv_list_add_text: [Exit] }
-    - init: { lv_list_add_button: [LV_SYMBOL_OK, Apply] }
-    - init: { lv_list_add_button: [LV_SYMBOL_CLOSE, Close] }
+    - init: { lv_list_add_text: ["File"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_FILE, "New"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_DIRECTORY, "Open"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_SAVE, "Save"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_CLOSE, "Delete"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_EDIT, "Edit"] }
+    - init: { lv_list_add_text: ["Connectivity"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_BLUETOOTH, "Bluetooth"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_GPS, "Navigation"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_USB, "USB"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_BATTERY_FULL, "Battery"] }
+    - init: { lv_list_add_text: ["Exit"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_OK, "Apply"] }
+    - init: { lv_list_add_button: [LV_SYMBOL_CLOSE, "Close"] }

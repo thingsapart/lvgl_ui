@@ -1,0 +1,15 @@
+- type: component
+  id: '@my_comp'
+  content:
+    type: obj
+    bg_color: '#f0f0f0'
+    radius: 5
+    children:
+      - type: label
+        text: "I am a reusable component"
+        center: []
+
+- type: use-view
+  id: '@my_comp'
+  size: [200, 80]
+  center: []

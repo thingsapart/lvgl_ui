@@ -1,0 +1,25 @@
+# A container with a 2x2 grid layout, placing children in specific cells.
+- type: obj
+  size: [200, 150]
+  center: []
+  layout: LV_LAYOUT_GRID
+  grid_dsc_array: [[80, 80, LV_GRID_TEMPLATE_LAST], [60, 60, LV_GRID_TEMPLATE_LAST]]
+  children:
+    - type: button
+      grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 0, 1]
+      children:
+        - type: label
+          text: "C0, R0"
+          center: []
+    - type: button
+      grid_cell: [LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 0, 1]
+      children:
+        - type: label
+          text: "C1, R0"
+          center: []
+    - type: button
+      grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_STRETCH, 1, 1] # Span 2 columns
+      children:
+        - type: label
+          text: "C0-1, R1"
+          center: []

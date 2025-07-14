@@ -11,14 +11,47 @@ static char* safe_strdup(const char* s) {
     return s ? strdup(s) : NULL;
 }
 
-static PropertyDefinition global_func_prop_def;
-static char global_func_setter_name[128];
-static char global_func_arg_type[64];
+// Helper to create a heap-allocated PropertyDefinition from a function definition.
+// This is used to synthesize properties from methods or global functions.
+// The caller is responsible for freeing the returned pointer.
+static PropertyDefinition* _create_prop_from_func(const char* prop_name, const FunctionDefinition* func_def, const char* widget_type_hint) {
+    if (!prop_name || !func_def) return NULL;
 
-// New static variables for method-derived properties
-static PropertyDefinition method_prop_def;
-static char method_setter_name[128];
-static char method_arg_type[64];
+    PropertyDefinition* pd = (PropertyDefinition*)calloc(1, sizeof(PropertyDefinition));
+    if (!pd) render_abort("Failed to allocate synthesized PropertyDefinition");
+
+    pd->is_heap_allocated = true; // Mark for freeing by caller
+    pd->name = safe_strdup(prop_name);
+    pd->setter = safe_strdup(func_def->name);
+    pd->widget_type_hint = safe_strdup(widget_type_hint);
+    pd->func_args = func_def->args_head; // This is a reference, not a copy
+
+    // Determine the C type and expected enum type of the property's value.
+    // This is usually the second argument of the function (after the target object).
+    const FunctionArg* value_arg = NULL;
+    if (func_def->args_head) {
+        bool first_arg_is_target = (func_def->args_head->type &&
+                                   (strstr(func_def->args_head->type, "lv_obj_t*") ||
+                                    strstr(func_def->args_head->type, "lv_style_t*")));
+        if (first_arg_is_target) {
+            value_arg = func_def->args_head->next;
+        } else {
+            // This handles functions that don't take a target obj, like lv_color_hex
+            value_arg = func_def->args_head;
+        }
+    }
+
+    if (value_arg) {
+        pd->c_type = safe_strdup(value_arg->type);
+        pd->expected_enum_type = safe_strdup(value_arg->expected_enum_type);
+    } else {
+        pd->c_type = safe_strdup("unknown");
+        pd->expected_enum_type = NULL;
+    }
+
+    return pd;
+}
+
 
 static void free_property_definition_list(PropertyDefinitionNode* head);
 static void free_function_arg_list(FunctionArg* head);
@@ -144,6 +177,7 @@ static WidgetDefinition* parse_widget_def(const char* def_name, const cJSON* def
             pd->is_style_prop = cJSON_IsTrue(cJSON_GetObjectItem(prop_detail_json, "is_style_prop"));
             pd->func_args = NULL; // Initialize new field
             pd->expected_enum_type = NULL; // Initialize new field
+            pd->is_heap_allocated = false; // Part of the main spec, not heap allocated per-call
 
             cJSON* expected_enum_type_json = cJSON_GetObjectItem(prop_detail_json, "expected_enum_type");
             if (cJSON_IsString(expected_enum_type_json) && expected_enum_type_json->valuestring != NULL) {
@@ -397,7 +431,7 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
     if (!spec || !type_name || !prop_name) return NULL;
 
     const char* current_type_to_check = type_name;
-    char constructed_name[128]; // For lv_obj_<prop_name>
+    char constructed_name[128];
 
     // --- STEP 1: Iterate through widget type and its parents ---
     while (current_type_to_check != NULL && current_type_to_check[0] != '\0') {
@@ -416,27 +450,8 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
             FunctionMapNode* m_node = widget_def->methods;
             while(m_node) {
                 if (m_node->name && strcmp(m_node->name, prop_name) == 0) {
-                    // Found as a direct method. Construct PropertyDefinition.
-                    memset(&method_prop_def, 0, sizeof(PropertyDefinition));
-                    strncpy(method_setter_name, m_node->name, sizeof(method_setter_name) - 1);
-                    method_setter_name[sizeof(method_setter_name) - 1] = '\0';
-
-                    method_prop_def.name = (char*)prop_name;
-                    method_prop_def.setter = method_setter_name;
-                    if (m_node->func_def && m_node->func_def->args_head && m_node->func_def->args_head->next) { // Assuming first arg is obj instance
-                        strncpy(method_arg_type, m_node->func_def->args_head->next->type, sizeof(method_arg_type) - 1);
-                         method_arg_type[sizeof(method_arg_type) -1] = '\0';
-                    } else {
-                        strcpy(method_arg_type, "unknown"); // Placeholder
-                    }
-                    method_prop_def.c_type = method_arg_type;
-                    method_prop_def.widget_type_hint = (char*)current_type_to_check;
-                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL;
-                    method_prop_def.expected_enum_type = NULL;
-                    if (method_prop_def.func_args && method_prop_def.func_args->next) {
-                        method_prop_def.expected_enum_type = method_prop_def.func_args->next->expected_enum_type;
-                    }
-                    return &method_prop_def;
+                    // Found a method matching the property name. Synthesize a PropertyDefinition.
+                    return _create_prop_from_func(prop_name, m_node->func_def, current_type_to_check);
                 }
                 m_node = m_node->next;
             }
@@ -446,26 +461,7 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
             m_node = widget_def->methods;
             while(m_node) {
                 if (m_node->name && strcmp(m_node->name, constructed_name) == 0) {
-                    memset(&method_prop_def, 0, sizeof(PropertyDefinition));
-                    strncpy(method_setter_name, m_node->name, sizeof(method_setter_name) - 1);
-                    method_setter_name[sizeof(method_setter_name) -1] = '\0';
-
-                    method_prop_def.name = (char*)prop_name;
-                    method_prop_def.setter = method_setter_name;
-                    if (m_node->func_def && m_node->func_def->args_head && m_node->func_def->args_head->next) {
-                         strncpy(method_arg_type, m_node->func_def->args_head->next->type, sizeof(method_arg_type) - 1);
-                         method_arg_type[sizeof(method_arg_type) -1] = '\0';
-                    } else {
-                        strcpy(method_arg_type, "unknown");
-                    }
-                    method_prop_def.c_type = method_arg_type;
-                    method_prop_def.widget_type_hint = (char*)current_type_to_check;
-                    method_prop_def.func_args = m_node->func_def ? m_node->func_def->args_head : NULL;
-                    method_prop_def.expected_enum_type = NULL;
-                    if (method_prop_def.func_args && method_prop_def.func_args->next) {
-                        method_prop_def.expected_enum_type = method_prop_def.func_args->next->expected_enum_type;
-                    }
-                    return &method_prop_def;
+                    return _create_prop_from_func(prop_name, m_node->func_def, current_type_to_check);
                 }
                 m_node = m_node->next;
             }
@@ -476,85 +472,37 @@ const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char
     }
 
     // --- STEP 2: Search global functions ---
-    FunctionMapNode* func_node = NULL;
+    const FunctionDefinition* func_def = NULL;
 
     // 2.1 Check global functions for prop_name verbatim
-    if (spec->functions) {
-       func_node = spec->functions;
-       while (func_node) {
-           if (func_node->name && strcmp(func_node->name, prop_name) == 0) {
-               memset(&global_func_prop_def, 0, sizeof(PropertyDefinition));
-               strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name) - 1);
-               global_func_setter_name[sizeof(global_func_setter_name) -1] = '\0';
-
-               global_func_prop_def.name = (char*)prop_name;
-               global_func_prop_def.setter = global_func_setter_name;
-               if (func_node->func_def && func_node->func_def->args_head) {
-                   bool first_arg_is_obj = (func_node->func_def->args_head->type && (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0));
-                   FunctionArg* relevant_arg = first_arg_is_obj ? func_node->func_def->args_head->next : func_node->func_def->args_head;
-                   if (relevant_arg && relevant_arg->type) {
-                       strncpy(global_func_arg_type, relevant_arg->type, sizeof(global_func_arg_type) - 1);
-                       global_func_arg_type[sizeof(global_func_arg_type)-1] = '\0';
-                   } else {
-                       strcpy(global_func_arg_type, "unknown");
-                   }
-               } else {
-                   strcpy(global_func_arg_type, "unknown");
-               }
-               global_func_prop_def.c_type = global_func_arg_type;
-               global_func_prop_def.widget_type_hint = (char*)type_name;
-               global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL;
-               global_func_prop_def.expected_enum_type = NULL;
-               FunctionArg* relevant_arg_for_enum_val = (global_func_prop_def.func_args && global_func_prop_def.func_args->type && (strcmp(global_func_prop_def.func_args->type, "lv_obj_t*") == 0 || strcmp(global_func_prop_def.func_args->type, "lv_style_t*") == 0) && global_func_prop_def.func_args->next) ? global_func_prop_def.func_args->next : global_func_prop_def.func_args;
-               if(relevant_arg_for_enum_val) {
-                    global_func_prop_def.expected_enum_type = relevant_arg_for_enum_val->expected_enum_type;
-               }
-               return &global_func_prop_def;
-           }
-           func_node = func_node->next;
-       }
+    func_def = api_spec_find_function(spec, prop_name);
+    if (func_def) {
+        return _create_prop_from_func(prop_name, func_def, type_name);
     }
 
     // 2.2 Check global functions for "lv_obj_" + prop_name
     snprintf(constructed_name, sizeof(constructed_name), "lv_obj_%s", prop_name);
-    if (spec->functions) {
-       func_node = spec->functions;
-       while (func_node) {
-           if (func_node->name && strcmp(func_node->name, constructed_name) == 0) {
-               memset(&global_func_prop_def, 0, sizeof(PropertyDefinition));
-               strncpy(global_func_setter_name, func_node->name, sizeof(global_func_setter_name)-1);
-               global_func_setter_name[sizeof(global_func_setter_name)-1] = '\0';
-
-               global_func_prop_def.name = (char*)prop_name;
-               global_func_prop_def.setter = global_func_setter_name;
-                if (func_node->func_def && func_node->func_def->args_head) {
-                   bool first_arg_is_obj = (func_node->func_def->args_head->type && (strcmp(func_node->func_def->args_head->type, "lv_obj_t*") == 0 || strcmp(func_node->func_def->args_head->type, "lv_obj_t *") == 0 || strcmp(func_node->func_def->args_head->type, "lv_style_t*") == 0 ));
-                   FunctionArg* relevant_arg = first_arg_is_obj ? func_node->func_def->args_head->next : func_node->func_def->args_head;
-                   if (relevant_arg && relevant_arg->type) {
-                       strncpy(global_func_arg_type, relevant_arg->type, sizeof(global_func_arg_type) - 1);
-                       global_func_arg_type[sizeof(global_func_arg_type)-1] = '\0';
-                   } else {
-                       strcpy(global_func_arg_type, "unknown");
-                   }
-               } else {
-                   strcpy(global_func_arg_type, "unknown");
-               }
-               global_func_prop_def.c_type = global_func_arg_type;
-               global_func_prop_def.widget_type_hint = (char*)type_name;
-               global_func_prop_def.func_args = func_node->func_def ? func_node->func_def->args_head : NULL;
-               global_func_prop_def.expected_enum_type = NULL;
-               FunctionArg* relevant_arg_for_enum_val2 = (global_func_prop_def.func_args && global_func_prop_def.func_args->type && (strcmp(global_func_prop_def.func_args->type, "lv_obj_t*") == 0 || strcmp(global_func_prop_def.func_args->type, "lv_style_t*") == 0) && global_func_prop_def.func_args->next) ? global_func_prop_def.func_args->next : global_func_prop_def.func_args;
-               if(relevant_arg_for_enum_val2) {
-                    global_func_prop_def.expected_enum_type = relevant_arg_for_enum_val2->expected_enum_type;
-               }
-               return &global_func_prop_def;
-           }
-           func_node = func_node->next;
-       }
+    func_def = api_spec_find_function(spec, constructed_name);
+    if (func_def) {
+        return _create_prop_from_func(prop_name, func_def, type_name);
     }
 
     return NULL; // Not found
 }
+
+void api_spec_free_property(const PropertyDefinition* prop) {
+    if (prop && prop->is_heap_allocated) {
+        free(prop->name);
+        free(prop->c_type);
+        free(prop->setter);
+        free(prop->widget_type_hint);
+        free(prop->obj_setter_prefix);
+        free(prop->expected_enum_type);
+        // Do not free prop->func_args, as it's a reference to a definition in the main spec.
+        free((void*)prop);
+    }
+}
+
 
 const cJSON* api_spec_get_constants(const ApiSpec* spec) {
     return spec ? spec->constants : NULL;

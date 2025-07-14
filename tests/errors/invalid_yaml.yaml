@@ -1,0 +1,6 @@
+# This YAML is intentionally invalid to test the parser's error reporting.
+- type: obj
+  size: [100, 100]
+  children:
+    - type: label
+   text: "This text is not indented correctly"

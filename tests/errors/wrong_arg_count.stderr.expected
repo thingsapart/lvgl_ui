@@ -1,0 +1,7 @@
+
+--- Summary of Generator Hints and Warnings ---
+  Path: [REDACTED]
+[1;31m[WARNING] [0mArgument count mismatch for function 'lv_obj_set_style_size'. Expected 4, but 2 were provided.
+
+-------------------------------------------
+

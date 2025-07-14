@@ -1,0 +1,4 @@
+# A color wheel widget for color selection.
+- type: colorwheel
+  lv_colorwheel_set_mode: LV_COLORWHEEL_MODE_HUE
+  center: []

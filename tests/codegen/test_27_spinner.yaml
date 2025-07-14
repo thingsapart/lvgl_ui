@@ -1,0 +1,5 @@
+# A perpetually spinning loading indicator.
+- type: spinner
+  size: [80, 80]
+  center: []
+  anim_params: [10000000, 60]

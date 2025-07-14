@@ -6,7 +6,8 @@
   border_color: { lv_palette_main: LV_PALETTE_BLUE }
   border_width: 5
   border_opa: LV_OPA_50
-  border_side: LV_BORDER_SIDE_BOTTOM | LV_BORDER_SIDE_RIGHT
+  border_side: [LV_BORDER_SIDE_BOTTOM | LV_BORDER_SIDE_RIGHT]
 
-- add_style: ['@style', LV_PART_MAIN]
+- type: obj
+  add_style: ['@style', LV_PART_MAIN]
   center: []

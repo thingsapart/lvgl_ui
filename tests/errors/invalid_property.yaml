@@ -1,0 +1,9 @@
+# This test checks that a misspelled property generates a warning
+# and a helpful suggestion.
+- type: button
+  id: '@my_button'
+  size: [120, 50]
+  colour: '#ff0000' # Intentionally misspelled 'color'
+  children:
+    - type: label
+      text: 'Invalid'

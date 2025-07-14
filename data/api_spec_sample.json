@@ -254,7 +254,21 @@
         "lv_obj_delete": { "return_type": "void", "args": [ "lv_obj_t*" ] },
         "lv_obj_add_event_cb": { "return_type": "lv_event_dsc_t*", "args": ["lv_obj_t*", "lv_event_cb_t", "lv_event_code_t", "void*"] },
         "lv_obj_get_child": { "return_type": "lv_obj_t*", "args": ["lv_obj_t*", "int32_t"] },
-        "lv_obj_invalidate": { "return_type": "void", "args": [ "lv_obj_t*" ] }
+        "lv_obj_invalidate": { "return_type": "void", "args": [ "lv_obj_t*" ] },
+        "lv_obj_add_flag": { "return_type": "void", "args": [ "lv_obj_t*", "lv_obj_flag_t" ] },
+        "lv_obj_add_screen_create_event": { "return_type": "void", "args": [ "lv_obj_t*", "lv_event_code_t", "lv_screen_create_cb_t", "lv_screen_load_anim_t", "uint32_t", "uint32_t" ] },
+        "lv_obj_add_screen_load_event": { "return_type": "void", "args": [ "lv_obj_t*", "lv_event_code_t", "lv_obj_t*", "lv_screen_load_anim_t", "uint32_t", "uint32_t" ] },
+        "lv_obj_add_state": { "return_type": "void", "args": [ "lv_obj_t*", "lv_state_t" ] },
+        "lv_obj_add_style": { "return_type": "void", "args": [ "lv_obj_t*", "lv_style_t*", "lv_style_selector_t" ] },
+        "lv_obj_add_subject_increment_event": { "return_type": "void", "args": [ "lv_obj_t*", "lv_subject_t*", "lv_event_code_t", "int32_t", "int32_t", "int32_t" ] },
+        "lv_obj_add_subject_set_int_event": { "return_type": "void", "args": [ "lv_obj_t*", "lv_subject_t*", "lv_event_code_t", "int32_t" ] },
+        "lv_obj_add_subject_set_string_event": { "return_type": "void", "args": [ "lv_obj_t*", "lv_subject_t*", "lv_event_code_t", "char*" ] },
+        "lv_obj_align": { "return_type": "void", "args": [ "lv_obj_t*", "lv_align_t", "int32_t", "int32_t" ] },
+        "lv_obj_align_to": { "return_type": "void", "args": [ "lv_obj_t*", "lv_obj_t*", "lv_align_t", "int32_t", "int32_t" ] },
+        "lv_obj_allocate_spec_attr": { "return_type": "void", "args": [ "lv_obj_t*" ] },
+        "lv_obj_area_is_visible": { "return_type": "bool", "args": [ "lv_obj_t*", "lv_area_t*" ] },
+        "lv_obj_bind_checked": { "return_type": "lv_observer_t*", "args": [ "lv_obj_t*", "lv_subject_t*" ] },
+        "lv_obj_bind_flag_if_eq": { "return_type": "lv_observer_t*", "args": [ "lv_obj_t*", "lv_subject_t*", "lv_obj_flag_t", "int32_t" ] }
       },
       "properties": {
         "align": { "setter": "lv_obj_set_align", "type": "lv_align_t" },
@@ -317,213 +331,5 @@
       "methods": { "lv_textarea_add_text": { "return_type": "void", "args": [ "lv_obj_t*", "char*" ] } },
       "properties": { "placeholder_text": { "setter": "lv_textarea_set_placeholder_text", "type": "char*" } }
     }
-    "obj": {
-      "inherits": null,
-      "methods": {
-        "lv_obj_add_event_cb": {
-          "return_type": "lv_event_dsc_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_event_cb_t",
-            "lv_event_code_t",
-            "void*"
-          ]
-        },
-        "lv_obj_add_flag": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*",
-            "lv_obj_flag_t"
-          ]
-        },
-        "lv_obj_add_screen_create_event": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*",
-            "lv_event_code_t",
-            "lv_screen_create_cb_t",
-            "lv_screen_load_anim_t",
-            "uint32_t",
-            "uint32_t"
-          ]
-        },
-        "lv_obj_add_screen_load_event": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*",
-            "lv_event_code_t",
-            "lv_obj_t*",
-            "lv_screen_load_anim_t",
-            "uint32_t",
-            "uint32_t"
-          ]
-        },
-        "lv_obj_add_state": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*",
-            "lv_state_t"
-          ]
-        },
-        "lv_obj_add_style": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*",
-            "lv_style_t*",
-            "lv_style_selector_t"
-          ]
-        },
-        "lv_obj_add_subject_increment_event": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_event_code_t",
-            "int32_t",
-            "int32_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_add_subject_set_int_event": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_event_code_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_add_subject_set_string_event": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_event_code_t",
-            "char*"
-          ]
-        },
-        "lv_obj_align": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*",
-            "lv_align_t",
-            "int32_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_align_to": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*",
-            "lv_obj_t*",
-            "lv_align_t",
-            "int32_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_allocate_spec_attr": {
-          "return_type": "void",
-          "args": [
-            "lv_obj_t*"
-          ]
-        },
-        "lv_obj_area_is_visible": {
-          "return_type": "bool",
-          "args": [
-            "lv_obj_t*",
-            "lv_area_t*"
-          ]
-        },
-        "lv_obj_bind_checked": {
-          "return_type": "lv_observer_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*"
-          ]
-        },
-        "lv_obj_bind_flag_if_eq": {
-          "return_type": "lv_observer_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_obj_flag_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_bind_flag_if_ge": {
-          "return_type": "lv_observer_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_obj_flag_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_bind_flag_if_gt": {
-          "return_type": "lv_observer_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_obj_flag_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_bind_flag_if_le": {
-          "return_type": "lv_observer_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_obj_flag_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_bind_flag_if_lt": {
-          "return_type": "lv_observer_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_obj_flag_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_bind_flag_if_not_eq": {
-          "return_type": "lv_observer_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_obj_flag_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_bind_state_if_eq": {
-          "return_type": "lv_observer_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_state_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_bind_state_if_ge": {
-          "return_type": "lv_observer_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_state_t",
-            "int32_t"
-          ]
-        },
-        "lv_obj_bind_state_if_gt": {
-          "return_type": "lv_observer_t*",
-          "args": [
-            "lv_obj_t*",
-            "lv_subject_t*",
-            "lv_state_t",
-            "int32_t"
-          ]
-        },
-        {
-          "//": "... and so on"
-        }
   }
 }

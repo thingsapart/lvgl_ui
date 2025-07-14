@@ -1,0 +1,9 @@
+- type: button
+  id: '@my_button'
+  size: [120, 50]
+  center: []
+  children:
+    - type: label
+      id: '@label_1'
+      text: Click Me
+      center: []

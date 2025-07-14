@@ -6,5 +6,6 @@
   shadow_width: 55
   shadow_color: { lv_palette_main: LV_PALETTE_BLUE }
 
-- add_style: ['@style', LV_PART_MAIN]
+- type: obj
+  add_style: ['@style', LV_PART_MAIN]
   center: []

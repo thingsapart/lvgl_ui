@@ -16,7 +16,7 @@
   bg_grad_color: { lv_palette_lighten: [LV_PALETTE_RED, 3] }
 
 - type: button
-  remove_style_all: []
+  lv_obj_remove_style_all: []
   pos: [10, 10]
   size: [120, 50]
   add_style: ['@style_btn', LV_PART_MAIN]
@@ -26,12 +26,12 @@
       center: []
 
 - type: button
-  remove_style_all: []
+  lv_obj_remove_style_all: []
   pos: [10, 80]
   size: [120, 50]
   add_style: ['@style_btn', LV_PART_MAIN]
   add_style: ['@style_button_red', LV_PART_MAIN]
-  radius: LV_RADIUS_CIRCLE
+  style_radius: [LV_RADIUS_CIRCLE, 0]
   children:
     - type: label
       text: Button 2
