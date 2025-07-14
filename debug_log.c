@@ -20,7 +20,7 @@ static bool enabled_modules[LOG_MODULE_COUNT] = {
   true,        // LOG_MODULE_DISPATCH
   true,        // LOG_MODULE_UTILS
   true,        // LOG_MODULE_SDL_VIEWER
-  true,        // LOG_MODULE_DATABINDING
+  false,        // LOG_MODULE_DATABINDING
 #else
   false
 #endif

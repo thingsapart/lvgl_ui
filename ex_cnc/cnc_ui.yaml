@@ -1,133 +1,231 @@
-# Simple CNC interface
+# Sleek, dark-themed CNC interface with manual jog controls
+
+# --- STYLES ---
 
 - type: style
-  id: @debug
-  bg_color: '#ff0088'
-  bg_opa: 100
+  id: "@style_dark_bg"
+  bg_color: '#1e2124'
+  text_color: '#d1d2d3'
 
 - type: style
-  id: @container
-  pad_all: 0
-  margin_all: 0
+  id: "@style_panel"
+  bg_color: '#282c34'
+  radius: 8
+  pad_all: 10
+  border_width: 1
+  border_color: '#454c59'
+  text_color: '#ffffff'
+
+- type: style
+  id: "@style_btn"
+  bg_color: '#3e444c'
+  border_width: 1
+  border_color: '#5a626d'
+  text_color: '#ffffff'
+  shadow_width: 5
+  shadow_opa: 30
+  shadow_offset_y: 3
+  shadow_color: '#000000'
+  radius: 5
+
+- type: style
+  id: "@style_btn_primary"
+  bg_color: '#007bff'
+  border_color: '#0069d9'
+
+- type: style
+  id: "@style_btn_warning"
+  bg_color: '#ffc107'
+  border_color: '#e0a800'
+  text_color: '#212529'
+  
+- type: style
+  id: "@style_btn_danger"
+  bg_color: '#dc3545'
+  border_color: '#c82333'
+
+- type: style
+  id: "@style_jog_btn"
+  # Inherits properties from @style_btn conceptually
+  bg_color: '#3e444c'
+  border_width: 1
+  border_color: '#5a626d'
+  text_color: '#ffffff'
+  shadow_width: 5
+  shadow_opa: 30
+  shadow_offset_y: 3
+  shadow_color: '#000000'
+  # Overrides
+  width: 50
+  height: 50
+  radius: 25 # Circle
+
+- type: style
+  id: "@style_transparent"
+  bg_opa: 0
   border_width: 0
-  outline_width: 0
+  pad_all: 0
+
+- type: style
+  id: '@info_label'
+  text_color: '#aaffaa'
+
+# --- UI LAYOUT ---
 
 - size: [100%, 100%]
   id: "@main_container"
-  add_style: ['@container', 0]
+  add_style: ["@style_dark_bg", 0]
   layout: LV_LAYOUT_FLEX
-  flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
   flex_flow: LV_FLEX_FLOW_COLUMN
+  flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+  pad_all: 10
   children:
-    - layout: LV_LAYOUT_FLEX
-      id: "@top_container"
-      add_style: ['@container', 0]
-      width: 100%
-      flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+    # Top Status Bar
+    - type: obj
+      add_style: ["@style_panel", 0]
+      width: "100%"
+      height: 60
+      layout: LV_LAYOUT_FLEX
       flex_flow: LV_FLEX_FLOW_ROW
-      flex_grow: 1
+      flex_align: [LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
       children:
-        - layout: LV_LAYOUT_FLEX
-          id: "@left_top_panel"
-          add_style: ['@container', 0]
-          flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
-          flex_flow: LV_FLEX_FLOW_COLUMN
+        - type: label
+          text: "STATUS: IDLE"
+          observes: { program|status: { string: "STATUS: %s" } }
+        - type: label
+          text: "X: +000.00"
+          observes: { position|x: { float: "X: %+07.2f" } }
+        - type: label
+          text: "Y: +000.00"
+          observes: { position|y: { float: "Y: %+07.2f" } }
+        - type: label
+          text: "Z: +000.00"
+          observes: { position|z: { float: "Z: %+07.2f" } }
+        - type: label
+          text: "RPM: 0"
+          observes: { spindle|rpm: { float: "RPM: %.0f" } }
+
+    # Main content area
+    - type: obj
+      add_style: ["@style_transparent", 0]
+      width: 100%
+      flex_grow: 1
+      layout: LV_LAYOUT_FLEX
+      flex_flow: LV_FLEX_FLOW_ROW
+      flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+      pad_gap: 10
+      margin_top: 10
+      children:
+        # Left Panel: Manual Controls
+        - type: obj
+          add_style: ["@style_panel", 0]
+          height: 100%
           flex_grow: 1
-          height: 100%
-          min_idth: 200
-          children:
-            - type: obj
-              width: "100%"
-              margin_top: 15
-              flex_flow: LV_FLEX_FLOW_ROW
-              flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
-              add_style: ['@container', 0]
-              pad_all: 10
-              radius: 5
-              children:
-                - type: label
-                  text: "STATUS: IDLE"
-                  observes:
-                    program|status: { string: "STATUS: %s" }
-                - type: label
-                  margin_left: 20
-                  text: "X: +000.00"
-                  observes:
-                    position|x: { float: "X: %+07.2f" }
-                - type: label
-                  margin_left: 20
-                  text: "Y: +000.00"
-                  observes:
-                    position|y: { float: "Y: %+07.2f" }
-                - type: label
-                  margin_left: 20
-                  text: "Z: +000.00"
-                  observes:
-                    position|z: { float: "Z: %+07.2f" }
-        - layout: LV_LAYOUT_FLEX
-          id: "@right_top_panel"
-          add_style: ['@container', 0]
-          width: 150
-          height: 100%
+          layout: LV_LAYOUT_FLEX
+          flex_flow: LV_FLEX_FLOW_ROW
           flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+          pad_gap: 40
+          children:
+            # X/Y Jog Cross
+            - type: obj
+              add_style: ["@style_transparent", 0]
+              layout: LV_LAYOUT_GRID
+              size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+              grid_dsc_array: [ [60, 60, 60, LV_GRID_TEMPLATE_LAST], [60, 60, 60, LV_GRID_TEMPLATE_LAST] ]
+              grid_align: [LV_GRID_ALIGN_CENTER, LV_GRID_ALIGN_CENTER]
+              children:
+                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1], action: { jog|move|y_plus: trigger }, children: [ { type: label, text: LV_SYMBOL_UP, center: [] } ] }
+                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1], action: { jog|move|x_minus: trigger }, children: [ { type: label, text: LV_SYMBOL_LEFT, center: [] } ] }
+                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1], action: { position|home: "trigger" }, children: [ { type: label, text: LV_SYMBOL_HOME, center: [] } ] }
+                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1], action: { jog|move|x_plus: trigger }, children: [ { type: label, text: LV_SYMBOL_RIGHT, center: [] } ] }
+                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1], action: { jog|move|y_minus: trigger }, children: [ { type: label, text: LV_SYMBOL_DOWN, center: [] } ] }
+
+            # Z Jog and distance
+            - type: obj
+              add_style: ["@style_transparent", 0]
+              height: 100%
+              layout: LV_LAYOUT_FLEX
+              flex_flow: LV_FLEX_FLOW_COLUMN
+              size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+              flex_align: [LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+              children:
+                - { type: button, add_style: ["@style_jog_btn", 0], action: { jog|move|z_plus: trigger }, children: [ { type: label, text: LV_SYMBOL_PLUS, center: [] } ] }
+                - type: obj # Jog step selection
+                  add_style: ["@style_transparent", 0]
+                  layout: LV_LAYOUT_FLEX
+                  flex_flow: LV_FLEX_FLOW_COLUMN
+                  flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+                  size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+                  children:
+                    - type: obj
+                      add_style: ["@style_transparent", 0]
+                      layout: LV_LAYOUT_FLEX
+                      flex_flow: LV_FLEX_FLOW_ROW
+                      pad_gap: 5
+                      size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+                      children:
+                        - { type: button, add_style: ["@style_btn", 0], action: { jog|set_step: [1.0] }, children: [{type: label, text: "1"}] }
+                        - { type: button, add_style: ["@style_btn", 0], action: { jog|set_step: [10.0] }, children: [{type: label, text: "10"}] }
+                        - { type: button, add_style: ["@style_btn", 0], action: { jog|set_step: [20.0] }, children: [{type: label, text: "20"}] }
+                    - type: label
+                      text: "Step: 1 mm"
+                      margin_top: 5
+                      add_style: ['@info_label', 0]
+                      observes: { jog|step: { float: "Step: %.0f mm" } }
+                - { type: button, add_style: ["@style_jog_btn", 0], action: { jog|move|z_minus: trigger }, children: [ { type: label, text: LV_SYMBOL_MINUS, center: [] } ] }
+        
+        # Right Panel: Machine Controls
+        - type: obj
+          add_style: ["@style_panel", 0]
+          height: 100%
+          width: 300
+          layout: LV_LAYOUT_FLEX
           flex_flow: LV_FLEX_FLOW_COLUMN
+          flex_align: [LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
           children:
             - type: obj
-              height: "100%"
-              margin_top: 15
-              flex_flow: LV_FLEX_FLOW_ROW_WRAP
-              flex_align: [LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
-              style_pad_all: 10
-              style_radius: 5
-              add_style: ['@container', 0]
+              add_style: ["@style_transparent", 0]
+              width: 100%
+              layout: LV_LAYOUT_FLEX
+              flex_flow: LV_FLEX_FLOW_ROW
+              flex_align: [LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
               children:
-                # Spindle Switch (Two-way binding)
                 - type: switch
-                  bg_color: "#1e5a87"
-                  observes:
-                    spindle|is_on: { bool: null }
-                  action:
-                    spindle|toggle: "toggle"
+                  observes: { spindle|is_on: { bool: null } }
+                  action: { spindle|toggle: "toggle" }
                 - type: label
                   text: "Spindle"
-
-                # Feed Override Button (Cycle action)
+                  add_style: ['@info_label', 0]
                 - type: button
-                  action:
-                    feedrate|override: [50, 90, 100, 110, 125]
+                  add_style: ["@style_btn", 0]
+                  action: { feedrate|override: [50, 90, 100, 110, 150] }
                   children:
                     - type: label
-                      text: "Feed: 100"
-                      observes:
-                        feedrate|override: { int: "Feed: %d%%" }
-
-    - layout: LV_LAYOUT_FLEX
-      id: "@bottom_container"
-      bg_color: '#22ff44'
-      width: 100%
-      height: 100
-      flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
-      flex_flow: LV_FLEX_FLOW_ROW
-      children:
-        # Control Buttons (Trigger actions)
-        - type: button
-          margin_left: 40
-          action:
-            program|run: "trigger"
-          children:
-            - type: label
-              text: "RUN"
-        - type: button
-          action:
-            program|pause: "trigger"
-          children:
-            - type: label
-              text: "PAUSE"
-        - type: button
-          action:
-            program|stop: "trigger"
-          children:
-            - type: label
-              text: "STOP"
-
-
+                      text: "Feed: 100%"
+                      observes: { feedrate|override: { int: "Feed: %d%%" } }
+            - type: obj
+              add_style: ["@style_transparent", 0]
+              width: 100%
+              layout: LV_LAYOUT_FLEX
+              flex_flow: LV_FLEX_FLOW_ROW
+              flex_align: [LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+              # size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+              children:
+                - type: button
+                  width: 70
+                  add_style: ["@style_btn", 0]
+                  add_style: ["@style_btn_primary", 0]
+                  action: { program|run: "trigger" }
+                  children: [{type: label, text: "RUN", center: []}]
+                - type: button
+                  width: 70
+                  add_style: ["@style_btn", 0]
+                  add_style: ["@style_btn_warning", 0]
+                  action: { program|pause: "trigger" }
+                  children: [{type: label, text: "PAUSE", center: []}]
+                - type: button
+                  width: 70
+                  add_style: ["@style_btn", 0]
+                  add_style: ["@style_btn_danger", 0]
+                  action: { program|stop: "trigger" }
+                  children: [{type: label, text: "STOP", center: []}]

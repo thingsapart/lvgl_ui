@@ -244,6 +244,7 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
                     cycle_values = evaluate_binding_array_expr(spec, registry, (IRExprArray*)act->data_expr, &cycle_count);
                 }
                 data_binding_add_action(c_obj, act->action_name, act->action_type, cycle_values, cycle_count);
+                // The data binding module now owns the `cycle_values` memory, so we don't free it here.
             }
             else {
                 // It's an expression (a setup call or runtime registration). Evaluate it.
@@ -289,7 +290,7 @@ static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* reg
             IRExprLiteral* lit = (IRExprLiteral*)n->expr;
             if (lit->is_string) {
                 result_array[i].type = BINDING_TYPE_STRING;
-                result_array[i].as.s_val = lit->value; // Assumes persistent string from IR
+                result_array[i].as.s_val = lit->value; // String is owned by IR, but will be duplicated by data_binding_add_action
             } else {
                 if (strcmp(lit->value, "true") == 0) {
                     result_array[i].type = BINDING_TYPE_BOOL;
@@ -297,12 +298,9 @@ static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* reg
                 } else if (strcmp(lit->value, "false") == 0) {
                     result_array[i].type = BINDING_TYPE_BOOL;
                     result_array[i].as.b_val = false;
-                } else if (strchr(lit->value, '.')) {
+                } else {
                     result_array[i].type = BINDING_TYPE_FLOAT;
                     result_array[i].as.f_val = strtof(lit->value, NULL);
-                } else {
-                    result_array[i].type = BINDING_TYPE_INT;
-                    result_array[i].as.i_val = strtol(lit->value, NULL, 0);
                 }
             }
         }

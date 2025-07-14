@@ -28,32 +28,22 @@ typedef struct {
 static StateObserverMapping state_observers[MAX_STATES];
 static uint32_t state_observer_count = 0;
 
-// --- Action User Data Structures ---
+// --- Unified Action User Data Structure ---
 
 typedef struct {
-    const char* action_name;
-} TriggerActionUserData;
+    action_type_t type;
+    const char* action_name;        // Persistent string from IR
+    binding_value_t* values;        // For cycle actions, heap-allocated and owned by this struct
+    uint32_t value_count;           // For cycle actions
+    uint32_t current_index;         // For cycle actions
+} ActionUserData;
 
-typedef struct {
-    const char* action_name;
-    bool current_state;
-} ToggleActionUserData;
-
-typedef struct {
-    const char* action_name;
-    const binding_value_t* values; // Points to static or heap-allocated array
-    bool values_are_heap_allocated; // Flag to indicate if we need to free `values`
-    uint32_t value_count;
-    uint32_t current_index;
-} CycleActionUserData;
 
 // --- Module-level variables ---
 static data_binding_action_handler_t app_action_handler = NULL;
 
 // --- Forward Declarations for Event Callbacks ---
-static void trigger_event_cb(lv_event_t* e);
-static void toggle_event_cb(lv_event_t* e);
-static void cycle_event_cb(lv_event_t* e);
+static void generic_action_event_cb(lv_event_t* e);
 static void free_action_user_data_cb(lv_event_t* e);
 
 
@@ -83,7 +73,6 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
                             char buf[128];
                             const char* fmt = current->observer.format_string ? current->observer.format_string : "%s";
                             switch(new_value.type) {
-                                case BINDING_TYPE_INT:    snprintf(buf, sizeof(buf), fmt, new_value.as.i_val); break;
                                 case BINDING_TYPE_FLOAT:  snprintf(buf, sizeof(buf), fmt, new_value.as.f_val); break;
                                 case BINDING_TYPE_BOOL:   snprintf(buf, sizeof(buf), fmt, new_value.as.b_val ? "ON" : "OFF"); break;
                                 case BINDING_TYPE_STRING: snprintf(buf, sizeof(buf), fmt, new_value.as.s_val); break;
@@ -101,9 +90,8 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
                             }
                             break;
                         case OBSERVER_TYPE_SLIDER_VALUE:
-                            if (new_value.type == BINDING_TYPE_INT || new_value.type == BINDING_TYPE_FLOAT) {
-                                int32_t val = (new_value.type == BINDING_TYPE_INT) ? new_value.as.i_val : (int32_t)new_value.as.f_val;
-                                lv_slider_set_value(current->observer.widget, val, LV_ANIM_ON);
+                            if (new_value.type == BINDING_TYPE_FLOAT) {
+                                lv_slider_set_value(current->observer.widget, (int32_t)new_value.as.f_val, LV_ANIM_ON);
                             } else {
                                 print_warning("Type mismatch: slider observer for '%s' received non-numeric value.", state_name);
                             }
@@ -158,96 +146,94 @@ void data_binding_add_observer(const char* state_name, lv_obj_t* widget, observe
 
 void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_type_t type, const binding_value_t* cycle_values, uint32_t cycle_value_count) {
     if (!widget || !action_name) return;
-    void* user_data = NULL;
-    lv_event_cb_t cb = NULL;
+
+    ActionUserData* user_data = calloc(1, sizeof(ActionUserData));
+    if (!user_data) render_abort("Failed to allocate action user data");
+
+    user_data->type = type;
+    user_data->action_name = action_name;
+
+    lv_event_cb_t cb = generic_action_event_cb;
     lv_event_code_t code = LV_EVENT_CLICKED;
 
-    switch(type) {
-        case ACTION_TYPE_TRIGGER: {
-            user_data = malloc(sizeof(TriggerActionUserData));
-            ((TriggerActionUserData*)user_data)->action_name = action_name; // Static string, no copy needed
-            cb = trigger_event_cb;
-            break;
+    if (type == ACTION_TYPE_TOGGLE) {
+        code = LV_EVENT_VALUE_CHANGED;
+    } else if (type == ACTION_TYPE_CYCLE) {
+        if (!cycle_values || cycle_value_count == 0) {
+            free(user_data);
+            return;
         }
-        case ACTION_TYPE_TOGGLE: {
-            user_data = malloc(sizeof(ToggleActionUserData));
-            ((ToggleActionUserData*)user_data)->action_name = action_name;
-            ((ToggleActionUserData*)user_data)->current_state = lv_obj_has_state(widget, LV_STATE_CHECKED);
-            cb = toggle_event_cb;
-            code = LV_EVENT_VALUE_CHANGED;
-            break;
+        
+        // Deep copy the cycle values array to take ownership.
+        binding_value_t* copied_values = malloc(cycle_value_count * sizeof(binding_value_t));
+        if (!copied_values) render_abort("Failed to allocate memory for cycle action values.");
+        
+        for (uint32_t i = 0; i < cycle_value_count; i++) {
+            copied_values[i] = cycle_values[i];
+            if (cycle_values[i].type == BINDING_TYPE_STRING && cycle_values[i].as.s_val) {
+                // Also copy the string itself
+                copied_values[i].as.s_val = strdup(cycle_values[i].as.s_val);
+                if (!copied_values[i].as.s_val) render_abort("Failed to duplicate string in cycle action values.");
+            }
         }
-        case ACTION_TYPE_CYCLE: {
-            if (!cycle_values || cycle_value_count == 0) return;
-            CycleActionUserData* cycle_data = malloc(sizeof(CycleActionUserData));
-            cycle_data->action_name = action_name;
-            cycle_data->values = cycle_values;
-            cycle_data->values_are_heap_allocated = (lv_obj_get_screen(widget) != lv_screen_active()); // Heuristic: if renderer is running, assume heap
-            cycle_data->value_count = cycle_value_count;
-            cycle_data->current_index = 0; // Always start at the first value
-            user_data = cycle_data;
-            cb = cycle_event_cb;
-            break;
-        }
+        
+        user_data->values = copied_values;
+        user_data->value_count = cycle_value_count;
     }
     
-    if (user_data && cb) {
-        lv_obj_add_event_cb(widget, cb, code, user_data);
-        // Add a cleanup handler for all action types that have user_data
-        lv_obj_add_event_cb(widget, free_action_user_data_cb, LV_EVENT_DELETE, user_data);
-        DEBUG_LOG(LOG_MODULE_DATABINDING, "Added action '%s' (type %d) to widget %p.", action_name, type, (void*)widget);
-    }
+    lv_obj_add_event_cb(widget, cb, code, user_data);
+    lv_obj_add_event_cb(widget, free_action_user_data_cb, LV_EVENT_DELETE, user_data);
+    DEBUG_LOG(LOG_MODULE_DATABINDING, "Added action '%s' (type %d) to widget %p.", action_name, type, (void*)widget);
 }
 
 
 // --- Event Callback Implementations ---
 
 static void free_action_user_data_cb(lv_event_t* e) {
-    void* user_data = lv_event_get_user_data(e);
+    ActionUserData* user_data = lv_event_get_user_data(e);
     if (user_data) {
-        // Special handling for cycle actions with heap-allocated value arrays
-        lv_event_code_t code = lv_event_get_code(e);
-        if (code == LV_EVENT_DELETE) {
-             CycleActionUserData* cycle_data = user_data;
-             if (cycle_data->values_are_heap_allocated && cycle_data->values) {
-                 DEBUG_LOG(LOG_MODULE_DATABINDING, "Freeing heap-allocated cycle values for action '%s'", cycle_data->action_name);
-                 free((void*)cycle_data->values);
-             }
+        if (user_data->type == ACTION_TYPE_CYCLE && user_data->values) {
+            // Free the deep-copied data
+            for (uint32_t i = 0; i < user_data->value_count; i++) {
+                if (user_data->values[i].type == BINDING_TYPE_STRING && user_data->values[i].as.s_val) {
+                    free((void*)user_data->values[i].as.s_val);
+                }
+            }
+            free(user_data->values);
         }
         DEBUG_LOG(LOG_MODULE_DATABINDING, "Freeing user_data for widget %p.", (void*)lv_event_get_target(e));
         free(user_data);
     }
 }
 
-static void trigger_event_cb(lv_event_t* e) {
+static void generic_action_event_cb(lv_event_t* e) {
     if (!app_action_handler) return;
-    TriggerActionUserData* user_data = lv_event_get_user_data(e);
+
+    ActionUserData* user_data = lv_event_get_user_data(e);
     binding_value_t val = {.type = BINDING_TYPE_NULL};
-    DEBUG_LOG(LOG_MODULE_DATABINDING, "Dispatching TRIGGER action: '%s'", user_data->action_name);
-    app_action_handler(user_data->action_name, val);
-}
 
-static void toggle_event_cb(lv_event_t* e) {
-    if (!app_action_handler) return;
-    ToggleActionUserData* user_data = lv_event_get_user_data(e);
-    lv_obj_t* widget = lv_event_get_target(e);
-    user_data->current_state = lv_obj_has_state(widget, LV_STATE_CHECKED);
-    binding_value_t val = {.type = BINDING_TYPE_BOOL, .as.b_val = user_data->current_state};
-    DEBUG_LOG(LOG_MODULE_DATABINDING, "Dispatching TOGGLE action: '%s', new state: %s", user_data->action_name, val.as.b_val ? "ON" : "OFF");
-    app_action_handler(user_data->action_name, val);
-}
+    switch(user_data->type) {
+        case ACTION_TYPE_TRIGGER:
+            DEBUG_LOG(LOG_MODULE_DATABINDING, "Dispatching TRIGGER action: '%s'", user_data->action_name);
+            // val is already NULL, which is correct.
+            break;
+        case ACTION_TYPE_TOGGLE:
+            val.type = BINDING_TYPE_BOOL;
+            val.as.b_val = lv_obj_has_state(lv_event_get_target(e), LV_STATE_CHECKED);
+            DEBUG_LOG(LOG_MODULE_DATABINDING, "Dispatching TOGGLE action: '%s', new state: %s", user_data->action_name, val.as.b_val ? "ON" : "OFF");
+            break;
+        case ACTION_TYPE_CYCLE:
+            if (user_data->value_count > 0) {
+                // Dispatch the current value first.
+                val = user_data->values[user_data->current_index];
+                DEBUG_LOG(LOG_MODULE_DATABINDING, "Dispatching CYCLE action: '%s', index: %u", user_data->action_name, user_data->current_index);
+                // Then increment the index for the *next* call.
+                user_data->current_index = (user_data->current_index + 1) % user_data->value_count;
+            }
+            break;
+    }
 
-static void cycle_event_cb(lv_event_t* e) {
-    if (!app_action_handler) return;
-    CycleActionUserData* user_data = lv_event_get_user_data(e);
-    
-    // Increment and wrap index
-    user_data->current_index = (user_data->current_index + 1) % user_data->value_count;
-    
-    // Get the new value from the list
-    binding_value_t new_val = user_data->values[user_data->current_index];
-    
-    // Dispatch the action
-    DEBUG_LOG(LOG_MODULE_DATABINDING, "Dispatching CYCLE action: '%s', index: %u", user_data->action_name, user_data->current_index);
-    app_action_handler(user_data->action_name, new_val);
+    if (app_action_handler) {
+        app_action_handler(user_data->action_name, val);
+    }
 }

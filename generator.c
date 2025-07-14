@@ -12,6 +12,7 @@
 
 // --- Global Configuration (from main.c) ---
 extern bool g_strict_mode;
+extern bool g_strict_registry_mode;
 
 // --- Generation Context ---
 typedef struct {
@@ -589,11 +590,20 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         if (len > 0 && s[len - 1] == '%') {
             char* temp_s = strdup(s);
             if (!temp_s) return NULL;
-            temp_s[len - 1] = '\0';
-            IRExprNode* args = NULL;
-            ir_expr_list_add(&args, ir_new_expr_literal(temp_s, "int32_t"));
+            temp_s[len - 1] = '\0'; // remove the '%'
+            
+            char* trimmed_num_part = trim_whitespace(temp_s);
+            char* endptr;
+            strtol(trimmed_num_part, &endptr, 10); // Try to parse it as an integer
+
+            // If the entire trimmed string was a valid number, endptr will point to the null terminator
+            if (*endptr == '\0' && endptr != trimmed_num_part) {
+                IRExprNode* args = NULL;
+                ir_expr_list_add(&args, ir_new_expr_literal(trimmed_num_part, "int32_t"));
+                free(temp_s);
+                return ir_new_expr_func_call("lv_pct", args, "lv_coord_t");
+            }
             free(temp_s);
-            return ir_new_expr_func_call("lv_pct", args, "lv_coord_t");
         }
 
         if (expected_c_type && api_spec_is_enum_member(ctx->api_spec, expected_c_type, s)) {

@@ -14,6 +14,8 @@
 
 char* read_file(const char* filename);
 
+char* trim_whitespace(char *str);
+
 #ifdef __DEBUG
   #define _dprintf fprintf
   #define _eprintf fprintf
