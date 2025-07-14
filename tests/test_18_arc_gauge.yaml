@@ -1,8 +1,0 @@
-# UI Test: An arc widget used as a simple gauge.
-- type: arc
-  size: [150, 150]
-  center: []
-  rotation: 135
-  bg_angles: [0, 270]
-  value: 75
-  set_value: 75 # Example of duplicate key

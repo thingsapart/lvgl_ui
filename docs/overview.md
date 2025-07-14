@@ -29,8 +29,8 @@ The generator's goal is to convert the *declarative* nature of JSON (defining "w
 
 -   A JSON object like `{ "type": "button", "id": "@my_btn", "width": 100 }`
 -   ...is translated into IR that represents the C code:
-    1.  `lv_obj_t* my_btn_0 = lv_button_create(parent);` (Constructor)
-    2.  `lv_obj_set_width(my_btn_0, 100);` (Setup Call)
+    1.  `lv_obj_t* my_btn_0 = lv_button_create(parent);` (Constructor in `IRObject->constructor_expr`)
+    2.  `lv_obj_set_width(my_btn_0, 100);` (Setup Call in `IRObject->operations` list)
 
 #### Detailed Functional Flow
 
@@ -47,12 +47,10 @@ The generator's goal is to convert the *declarative* nature of JSON (defining "w
         -   If the JSON has an `"init": { ... }` block, it's treated as an explicit constructor function call. `unmarshal_value` is called to generate an `IRExprFunctionCall`.
         -   Otherwise, it looks up the widget type in the `ApiSpec` to find its `create` function (e.g., `lv_label_create`) or `init` function (e.g., `lv_style_init`). It then creates an `IRExprFunctionCall` for this function. The first argument is always the parent's C variable name.
         -   This constructor expression is stored in the `IRObject->constructor_expr` field.
-    -   **Property/Method Processing:** It iterates over all other keys in the JSON object (e.g., `"text"`, `"width"`, `"add_flag"`).
-        -   For each key, it calls `api_spec_find_property()` to find the corresponding LVGL setter function (e.g., `width` -> `lv_obj_set_width`).
-        -   It calls `unmarshal_value()` on the JSON property's value (e.g., `"Hello"`, `100`, `"@another_obj"`) to convert it into an `IRExpr` node.
-        -   It creates an `IRExprFunctionCall` node representing the setter call (e.g., `lv_obj_set_width(my_button_0, 100)`). The target object (`my_button_0`) is the first argument, followed by the unmarshaled value expression.
-        -   This function call expression is added to the `IRObject->setup_calls` linked list.
-    -   **Child Processing:** If a `"children"` array exists, it recursively calls `parse_object` for each child, passing the current object's C name as the new parent. The resulting child `IRObject` nodes are added to the current object's `children` list.
+    -   **Property/Method/Child Processing:** It iterates over all other keys in the JSON object (e.g., `"text"`, `"width"`, `"add_flag"`, `"children"`).
+        -   **Properties/Methods:** For each key, it calls `api_spec_find_property()` to find the corresponding LVGL setter function (e.g., `width` -> `lv_obj_set_width`). It then converts the JSON property's value into an `IRExpr` and creates an `IRExprFunctionCall` node for the setter. This function call is added to the `IRObject->operations` linked list.
+        -   **Children:** If a `"children"` key exists, it recursively calls `parse_object` for each child. The resulting child `IRObject` node is also added to the current object's `operations` list, ensuring children are created after the parent is configured.
+        -   **Data Binding:** Keys like `"observes"` and `"action"` are translated into `IRObserver` and `IRAction` nodes, which are also added to the `operations` list.
 
 3.  **Value Unmarshaling (`unmarshal_value`):**
     -   This utility function converts a `cJSON` value into a specific `IRExpr` node. It's crucial for handling different value types.
@@ -80,8 +78,11 @@ The IR is defined in `ir.h` and `ir.c`. It's a tree of nodes that represents the
     -   `c_type`: The actual C type (e.g., `lv_obj_t*`).
     -   `registered_id`: The user-provided ID from JSON (e.g., `@my_label`).
     -   `constructor_expr`: An `IRExpr*` that generates the code to create the object (e.g., a call to `lv_label_create(parent)`).
-    -   `setup_calls`: A linked list of `IRExprFunctionCall` nodes for all the properties and methods applied to this object.
-    -   `children`: A linked list of child `IRObject` nodes.
+    -   **`operations`**: This is a crucial linked list of `IROperationNode`s. It contains an ordered sequence of all actions to be performed on or within the context of this object. This includes:
+        -   Setup calls (e.g., `lv_label_set_text(...)`).
+        -   Child object creation (`IRObject` nodes).
+        -   Data binding setup (`IRObserver`, `IRAction` nodes).
+        -   Generator warnings (`IRWarning` nodes).
 
 -   **`IRExpr` Family**: These nodes represent values and expressions.
     -   **`IRExprLiteral`**: Represents a literal value like `100`, `"Hello"`, or `true`.
@@ -111,8 +112,8 @@ It works in two passes:
     1.  It prints a `do { ... } while(0);` block to create a new C scope for the object and its children.
     2.  It prints the variable declaration based on the `c_type` and `c_name` from the `IRObject` node (e.g., `lv_obj_t* label_0;`).
     3.  It calls `print_expr` on the `IRObject->constructor_expr`. This generates the assignment line, e.g., `label_0 = lv_label_create(parent);`.
-    4.  It iterates through the `IRObject->setup_calls` list, calling `print_expr` for each one. This generates all the configuration calls, e.g., `lv_label_set_text(label_0, "Hello");`.
-    5.  It recursively calls `print_object_list` for the `IRObject->children`, passing the current object's `c_name` (`label_0`) as the `parent_c_name` for the children.
+    4.  It iterates through the `IRObject->operations` list. For each operation, it calls `print_node`, which handles printing child objects, setup calls, warnings, etc., in the correct order.
+    5.  The recursion for children happens within the `print_node` function when it encounters an `IR_NODE_OBJECT` in the operations list.
 
 **Expression Printing (`print_expr`)**
 

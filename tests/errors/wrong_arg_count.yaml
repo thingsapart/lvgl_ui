@@ -1,0 +1,5 @@
+# This test calls a function with the wrong number of arguments.
+- type: obj
+  id: '@test_obj'
+  # lv_obj_set_size expects two arguments (width, height), but is given one.
+  size: 150

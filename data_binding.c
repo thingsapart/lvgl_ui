@@ -70,15 +70,32 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
                 if (lv_obj_is_valid(current->observer.widget)) {
                     switch (current->observer.update_type) {
                         case OBSERVER_TYPE_LABEL_TEXT: {
-                            char buf[128];
+                            char* buf = NULL;
+                            int len = 0;
                             const char* fmt = current->observer.format_string ? current->observer.format_string : "%s";
+                            
+                            // Determine required buffer size
                             switch(new_value.type) {
-                                case BINDING_TYPE_FLOAT:  snprintf(buf, sizeof(buf), fmt, new_value.as.f_val); break;
-                                case BINDING_TYPE_BOOL:   snprintf(buf, sizeof(buf), fmt, new_value.as.b_val ? "ON" : "OFF"); break;
-                                case BINDING_TYPE_STRING: snprintf(buf, sizeof(buf), fmt, new_value.as.s_val); break;
-                                default:                  strncpy(buf, "N/A", sizeof(buf)-1); buf[sizeof(buf)-1] = '\0'; break;
+                                case BINDING_TYPE_FLOAT:  len = snprintf(NULL, 0, fmt, new_value.as.f_val); break;
+                                case BINDING_TYPE_BOOL:   len = snprintf(NULL, 0, fmt, new_value.as.b_val ? "ON" : "OFF"); break;
+                                case BINDING_TYPE_STRING: len = snprintf(NULL, 0, fmt, new_value.as.s_val); break;
+                                default:                  len = 3; break; // "N/A"
                             }
-                            lv_label_set_text(current->observer.widget, buf);
+                            
+                            if (len >= 0) {
+                                buf = malloc(len + 1);
+                                if(buf) {
+                                    // Format into the allocated buffer
+                                    switch(new_value.type) {
+                                        case BINDING_TYPE_FLOAT:  snprintf(buf, len + 1, fmt, new_value.as.f_val); break;
+                                        case BINDING_TYPE_BOOL:   snprintf(buf, len + 1, fmt, new_value.as.b_val ? "ON" : "OFF"); break;
+                                        case BINDING_TYPE_STRING: snprintf(buf, len + 1, fmt, new_value.as.s_val); break;
+                                        default:                  strcpy(buf, "N/A"); break;
+                                    }
+                                    lv_label_set_text(current->observer.widget, buf);
+                                    free(buf);
+                                }
+                            }
                             break;
                         }
                         case OBSERVER_TYPE_SWITCH_STATE:

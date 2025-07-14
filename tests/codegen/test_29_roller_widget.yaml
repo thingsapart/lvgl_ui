@@ -1,0 +1,5 @@
+# A "rolodex" style selector for choosing an option.
+- type: roller
+  lv_roller_set_options: ["January\nFebruary\nMarch\nApril\nMay\nJune\nJuly\nAugust\nSeptember\nOctober\nNovember\nDecember", LV_ROLLER_MODE_NORMAL]
+  lv_roller_set_visible_row_count: 4
+  center: []

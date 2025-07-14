@@ -1,0 +1,13 @@
+- type: obj
+  size: [300, 200]
+  # These properties don't exist, this test is just for parsing YAML scalars.
+  # The generator will correctly warn that these properties are not found.
+  # add_flag: true
+  # add_state: false
+  # text_decor: null
+  # x: 123
+  # y: 45.67
+  # text: "A string with spaces"
+  # long_mode: LV_LABEL_LONG_SCROLL
+  # bg_color: '#ABCDEF'
+  # opacity:

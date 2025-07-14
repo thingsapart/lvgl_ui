@@ -36,6 +36,13 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent, Regi
     render_object_list(api_spec, root->root_objects, registry);
     DEBUG_LOG(LOG_MODULE_RENDERER, "LVGL render backend finished.");
 
+    // *** THE FIX ***
+    // After all objects are created, explicitly update the layout of the parent container.
+    // This forces LVGL to calculate the final sizes and positions of all flex/grid children
+    // before the next draw cycle, ensuring alignments like LV_ALIGN_CENTER work correctly.
+    lv_obj_update_layout(parent);
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Forcing layout update on parent container.");
+
     // Note: The registry is NOT freed here. Its lifecycle is now managed by the caller (main).
 }
 
@@ -244,7 +251,9 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
                     cycle_values = evaluate_binding_array_expr(spec, registry, (IRExprArray*)act->data_expr, &cycle_count);
                 }
                 data_binding_add_action(c_obj, act->action_name, act->action_type, cycle_values, cycle_count);
-                // The data binding module now owns the `cycle_values` memory, so we don't free it here.
+                if (cycle_values) {
+                    free(cycle_values);
+                }
             }
             else {
                 // It's an expression (a setup call or runtime registration). Evaluate it.

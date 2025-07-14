@@ -1,0 +1,8 @@
+# A simple centered button to test basic rendering.
+- type: button
+  size: [120, 50]
+  center: []
+  children:
+    - type: label
+      text: Click Me
+      center: []

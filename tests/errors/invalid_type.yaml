@@ -1,0 +1,4 @@
+# Tests an object with a type that does not exist in the api_spec.
+# The generator should fall back to a generic 'obj' and issue a warning.
+- type: non_existent_widget
+  id: '@invalid_obj'

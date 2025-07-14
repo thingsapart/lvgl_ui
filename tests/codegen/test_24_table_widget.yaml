@@ -1,0 +1,9 @@
+# A simple 2x3 table with custom column widths and populated cells.
+- type: table
+  size: [240, 100]
+  center: []
+  lv_table_set_column_width: [0, 60]
+  lv_table_set_cell_value: [0, 0, 'Header 1']
+  lv_table_set_cell_value: [0, 1, 'Header 2']
+  lv_table_set_cell_value: [1, 0, 'Cell 1']
+  lv_table_set_cell_value: [1, 1, 'Cell 2']

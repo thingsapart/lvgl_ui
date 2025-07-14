@@ -1,0 +1,14 @@
+- type: style
+  id: '@btn_style'
+  bg_color: '#3498db' # A nice blue
+  border_width: 0
+  radius: 8
+
+- type: button
+  add_style: ['@btn_style', 0]
+  size: [150, 60]
+  center: []
+  children:
+    - type: label
+      text: Styled Button
+      center: []

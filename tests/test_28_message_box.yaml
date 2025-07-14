@@ -1,7 +1,0 @@
-# A message box with a title, text, and some buttons.
-- type: msgbox
-  title: 'Confirmation'
-  text: "Are you sure you want to proceed?"
-  add_close_button: true
-  buttons: ["Apply", "Cancel", ""]
-  center: []

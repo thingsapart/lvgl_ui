@@ -2,11 +2,13 @@ CC = gcc
 
 ifneq ("$(wildcard ./cJSON/libcjson.a)","")
     LIB_CJSON = ./cJSON/libcjson.a
-		INC_CJSON = -I./cJSON
+    INC_CJSON = -I./cJSON
 else
     LIBCJSON = -lcjson
-		INC_CJSON = -I/usr/include/cjson
+    INC_CJSON = -I/usr/include/cjson
 endif
+
+INC_LODE_PNG = -I./libs
 
 # Define the LVGL directory relative to this script
 LVGL_DIR = $(PWD)/lvgl
@@ -45,12 +47,17 @@ DYNAMIC_LVGL_CFLAGS ?= -DENABLE_IR_INPUTS # Default to only IR inputs
 # Add DYNAMIC_LVGL_CFLAGS to general CFLAGS
 CFLAGS += $(DYNAMIC_LVGL_CFLAGS)
 
-SOURCES = api_spec.c ir.c registry.c generator.c ir_printer.c ir_debug_printer.c c_code_printer.c utils.c debug_log.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c viewer/view_inspector.c lvgl_renderer.c yaml_parser.c warning_printer.c data_binding.c
+SOURCES = api_spec.c ir.c registry.c generator.c ir_printer.c ir_debug_printer.c c_code_printer.c utils.c debug_log.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c viewer/view_inspector.c lvgl_renderer.c yaml_parser.c warning_printer.c data_binding.c libs/lodepng.c
 OBJECTS = $(SOURCES:.c=.o)
 
 # Main target rule now depends on the LVGL library
 $(TARGET): $(OBJECTS) main.o $(LVGL_LIB)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJECTS) main.o $(LIBS)
+
+$(OBJECTS): %.o: %.c
+	@echo "Compiling $<..."
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Rule to build the LVGL static library if it doesn't exist.
 # This rule is triggered because $(LVGL_LIB) is a prerequisite for $(TARGET).
@@ -116,10 +123,6 @@ ex_cnc/cnc_main_live.o: ex_cnc/cnc_main.c
 
 ex_cnc/cnc_main_native.o: ex_cnc/cnc_main.c
 	$(CC) $(CFLAGS) -DCNC_STATIC_BUILD_MODE -c $< -o $@
-
-%.o: %.c
-	@echo "Compiling $< with CFLAGS=$(CFLAGS)"
-	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	@rm -f $(OBJECTS) $(TARGET) $(DYNAMIC_LVGL_H) $(DYNAMIC_LVGL_C) $(DYNAMIC_LVGL_O)

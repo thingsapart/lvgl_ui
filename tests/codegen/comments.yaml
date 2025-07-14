@@ -1,0 +1,9 @@
+# Tests that comments are correctly ignored by the parser.
+- type: obj
+  # This is a comment inside an object.
+  id: '@root_obj'
+  children:
+    - type: label
+      # Another comment.
+      text: "This label should be created"
+      # And a final one.

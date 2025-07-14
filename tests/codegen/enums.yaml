@@ -1,0 +1,4 @@
+# Tests that enum strings are correctly resolved.
+- type: label
+  add_flag: LV_OBJ_FLAG_FLOATING
+  bg_opa: LV_OPA_COVER

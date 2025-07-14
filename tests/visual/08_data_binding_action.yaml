@@ -1,0 +1,12 @@
+# A simple data binding test where clicking a button triggers an action.
+# This test requires a minimal application harness to see the log output.
+- type: button
+  id: '@my_action_btn'
+  center: []
+  size: [150, 50]
+  action:
+    my_button_click: trigger
+  children:
+    - type: label
+      text: Trigger Action
+      center: []

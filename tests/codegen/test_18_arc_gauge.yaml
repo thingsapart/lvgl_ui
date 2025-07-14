@@ -1,0 +1,7 @@
+# UI Test: An arc widget used as a simple gauge.
+- type: arc
+  size: [150, 150]
+  center: []
+  lv_arc_set_rotation: 135
+  lv_arc_set_bg_angles: [0, 270]
+  lv_arc_set_value: 75

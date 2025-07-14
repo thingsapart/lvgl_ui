@@ -35,13 +35,11 @@ typedef struct {
     char* c_type;                 // Corresponding C type (e.g., "int", "const char*", "lv_color_t")
     char* setter;                 // Name of the LVGL setter function (e.g., "lv_obj_set_width")
     char* widget_type_hint;       // For which widget type this setter is primarily for (e.g. "obj", "label", "style") helps construct setter if not explicit
-    // int num_style_args;           // REMOVED
-    // char* style_part_default;     // REMOVED
-    // char* style_state_default;    // REMOVED
     bool is_style_prop;           // True if this property is generally set on style objects or via local style setters
     char* obj_setter_prefix;      // For global properties, e.g. "lv_obj_set_style" for "text_color" -> "lv_obj_set_style_text_color"
-    FunctionArg* func_args;       // NEW FIELD: Linked list of arguments if this property resolves to a function/method with a known signature.
-    char* expected_enum_type; // MODIFIED: Name of the enum type expected by this property (now non-const).
+    const FunctionArg* func_args; // NEW FIELD: Linked list of arguments if this property resolves to a function/method with a known signature.
+    char* expected_enum_type;     // MODIFIED: Name of the enum type expected by this property (now non-const).
+    bool is_heap_allocated;       // NEW: True if this struct was allocated on the heap and must be freed by the caller.
 } PropertyDefinition;
 
 typedef struct PropertyDefinitionNode {
@@ -57,7 +55,6 @@ typedef struct WidgetDefinition {
     char* init_func;    // ADDED: Initialization function for objects (e.g., "lv_style_init")
     PropertyDefinitionNode* properties; // Linked list of applicable properties
     FunctionMapNode* methods; // Linked list of methods specific to this widget
-    // char* parent_type; // Optional: expected parent type
 } WidgetDefinition;
 
 // Node for the linked list of widget definitions (maps widget type name to its definition)
@@ -92,8 +89,14 @@ const WidgetDefinition* api_spec_find_widget(const ApiSpec* spec, const char* wi
 // Retrieves property definition for a specific widget type or API object type.
 // type_name: e.g., "button", "label", "obj" (for common ones), "style"
 // prop_name: the name of the property.
-// Returns NULL if the property is not found for that type.
+// Returns a const pointer to a property definition. If the property is synthesized
+// on-the-fly (from a method or global function), it will be heap-allocated.
+// Use `prop->is_heap_allocated` to check and free it with `api_spec_free_property`
+// when you are done.
 const PropertyDefinition* api_spec_find_property(const ApiSpec* spec, const char* type_name, const char* prop_name);
+
+// Frees a PropertyDefinition struct, but only if it was heap-allocated.
+void api_spec_free_property(const PropertyDefinition* prop);
 
 // Suggests a valid property name based on a misspelled one using Levenshtein distance.
 // Returns a pointer to a static buffer containing the suggestion, or NULL if no good match is found.
