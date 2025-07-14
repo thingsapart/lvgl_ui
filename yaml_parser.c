@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include "utils.h"
 
 #define YAML_PARSER_MAX_DEPTH 64
 #define YAML_PARSER_MAX_LINE_LEN 1024
@@ -55,16 +56,6 @@ static void cjson_add_item_to_object_with_duplicates(cJSON *object, const char *
 
 
 // --- String & Line Helpers ---
-
-static char* trim_whitespace(char *str) {
-    char *end;
-    while (isspace((unsigned char)*str)) str++;
-    if (*str == 0) return str;
-    end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end)) end--;
-    *(end + 1) = 0;
-    return str;
-}
 
 static int get_indent(const char *line) {
     int indent = 0;
@@ -247,39 +238,54 @@ void parse_line(ParserState *state, int line_idx) {
 
     cJSON *parent = state->stack[state->stack_top].node;
 
-    char *item_content = content;
+    // --- CASE 1: Line is a list item ---
     if (*content == '-') {
         if (!cJSON_IsArray(parent)) {
             set_error(state, "Found list item '-' in a non-array context.");
             return;
         }
 
+        char *item_content = trim_whitespace(content + 1);
+
+        // Check if the item is a flow-style collection on the same line
+        if (*item_content == '{' || *item_content == '[') {
+            cJSON* flow_node = parse_value_string(item_content, state);
+            cJSON_AddItemToArray(parent, flow_node);
+            return; // This line is fully processed
+        }
+
+        // It's a block-style item. Create a new object for it.
         cJSON *new_obj = cJSON_CreateObject();
         cJSON_AddItemToArray(parent, new_obj);
         push_stack(state, new_obj, indent);
-        parent = new_obj;
-        item_content = trim_whitespace(content + 1);
         
-        if (*item_content == '\0') {
-            return;
-        }
+        // FIX: Update the local parent variable to the new object context
+        parent = new_obj;
 
-    } else {
-        if (!cJSON_IsObject(parent)) {
-            set_error(state, "Found key-value pair in a non-object context.");
-            return;
+        // If there's content on the same line, process it as a k:v pair for the new object.
+        if (*item_content != '\0') {
+            content = item_content; // The rest of the logic will process this content.
+        } else {
+            return; // No content on this line, wait for the next indented line.
         }
     }
-
-    char *colon = strchr(item_content, ':');
+    
+    // --- CASE 2: Line is a key-value pair ---
+    if (!cJSON_IsObject(parent)) {
+        set_error(state, "Found key-value pair in a non-object context.");
+        return;
+    }
+    
+    char *colon = strchr(content, ':');
     if (!colon) {
-        set_error(state, "Invalid item (missing ':'). Content: '%s'", item_content);
+        set_error(state, "Invalid item (missing ':'). Content: '%s'", content);
         return;
     }
     *colon = '\0';
-    char *key = trim_whitespace(item_content);
+    char *key = trim_whitespace(content);
     char *val_str = colon + 1;
 
+    // Remove trailing comments from the value part
     bool in_single_quotes = false;
     bool in_double_quotes = false;
     char *p = val_str;
@@ -295,39 +301,38 @@ void parse_line(ParserState *state, int line_idx) {
     char *trimmed_val_str = trim_whitespace(val_str);
 
     if (*trimmed_val_str == '\0') {
+        // Value is empty. This implies a block follows. Peek ahead.
         int next_content_indent = -1;
-        char* next_content_start = NULL;
+        char first_char_of_next_content = '\0';
         for (int j = line_idx + 1; j < state->num_lines; j++) {
-            char temp_line[YAML_PARSER_MAX_LINE_LEN];
-            strncpy(temp_line, state->lines[j], YAML_PARSER_MAX_LINE_LEN-1);
-            temp_line[YAML_PARSER_MAX_LINE_LEN-1] = '\0';
+            // Make a copy of the line to safely trim it
+            char next_line_copy[YAML_PARSER_MAX_LINE_LEN];
+            strncpy(next_line_copy, state->lines[j], sizeof(next_line_copy) - 1);
+            next_line_copy[sizeof(next_line_copy) - 1] = '\0';
 
-            int current_indent = get_indent(temp_line);
-            char* current_content = trim_whitespace(temp_line + current_indent);
-            
+            int current_indent = get_indent(next_line_copy);
+            char* current_content = trim_whitespace(next_line_copy + current_indent);
+
             if (*current_content == '\0' || *current_content == '#') {
-                continue;
+                continue; // Skip empty/comment lines
             }
             next_content_indent = current_indent;
-            next_content_start = current_content;
+            first_char_of_next_content = *current_content;
             break;
         }
 
         if (next_content_indent > indent) {
-            bool is_list = (next_content_start && *next_content_start == '-');
-            if (is_list) {
-                cJSON *arr = cJSON_CreateArray();
-                cjson_add_item_to_object_with_duplicates(parent, key, arr);
-                push_stack(state, arr, indent);
-            } else {
-                cJSON *obj = cJSON_CreateObject();
-                cjson_add_item_to_object_with_duplicates(parent, key, obj);
-                push_stack(state, obj, indent);
-            }
+            // Indented block follows.
+            bool is_list = (first_char_of_next_content == '-');
+            cJSON *new_container = is_list ? cJSON_CreateArray() : cJSON_CreateObject();
+            cjson_add_item_to_object_with_duplicates(parent, key, new_container);
+            push_stack(state, new_container, indent);
         } else {
+            // No indented block, it's just a key with a null value.
             cjson_add_item_to_object_with_duplicates(parent, key, cJSON_CreateNull());
         }
     } else {
+        // Value is on the same line.
         cJSON *val_node = parse_value_string(trimmed_val_str, state);
         cjson_add_item_to_object_with_duplicates(parent, key, val_node);
     }
@@ -338,31 +343,71 @@ void parse_line(ParserState *state, int line_idx) {
 
 cJSON* yaml_to_cjson(const char* yaml_content, char** error_message) {
     if (!yaml_content) {
-        *error_message = strdup("Input YAML content is NULL.");
+        if (error_message) *error_message = strdup("Input YAML content is NULL.");
         return NULL;
     }
-    
+
     ParserState state = {0};
     state.error = error_message;
-    *error_message = NULL;
+    if (error_message) *error_message = NULL;
     state.stack_top = -1;
 
     char* content_copy = strdup(yaml_content);
+    if (!content_copy) {
+         if (error_message) *error_message = strdup("Failed to allocate memory for YAML content copy.");
+         return NULL;
+    }
     split_lines(&state, content_copy);
 
-    cJSON *root = cJSON_CreateArray();
-    push_stack(&state, root, -1);
-    
+    // Find the first non-empty, non-comment line to determine the root type.
+    int first_content_line_idx = -1;
+    bool root_is_sequence = false;
+    cJSON *root = NULL;
+
     for (int i = 0; i < state.num_lines; i++) {
-        parse_line(&state, i);
-        if (*state.error) break;
+        char temp_line[YAML_PARSER_MAX_LINE_LEN];
+        strncpy(temp_line, state.lines[i], sizeof(temp_line) - 1);
+        temp_line[sizeof(temp_line) - 1] = '\0';
+        char* content = trim_whitespace(temp_line);
+        if (*content == '\0' || *content == '#') continue;
+
+        first_content_line_idx = i;
+        if (*content == '-') {
+            root_is_sequence = true;
+        }
+        break;
     }
 
-    free(content_copy); // Frees the buffer used by strtok
+    if (first_content_line_idx == -1) { // Empty file
+        free(content_copy);
+        return cJSON_CreateArray(); // Return empty array
+    }
 
-    if (*state.error) {
+    if (root_is_sequence) {
+        root = cJSON_CreateArray();
+        push_stack(&state, root, -1);
+    } else {
+        root = cJSON_CreateObject();
+        push_stack(&state, root, -1);
+    }
+
+    for (int i = first_content_line_idx; i < state.num_lines; i++) {
+        parse_line(&state, i);
+        if (state.error && *state.error) break;
+    }
+
+    free(content_copy);
+
+    if (state.error && *state.error) {
         cJSON_Delete(root);
         return NULL;
+    }
+
+    // If the root was a mapping, wrap it in an array to satisfy the generator's contract.
+    if (!root_is_sequence && root) {
+        cJSON* array_wrapper = cJSON_CreateArray();
+        cJSON_AddItemToArray(array_wrapper, root);
+        return array_wrapper;
     }
 
     return root;

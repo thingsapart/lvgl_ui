@@ -18,6 +18,22 @@ typedef struct IdMapNode {
     struct IdMapNode* next;
 } IdMapNode;
 
+// --- Static Array to C-Name Mapping ---
+// For generating static const arrays for LVGL properties
+typedef struct ArrayMapNode {
+    const IRExprArray* array_node; // Key: The IR node pointer
+    char* c_name;                  // Value: The generated C variable name
+    struct ArrayMapNode* next;
+} ArrayMapNode;
+
+
+// --- Forward Declarations ---
+static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_map, ArrayMapNode* array_map, bool pass_by_ref_for_struct);
+static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* id_map, ArrayMapNode* array_map);
+static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* id_map, ArrayMapNode* array_map);
+static void find_and_map_arrays_in_expr(IRExpr* expr, ArrayMapNode** map_head, int* counter);
+
+// --- Map Helpers: ID Map ---
 static void id_map_add(IdMapNode** map_head, const char* id, const char* c_name, const char* c_type) {
     if (!id || !c_name || !c_type) return;
     IdMapNode* new_node = malloc(sizeof(IdMapNode));
@@ -52,10 +68,35 @@ static void id_map_free(IdMapNode* map_head) {
 }
 
 
-// --- Forward Declarations ---
-static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, bool pass_by_ref_for_struct);
-static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* map);
-static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* map);
+// --- Map Helpers: Array Map ---
+
+static void array_map_add(ArrayMapNode** map_head, const IRExprArray* array_node, const char* c_name) {
+    ArrayMapNode* new_node = malloc(sizeof(ArrayMapNode));
+    if (!new_node) render_abort("Failed to allocate ArrayMapNode");
+    new_node->array_node = array_node;
+    new_node->c_name = strdup(c_name);
+    new_node->next = *map_head;
+    *map_head = new_node;
+}
+
+static const char* array_map_get_name(ArrayMapNode* map_head, const IRExprArray* array_node) {
+    for (ArrayMapNode* current = map_head; current; current = current->next) {
+        if (current->array_node == array_node) {
+            return current->c_name;
+        }
+    }
+    return NULL;
+}
+
+static void array_map_free(ArrayMapNode* map_head) {
+    ArrayMapNode* current = map_head;
+    while (current) {
+        ArrayMapNode* next = current->next;
+        free(current->c_name);
+        free(current);
+        current = next;
+    }
+}
 
 
 // --- Printing Helpers ---
@@ -86,17 +127,17 @@ static void print_c_string_literal(const char* str, size_t len) {
     printf("\"");
 }
 
-static void print_expr_list(IRExprNode* head, const char* parent_c_name, IdMapNode* map) {
+static void print_expr_list(IRExprNode* head, const char* parent_c_name, IdMapNode* id_map, ArrayMapNode* array_map) {
     bool first = true;
     for (IRExprNode* current = head; current; current = current->next) {
         if (!first) printf(", ");
         // When passing arguments to functions, non-pointer structs should be passed by reference.
-        print_expr(current->expr, parent_c_name, map, true);
+        print_expr(current->expr, parent_c_name, id_map, array_map, true);
         first = false;
     }
 }
 
-static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, bool pass_by_ref_for_struct) {
+static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_map, ArrayMapNode* array_map, bool pass_by_ref_for_struct) {
     if (!expr) { printf("NULL"); return; }
 
     switch (expr->base.type) {
@@ -124,12 +165,12 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, 
 
             if (strcmp(name, "parent") == 0) {
                 c_name_to_print = parent_c_name;
-                 const IdMapNode* parent_node = id_map_get_node(map, parent_c_name);
+                 const IdMapNode* parent_node = id_map_get_node(id_map, parent_c_name);
                  if (parent_node) c_type_of_ref = parent_node->c_type;
 
             } else {
                 const char* lookup_key = (name[0] == '@') ? name + 1 : name;
-                const IdMapNode* node = id_map_get_node(map, lookup_key);
+                const IdMapNode* node = id_map_get_node(id_map, lookup_key);
                 if (node) {
                     c_name_to_print = node->c_name;
                     c_type_of_ref = node->c_type;
@@ -158,12 +199,14 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, 
         case IR_EXPR_FUNCTION_CALL: {
             IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
             printf("%s(", call->func_name);
-            print_expr_list(call->args, parent_c_name, map);
+            print_expr_list(call->args, parent_c_name, id_map, array_map);
             printf(")");
             break;
         }
         case IR_EXPR_ARRAY: {
             IRExprArray* arr = (IRExprArray*)expr;
+
+            // Special case for data binding arrays, which are always stack-based compound literals
             if (strcmp(arr->base.c_type, "binding_value_t*") == 0) {
                  printf("(const binding_value_t[]) { ");
                  for (IRExprNode* n = arr->elements; n; n = n->next) {
@@ -172,35 +215,42 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, 
                         IRExprLiteral* lit = (IRExprLiteral*)n->expr;
                         if (lit->is_string) {
                             printf(".type=BINDING_TYPE_STRING, .as.s_val=");
-                            print_expr(n->expr, parent_c_name, map, false);
+                            print_expr(n->expr, parent_c_name, id_map, array_map, false);
                         } else {
                             if (strcmp(lit->value, "true") == 0 || strcmp(lit->value, "false") == 0) {
                                 printf(".type=BINDING_TYPE_BOOL, .as.b_val=%s", lit->value);
-                            } else if (strchr(lit->value, '.')) {
-                                printf(".type=BINDING_TYPE_FLOAT, .as.f_val=%s", lit->value);
                             } else {
-                                printf(".type=BINDING_TYPE_INT, .as.i_val=%s", lit->value);
+                                // **THE FIX**: Ensure a decimal point is present for float literals.
+                                printf(".type=BINDING_TYPE_FLOAT, .as.f_val=%s", lit->value);
+                                if (strchr(lit->value, '.') == NULL) {
+                                    printf(".0");
+                                }
+                                printf("f");
                             }
                         }
                     }
                     printf(" }");
                     if (n->next) printf(", ");
                  }
-            } else {
-                // Original logic for primitive arrays
-                char* base_type = get_array_base_type(arr->base.c_type);
-                printf("(%s[]){ ", base_type ? base_type : "void*" );
-                print_expr_list(arr->elements, parent_c_name, map);
-                free(base_type);
+                 printf(" }");
+                 break; // Exit the case
             }
-            printf(" }");
+
+            // For all other arrays, look up the pre-declared static variable name.
+            const char* array_c_name = array_map_get_name(array_map, arr);
+            if (array_c_name) {
+                printf("%s", array_c_name);
+            } else {
+                // Fallback for an unmapped array (should not happen in normal flow)
+                printf("/* UNMAPPED_ARRAY */ NULL");
+            }
             break;
         }
         case IR_EXPR_RUNTIME_REG_ADD: {
             IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
             printf("obj_registry_add(\"%s\", ", reg->id);
             // when registering, we need to pass the address of a struct, but the value of a pointer.
-            print_expr(reg->object_expr, parent_c_name, map, true);
+            print_expr(reg->object_expr, parent_c_name, id_map, array_map, true);
             printf(")");
             break;
         }
@@ -210,11 +260,11 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* map, 
     }
 }
 
-static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* map) {
+static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* id_map, ArrayMapNode* array_map) {
     if (!node) return;
     switch(node->type) {
         case IR_NODE_OBJECT:
-            print_object_list((IRObject*)node, indent_level, target_c_name, map);
+            print_object_list((IRObject*)node, indent_level, target_c_name, id_map, array_map);
             break;
         case IR_NODE_WARNING:
             print_indent(indent_level);
@@ -238,7 +288,7 @@ static void print_node(IRNode* node, int indent_level, const char* parent_c_name
                    act->action_name,
                    act->action_type);
             if (act->data_expr) {
-                print_expr(act->data_expr, parent_c_name, map, false);
+                print_expr(act->data_expr, parent_c_name, id_map, array_map, false);
                 // Also need to print the count
                 if (act->data_expr->base.type == IR_EXPR_ARRAY) {
                     int count = 0;
@@ -254,7 +304,7 @@ static void print_node(IRNode* node, int indent_level, const char* parent_c_name
         default:
             // Must be an expression
             print_indent(indent_level);
-            print_expr((IRExpr*)node, parent_c_name, map, false);
+            print_expr((IRExpr*)node, parent_c_name, id_map, array_map, false);
             printf(";\n");
             break;
     }
@@ -286,7 +336,50 @@ static void build_id_map_recursive(IRObject* head, IdMapNode** map_head) {
     }
 }
 
-static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* map) {
+
+static void find_and_map_arrays_in_expr(IRExpr* expr, ArrayMapNode** map_head, int* counter) {
+    if (!expr) return;
+
+    if (expr->base.type == IR_EXPR_ARRAY) {
+        IRExprArray* arr = (IRExprArray*)expr;
+        // IMPORTANT: Skip data-binding arrays, which are handled as compound literals.
+        if (strcmp(arr->base.c_type, "binding_value_t*") != 0) {
+            if (!array_map_get_name(*map_head, arr)) {
+                char name_buf[64];
+                snprintf(name_buf, sizeof(name_buf), "s_static_array_%d", (*counter)++);
+                array_map_add(map_head, arr, name_buf);
+            }
+        }
+        // Recursively search inside the array elements
+        for (IRExprNode* elem_node = arr->elements; elem_node; elem_node = elem_node->next) {
+            find_and_map_arrays_in_expr(elem_node->expr, map_head, counter);
+        }
+    } else if (expr->base.type == IR_EXPR_FUNCTION_CALL) {
+        IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
+        for (IRExprNode* arg_node = call->args; arg_node; arg_node = arg_node->next) {
+            find_and_map_arrays_in_expr(arg_node->expr, map_head, counter);
+        }
+    }
+}
+
+static void build_array_map_recursive(IRObject* head, ArrayMapNode** map_head, int* counter) {
+    for (IRObject* current = head; current; current = current->next) {
+        find_and_map_arrays_in_expr(current->constructor_expr, map_head, counter);
+
+        if (current->operations) {
+            for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
+                if (op_node->op_node->type == IR_NODE_OBJECT) {
+                    build_array_map_recursive((IRObject*)op_node->op_node, map_head, counter);
+                } else {
+                    find_and_map_arrays_in_expr((IRExpr*)op_node->op_node, map_head, counter);
+                }
+            }
+        }
+    }
+}
+
+
+static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* id_map, ArrayMapNode* array_map) {
     for (IRObject* current = head; current; current = current->next) {
         if(strncmp(current->json_type, "//", 2) == 0) continue; // Skip comment objects
 
@@ -309,7 +402,7 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             // Otherwise, they are initialized to NULL.
             printf("%s %s = ", current->c_type, current->c_name);
             if (current->constructor_expr) {
-                print_expr(current->constructor_expr, parent_c_name, map, false);
+                print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
             } else {
                 printf("NULL");
             }
@@ -320,7 +413,7 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             if (current->constructor_expr) {
                 // The constructor must be a void function like `lv_style_init(&style_0)`
                 print_indent(content_indent);
-                print_expr(current->constructor_expr, parent_c_name, map, false);
+                print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
                 printf(";\n");
             }
         }
@@ -329,7 +422,7 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             printf("\n");
             IROperationNode* op_node = current->operations;
             while(op_node) {
-                print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, map);
+                print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map);
                 op_node = op_node->next;
             }
         }
@@ -353,18 +446,42 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
     printf("#include \"data_binding.h\"\n\n");
     printf("void create_ui(lv_obj_t* parent) {\n");
 
+    // Pre-pass 1: Build map of IDs to C variable names
     IdMapNode* id_map = NULL;
     build_id_map_recursive(root->root_objects, &id_map);
     id_map_add(&id_map, "parent", "parent", "lv_obj_t*");
 
+    // Pre-pass 2: Build map of IRExprArray nodes to generated static C variable names
+    ArrayMapNode* array_map = NULL;
+    int array_counter = 0;
+    build_array_map_recursive(root->root_objects, &array_map, &array_counter);
+
+    // Print all static array declarations at the top of the function
+    if (array_map) {
+        print_indent(1);
+        printf("// --- Static Arrays for LVGL properties ---\n");
+        for (ArrayMapNode* current = array_map; current; current = current->next) {
+            const IRExprArray* arr = current->array_node;
+            char* base_type = get_array_base_type(arr->base.c_type);
+            print_indent(1);
+            printf("static const %s %s[] = { ", base_type, current->c_name);
+            print_expr_list(arr->elements, "parent", id_map, array_map);
+            printf(" };\n");
+            free(base_type);
+        }
+        printf("\n");
+    }
+
     if (root->root_objects) {
-        print_object_list(root->root_objects, 1, "parent", id_map);
+        print_object_list(root->root_objects, 1, "parent", id_map, array_map);
     } else {
         print_indent(1);
         printf("/* (No root objects) */\n");
     }
 
     printf("}\n");
-    id_map_free(id_map);
-}
 
+    // Cleanup
+    id_map_free(id_map);
+    array_map_free(array_map);
+}

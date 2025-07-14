@@ -9,10 +9,10 @@
 
 /**
  * @brief Enum for the types of values that can be passed through the binding system.
+ * Numeric types have been consolidated into BINDING_TYPE_FLOAT.
  */
 typedef enum {
     BINDING_TYPE_NULL,
-    BINDING_TYPE_INT,
     BINDING_TYPE_FLOAT,
     BINDING_TYPE_BOOL,
     BINDING_TYPE_STRING,
@@ -24,7 +24,6 @@ typedef enum {
 typedef struct {
     binding_value_type_t type;
     union {
-        int32_t i_val;
         float f_val;
         bool b_val;
         const char* s_val; // Assumed to be a persistent string

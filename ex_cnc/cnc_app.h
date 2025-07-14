@@ -13,7 +13,8 @@ typedef struct {
     bool spindle_on;
     bool program_running;
     int feed_override; // Percentage
-    
+    float jog_step;    // The distance for manual jog moves
+
     // Internal state for simulation
     float sim_angle;
     float sim_radius;

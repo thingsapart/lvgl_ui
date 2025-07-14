@@ -3,6 +3,18 @@
 #include <stdlib.h>
 #include "utils.h"
 #include <limits.h>
+#include <string.h>
+#include <ctype.h>
+
+char* trim_whitespace(char *str) {
+    char *end;
+    while (isspace((unsigned char)*str)) str++;
+    if (*str == 0) return str;
+    end = str + strlen(str) - 1;
+    while (end > str && isspace((unsigned char)*end)) end--;
+    *(end + 1) = 0;
+    return str;
+}
 
 char* read_file(const char* filename) {
     FILE* f = fopen(filename, "rb");
@@ -21,9 +33,6 @@ char* read_file(const char* filename) {
     fclose(f);
     return buffer;
 }
-
-#include <string.h>
-#include <ctype.h>
 
 // Helper function to convert a single hex digit character to its integer value
 static int hex_digit_to_val(char c) {
@@ -309,4 +318,3 @@ char* get_array_base_type(const char* array_c_type) {
     free(type_copy);
     return result;
 }
-
