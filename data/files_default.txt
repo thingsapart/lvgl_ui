@@ -1,0 +1,8 @@
+docs/overview.md
+data/api_spec_sample.json
+data/lv_def_sample.json
+*.c
+*.h
+viewer/*.c
+viewer/*.h
+generate_dynamic_lvgl_dispatch.py

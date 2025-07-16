@@ -4,24 +4,17 @@
 # and copy it to the clipboard.
 #
 # Usage:
-#   ./script.sh              - Processes predefined files and copies to clipboard.
-#   ./script.sh file1.c *.h  - Processes specified files and copies to clipboard.
-#   ./script.sh --print      - Processes predefined files and prints to stdout.
-#   ./script.sh --print *.py - Processes specified python files and prints to stdout.
+#   ./concat_files.sh                  - Processes files listed in data/files_default.txt.
+#   ./concat_files.sh file1.c *.h      - Processes specified files, ignoring the default list.
+#   ./concat_files.sh + file1.c *.h    - Adds specified files to the list from data/files_default.txt.
+#   ./concat_files.sh --print          - Prints to stdout instead of copying. Can be combined with other arguments.
+#
+# Note: Options like --print and + must come before file arguments.
+#   Example: ./concat_files.sh --print + file1.c
 
 # --- Configuration ---
-# Add your default files and glob patterns to this list.
-# Note: For recursive globs like 'src/**/*.js', 'globstar' must be enabled.
-PREDEFINED_FILES=(
-  "docs/overview.md"
-  "data/api_spec_sample.json"
-  "data/lv_def_sample.json"
-  "*.c"
-  "*.h"
-  "viewer/*.c"
-  "viewer/*.h"
-  "generate_dynamic_lvgl_dispatch.py"
-)
+# The default list of files is read from this file, one pattern per line.
+DEFAULT_FILES_CONFIG="data/files_default.txt"
 
 # --- Script Logic ---
 
@@ -40,22 +33,47 @@ else
   COPY_CMD=""
 fi
 
-# --- Argument Parsing ---
+# --- Argument Parsing and File List Generation ---
 PRINT_ONLY=false
+ADD_MODE=false
+
+# Handle flags. They must appear before file arguments.
 if [[ "$1" == "--print" ]]; then
   PRINT_ONLY=true
   shift # Remove --print from the list of arguments
 fi
 
+if [[ "$1" == "+" ]]; then
+  ADD_MODE=true
+  shift # Remove '+' from the list of arguments
+fi
+
+# Load predefined files from the configuration file.
+PREDEFINED_FILES=()
+if [ -f "$DEFAULT_FILES_CONFIG" ]; then
+    # Use mapfile to read lines into an array. -t removes trailing newlines.
+    mapfile -t PREDEFINED_FILES < "$DEFAULT_FILES_CONFIG"
+else
+  # The config file is required in default mode or add mode, but not replace mode.
+  if [[ "$#" -eq 0 || "$ADD_MODE" = true ]]; then
+    echo "Error: Default file list '$DEFAULT_FILES_CONFIG' not found." >&2
+    echo "Please create it or specify file paths directly to use replace mode." >&2
+    exit 1
+  fi
+fi
+
 # Enable recursive globbing (e.g., **/*.js)
 shopt -s globstar
 
-# Determine which list of files to use
-if [ "$#" -gt 0 ]; then
-  # If command-line arguments are provided, use them.
+# Determine the final list of files to process based on the mode.
+if [ "$ADD_MODE" = true ]; then
+  # ADD mode: Combine predefined files with command-line arguments.
+  FILES_TO_PROCESS=("${PREDEFINED_FILES[@]}" "$@")
+elif [ "$#" -gt 0 ]; then
+  # REPLACE mode: Use only the files from command-line arguments.
   FILES_TO_PROCESS=("$@")
 else
-  # Otherwise, use the predefined list from the script.
+  # DEFAULT mode: Use the predefined list.
   FILES_TO_PROCESS=("${PREDEFINED_FILES[@]}")
 fi
 
