@@ -42,7 +42,7 @@ void cnc_app_init(void) {
     g_cnc_state.sim_radius = 0.0f;
 
     // Register our action handler with the data binding system
-    data_binding_register_action_handler(cnc_action_handler);
+    data_binding_register_action_handler(cnc_action_handler, NULL);
 
     // Notify initial state to the UI
     cnc_app_notify_all();

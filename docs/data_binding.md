@@ -43,43 +43,74 @@ You define an action on a widget using the `action` key. The value is a map wher
 
 To receive these actions in your application, you must implement a single handler function and register it.
 
-1.  **Define the Handler Function:** The function must match the `data_binding_action_handler_t` signature from `data_binding.h`.
+#### User Data Context
+
+The data binding system allows you to register a `void* user_data` pointer during initialization. This pointer is then passed to every call to your action handler, allowing you to easily access your application's state or context without using global variables.
+
+1.  **Define your application state struct:**
+
+    ```c
+    // In your application's header or C file
+    typedef struct {
+        // ... application state variables
+        bool spindle_on;
+        int program_mode;
+        // ... etc
+    } AppContext;
+    ```
+
+2.  **Define the Handler Function:** The function must match the `data_binding_action_handler_t` signature. Note the final `void* user_data` parameter.
 
     ```c
     // In your application C file (e.g., my_app.c)
     #include "data_binding.h"
+    #include "my_app.h" // where AppContext is defined
     #include <stdio.h>
+    #include <string.h>
 
-    void my_action_handler(const char* action_name, binding_value_t value) {
+    void my_action_handler(const char* action_name, binding_value_t value, void* user_data) {
+        AppContext* app = (AppContext*)user_data; // Cast user_data to your context type
+        if (!app) return;
+
         printf("ACTION: name='%s', type=%d\n", action_name, value.type);
 
         if (strcmp(action_name, "program|run") == 0) {
             // value.type is BINDING_TYPE_NULL for a trigger
-            start_program();
+            start_program(app); // Pass context to your logic
         }
         else if (strcmp(action_name, "spindle|toggle") == 0) {
             // value.type is BINDING_TYPE_BOOL for a toggle
             bool is_on = value.as.b_val;
+            app->spindle_on = is_on; // Directly modify state
             set_spindle_state(is_on);
         }
         else if (strcmp(action_name, "feedrate|override") == 0) {
             // value.type is BINDING_TYPE_FLOAT for numeric cycle values
             float feedrate = value.as.f_val;
-            set_feedrate_override(feedrate);
+            set_feedrate_override(app, feedrate);
         }
     }
     ```
 
-2.  **Register the Handler:** In your application's initialization routine, register this function. This only needs to be done once.
+3.  **Register the Handler:** In your application's initialization routine, create your context struct and pass its address when registering the handler.
 
     ```c
     // In your application's init function
     #include "data_binding.h"
+    #include "my_app.h"
+
+    // Can be static, global, or heap-allocated as needed
+    static AppContext g_app_context;
 
     void my_app_init(void) {
         // ... other initializations
+        // ... initialize g_app_context fields ...
+        
         data_binding_init(); // Must be called first
-        data_binding_register_action_handler(my_action_handler);
+
+        // Pass a pointer to your context struct as the second argument
+        data_binding_register_action_handler(my_action_handler, &g_app_context);
+        
         // ...
     }
     ```

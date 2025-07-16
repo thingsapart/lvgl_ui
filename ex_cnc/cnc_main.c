@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
         render_abort("Failed to initialize SDL viewer.");
     }
     data_binding_init();
-    data_binding_register_action_handler(cnc_action_handler);
+    data_binding_register_action_handler(cnc_action_handler, NULL);
 
     lv_obj_t* screen = sdl_viewer_create_main_screen();
 
