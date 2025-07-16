@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <stddef.h> // For size_t
+#include <time.h> // For time_t
 
 // ANSI color codes for terminal output
 #define ANSI_BOLD_RED     "\x1b[1;31m"
@@ -60,5 +61,9 @@ void print_hint(const char* format, ...);
 // e.g., "char **" -> "char*"
 // the caller must free the returned string.
 char* get_array_base_type(const char* array_c_type);
+
+// Returns the last modification time of a file.
+// Returns 0 on error (e.g., file not found).
+time_t get_file_mod_time(const char *path);
 
 #endif // UTILS_H

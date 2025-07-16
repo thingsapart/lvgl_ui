@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cJSON.h>
+#include <time.h>
+#include <sys/stat.h>
 
 #include "utils.h"
 #include "api_spec.h"
@@ -36,12 +38,14 @@ bool g_strict_registry_mode = false;
 
 // --- Function Declarations ---
 void print_usage(const char* prog_name);
+static void cleanup_ui_state(IRRoot** ir_root_ptr, Registry** registry_ptr, lv_obj_t* preview, lv_obj_t* inspector);
+static bool load_and_render_ui(const char* ui_spec_path, ApiSpec* api_spec, lv_obj_t* preview_panel, lv_obj_t* inspector_panel, IRRoot** ir_root_ptr, Registry** registry_ptr);
 
 
 // --- Main Application ---
 
 void print_usage(const char* prog_name) {
-    fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json|yaml> [--codegen <backends>] [--debug_out <modules>] [--strict] [--strict-registry] [--screenshot-and-exit <path>]\n", prog_name);
+    fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json|yaml> [--codegen <backends>] [--debug_out <modules>] [--strict] [--strict-registry] [--screenshot-and-exit <path>] [--watch]\n", prog_name);
     fprintf(stderr, "  <backends> is a comma-separated list of code generation backends.\n");
     fprintf(stderr, "    Available: ir_print, ir_debug_print, c_code, lvgl_render\n");
     fprintf(stderr, "    Default: ir_print\n");
@@ -50,6 +54,7 @@ void print_usage(const char* prog_name) {
     fprintf(stderr, "  --strict: Enables strict mode. Fails on argument count mismatches and unresolved registry references.\n");
     fprintf(stderr, "  --strict-registry: Fails only on unresolved registry references.\n");
     fprintf(stderr, "  --screenshot-and-exit <path.png>: For visual testing. Renders UI, saves a screenshot, and exits.\n");
+    fprintf(stderr, "  --watch: When using lvgl_render backend, reloads the UI when the spec file changes.\n");
 }
 
 void render_abort(const char *msg) {
@@ -58,18 +63,85 @@ void render_abort(const char *msg) {
     exit(1);
 }
 
+static void cleanup_ui_state(IRRoot** ir_root_ptr, Registry** registry_ptr, lv_obj_t* preview, lv_obj_t* inspector) {
+    if (ir_root_ptr && *ir_root_ptr) {
+        ir_free((IRNode*)*ir_root_ptr);
+        *ir_root_ptr = NULL;
+    }
+    if (registry_ptr && *registry_ptr) {
+        registry_free(*registry_ptr);
+        *registry_ptr = NULL;
+    }
+    // Renderer calls obj_registry_deinit internally, but let's be explicit
+    obj_registry_deinit();
+    if (preview) {
+        lv_obj_clean(preview);
+    }
+    if (inspector) {
+        lv_obj_clean(inspector);
+    }
+}
+
+static bool load_and_render_ui(
+    const char* ui_spec_path,
+    ApiSpec* api_spec,
+    lv_obj_t* preview_panel,
+    lv_obj_t* inspector_panel,
+    IRRoot** ir_root_ptr,
+    Registry** registry_ptr
+) {
+    // 1. Load and parse file
+    char* ui_spec_content = read_file(ui_spec_path);
+    if (!ui_spec_content) {
+        print_warning("Could not read UI spec file: %s", ui_spec_path);
+        return false;
+    }
+
+    cJSON* ui_spec_json = NULL;
+    const char* extension = strrchr(ui_spec_path, '.');
+    if (extension && (strcmp(extension, ".yaml") == 0 || strcmp(extension, ".yml") == 0)) {
+        char* error_msg = NULL;
+        ui_spec_json = yaml_to_cjson(ui_spec_content, &error_msg);
+        if (error_msg) {
+            fprintf(stderr, "\n%s\n", error_msg); free(error_msg); free(ui_spec_content); return false;
+        }
+    } else {
+        ui_spec_json = cJSON_Parse(ui_spec_content);
+        if (!ui_spec_json) {
+            fprintf(stderr, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
+            free(ui_spec_content); return false;
+        }
+    }
+    free(ui_spec_content);
+
+    // 2. Generate IR
+    *ir_root_ptr = generate_ir_from_ui_spec(ui_spec_json, api_spec);
+    cJSON_Delete(ui_spec_json);
+    if (!*ir_root_ptr) {
+        print_warning("Failed to generate IR from UI spec.");
+        return false;
+    }
+
+    // 3. Create registry and render
+    *registry_ptr = registry_create();
+    view_inspector_init(inspector_panel, *ir_root_ptr, api_spec);
+    lvgl_render_backend(*ir_root_ptr, api_spec, preview_panel, *registry_ptr);
+
+    // 4. Run warning printer for immediate feedback
+    warning_print_backend(*ir_root_ptr);
+
+    return true;
+}
+
 
 int main(int argc, char* argv[]) {
     // --- Resource Declarations for robust cleanup ---
     int return_code = 0;
     char* api_spec_content = NULL;
     cJSON* api_spec_json = NULL;
-    char* ui_spec_content = NULL;
-    cJSON* ui_spec_json = NULL;
     ApiSpec* api_spec = NULL;
-    IRRoot* ir_root = NULL;
+    IRRoot* ir_root = NULL; // Used by non-renderer backends
     char* backend_list_copy = NULL;
-    Registry* renderer_registry = NULL; // Moved registry for renderer here
 
     // --- 1. Argument Parsing ---
     const char* api_spec_path = NULL;
@@ -77,6 +149,7 @@ int main(int argc, char* argv[]) {
     const char* codegen_list_str = "ir_print"; // Default backend
     const char* debug_out_str = NULL;          // For --debug_out flag
     const char* screenshot_path = NULL;
+    bool watch_mode = false;
 
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--codegen") == 0) {
@@ -107,6 +180,8 @@ int main(int argc, char* argv[]) {
             g_strict_mode = true;
         } else if (strcmp(argv[i], "--strict-registry") == 0) {
             g_strict_registry_mode = true;
+        } else if (strcmp(argv[i], "--watch") == 0) {
+            watch_mode = true;
         } else if (!api_spec_path) {
             api_spec_path = argv[i];
         } else if (!ui_spec_path) {
@@ -150,40 +225,7 @@ int main(int argc, char* argv[]) {
         goto cleanup;
     }
 
-    ui_spec_content = read_file(ui_spec_path);
-    if (!ui_spec_content) {
-        fprintf(stderr, "Error reading UI spec file: %s\n", ui_spec_path);
-        return_code = 1;
-        goto cleanup;
-    }
-
-    const char* extension = strrchr(ui_spec_path, '.');
-    if (extension && (strcmp(extension, ".yaml") == 0 || strcmp(extension, ".yml") == 0)) {
-        DEBUG_LOG(LOG_MODULE_MAIN, "YAML file detected: '%s'. Parsing with built-in parser...\n", ui_spec_path);
-        char* error_msg = NULL;
-        ui_spec_json = yaml_to_cjson(ui_spec_content, &error_msg);
-
-        char *out  = cJSON_Print(ui_spec_json);
-        DEBUG_LOG(LOG_MODULE_MAIN, "YAML -> JSON:\n\n%s\n\n", out);
-        free(out);
-        DEBUG_LOG(LOG_MODULE_MAIN, "------------------------------\n");
-
-        if (error_msg) {
-            fprintf(stderr, "%s\n", error_msg);
-            free(error_msg);
-            return_code = 1;
-            goto cleanup;
-        }
-    } else {
-        // Assume JSON for any other file type
-        ui_spec_json = cJSON_Parse(ui_spec_content);
-        if (!ui_spec_json) {
-            DEBUG_LOG(LOG_MODULE_MAIN, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
-            return_code = 1;
-            goto cleanup;
-        }
-    }
-
+    // UI spec is NOT loaded here anymore. It's loaded by the specific backend logic.
 
     // --- 3. IR Generation ---
     api_spec = api_spec_parse(api_spec_json);
@@ -193,13 +235,7 @@ int main(int argc, char* argv[]) {
         goto cleanup;
     }
 
-    ir_root = generate_ir_from_ui_spec(ui_spec_json, api_spec);
-    if (!ir_root) {
-        fprintf(stderr, "Failed to generate IR from the UI spec.\n");
-        return_code = 1;
-        goto cleanup;
-    }
-
+    // IR is NOT generated here anymore. It's generated by the specific backend logic.
 
     // --- 4. Run Code Generation Backends ---
     backend_list_copy = strdup(codegen_list_str);
@@ -207,32 +243,19 @@ int main(int argc, char* argv[]) {
 
     char* backend_name = strtok(backend_list_copy, ",");
     while (backend_name != NULL) {
-        if (strcmp(backend_name, "ir_print") == 0) {
-            ir_print_backend(ir_root, api_spec);
-        } else if (strcmp(backend_name, "ir_debug_print") == 0) {
-            ir_debug_print_backend(ir_root, api_spec);
-        } else if (strcmp(backend_name, "c_code") == 0) {
-            c_code_print_backend(ir_root, api_spec);
-        } else if (strcmp(backend_name, "lvgl_render") == 0) {
+        if (strcmp(backend_name, "lvgl_render") == 0) {
             DEBUG_LOG(LOG_MODULE_MAIN, "Executing 'lvgl_render' backend.");
 
             if (sdl_viewer_init() != 0) {
                 fprintf(stderr, "FATAL: Failed to initialize SDL viewer.\n");
-                return_code = 1;
-                goto cleanup;
+                return_code = 1; goto cleanup;
             }
 
             lv_obj_t* screen = sdl_viewer_create_main_screen();
-            if (!screen) {
-                fprintf(stderr, "FATAL: Failed to create main screen.\n");
-                sdl_viewer_deinit();
-                return_code = 1;
-                goto cleanup;
-            }
-
             lv_obj_t* preview_panel = screen;
+            lv_obj_t* inspector_panel = NULL;
+
             if(!screenshot_path) {
-                // Create the two-pane layout for preview and inspector
                 lv_obj_t* main_container = lv_obj_create(screen);
                 lv_obj_set_size(main_container, lv_pct(100), lv_pct(100));
                 lv_obj_set_flex_flow(main_container, LV_FLEX_FLOW_ROW);
@@ -245,50 +268,104 @@ int main(int argc, char* argv[]) {
                 lv_obj_set_style_pad_all(preview_panel, 0, 0);
                 lv_obj_set_style_border_width(preview_panel, 0, 0);
 
-                lv_obj_t* inspector_panel = lv_obj_create(main_container);
+                inspector_panel = lv_obj_create(main_container);
                 lv_obj_set_width(inspector_panel, 350);
                 lv_obj_set_height(inspector_panel, lv_pct(100));
                 lv_obj_set_style_pad_all(inspector_panel, 0, 0);
                 lv_obj_set_style_border_width(inspector_panel, 0, 0);
-                view_inspector_init(inspector_panel, ir_root, api_spec);
             }
 
+            IRRoot* current_ir = NULL;
+            Registry* current_registry = NULL;
+            time_t last_mod_time = 0;
+            bool quit = false;
+            bool first_run = true;
 
-            // Create the registry that will live for the duration of the renderer
-            renderer_registry = registry_create();
+            while (!quit) {
+                bool needs_reload = false;
+                if (first_run) {
+                    needs_reload = true;
+                    first_run = false;
+                } else if (watch_mode) {
+                    time_t current_mod_time = get_file_mod_time(ui_spec_path);
+                    if (current_mod_time != 0 && current_mod_time != last_mod_time) {
+                        needs_reload = true;
+                    }
+                }
 
-            // Render the IR onto the PREVIEW PANEL.
-            lvgl_render_backend(ir_root, api_spec, preview_panel, renderer_registry);
+                if (needs_reload) {
+                    DEBUG_LOG(LOG_MODULE_MAIN, "Reloading UI from '%s'...", ui_spec_path);
+                    cleanup_ui_state(&current_ir, &current_registry, preview_panel, inspector_panel);
+                    if (load_and_render_ui(ui_spec_path, api_spec, preview_panel, inspector_panel, &current_ir, &current_registry)) {
+                        last_mod_time = get_file_mod_time(ui_spec_path);
+                    } else {
+                        print_warning("Failed to load and render UI. Waiting for file changes...");
+                    }
+                }
 
-            if (screenshot_path) {
-                // For automated testing: render for a short duration to allow UI to stabilize,
-                // then take a screenshot and exit.
-                sdl_viewer_render_for_time(250); // Wait 250ms for animations/layouts
-                sdl_viewer_take_snapshot_lvgl(screenshot_path);
-                DEBUG_LOG(LOG_MODULE_MAIN, "Screenshot saved to '%s'. Exiting.", screenshot_path);
-            } else {
-                // For interactive viewing: enter the main rendering loop.
-                DEBUG_LOG(LOG_MODULE_MAIN, "Starting SDL viewer loop. Close the window to exit.\n");
-                sdl_viewer_loop();
-                DEBUG_LOG(LOG_MODULE_MAIN, "SDL viewer exited.\n");
+                if (sdl_viewer_tick()) {
+                    quit = true;
+                }
+                
+                if (screenshot_path) {
+                    sdl_viewer_render_for_time(250);
+                    sdl_viewer_take_snapshot_lvgl(screenshot_path);
+                    quit = true;
+                }
+
+                if (watch_mode) {
+                    sdl_viewer_delay(5);
+                }
             }
             
-            // Clean up resources used by the runtime renderer
+            cleanup_ui_state(&current_ir, &current_registry, NULL, NULL);
             sdl_viewer_deinit();
-            obj_registry_deinit();
-            
+
         } else {
-            fprintf(stderr, "Warning: Unknown codegen backend '%s'.\n", backend_name);
+            // For other backends, generate IR once if needed
+            if (!ir_root) {
+                char* ui_spec_content = read_file(ui_spec_path);
+                if (!ui_spec_content) { fprintf(stderr, "Error reading UI spec file: %s\n", ui_spec_path); return_code = 1; goto cleanup; }
+
+                cJSON* ui_spec_json = NULL;
+                const char* extension = strrchr(ui_spec_path, '.');
+                if (extension && (strcmp(extension, ".yaml") == 0 || strcmp(extension, ".yml") == 0)) {
+                    char* error_msg = NULL;
+                    ui_spec_json = yaml_to_cjson(ui_spec_content, &error_msg);
+                    if (error_msg) { fprintf(stderr, "%s\n", error_msg); free(error_msg); free(ui_spec_content); return_code = 1; goto cleanup; }
+                } else {
+                    ui_spec_json = cJSON_Parse(ui_spec_content);
+                    if (!ui_spec_json) { fprintf(stderr, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr()); free(ui_spec_content); return_code = 1; goto cleanup; }
+                }
+                free(ui_spec_content);
+
+                ir_root = generate_ir_from_ui_spec(ui_spec_json, api_spec);
+                cJSON_Delete(ui_spec_json);
+
+                if (!ir_root) { fprintf(stderr, "Failed to generate IR from the UI spec.\n"); return_code = 1; goto cleanup; }
+            }
+
+            // Run the non-rendering backend
+            if (strcmp(backend_name, "ir_print") == 0) {
+                ir_print_backend(ir_root, api_spec);
+            } else if (strcmp(backend_name, "ir_debug_print") == 0) {
+                ir_debug_print_backend(ir_root, api_spec);
+            } else if (strcmp(backend_name, "c_code") == 0) {
+                c_code_print_backend(ir_root, api_spec);
+            } else {
+                fprintf(stderr, "Warning: Unknown codegen backend '%s'.\n", backend_name);
+            }
         }
         backend_name = strtok(NULL, ",");
     }
 
-    // --- 4.5. Run Warning Summary Backend (Always runs last) ---
-    warning_print_backend(ir_root);
+    // --- 4.5. Run Warning Summary Backend (if IR was generated for non-render backends) ---
+    if(ir_root) {
+        warning_print_backend(ir_root);
+    }
 
 cleanup:
     // --- 5. Cleanup ---
-    if(renderer_registry) registry_free(renderer_registry);
     if(backend_list_copy) free(backend_list_copy);
     if(ir_root) ir_free((IRNode*)ir_root);
     if(api_spec) api_spec_free(api_spec);

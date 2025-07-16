@@ -5,6 +5,8 @@
 #include <limits.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/stat.h>
+#include <time.h>
 
 char* trim_whitespace(char *str) {
     char *end;
@@ -19,7 +21,8 @@ char* trim_whitespace(char *str) {
 char* read_file(const char* filename) {
     FILE* f = fopen(filename, "rb");
     if (!f) {
-        perror("fopen");
+        // This is a common, recoverable error, so don't use perror which prints to stderr directly.
+        // Let the caller decide how to report the error.
         return NULL;
     }
     fseek(f, 0, SEEK_END);
@@ -27,12 +30,26 @@ char* read_file(const char* filename) {
     fseek(f, 0, SEEK_SET);
     char* buffer = (char*)malloc(length + 1);
     if (buffer) {
-        fread(buffer, 1, length, f);
-        buffer[length] = '\0';
+        if (fread(buffer, 1, length, f) != (size_t)length) {
+            // Handle read error
+            free(buffer);
+            buffer = NULL;
+        } else {
+            buffer[length] = '\0';
+        }
     }
     fclose(f);
     return buffer;
 }
+
+time_t get_file_mod_time(const char *path) {
+    struct stat attr;
+    if (stat(path, &attr) == 0) {
+        return attr.st_mtime;
+    }
+    return 0; // Return 0 on error (e.g., file not found)
+}
+
 
 // Helper function to convert a single hex digit character to its integer value
 static int hex_digit_to_val(char c) {

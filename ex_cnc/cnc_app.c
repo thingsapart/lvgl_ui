@@ -48,7 +48,7 @@ void cnc_app_init(void) {
     cnc_app_notify_all();
 }
 
-void cnc_action_handler(const char* action_name, binding_value_t value) {
+void cnc_action_handler(const char* action_name, binding_value_t value, void* user_data) {
     printf("CNC ACTION: name='%s' | value_type=%d\n", action_name, value.type);
     bool position_changed = false;
     bool program_state_changed = false;

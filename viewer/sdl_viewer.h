@@ -11,9 +11,9 @@ int sdl_viewer_init(void);
 // Returns a pointer to the created screen object
 lv_obj_t* sdl_viewer_create_main_screen(void);
 
-// Handle SDL events and LVGL tasks in an infinite loop.
-// This is used for interactive viewing.
-void sdl_viewer_loop(void);
+// Handle SDL events and LVGL tasks for a single frame.
+// Returns 1 on quit event, 0 to continue.
+int sdl_viewer_tick(void);
 
 // Handle SDL events and LVGL tasks for a specific duration.
 // This is used for automated testing to let the UI stabilize.
@@ -32,6 +32,9 @@ void sdl_viewer_render_for_time_and_snapshot(uint32_t ms_to_run, const char *pat
 
 // Deinitialize SDL and LVGL
 void sdl_viewer_deinit(void);
+
+// Simple delay/sleep.
+void sdl_viewer_delay(int ms);
 
 #define HIGH_DPI
 

@@ -114,41 +114,34 @@ lv_obj_t* sdl_viewer_create_main_screen(void) {
     return screen;
 }
 
-void sdl_viewer_loop(void) {
-    Uint32 lastTick = SDL_GetTicks();
-    while(1) {
-        SDL_Delay(5);
-        Uint32 current = SDL_GetTicks();
-        lv_tick_inc(current - lastTick); // Update the tick timer. Tick is new for LVGL 9
-        lastTick = current;
-        lv_timer_handler();
-     }
-}
-
-/**
-void sdl_viewer_loop(void) {
-    Uint32 lastTick = SDL_GetTicks();
-    while(1) {
-        SDL_Event e;
-        while(SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                return; // Exit loop if window is closed
-            }
-        }
-        
-        Uint32 current = SDL_GetTicks();
-        uint32_t elapsed = current - lastTick;
-        if (elapsed < 5) {
-             SDL_Delay(5 - elapsed);
-             current = SDL_GetTicks();
-        }
-        
-        lv_tick_inc(current - lastTick);
-        lastTick = current;
-        lv_timer_handler();
+int sdl_viewer_tick(void) {
+    static Uint32 lastTick = 0;
+    if(lastTick == 0) {
+        lastTick = SDL_GetTicks();
     }
+
+    SDL_Event e;
+    while(SDL_PollEvent(&e)) {
+        if (e.type == SDL_QUIT) {
+            return 1; // Signal quit
+        }
+    }
+
+    Uint32 current = SDL_GetTicks();
+    uint32_t elapsed = current - lastTick;
+
+    // Cap the update rate to avoid spamming lv_tick_inc in a tight loop
+    if (elapsed < 5) {
+        SDL_Delay(5 - elapsed);
+        current = SDL_GetTicks();
+    }
+
+    lv_tick_inc(current - lastTick);
+    lastTick = current;
+    lv_timer_handler(); // This handles rendering and animations
+
+    return 0; // Continue
 }
-*/
 
 void sdl_viewer_render_for_time(uint32_t ms_to_run) {
     uint32_t start_tick = SDL_GetTicks();
@@ -242,4 +235,9 @@ void sdl_viewer_take_snapshot_lvgl(const char* path) {
 
 void sdl_viewer_deinit(void) {
   // Nothing to do here, SDL cleans up after itself when done.
+}
+
+
+void sdl_viewer_delay(int ms) {
+  SDL_Delay(ms);
 }
