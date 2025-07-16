@@ -9,7 +9,6 @@ This project is a transpiler that converts high-level, human-readable UI definit
 - [The Generation Pipeline](#the-generation-pipeline)
 - [Key Features](#key-features)
 - [Getting Started](#getting-started)
-- [Example: The Declarative Advantage](#example-the-declarative-advantage)
 
 ## Advantages
 
