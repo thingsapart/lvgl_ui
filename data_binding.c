@@ -56,11 +56,20 @@ static void free_observer_config_cb(lv_event_t* e);
 // --- Public API Implementation ---
 
 void data_binding_init(void) {
+    // This function needs to be safe to call multiple times for watch mode.
+    // It must free any previously allocated memory.
+    for (uint32_t i = 0; i < state_observer_count; i++) {
+        free(state_observers[i].state_name);
+        // Note: The individual observer configs are freed by the LV_EVENT_DELETE
+        // callback attached to each widget. When lv_obj_clean is called, this
+        // event is triggered for all children, ensuring no memory leaks.
+    }
+
     memset(state_observers, 0, sizeof(state_observers));
     state_observer_count = 0;
     app_action_handler = NULL;
     app_user_data = NULL;
-    DEBUG_LOG(LOG_MODULE_DATABINDING, "Data binding system initialized.");
+    DEBUG_LOG(LOG_MODULE_DATABINDING, "Data binding system (re)initialized.");
 }
 
 void data_binding_register_action_handler(data_binding_action_handler_t handler, void* user_data) {

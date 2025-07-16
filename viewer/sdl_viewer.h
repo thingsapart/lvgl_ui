@@ -2,6 +2,7 @@
 #define SDL_VIEWER_H
 
 #include "lvgl.h"
+#include "api_spec.h"
 
 // Initialize SDL and LVGL display
 // Returns 0 on success, -1 on error
@@ -14,6 +15,10 @@ lv_obj_t* sdl_viewer_create_main_screen(void);
 // Handle SDL events and LVGL tasks in an infinite loop.
 // This is used for interactive viewing.
 void sdl_viewer_loop(void);
+
+// Handle SDL events and LVGL tasks in a loop for "watch mode".
+// This loop periodically checks a file for changes and triggers a UI reload.
+void sdl_viewer_loop_watch_mode(const char* ui_spec_path, ApiSpec* api_spec, lv_obj_t* preview_panel, lv_obj_t* inspector_panel);
 
 // Handle SDL events and LVGL tasks for a specific duration.
 // This is used for automated testing to let the UI stabilize.

@@ -3,8 +3,10 @@
 #include <SDL2/SDL_image.h>
 #include "lvgl.h"
 #include "libs/lodepng.h" // For saving snapshots as PNG
+#include "lvgl_renderer.h"
 
 #include <unistd.h>
+#include <sys/stat.h>
 #define SDL_MAIN_HANDLED        /*To fix SDL's "undefined reference to WinMain" issue*/
 #include <SDL2/SDL.h>
 #include "drivers/sdl/lv_sdl_mouse.h"
@@ -124,6 +126,57 @@ void sdl_viewer_loop(void) {
         lv_timer_handler();
      }
 }
+
+static long get_file_mod_time(const char* path) {
+    struct stat attr;
+    if (stat(path, &attr) == 0) {
+        return attr.st_mtime;
+    }
+    return -1;
+}
+
+static bool quit_flag = false;
+
+static void close_event_cb(lv_event_t * e) {
+    // The main screen's delete event is a good proxy for the window being closed.
+    // lv_timer_handler -> sdl_event_handler -> lv_sdl_quit_request=true -> lv_display_delete -> LV_EVENT_DELETE
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_DELETE) {
+        quit_flag = true;
+    }
+}
+
+void sdl_viewer_loop_watch_mode(const char* ui_spec_path, ApiSpec* api_spec, lv_obj_t* preview_panel, lv_obj_t* inspector_panel) {
+    quit_flag = false;
+
+    // Attach a callback to the screen to detect when the window is closed
+    lv_obj_add_event_cb(lv_screen_active(), close_event_cb, LV_EVENT_DELETE, NULL);
+
+    // Initial load
+    lvgl_renderer_reload_ui(ui_spec_path, api_spec, preview_panel, inspector_panel);
+    long last_mod_time = get_file_mod_time(ui_spec_path);
+    Uint32 lastTick = SDL_GetTicks();
+    int timer_counter = 0;
+
+    while (!quit_flag) {
+        // Check for file changes every 200ms
+        if (++timer_counter % 40 == 0) {
+            long current_mod_time = get_file_mod_time(ui_spec_path);
+            if (current_mod_time != -1 && current_mod_time != last_mod_time) {
+                last_mod_time = current_mod_time;
+                lvgl_renderer_reload_ui(ui_spec_path, api_spec, preview_panel, inspector_panel);
+            }
+        }
+
+        // Standard LVGL/SDL loop
+        SDL_Delay(5);
+        Uint32 current = SDL_GetTicks();
+        lv_tick_inc(current - lastTick);
+        lastTick = current;
+        lv_timer_handler();
+    }
+}
+
 
 /**
 void sdl_viewer_loop(void) {

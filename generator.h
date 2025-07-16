@@ -22,4 +22,19 @@
  */
 IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_spec);
 
+/**
+ * @brief Reads a UI specification file (JSON or YAML), parses it, and generates an IR tree.
+ *
+ * This is a convenience wrapper that handles file I/O and parsing before calling
+ * `generate_ir_from_ui_spec`. It cleans up its own intermediate resources (file content buffer,
+ * cJSON object).
+ *
+ * @param ui_spec_path The path to the UI specification file.
+ * @param api_spec The parsed LVGL API specification.
+ * @return A pointer to the root of the generated IR tree (IRRoot), or NULL on any error
+ *         (file not found, parse error, generation error). The caller is responsible
+ *         for freeing the returned tree.
+ */
+IRRoot* generate_ir_from_file(const char* ui_spec_path, const ApiSpec* api_spec);
+
 #endif // GENERATOR_H

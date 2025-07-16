@@ -41,7 +41,7 @@ void print_usage(const char* prog_name);
 // --- Main Application ---
 
 void print_usage(const char* prog_name) {
-    fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json|yaml> [--codegen <backends>] [--debug_out <modules>] [--strict] [--strict-registry] [--screenshot-and-exit <path>]\n", prog_name);
+    fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json|yaml> [--codegen <backends>] [--debug_out <modules>] [--strict] [--strict-registry] [--screenshot-and-exit <path>] [--watch]\n", prog_name);
     fprintf(stderr, "  <backends> is a comma-separated list of code generation backends.\n");
     fprintf(stderr, "    Available: ir_print, ir_debug_print, c_code, lvgl_render\n");
     fprintf(stderr, "    Default: ir_print\n");
@@ -50,6 +50,7 @@ void print_usage(const char* prog_name) {
     fprintf(stderr, "  --strict: Enables strict mode. Fails on argument count mismatches and unresolved registry references.\n");
     fprintf(stderr, "  --strict-registry: Fails only on unresolved registry references.\n");
     fprintf(stderr, "  --screenshot-and-exit <path.png>: For visual testing. Renders UI, saves a screenshot, and exits.\n");
+    fprintf(stderr, "  --watch: Enables live-reloading of the UI when the UI spec file changes.\n");
 }
 
 void render_abort(const char *msg) {
@@ -64,8 +65,6 @@ int main(int argc, char* argv[]) {
     int return_code = 0;
     char* api_spec_content = NULL;
     cJSON* api_spec_json = NULL;
-    char* ui_spec_content = NULL;
-    cJSON* ui_spec_json = NULL;
     ApiSpec* api_spec = NULL;
     IRRoot* ir_root = NULL;
     char* backend_list_copy = NULL;
@@ -77,6 +76,7 @@ int main(int argc, char* argv[]) {
     const char* codegen_list_str = "ir_print"; // Default backend
     const char* debug_out_str = NULL;          // For --debug_out flag
     const char* screenshot_path = NULL;
+    bool watch_mode = false;
 
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--codegen") == 0) {
@@ -107,6 +107,8 @@ int main(int argc, char* argv[]) {
             g_strict_mode = true;
         } else if (strcmp(argv[i], "--strict-registry") == 0) {
             g_strict_registry_mode = true;
+        } else if (strcmp(argv[i], "--watch") == 0) {
+            watch_mode = true;
         } else if (!api_spec_path) {
             api_spec_path = argv[i];
         } else if (!ui_spec_path) {
@@ -150,41 +152,6 @@ int main(int argc, char* argv[]) {
         goto cleanup;
     }
 
-    ui_spec_content = read_file(ui_spec_path);
-    if (!ui_spec_content) {
-        fprintf(stderr, "Error reading UI spec file: %s\n", ui_spec_path);
-        return_code = 1;
-        goto cleanup;
-    }
-
-    const char* extension = strrchr(ui_spec_path, '.');
-    if (extension && (strcmp(extension, ".yaml") == 0 || strcmp(extension, ".yml") == 0)) {
-        DEBUG_LOG(LOG_MODULE_MAIN, "YAML file detected: '%s'. Parsing with built-in parser...\n", ui_spec_path);
-        char* error_msg = NULL;
-        ui_spec_json = yaml_to_cjson(ui_spec_content, &error_msg);
-
-        char *out  = cJSON_Print(ui_spec_json);
-        DEBUG_LOG(LOG_MODULE_MAIN, "YAML -> JSON:\n\n%s\n\n", out);
-        free(out);
-        DEBUG_LOG(LOG_MODULE_MAIN, "------------------------------\n");
-
-        if (error_msg) {
-            fprintf(stderr, "%s\n", error_msg);
-            free(error_msg);
-            return_code = 1;
-            goto cleanup;
-        }
-    } else {
-        // Assume JSON for any other file type
-        ui_spec_json = cJSON_Parse(ui_spec_content);
-        if (!ui_spec_json) {
-            DEBUG_LOG(LOG_MODULE_MAIN, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
-            return_code = 1;
-            goto cleanup;
-        }
-    }
-
-
     // --- 3. IR Generation ---
     api_spec = api_spec_parse(api_spec_json);
     if (!api_spec) {
@@ -193,11 +160,14 @@ int main(int argc, char* argv[]) {
         goto cleanup;
     }
 
-    ir_root = generate_ir_from_ui_spec(ui_spec_json, api_spec);
-    if (!ir_root) {
-        fprintf(stderr, "Failed to generate IR from the UI spec.\n");
-        return_code = 1;
-        goto cleanup;
+    // In non-watch mode, we generate the IR once. In watch mode, it's generated on each change.
+    if (!watch_mode) {
+        ir_root = generate_ir_from_file(ui_spec_path, api_spec);
+        if (!ir_root) {
+            fprintf(stderr, "Aborting due to IR generation failure.\n");
+            return_code = 1;
+            goto cleanup;
+        }
     }
 
 
@@ -231,6 +201,8 @@ int main(int argc, char* argv[]) {
             }
 
             lv_obj_t* preview_panel = screen;
+            lv_obj_t* inspector_panel = NULL;
+
             if(!screenshot_path) {
                 // Create the two-pane layout for preview and inspector
                 lv_obj_t* main_container = lv_obj_create(screen);
@@ -245,32 +217,36 @@ int main(int argc, char* argv[]) {
                 lv_obj_set_style_pad_all(preview_panel, 0, 0);
                 lv_obj_set_style_border_width(preview_panel, 0, 0);
 
-                lv_obj_t* inspector_panel = lv_obj_create(main_container);
+                inspector_panel = lv_obj_create(main_container);
                 lv_obj_set_width(inspector_panel, 350);
                 lv_obj_set_height(inspector_panel, lv_pct(100));
                 lv_obj_set_style_pad_all(inspector_panel, 0, 0);
                 lv_obj_set_style_border_width(inspector_panel, 0, 0);
-                view_inspector_init(inspector_panel, ir_root, api_spec);
             }
 
-
-            // Create the registry that will live for the duration of the renderer
-            renderer_registry = registry_create();
-
-            // Render the IR onto the PREVIEW PANEL.
-            lvgl_render_backend(ir_root, api_spec, preview_panel, renderer_registry);
-
-            if (screenshot_path) {
-                // For automated testing: render for a short duration to allow UI to stabilize,
-                // then take a screenshot and exit.
-                sdl_viewer_render_for_time(250); // Wait 250ms for animations/layouts
-                sdl_viewer_take_snapshot_lvgl(screenshot_path);
-                DEBUG_LOG(LOG_MODULE_MAIN, "Screenshot saved to '%s'. Exiting.", screenshot_path);
+            if (watch_mode && !screenshot_path) {
+                // Watch mode takes over the main loop.
+                DEBUG_LOG(LOG_MODULE_MAIN, "Starting viewer in watch mode for '%s'. Close window to exit.\n", ui_spec_path);
+                sdl_viewer_loop_watch_mode(ui_spec_path, api_spec, preview_panel, inspector_panel);
+                DEBUG_LOG(LOG_MODULE_MAIN, "SDL viewer exited from watch mode.\n");
             } else {
-                // For interactive viewing: enter the main rendering loop.
-                DEBUG_LOG(LOG_MODULE_MAIN, "Starting SDL viewer loop. Close the window to exit.\n");
-                sdl_viewer_loop();
-                DEBUG_LOG(LOG_MODULE_MAIN, "SDL viewer exited.\n");
+                 // Normal one-shot render mode (for screenshotting or single-run view).
+                if (inspector_panel) {
+                    view_inspector_init(inspector_panel, ir_root, api_spec);
+                }
+
+                renderer_registry = registry_create();
+                lvgl_render_backend(ir_root, api_spec, preview_panel, renderer_registry);
+
+                if (screenshot_path) {
+                    sdl_viewer_render_for_time(250);
+                    sdl_viewer_take_snapshot_lvgl(screenshot_path);
+                    DEBUG_LOG(LOG_MODULE_MAIN, "Screenshot saved to '%s'. Exiting.", screenshot_path);
+                } else {
+                    DEBUG_LOG(LOG_MODULE_MAIN, "Starting SDL viewer loop. Close the window to exit.\n");
+                    sdl_viewer_loop();
+                    DEBUG_LOG(LOG_MODULE_MAIN, "SDL viewer exited.\n");
+                }
             }
             
             // Clean up resources used by the runtime renderer
@@ -284,7 +260,9 @@ int main(int argc, char* argv[]) {
     }
 
     // --- 4.5. Run Warning Summary Backend (Always runs last) ---
-    warning_print_backend(ir_root);
+    if (ir_root) {
+        warning_print_backend(ir_root);
+    }
 
 cleanup:
     // --- 5. Cleanup ---

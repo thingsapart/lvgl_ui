@@ -4,6 +4,7 @@
 #include "registry.h"
 #include "debug_log.h"
 #include "utils.h"
+#include "yaml_parser.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -94,6 +95,47 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
     registry_free(ctx.registry);
     return ir_root;
 }
+
+IRRoot* generate_ir_from_file(const char* ui_spec_path, const ApiSpec* api_spec) {
+    char* ui_spec_content = read_file(ui_spec_path);
+    if (!ui_spec_content) {
+        fprintf(stderr, "Error reading UI spec file: %s\n", ui_spec_path);
+        return NULL;
+    }
+
+    cJSON* ui_spec_json = NULL;
+    const char* extension = strrchr(ui_spec_path, '.');
+    if (extension && (strcmp(extension, ".yaml") == 0 || strcmp(extension, ".yml") == 0)) {
+        DEBUG_LOG(LOG_MODULE_MAIN, "YAML file detected: '%s'. Parsing...", ui_spec_path);
+        char* error_msg = NULL;
+        ui_spec_json = yaml_to_cjson(ui_spec_content, &error_msg);
+        if (error_msg) {
+            fprintf(stderr, "%s\n", error_msg);
+            free(error_msg);
+            free(ui_spec_content);
+            return NULL;
+        }
+    } else {
+        ui_spec_json = cJSON_Parse(ui_spec_content);
+        if (!ui_spec_json) {
+            fprintf(stderr, "Error parsing UI spec JSON: %s\n", cJSON_GetErrorPtr());
+            free(ui_spec_content);
+            return NULL;
+        }
+    }
+
+    IRRoot* ir_root = generate_ir_from_ui_spec(ui_spec_json, api_spec);
+    
+    cJSON_Delete(ui_spec_json);
+    free(ui_spec_content);
+
+    if (!ir_root) {
+        fprintf(stderr, "Failed to generate IR from the UI spec.\n");
+    }
+
+    return ir_root;
+}
+
 
 // --- Core Object Parser ---
 
