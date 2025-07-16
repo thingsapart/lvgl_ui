@@ -132,12 +132,15 @@ typedef struct {
     char* message;
 } IRWarning;
 
-// Data binding: Observer
+// Data binding: Observer. Replaces the old, more specific IRObserver.
 typedef struct IRObserver {
     IRNode base;
     char* state_name;
     observer_update_type_t update_type;
-    char* format_string;
+    IRExpr* config_expr; // Configuration for the binding.
+                         // For TEXT: it's a string literal.
+                         // For VISIBLE/CHECKED/DISABLED: it's a bool literal OR an array of pairs (map).
+                         // For STYLE: it's an array of pairs (map).
 } IRObserver;
 
 // Data binding: Action
@@ -222,7 +225,7 @@ IRComponent* ir_new_component_def(const char* id, IRObject* root_widget);
 IRProperty* ir_new_property(const char* name, IRExpr* value);
 IRWithBlock* ir_new_with_block(IRExpr* target, IRExprNode* calls, IRObject* children);
 IRWarning* ir_new_warning(const char* message);
-IRObserver* ir_new_observer(const char* state_name, observer_update_type_t update_type, const char* format);
+IRObserver* ir_new_observer(const char* state_name, observer_update_type_t update_type, IRExpr* config_expr);
 IRAction* ir_new_action(const char* action_name, action_type_t action_type, IRExpr* data);
 
 // --- List management helpers ---
@@ -242,4 +245,3 @@ intptr_t ir_node_get_int(IRNode* node);
 bool ir_node_get_bool(IRNode* node);
 
 #endif // IR_H
-

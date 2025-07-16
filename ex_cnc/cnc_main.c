@@ -35,8 +35,6 @@ int main(int argc, char* argv[]) {
     if (sdl_viewer_init() != 0) {
         render_abort("Failed to initialize SDL viewer.");
     }
-    cnc_app_init();
-    
     data_binding_init();
     data_binding_register_action_handler(cnc_action_handler);
 
@@ -70,6 +68,8 @@ int main(int argc, char* argv[]) {
     #error "No build mode defined. Please compile with -DCNC_LIVE_RENDER_MODE or -DCNC_STATIC_BUILD_MODE"
 #endif
 
+    cnc_app_init();
+    
     // --- Main Simulation Loop (common to both modes) ---
     printf("Starting CNC simulation. Close the window to exit.\n");
     while(1) {

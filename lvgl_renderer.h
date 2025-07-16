@@ -3,22 +3,19 @@
 
 #include "ir.h"
 #include "api_spec.h"
-#include "lvgl.h"
 #include "registry.h"
+#include "c_gen/lvgl_dispatch.h" // Include the canonical definition
+
+// --- Main Backend Entry Point ---
 
 /**
- * @brief The main function for the dynamic LVGL rendering backend.
- *
- * This function traverses the IR tree and executes it at runtime, creating a live
- * LVGL UI. It uses a dynamically-dispatched function call mechanism to
- * interact with the LVGL library. This backend is intended for applications
- * that need to load and render UI definitions on the fly.
- *
+ * @brief Renders the given IR tree into a live LVGL UI.
+ * This is the main entry point for the "lvgl_render" backend.
  * @param root The root of the IR tree to render.
- * @param api_spec The parsed API specification, needed by the dispatcher.
- * @param parent The top-level lv_obj_t* to which the new UI will be parented.
- * @param registry A pre-initialized registry to store created objects and arrays.
- *                 The caller is responsible for its lifecycle.
+ * @param api_spec The parsed API specification.
+ * @param parent The LVGL object to render the UI onto.
+ * @param registry The registry to use for storing object pointers and static data.
+ *                 The caller is responsible for the lifecycle of this registry.
  */
 void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent, Registry* registry);
 

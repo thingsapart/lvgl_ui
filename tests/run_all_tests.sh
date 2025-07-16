@@ -12,6 +12,10 @@ echo "--- Running Codegen Tests ---"
 (cd codegen && ./run.sh)
 echo ""
 
+echo "--- Running IR Tests ---"
+(cd ir && ./run.sh)
+echo ""
+
 echo "--- Running Error Tests ---"
 (cd errors && ./run.sh)
 echo ""

@@ -5,12 +5,20 @@
 #include "data_binding.h"
 
 void create_ui(lv_obj_t* parent) {
+    // --- Static Arrays for LVGL properties ---
+    static const void* s_static_array_5[] = { "user_data", "NULL" };
+    static const void* s_static_array_4[] = { "delay", 0 };
+    static const void* s_static_array_3[] = { "time", 200 };
+    static const void* s_static_array_2[] = { "path", "lv_anim_path_linear" };
+    static const unknown s_static_array_1[] = { LV_STYLE_BG_COLOR };
+    static const void* s_static_array_0[] = { "props", s_static_array_1 };
+
     // trans_style: trans_style_0 (style)
     lv_style_t* trans_style_0 = malloc(sizeof(lv_style_t));
 
     lv_style_init(trans_style_0);
     obj_registry_add("trans_style", trans_style_0);
-    lv_style_set_transition(trans_style_0, props(LV_STYLE_BG_COLOR));
+    lv_style_set_transition(trans_style_0, /* UNMAPPED_ARRAY */ NULL);
 
     // unnamed: button_1 (button)
     lv_obj_t* button_1 = lv_button_create(parent);

@@ -9,6 +9,9 @@
 
 #define YAML_PARSER_MAX_DEPTH 64
 #define YAML_PARSER_MAX_LINE_LEN 1024
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_BOLD          "\x1b[1m"
 
 typedef struct {
     cJSON *node;
@@ -23,19 +26,16 @@ typedef struct {
     int stack_top;
     char *lines[8192]; // Max lines
     int num_lines;
+    char *original_content_buffer; // To hold the duplicated string for lines
 } ParserState;
 
 // --- Forward Declarations ---
 static cJSON *parse_value(const char **p_str, ParserState *state);
 static void parse_line(ParserState *state, int line_idx);
-static void set_error(ParserState *state, const char *format, ...);
+static void set_error(ParserState *state, const char* token_start, size_t token_len, const char *format, ...);
 
 
 // --- cJSON Helper ---
-
-// Adds an item to a cJSON object, but unlike the standard cJSON_AddItemToObject,
-// it does not check for or replace existing keys. It simply appends the new
-// item to the object's child linked list, allowing for duplicate keys.
 static void cjson_add_item_to_object_with_duplicates(cJSON *object, const char *string, cJSON *item) {
     if (!object || !string || !item || !cJSON_IsObject(object)) return;
 
@@ -66,35 +66,40 @@ static int get_indent(const char *line) {
 }
 
 static void split_lines(ParserState *state, const char *yaml_content) {
-    char *buffer = strdup(yaml_content);
-    char *p = buffer;
-    while ((state->lines[state->num_lines] = strtok(p, "\n\r")) != NULL) {
-        p = NULL;
-        state->num_lines++;
-        if (state->num_lines >= 8192) {
-            set_error(state, "Exceeded maximum number of lines (8192)");
+    state->original_content_buffer = strdup(yaml_content);
+    if (!state->original_content_buffer) return;
+
+    const char *start = state->original_content_buffer;
+    const char *p = start;
+
+    while (true) {
+        if (*p == '\n' || *p == '\0') {
+            if (state->num_lines >= 8192) {
+                set_error(state, NULL, 0, "Exceeded maximum number of lines (8192)");
+                return;
+            }
+            // strndup is safe for zero-length lines
+            state->lines[state->num_lines++] = strndup(start, p - start);
+            start = p + 1;
+        }
+        if (*p == '\0') {
             break;
         }
+        p++;
     }
-    // We don't free buffer here because strtok holds pointers into it.
-    // It will be freed with the state at the end.
 }
 
 // --- Value Parser ---
-
-// This is now the main recursive parsing function. It takes a pointer-to-a-pointer
-// to the string and advances it as it consumes tokens.
 static cJSON* parse_value(const char **p_str, ParserState *state) {
     const char *ptr = *p_str;
     while(isspace((unsigned char)*ptr)) ptr++;
 
-    // 1. Handle flow collections recursively
     if (*ptr == '[' || *ptr == '{') {
         char start_char = *ptr;
         char end_char = (start_char == '[') ? ']' : '}';
         cJSON *root = (start_char == '[') ? cJSON_CreateArray() : cJSON_CreateObject();
         
-        ptr++; // Skip '[' or '{'
+        ptr++;
 
         while (*ptr) {
             while (isspace((unsigned char)*ptr)) ptr++;
@@ -103,29 +108,39 @@ static cJSON* parse_value(const char **p_str, ParserState *state) {
             if (cJSON_IsArray(root)) {
                  cJSON_AddItemToArray(root, parse_value(&ptr, state));
             } else { // Object
+                const char* key_start_ptr = ptr;
                 cJSON* key_node = parse_value(&ptr, state);
-                if (!cJSON_IsString(key_node)) {
-                    set_error(state, "Invalid key in flow-style map");
+                
+                char key_string[128];
+                if (cJSON_IsString(key_node)) {
+                    strncpy(key_string, key_node->valuestring, sizeof(key_string) - 1);
+                    key_string[sizeof(key_string) - 1] = '\0';
+                } else if (cJSON_IsNumber(key_node)) {
+                    snprintf(key_string, sizeof(key_string), "%g", key_node->valuedouble);
+                } else {
+                    set_error(state, key_start_ptr, (ptr - key_start_ptr), "Invalid key in flow-style map (must be a string or number)");
                     cJSON_Delete(key_node);
                     cJSON_Delete(root);
                     return cJSON_CreateNull();
                 }
+
                 while(isspace((unsigned char)*ptr)) ptr++;
+                const char* colon_pos = ptr;
                 if (*ptr != ':') {
-                    set_error(state, "Expected ':' in flow-style map");
+                    set_error(state, colon_pos, 1, "Expected ':' in flow-style map");
                     cJSON_Delete(key_node);
                     cJSON_Delete(root);
                     return cJSON_CreateNull();
                 }
                 ptr++; // Skip ':'
-                cjson_add_item_to_object_with_duplicates(root, key_node->valuestring, parse_value(&ptr, state));
+                cjson_add_item_to_object_with_duplicates(root, key_string, parse_value(&ptr, state));
                 cJSON_Delete(key_node);
             }
 
             while(isspace((unsigned char)*ptr)) ptr++;
             if (*ptr == ',') ptr++;
             else if (*ptr != end_char) {
-                set_error(state, "Expected ',' or '%c' in flow collection", end_char);
+                set_error(state, ptr, 1, "Expected ',' or '%c' in flow collection", end_char);
                 cJSON_Delete(root);
                 return cJSON_CreateNull();
             }
@@ -135,13 +150,12 @@ static cJSON* parse_value(const char **p_str, ParserState *state) {
         return root;
     }
 
-    // 2. Handle quoted strings
     if (*ptr == '"' || *ptr == '\'') {
         char quote = *ptr;
         ptr++;
         const char* start = ptr;
         while (*ptr && *ptr != quote) {
-            if (*ptr == '\\') ptr++; // Skip escaped char
+            if (*ptr == '\\') ptr++;
             ptr++;
         }
         char* val = strndup(start, ptr - start);
@@ -152,7 +166,6 @@ static cJSON* parse_value(const char **p_str, ParserState *state) {
         return node;
     }
 
-    // 3. Handle unquoted scalars
     const char* start = ptr;
     while (*ptr && *ptr != ',' && *ptr != ']' && *ptr != '}' && *ptr != ':') {
         ptr++;
@@ -177,8 +190,6 @@ static cJSON* parse_value(const char **p_str, ParserState *state) {
     return node;
 }
 
-
-// A simple wrapper to start the recursive parsing process.
 static cJSON* parse_value_string(const char *str, ParserState* state) {
     const char *p = str;
     return parse_value(&p, state);
@@ -189,7 +200,7 @@ static cJSON* parse_value_string(const char *str, ParserState* state) {
 
 static void push_stack(ParserState *state, cJSON *node, int indent) {
     if (state->stack_top >= YAML_PARSER_MAX_DEPTH - 1) {
-        set_error(state, "Exceeded maximum YAML depth of %d", YAML_PARSER_MAX_DEPTH);
+        set_error(state, NULL, 0, "Exceeded maximum YAML depth of %d", YAML_PARSER_MAX_DEPTH);
         return;
     }
     state->stack_top++;
@@ -203,18 +214,58 @@ static void pop_stack(ParserState *state) {
     }
 }
 
-static void set_error(ParserState *state, const char *format, ...) {
-    if (state && state->error && *state->error) return; // Don't overwrite first error
-    char buffer[256];
+static void set_error(ParserState *state, const char* token_start, size_t token_len, const char *format, ...) {
+    if (!state || !state->error || *state->error) return;
+
+    char message_buffer[256];
     va_list args;
     va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
+    vsnprintf(message_buffer, sizeof(message_buffer), format, args);
     va_end(args);
 
-    if (state && state->error) {
-        char *err_str = malloc(strlen(buffer) + 32);
-        sprintf(err_str, "YAML Error on line %d: %s", state->line_num, buffer);
+    char context_buffer[YAML_PARSER_MAX_LINE_LEN * 2 + 256] = {0};
+    if (token_start && state->line_num > 0 && state->line_num <= state->num_lines) {
+        const char* line_start = state->lines[state->line_num - 1];
+        int col = token_start - line_start;
+        size_t len = (token_len > 0) ? token_len : 1;
+
+        if (col < 0 || col >= YAML_PARSER_MAX_LINE_LEN) {
+            col = 0; // Fallback
+        }
+
+        char underline[YAML_PARSER_MAX_LINE_LEN] = {0};
+        memset(underline, ' ', col);
+        memset(underline + col, '^', len);
+        
+        char temp_line_buffer[YAML_PARSER_MAX_LINE_LEN + 128];
+        snprintf(temp_line_buffer, sizeof(temp_line_buffer), "%.*s%s%.*s%s%s", 
+                 col, line_start,                                     // Part before token
+                 ANSI_BOLD ANSI_COLOR_RED, (int)len, token_start,      // The token, highlighted
+                 ANSI_COLOR_RESET,                                     // Reset color
+                 token_start + len                                     // Part after token
+        );
+
+        snprintf(context_buffer, sizeof(context_buffer),
+                 "\n\n%s    ---> Error context (Line %d, Col %d):%s\n"
+                 "%s%4d |%s %s\n"
+                 "       | %s%s%s\n",
+                 ANSI_BOLD, state->line_num, col + 1, ANSI_COLOR_RESET,
+                 ANSI_BOLD, state->line_num, ANSI_COLOR_RESET, temp_line_buffer,
+                 ANSI_COLOR_RED, underline, ANSI_COLOR_RESET
+                );
+    }
+    
+    size_t total_len = strlen(message_buffer) + strlen(context_buffer) + 64;
+    char *err_str = malloc(total_len);
+    if (err_str) {
+        snprintf(err_str, total_len, "YAML Parse Error: %s%s", message_buffer, context_buffer);
         *state->error = err_str;
+    } else {
+        char* fallback_err = malloc(strlen(message_buffer) + 32);
+        if (fallback_err) {
+             sprintf(fallback_err, "YAML Error on line %d: %s", state->line_num, message_buffer);
+            *state->error = fallback_err;
+        }
     }
 }
 
@@ -222,14 +273,15 @@ static void set_error(ParserState *state, const char *format, ...) {
 
 void parse_line(ParserState *state, int line_idx) {
     state->line_num = line_idx + 1;
-    char original_line[YAML_PARSER_MAX_LINE_LEN];
-    snprintf(original_line, sizeof(original_line), "%s", state->lines[line_idx]);
+    char* original_line = state->lines[line_idx];
     
     int indent = get_indent(original_line);
     char* content = trim_whitespace(original_line + indent);
     if (*content == '\0' || *content == '#') {
-        return; // Skip empty or comment-only lines
+        return;
     }
+    
+    const char* error_pos = content;
     
     while (state->stack_top > 0 && indent <= state->stack[state->stack_top].indent) {
         pop_stack(state);
@@ -237,100 +289,83 @@ void parse_line(ParserState *state, int line_idx) {
 
     cJSON *parent = state->stack[state->stack_top].node;
 
-    // --- CASE 1: Line is a list item ---
     if (*content == '-') {
         if (!cJSON_IsArray(parent)) {
-            set_error(state, "Found list item '-' in a non-array context.");
+            set_error(state, error_pos, 1, "Found list item '-' in a non-array context.");
             return;
         }
 
         char *item_content = trim_whitespace(content + 1);
+        const char* item_content_error_pos = item_content;
 
-        // Check if the item is a flow-style collection on the same line
         if (*item_content == '{' || *item_content == '[') {
+            state->ptr = item_content_error_pos;
             cJSON* flow_node = parse_value_string(item_content, state);
             cJSON_AddItemToArray(parent, flow_node);
-            return; // This line is fully processed
+            return;
         }
 
-        // It's a block-style item. Create a new object for it.
         cJSON *new_obj = cJSON_CreateObject();
         cJSON_AddItemToArray(parent, new_obj);
         push_stack(state, new_obj, indent);
         
-        // FIX: Update the local parent variable to the new object context
         parent = new_obj;
 
-        // If there's content on the same line, process it as a k:v pair for the new object.
         if (*item_content != '\0') {
-            content = item_content; // The rest of the logic will process this content.
+            content = item_content;
+            error_pos = item_content_error_pos;
         } else {
-            return; // No content on this line, wait for the next indented line.
+            return;
         }
     }
     
-    // --- CASE 2: Line is a key-value pair ---
     if (!cJSON_IsObject(parent)) {
-        set_error(state, "Found key-value pair in a non-object context.");
+        set_error(state, error_pos, strlen(content), "Found key-value pair in a non-object context.");
         return;
     }
     
     char *colon = strchr(content, ':');
     if (!colon) {
-        set_error(state, "Invalid item (missing ':'). Content: '%s'", content);
+        set_error(state, error_pos, strlen(content), "Invalid mapping (missing ':')");
         return;
     }
     *colon = '\0';
     char *key = trim_whitespace(content);
     char *val_str = colon + 1;
 
-    // Remove trailing comments from the value part
-    bool in_single_quotes = false;
-    bool in_double_quotes = false;
+    bool in_quotes = false;
     char *p = val_str;
     while(*p) {
-        if (*p == '\'' && !in_double_quotes) in_single_quotes = !in_single_quotes;
-        else if (*p == '"' && !in_single_quotes) in_double_quotes = !in_double_quotes;
-        else if (*p == '#' && !in_single_quotes && !in_double_quotes) {
-            *p = '\0';
-            break;
-        }
+        if (*p == '"' || *p == '\'') in_quotes = !in_quotes;
+        else if (*p == '#' && !in_quotes) { *p = '\0'; break; }
         p++;
     }
     char *trimmed_val_str = trim_whitespace(val_str);
+    const char* val_error_pos = trimmed_val_str;
 
     if (*trimmed_val_str == '\0') {
-        // Value is empty. This implies a block follows. Peek ahead.
         int next_content_indent = -1;
         char first_char_of_next_content = '\0';
         for (int j = line_idx + 1; j < state->num_lines; j++) {
-            // Make a copy of the line to safely trim it
-            char next_line_copy[YAML_PARSER_MAX_LINE_LEN];
-            snprintf(next_line_copy, sizeof(next_line_copy), "%s", state->lines[j]);
-            
-            int current_indent = get_indent(next_line_copy);
-            char* current_content = trim_whitespace(next_line_copy + current_indent);
+            char* next_line = state->lines[j];
+            int current_indent = get_indent(next_line);
+            char* current_content = trim_whitespace(next_line + current_indent);
 
-            if (*current_content == '\0' || *current_content == '#') {
-                continue; // Skip empty/comment lines
-            }
+            if (*current_content == '\0' || *current_content == '#') continue;
             next_content_indent = current_indent;
             first_char_of_next_content = *current_content;
             break;
         }
 
         if (next_content_indent > indent) {
-            // Indented block follows.
-            bool is_list = (first_char_of_next_content == '-');
-            cJSON *new_container = is_list ? cJSON_CreateArray() : cJSON_CreateObject();
+            cJSON *new_container = (first_char_of_next_content == '-') ? cJSON_CreateArray() : cJSON_CreateObject();
             cjson_add_item_to_object_with_duplicates(parent, key, new_container);
             push_stack(state, new_container, indent);
         } else {
-            // No indented block, it's just a key with a null value.
             cjson_add_item_to_object_with_duplicates(parent, key, cJSON_CreateNull());
         }
     } else {
-        // Value is on the same line.
+        state->ptr = val_error_pos;
         cJSON *val_node = parse_value_string(trimmed_val_str, state);
         cjson_add_item_to_object_with_duplicates(parent, key, val_node);
     }
@@ -350,22 +385,20 @@ cJSON* yaml_to_cjson(const char* yaml_content, char** error_message) {
     if (error_message) *error_message = NULL;
     state.stack_top = -1;
 
-    char* content_copy = strdup(yaml_content);
-    if (!content_copy) {
-         if (error_message) *error_message = strdup("Failed to allocate memory for YAML content copy.");
-         return NULL;
+    split_lines(&state, yaml_content);
+    if (state.error && *state.error) {
+        free(state.original_content_buffer);
+        // Free the lines that were allocated before the error
+        for(int i=0; i<state.num_lines; i++) free(state.lines[i]);
+        return NULL;
     }
-    split_lines(&state, content_copy);
 
-    // Find the first non-empty, non-comment line to determine the root type.
     int first_content_line_idx = -1;
     bool root_is_sequence = false;
     cJSON *root = NULL;
 
     for (int i = 0; i < state.num_lines; i++) {
-        char temp_line[YAML_PARSER_MAX_LINE_LEN];
-        snprintf(temp_line, sizeof(temp_line), "%s", state.lines[i]);
-        char* content = trim_whitespace(temp_line);
+        char* content = trim_whitespace(state.lines[i]);
         if (*content == '\0' || *content == '#') continue;
 
         first_content_line_idx = i;
@@ -375,37 +408,29 @@ cJSON* yaml_to_cjson(const char* yaml_content, char** error_message) {
         break;
     }
 
-    if (first_content_line_idx == -1) { // Empty file
-        free(content_copy);
-        return cJSON_CreateArray(); // Return empty array
-    }
-
-    if (root_is_sequence) {
+    if (first_content_line_idx == -1) {
         root = cJSON_CreateArray();
-        push_stack(&state, root, -1);
     } else {
-        root = cJSON_CreateObject();
+        root = root_is_sequence ? cJSON_CreateArray() : cJSON_CreateObject();
         push_stack(&state, root, -1);
+        for (int i = first_content_line_idx; i < state.num_lines; i++) {
+            parse_line(&state, i);
+            if (state.error && *state.error) break;
+        }
     }
-
-    for (int i = first_content_line_idx; i < state.num_lines; i++) {
-        parse_line(&state, i);
-        if (state.error && *state.error) break;
-    }
-
-    free(content_copy);
 
     if (state.error && *state.error) {
         cJSON_Delete(root);
-        return NULL;
-    }
-
-    // If the root was a mapping, wrap it in an array to satisfy the generator's contract.
-    if (!root_is_sequence && root) {
+        root = NULL;
+    } else if (root && !root_is_sequence) {
         cJSON* array_wrapper = cJSON_CreateArray();
         cJSON_AddItemToArray(array_wrapper, root);
-        return array_wrapper;
+        root = array_wrapper;
     }
+    
+    // Free all allocated memory
+    free(state.original_content_buffer);
+    for(int i=0; i<state.num_lines; i++) free(state.lines[i]);
 
     return root;
 }

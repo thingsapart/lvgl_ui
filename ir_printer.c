@@ -99,7 +99,9 @@ static void print_node(IRNode* node, int indent_level) {
             break;
         case IR_NODE_OBSERVER: {
             IRObserver* obs = (IRObserver*)node;
-            printf("observes(\"%s\", type=%d, format=\"%s\")\n", obs->state_name, obs->update_type, obs->format_string ? obs->format_string : "");
+            printf("observes(\"%s\", type=%d, config=", obs->state_name, obs->update_type);
+            print_expr(obs->config_expr);
+            printf(")\n");
             break;
         }
         case IR_NODE_ACTION: {
@@ -211,4 +213,3 @@ void ir_print_backend(IRRoot* root, const ApiSpec* api_spec) {
         printf("(No root objects)\n");
     }
 }
-

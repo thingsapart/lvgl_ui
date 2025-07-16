@@ -1,0 +1,66 @@
+[IR_NODE_ROOT]
+  [IR_NODE_OBJECT] c_name="style1_0" json_type="style" c_type="lv_style_t*" id="style1"
+    [CONSTRUCTOR_EXPR]
+      [IR_EXPR_FUNCTION_CALL] type: <lv_style_t*> func_name="malloc"
+        [ARGS]
+          [IR_EXPR_LITERAL] type: <size_t> value=sizeof(lv_style_t) is_string=false
+    [OPERATIONS]
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_style_init"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_style_t*> name=style1_0
+      [IR_EXPR_RUNTIME_REG_ADD] type: <void> id="style1"
+        [OBJECT_EXPR]
+          [IR_EXPR_REGISTRY_REF] type: <lv_style_t*> name=style1_0
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_style_set_bg_color"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_style_t*> name=style1_0
+          [IR_EXPR_FUNCTION_CALL] type: <lv_color_t> func_name="lv_color_hex"
+            [ARGS]
+              [IR_EXPR_LITERAL] type: <uint32_t> value=0xFF0000 is_string=false
+  [IR_NODE_OBJECT] c_name="style2_1" json_type="style" c_type="lv_style_t*" id="style2"
+    [CONSTRUCTOR_EXPR]
+      [IR_EXPR_FUNCTION_CALL] type: <lv_style_t*> func_name="malloc"
+        [ARGS]
+          [IR_EXPR_LITERAL] type: <size_t> value=sizeof(lv_style_t) is_string=false
+    [OPERATIONS]
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_style_init"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_style_t*> name=style2_1
+      [IR_EXPR_RUNTIME_REG_ADD] type: <void> id="style2"
+        [OBJECT_EXPR]
+          [IR_EXPR_REGISTRY_REF] type: <lv_style_t*> name=style2_1
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_style_set_border_width"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_style_t*> name=style2_1
+          [IR_EXPR_LITERAL] type: <float> value=2 is_string=false
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_style_set_border_color"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_style_t*> name=style2_1
+          [IR_EXPR_FUNCTION_CALL] type: <lv_color_t> func_name="lv_color_hex"
+            [ARGS]
+              [IR_EXPR_LITERAL] type: <uint32_t> value=0x0000FF is_string=false
+  [IR_NODE_OBJECT] c_name="obj_2" json_type="obj" c_type="lv_obj_t*"
+    [CONSTRUCTOR_EXPR]
+      [IR_EXPR_FUNCTION_CALL] type: <lv_obj_t*> func_name="lv_obj_create"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=parent
+    [OPERATIONS]
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_set_style_size"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=obj_2
+          [IR_EXPR_LITERAL] type: <float> value=100 is_string=false
+          [IR_EXPR_LITERAL] type: <float> value=50 is_string=false
+          [IR_EXPR_LITERAL] type: <lv_style_selector_t> value=0 is_string=false
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_center"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=obj_2
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_add_style"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=obj_2
+          [IR_EXPR_REGISTRY_REF] type: <lv_style_t*> name=@style1
+          [IR_EXPR_LITERAL] type: <float> value=0 is_string=false
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_add_style"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=obj_2
+          [IR_EXPR_REGISTRY_REF] type: <lv_style_t*> name=@style2
+          [IR_EXPR_LITERAL] type: <float> value=0 is_string=false

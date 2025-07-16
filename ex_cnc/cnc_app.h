@@ -30,4 +30,6 @@ void cnc_action_handler(const char* action_name, binding_value_t value);
 // Simulates one tick of the CNC machine; call this from a timer.
 void cnc_app_tick(void);
 
+void cnc_app_notify_all(void);
+
 #endif // CNC_APP_H

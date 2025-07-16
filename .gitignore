@@ -6,7 +6,8 @@ c_gen/create_ui.*
 data/lv_def.json
 
 # Executables
-ex_cnc/cnc_app_live
+ex_cnc/ex_cnc_rendered
+ex_cnc/ex_cnc_native
 
 .*.swp
 

@@ -10,6 +10,6 @@ void create_ui(lv_obj_t* parent) {
 
     lv_obj_set_style_size(spinner_0, 80, 80, 0);
     lv_obj_center(spinner_0);
-    lv_spinner_set_anim_params(spinner_0, 1000, 60);
+    lv_spinner_set_anim_params(spinner_0, 1e+07, 60);
 
 }

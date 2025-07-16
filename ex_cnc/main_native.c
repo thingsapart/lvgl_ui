@@ -34,8 +34,6 @@ int main(int argc, char* argv[]) {
     // --- Application Initialization ---
     // Initialize the data binding system first
     data_binding_init();
-    // Initialize our CNC application logic, which registers its action handler
-    cnc_app_init();
     
     // --- UI Creation ---
     // This function is generated from our ui.yaml by the c_code backend
@@ -45,6 +43,12 @@ int main(int argc, char* argv[]) {
     // Create a timer to drive the CNC simulation
     lv_timer_create(tick_timer_cb, 50, NULL);
     
+    // Initialize our CNC application logic, which registers its action handler
+    cnc_app_init();
+
+    lv_timer_handler();
+    cnc_app_notify_all();
+
     printf("Starting main loop. Close the window to exit.\n");
     sdl_viewer_loop();
 

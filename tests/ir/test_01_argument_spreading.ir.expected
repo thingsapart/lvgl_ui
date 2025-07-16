@@ -1,0 +1,16 @@
+[IR_NODE_ROOT]
+  [IR_NODE_OBJECT] c_name="my_obj_0" json_type="obj" c_type="lv_obj_t*" id="my_obj"
+    [CONSTRUCTOR_EXPR]
+      [IR_EXPR_FUNCTION_CALL] type: <lv_obj_t*> func_name="lv_obj_create"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=parent
+    [OPERATIONS]
+      [IR_EXPR_RUNTIME_REG_ADD] type: <void> id="my_obj"
+        [OBJECT_EXPR]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=my_obj_0
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_set_style_size"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=my_obj_0
+          [IR_EXPR_LITERAL] type: <float> value=100 is_string=false
+          [IR_EXPR_LITERAL] type: <float> value=50 is_string=false
+          [IR_EXPR_LITERAL] type: <lv_style_selector_t> value=0 is_string=false

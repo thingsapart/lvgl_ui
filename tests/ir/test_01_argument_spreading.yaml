@@ -1,0 +1,5 @@
+# Tests that a top-level array is "spread" as function arguments,
+# NOT treated as a C-array literal.
+- type: obj
+  id: '@my_obj'
+  size: [100, 50]

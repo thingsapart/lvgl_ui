@@ -1,0 +1,6 @@
+# Tests that a NESTED array is correctly interpreted as a single C-array argument.
+# This is crucial for properties that take C arrays as input.
+- type: obj
+  id: '@my_grid'
+  grid_dsc_array: [ [60, 60, LV_GRID_TEMPLATE_LAST], [50, LV_GRID_TEMPLATE_LAST] ]
+
