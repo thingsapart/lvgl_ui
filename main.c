@@ -124,7 +124,7 @@ static bool load_and_render_ui(
 
     // 3. Create registry and render
     *registry_ptr = registry_create();
-    view_inspector_init(inspector_panel, *ir_root_ptr, api_spec);
+    if (inspector_panel) { view_inspector_init(inspector_panel, *ir_root_ptr, api_spec); }
     lvgl_render_backend(*ir_root_ptr, api_spec, preview_panel, *registry_ptr);
 
     // 4. Run warning printer for immediate feedback
