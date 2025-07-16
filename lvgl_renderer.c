@@ -3,9 +3,10 @@
 #include "debug_log.h"
 #include "registry.h"
 #include "utils.h"
+#include "generator.h"
+#include "viewer/view_inspector.h"
 #include <stdlib.h>
 #include <string.h>
-#include "viewer/view_inspector.h"
 
 
 // --- Forward Declarations ---
@@ -32,6 +33,50 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent, Regi
     lv_obj_update_layout(parent);
     DEBUG_LOG(LOG_MODULE_RENDERER, "Forcing layout update on parent container.");
 }
+
+void lvgl_renderer_reload_ui(const char* ui_spec_path, ApiSpec* api_spec, lv_obj_t* preview_panel, lv_obj_t* inspector_panel) {
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Reloading UI from %s", ui_spec_path);
+
+    // 1. Generate new IR from the file
+    IRRoot* ir_root = generate_ir_from_file(ui_spec_path, api_spec);
+    if (!ir_root) {
+        // Display an error message on the screen
+        lv_obj_clean(preview_panel);
+        lv_obj_t* label = lv_label_create(preview_panel);
+        lv_label_set_text(label, "#f04040 Error parsing UI file.\nSee console for details.#");
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_center(label);
+        return;
+    }
+
+    // 2. Clean the target panels in the live UI
+    lv_obj_clean(preview_panel);
+    if (inspector_panel) {
+        lv_obj_clean(inspector_panel);
+    }
+
+    // 3. Reset runtime registries
+    obj_registry_deinit();
+    data_binding_init(); // Also reset data binding state
+
+    // 4. Re-render the UI using the new IR
+    Registry* renderer_registry = registry_create();
+    if (renderer_registry) {
+        lvgl_render_backend(ir_root, api_spec, preview_panel, renderer_registry);
+        registry_free(renderer_registry);
+    }
+
+    // 5. Re-initialize the inspector with the new IR
+    if (inspector_panel) {
+        view_inspector_init(inspector_panel, ir_root, api_spec);
+    }
+    
+    // 6. Free the IR, it's not needed anymore for this cycle
+    ir_free((IRNode*)ir_root);
+
+    DEBUG_LOG(LOG_MODULE_RENDERER, "UI reload complete.");
+}
+
 
 // --- Core Rendering Logic ---
 static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* registry, IRExprArray* arr, uint32_t* out_count);
