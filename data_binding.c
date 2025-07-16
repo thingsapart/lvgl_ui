@@ -46,6 +46,7 @@ typedef struct {
 
 // --- Module-level variables ---
 static data_binding_action_handler_t app_action_handler = NULL;
+static void* app_user_data = NULL;
 
 // --- Forward Declarations for Event Callbacks ---
 static void generic_action_event_cb(lv_event_t* e);
@@ -58,11 +59,13 @@ void data_binding_init(void) {
     memset(state_observers, 0, sizeof(state_observers));
     state_observer_count = 0;
     app_action_handler = NULL;
+    app_user_data = NULL;
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Data binding system initialized.");
 }
 
-void data_binding_register_action_handler(data_binding_action_handler_t handler) {
+void data_binding_register_action_handler(data_binding_action_handler_t handler, void* user_data) {
     app_action_handler = handler;
+    app_user_data = user_data;
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Application action handler registered.");
 }
 
@@ -380,6 +383,6 @@ static void generic_action_event_cb(lv_event_t* e) {
     
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Dispatching action: '%s'", user_data->action_name);
     if (app_action_handler) {
-        app_action_handler(user_data->action_name, val);
+        app_action_handler(user_data->action_name, val, app_user_data);
     }
 }

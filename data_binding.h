@@ -55,8 +55,11 @@ typedef enum {
 /**
  * @brief A function pointer for the application's main action handler.
  * This single function will receive all actions triggered by the UI.
+ * @param action_name The name of the action being triggered.
+ * @param value The value associated with the action (if any).
+ * @param user_data The user-provided context pointer registered at initialization.
  */
-typedef void (*data_binding_action_handler_t)(const char* action_name, binding_value_t value);
+typedef void (*data_binding_action_handler_t)(const char* action_name, binding_value_t value, void* user_data);
 
 
 // --- Public API for the Main Application ---
@@ -67,10 +70,12 @@ typedef void (*data_binding_action_handler_t)(const char* action_name, binding_v
 void data_binding_init(void);
 
 /**
- * @brief Registers the application's single action handler function.
+ * @brief Registers the application's single action handler function and a user context pointer.
  * @param handler A pointer to the function that will process UI actions.
+ * @param user_data A pointer to an application-defined context struct or variable. This
+ *                  pointer will be passed to every invocation of the action handler.
  */
-void data_binding_register_action_handler(data_binding_action_handler_t handler);
+void data_binding_register_action_handler(data_binding_action_handler_t handler, void* user_data);
 
 /**
  * @brief Notifies the UI that a piece of the application's state has changed.
