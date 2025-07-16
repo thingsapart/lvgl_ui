@@ -1,0 +1,22 @@
+[IR_NODE_ROOT]
+  [IR_NODE_OBJECT] c_name="my_grid_0" json_type="obj" c_type="lv_obj_t*" id="my_grid"
+    [CONSTRUCTOR_EXPR]
+      [IR_EXPR_FUNCTION_CALL] type: <lv_obj_t*> func_name="lv_obj_create"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=parent
+    [OPERATIONS]
+      [IR_EXPR_RUNTIME_REG_ADD] type: <void> id="my_grid"
+        [OBJECT_EXPR]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=my_grid_0
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_set_grid_dsc_array"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=my_grid_0
+          [IR_EXPR_ARRAY] type: <int32_t*> ptr=0xcafe
+            [ELEMENTS]
+              [IR_EXPR_LITERAL] type: <float> value=60 is_string=false
+              [IR_EXPR_LITERAL] type: <float> value=60 is_string=false
+              [IR_EXPR_LITERAL] type: <float> value=536870911 is_string=false
+          [IR_EXPR_ARRAY] type: <int32_t*> ptr=0xcafe
+            [ELEMENTS]
+              [IR_EXPR_LITERAL] type: <float> value=50 is_string=false
+              [IR_EXPR_LITERAL] type: <float> value=536870911 is_string=false

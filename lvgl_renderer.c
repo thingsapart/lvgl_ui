@@ -1,10 +1,10 @@
 #include "lvgl_renderer.h"
-#include "c_gen/lvgl_dispatch.h"
 #include "data_binding.h"
 #include "debug_log.h"
 #include "registry.h"
 #include "utils.h"
 #include <stdlib.h>
+#include <string.h>
 #include "viewer/view_inspector.h"
 
 
@@ -12,9 +12,6 @@
 static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry);
 static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry* registry);
 static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr, RenderValue* out_val);
-static void debug_print_expr_as_c(IRExpr* expr, Registry* registry, FILE* stream);
-static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* registry, IRExprArray* arr, uint32_t* out_count);
-
 
 // --- Main Backend Entry Point ---
 
@@ -24,11 +21,7 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent, Regi
         return;
     }
 
-    // Initialize the C-side dispatcher's own registry
     obj_registry_init();
-    // data_binding_init(); // Removed: Let main initialize the data binding system
-
-    // Add the top-level parent widget to both registries so it can be referenced.
     registry_add_pointer(registry, parent, "parent", "obj", "lv_obj_t*");
     obj_registry_add("parent", parent);
 
@@ -36,167 +29,30 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent, Regi
     render_object_list(api_spec, root->root_objects, registry);
     DEBUG_LOG(LOG_MODULE_RENDERER, "LVGL render backend finished.");
 
-    // *** THE FIX ***
-    // After all objects are created, explicitly update the layout of the parent container.
-    // This forces LVGL to calculate the final sizes and positions of all flex/grid children
-    // before the next draw cycle, ensuring alignments like LV_ALIGN_CENTER work correctly.
     lv_obj_update_layout(parent);
     DEBUG_LOG(LOG_MODULE_RENDERER, "Forcing layout update on parent container.");
-
-    // Note: The registry is NOT freed here. Its lifecycle is now managed by the caller (main).
 }
-
-// --- Debugging Helper ---
-
-static void debug_print_expr_as_c(IRExpr* expr, Registry* registry, FILE* stream) {
-    if (!expr) {
-        fprintf(stream, "NULL");
-        return;
-    }
-
-    switch (expr->base.type) {
-        case IR_EXPR_LITERAL: {
-            IRExprLiteral* lit = (IRExprLiteral*)expr;
-            if (lit->is_string) {
-                // A full C-escape is complex, this is good enough for debug
-                fprintf(stream, "\"%s\"", lit->value);
-            } else {
-                fprintf(stream, "%s", lit->value);
-            }
-            break;
-        }
-        case IR_EXPR_STATIC_STRING: {
-            fprintf(stream, "\"%s\"", ((IRExprStaticString*)expr)->value);
-            break;
-        }
-        case IR_EXPR_ENUM:
-            fprintf(stream, "%s", ((IRExprEnum*)expr)->symbol);
-            break;
-        case IR_EXPR_REGISTRY_REF: {
-            fprintf(stream, "%s", ((IRExprRegistryRef*)expr)->name);
-            break;
-        }
-        case IR_EXPR_RAW_POINTER: {
-             fprintf(stream, "(void*)%p", ((IRExprRawPointer*)expr)->ptr);
-             break;
-        }
-        case IR_EXPR_CONTEXT_VAR:
-             fprintf(stream, "/* CONTEXT_VAR: %s */", ((IRExprContextVar*)expr)->name);
-            break;
-        case IR_EXPR_FUNCTION_CALL: {
-            IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
-            fprintf(stream, "%s(", call->func_name);
-            IRExprNode* arg_node = call->args;
-            bool first = true;
-            while(arg_node) {
-                if (!first) fprintf(stream, ", ");
-                bool is_struct_by_value = false;
-                if (arg_node->expr->base.type == IR_EXPR_REGISTRY_REF) {
-                    const char* ref_name = ((IRExprRegistryRef*)arg_node->expr)->name;
-                    const char* c_type = registry_get_c_type_for_id(registry, ref_name);
-                    if (c_type && strchr(c_type, '*') == NULL) {
-                        is_struct_by_value = true;
-                    }
-                }
-                if (is_struct_by_value) fprintf(stream, "&");
-                debug_print_expr_as_c(arg_node->expr, registry, stream);
-                first = false;
-                arg_node = arg_node->next;
-            }
-            fprintf(stream, ")");
-            break;
-        }
-        case IR_EXPR_ARRAY: {
-            fprintf(stream, "{ ");
-            IRExprNode* elem_node = ((IRExprArray*)expr)->elements;
-            bool first = true;
-            while(elem_node) {
-                if (!first) fprintf(stream, ", ");
-                debug_print_expr_as_c(elem_node->expr, registry, stream);
-                first = false;
-                elem_node = elem_node->next;
-            }
-            fprintf(stream, " }");
-            break;
-        }
-        case IR_EXPR_RUNTIME_REG_ADD: {
-            IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
-            fprintf(stream, "obj_registry_add(\"%s\", ", reg->id);
-            bool is_struct_by_value = false;
-            if (reg->object_expr->base.type == IR_EXPR_REGISTRY_REF) {
-                const char* ref_name = ((IRExprRegistryRef*)reg->object_expr)->name;
-                const char* c_type = registry_get_c_type_for_id(registry, ref_name);
-                if (c_type && strchr(c_type, '*') == NULL) {
-                    is_struct_by_value = true;
-                }
-            }
-            if (is_struct_by_value) fprintf(stream, "&");
-            debug_print_expr_as_c(reg->object_expr, registry, stream);
-            fprintf(stream, ")");
-            break;
-        }
-        default:
-            fprintf(stream, "/* UNKNOWN_EXPR */");
-            break;
-    }
-}
-
 
 // --- Core Rendering Logic ---
+static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* registry, IRExprArray* arr, uint32_t* out_count);
 
-// This function processes a SINGLE object: creates it, registers it, and processes its operations.
 static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry* registry) {
     DEBUG_LOG(LOG_MODULE_RENDERER, "Rendering object: c_name='%s', json_type='%s'", current_obj->c_name, current_obj->json_type);
 
-    bool debug_c_code = debug_log_is_module_enabled(LOG_MODULE_RENDERER);
-    if (debug_c_code) {
-        fprintf(stderr, "[RENDERER C-CODE] // %s: %s\n", current_obj->registered_id ? current_obj->registered_id : "unnamed", current_obj->c_name);
-        fprintf(stderr, "[RENDERER C-CODE] do {\n");
-        bool is_pointer = (current_obj->c_type && strchr(current_obj->c_type, '*') != NULL);
-        fprintf(stderr, "[RENDERER C-CODE]     %s %s%s;\n", current_obj->c_type, current_obj->c_name, is_pointer ? " = NULL" : "");
-    }
-
-    RenderValue constructor_result;
-    constructor_result.type = RENDER_VAL_TYPE_NULL;
-    constructor_result.as.p_val = NULL;
-
+    RenderValue constructor_result = { .type = RENDER_VAL_TYPE_NULL, .as.p_val = NULL };
     void* c_obj = NULL;
 
-    // 1. Create the object by executing its constructor expression
     if (current_obj->constructor_expr) {
-        bool is_malloc_constructor = false;
-        if (current_obj->constructor_expr->base.type == IR_EXPR_FUNCTION_CALL) {
-            if (strcmp(((IRExprFunctionCall*)current_obj->constructor_expr)->func_name, "malloc") == 0) {
-                is_malloc_constructor = true;
-            }
-        }
+        bool is_malloc = (current_obj->constructor_expr->base.type == IR_EXPR_FUNCTION_CALL &&
+                          strcmp(((IRExprFunctionCall*)current_obj->constructor_expr)->func_name, "malloc") == 0);
 
-        if (is_malloc_constructor) {
-            // Special handling for malloc: execute it directly instead of using the LVGL dispatcher.
-            // We determine *what* to malloc based on the object's C type.
+        if (is_malloc) {
             if (strcmp(current_obj->c_type, "lv_style_t*") == 0) {
                 c_obj = malloc(sizeof(lv_style_t));
-                if (!c_obj) render_abort("Failed to malloc lv_style_t for renderer");
-                if (debug_c_code) {
-                     fprintf(stderr, "[RENDERER C-CODE]     %s = (%s)malloc(sizeof(%s));\n",
-                        current_obj->c_name, "lv_style_t*", "lv_style_t");
-                }
             } else {
-                 char err_buf[256];
-                 snprintf(err_buf, sizeof(err_buf), "Renderer Error: Don't know how to handle 'malloc' for type '%s'", current_obj->c_type);
-                 render_abort(err_buf);
+                 render_abort("Renderer Error: Don't know how to malloc this type");
             }
         } else {
-            // For all other constructors, use the regular dispatcher.
-            if (debug_c_code) {
-                bool is_pointer = (current_obj->c_type && strchr(current_obj->c_type, '*') != NULL);
-                fprintf(stderr, "[RENDERER C-CODE]     ");
-                if (is_pointer) {
-                    fprintf(stderr, "%s = ", current_obj->c_name);
-                }
-                debug_print_expr_as_c(current_obj->constructor_expr, registry, stderr);
-                fprintf(stderr, ";\n");
-            }
             evaluate_expression(spec, registry, current_obj->constructor_expr, &constructor_result);
             if(constructor_result.type == RENDER_VAL_TYPE_POINTER) {
                 c_obj = constructor_result.as.p_val;
@@ -204,37 +60,18 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
         }
     }
 
-    if (!c_obj && current_obj->constructor_expr) {
-        // Don't warn about NULL constructors for "void" type objects, which are just function calls.
-        if (strcmp(current_obj->c_type, "void") != 0) {
-            DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Constructor for '%s' returned NULL.", current_obj->c_name);
-        }
-    }
+    if (c_obj) view_inspector_set_object_pointer((IRNode*)current_obj, c_obj);
 
-    // *** INSPECTOR INTEGRATION ***
-    // Notify the inspector of the newly created live object.
-    if (c_obj) {
-        view_inspector_set_object_pointer((IRNode*)current_obj, c_obj);
-    }
-    // ***************************
-
-    // Register the newly created object so it can be found by subsequent calls.
-    // This happens BEFORE operations are processed.
     registry_add_pointer(registry, c_obj, current_obj->c_name, current_obj->json_type, current_obj->c_type);
-    // Add the C-name to the C-side registry as well, so it can be resolved by the dispatcher.
     obj_registry_add(current_obj->c_name, c_obj);
 
     if (current_obj->registered_id) {
          registry_add_pointer(registry, c_obj, current_obj->registered_id, current_obj->json_type, current_obj->c_type);
          obj_registry_add(current_obj->registered_id, c_obj);
-         DEBUG_LOG(LOG_MODULE_REGISTRY, "Registered ID '%s' to pointer %p", current_obj->registered_id, c_obj);
     }
 
-    // 2. Execute all operations for this object (setup calls and children, in order).
     if (current_obj->operations) {
-        if (debug_c_code) fprintf(stderr, "[RENDERER C-CODE]\n");
-        IROperationNode* op_node = current_obj->operations;
-        while(op_node) {
+        for (IROperationNode* op_node = current_obj->operations; op_node; op_node = op_node->next) {
             IRNode* node = op_node->op_node;
             if (node->type == IR_NODE_OBJECT) {
                 render_single_object(spec, (IRObject*)node, registry);
@@ -242,7 +79,51 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
                 print_hint("%s", ((IRWarning*)node)->message);
             } else if (node->type == IR_NODE_OBSERVER) {
                 IRObserver* obs = (IRObserver*)node;
-                data_binding_add_observer(obs->state_name, c_obj, obs->update_type, obs->format_string);
+                const void* config_ptr = NULL;
+                size_t config_len = 0;
+                const void* default_ptr = NULL;
+
+                RenderValue val;
+                evaluate_expression(spec, registry, obs->config_expr, &val);
+
+                if (obs->config_expr->base.type == IR_EXPR_LITERAL) {
+                    if (((IRExprLiteral*)obs->config_expr)->is_string) {
+                        config_ptr = val.as.s_val; // Format string
+                    } else {
+                        config_ptr = &val.as.b_val; // bool for direct mapping
+                    }
+                } else if (obs->config_expr->base.type == IR_EXPR_ARRAY) { // Map
+                    IRExprArray* map_arr = (IRExprArray*)obs->config_expr;
+                    config_len = 0;
+                    for (IRExprNode* n = map_arr->elements; n; n = n->next) config_len++;
+                    binding_map_entry_t* map = calloc(config_len, sizeof(binding_map_entry_t));
+                    
+                    int i = 0;
+                    int final_count = 0;
+                    for (IRExprNode* n = map_arr->elements; n; n = n->next, i++) {
+                        IRExprArray* pair = (IRExprArray*)n->expr;
+                        RenderValue key, value;
+                        evaluate_expression(spec, registry, pair->elements->expr, &key);
+                        evaluate_expression(spec, registry, pair->elements->next->expr, &value);
+
+                        if(key.type == RENDER_VAL_TYPE_STRING && strcmp(key.as.s_val, "default") == 0) {
+                            if (obs->update_type == OBSERVER_TYPE_STYLE) default_ptr = value.as.p_val;
+                            else default_ptr = &value.as.b_val;
+                        } else {
+                            if (key.type == RENDER_VAL_TYPE_STRING) map[final_count].key = (binding_value_t){.type=BINDING_TYPE_STRING, .as.s_val=key.as.s_val};
+                            else if (key.type == RENDER_VAL_TYPE_BOOL) map[final_count].key = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=key.as.b_val};
+                            else map[final_count].key = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=(float)key.as.i_val};
+                            
+                            if (obs->update_type == OBSERVER_TYPE_STYLE) map[final_count].value.p_val = value.as.p_val;
+                            else map[final_count].value.b_val = value.as.b_val;
+                            final_count++;
+                        }
+                    }
+                    config_ptr = map;
+                    config_len = final_count;
+                }
+                data_binding_add_observer(obs->state_name, c_obj, obs->update_type, config_ptr, config_len, default_ptr);
+                if (config_len > 0) free((void*)config_ptr);
             } else if (node->type == IR_NODE_ACTION) {
                 IRAction* act = (IRAction*)node;
                 binding_value_t* cycle_values = NULL;
@@ -251,30 +132,15 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
                     cycle_values = evaluate_binding_array_expr(spec, registry, (IRExprArray*)act->data_expr, &cycle_count);
                 }
                 data_binding_add_action(c_obj, act->action_name, act->action_type, cycle_values, cycle_count);
-                if (cycle_values) {
-                    free(cycle_values);
-                }
+                if (cycle_values) free(cycle_values);
+            } else {
+                RenderValue ignored;
+                evaluate_expression(spec, registry, (IRExpr*)node, &ignored);
             }
-            else {
-                // It's an expression (a setup call or runtime registration). Evaluate it.
-                if (debug_c_code) {
-                    fprintf(stderr, "[RENDERER C-CODE]     ");
-                    debug_print_expr_as_c((IRExpr*)node, registry, stderr);
-                    fprintf(stderr, ";\n");
-                }
-                RenderValue ignored_result;
-                evaluate_expression(spec, registry, (IRExpr*)node, &ignored_result);
-            }
-            op_node = op_node->next;
         }
-    }
-
-    if (debug_c_code) {
-        fprintf(stderr, "[RENDERER C-CODE] } while(0);\n\n");
     }
 }
 
-// This function iterates over a list of SIBLING objects.
 static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry) {
     for (IRObject* current_obj = head; current_obj; current_obj = current_obj->next) {
         render_single_object(spec, current_obj, registry);
@@ -287,7 +153,6 @@ static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* reg
     int count = 0;
     for (IRExprNode* n = arr->elements; n; n = n->next) count++;
     *out_count = count;
-
     if (count == 0) return NULL;
 
     binding_value_t* result_array = calloc(count, sizeof(binding_value_t));
@@ -295,23 +160,13 @@ static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* reg
 
     int i = 0;
     for (IRExprNode* n = arr->elements; n; n = n->next, i++) {
-        if (n->expr->base.type == IR_EXPR_LITERAL) {
-            IRExprLiteral* lit = (IRExprLiteral*)n->expr;
-            if (lit->is_string) {
-                result_array[i].type = BINDING_TYPE_STRING;
-                result_array[i].as.s_val = lit->value; // String is owned by IR, but will be duplicated by data_binding_add_action
-            } else {
-                if (strcmp(lit->value, "true") == 0) {
-                    result_array[i].type = BINDING_TYPE_BOOL;
-                    result_array[i].as.b_val = true;
-                } else if (strcmp(lit->value, "false") == 0) {
-                    result_array[i].type = BINDING_TYPE_BOOL;
-                    result_array[i].as.b_val = false;
-                } else {
-                    result_array[i].type = BINDING_TYPE_FLOAT;
-                    result_array[i].as.f_val = strtof(lit->value, NULL);
-                }
-            }
+        RenderValue val;
+        evaluate_expression(spec, registry, n->expr, &val);
+        switch(val.type) {
+            case RENDER_VAL_TYPE_STRING: result_array[i] = (binding_value_t){.type=BINDING_TYPE_STRING, .as.s_val=val.as.s_val}; break;
+            case RENDER_VAL_TYPE_BOOL: result_array[i] = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=val.as.b_val}; break;
+            case RENDER_VAL_TYPE_INT: result_array[i] = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=(float)val.as.i_val}; break;
+            default: result_array[i].type = BINDING_TYPE_NULL;
         }
     }
     return result_array;
@@ -331,13 +186,10 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
                 out_val->type = RENDER_VAL_TYPE_STRING;
                 out_val->as.s_val = lit->value;
             } else {
-                if(strcmp(lit->value, "true") == 0) {
+                if(strcmp(lit->base.c_type, "bool") == 0) {
                     out_val->type = RENDER_VAL_TYPE_BOOL;
-                    out_val->as.b_val = true;
-                } else if (strcmp(lit->value, "false") == 0) {
-                    out_val->type = RENDER_VAL_TYPE_BOOL;
-                    out_val->as.b_val = false;
-                } else {
+                    out_val->as.b_val = (strcmp(lit->value, "true") == 0);
+                } else { // It's a number, treat as int internally for renderer
                     out_val->type = RENDER_VAL_TYPE_INT;
                     out_val->as.i_val = strtol(lit->value, NULL, 0);
                 }
@@ -352,7 +204,6 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
         }
 
         case IR_EXPR_ENUM: {
-            // An enum represents an integer value.
             out_val->type = RENDER_VAL_TYPE_INT;
             out_val->as.i_val = ((IRExprEnum*)expr)->value;
             return;
@@ -385,10 +236,9 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             if(strcmp(base_type, "lv_coord_t") == 0) element_size = sizeof(lv_coord_t);
             else if(strcmp(base_type, "int32_t") == 0) element_size = sizeof(int32_t);
             else if(strcmp(base_type, "int") == 0) element_size = sizeof(int);
+            else if(strcmp(base_type, "void*") == 0) element_size = sizeof(void*);
             else {
-                char err_buf[256];
-                snprintf(err_buf, sizeof(err_buf), "Unsupported array base type for renderer: %s", base_type);
-                render_abort(err_buf);
+                render_abort("Unsupported array base type for renderer");
             }
             free(base_type);
 
@@ -399,11 +249,12 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             for (IRExprNode* n = arr->elements; n; n=n->next) {
                 RenderValue elem_val;
                 evaluate_expression(spec, registry, n->expr, &elem_val);
-                // Assuming all array elements resolve to integers for now.
                 if (elem_val.type == RENDER_VAL_TYPE_INT) {
                     if (element_size == sizeof(lv_coord_t)) ((lv_coord_t*)c_array)[i] = (lv_coord_t)elem_val.as.i_val;
                     else if (element_size == sizeof(int32_t)) ((int32_t*)c_array)[i] = (int32_t)elem_val.as.i_val;
                     else if (element_size == sizeof(int)) ((int*)c_array)[i] = (int)elem_val.as.i_val;
+                } else if (elem_val.type == RENDER_VAL_TYPE_POINTER) {
+                    if (element_size == sizeof(void*)) ((void**)c_array)[i] = elem_val.as.p_val;
                 }
                 i++;
             }
@@ -421,8 +272,6 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             RenderValue obj_to_reg;
             evaluate_expression(spec, registry, reg->object_expr, &obj_to_reg);
             if (obj_to_reg.type == RENDER_VAL_TYPE_POINTER) {
-                // We're already in the renderer, so just add to the C-side registry.
-                // The main registry was populated when the object was created.
                 obj_registry_add(reg->id, obj_to_reg.as.p_val);
             }
             out_val->type = RENDER_VAL_TYPE_NULL;
@@ -433,82 +282,56 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
             DEBUG_LOG(LOG_MODULE_DISPATCH, "Evaluating call: %s", call->func_name);
 
-            // --- General-purpose dynamic dispatch ---
-
-            // 1. Evaluate all arguments into concrete values.
             int arg_count = 0;
             for (IRExprNode* n = call->args; n; n = n->next) arg_count++;
-
             RenderValue* evaluated_args = arg_count > 0 ? calloc(arg_count, sizeof(RenderValue)) : NULL;
             if (arg_count > 0 && !evaluated_args) render_abort("Failed to allocate evaluated_args array");
-
             int i = 0;
             for (IRExprNode* n = call->args; n; n = n->next) {
                 evaluate_expression(spec, registry, n->expr, &evaluated_args[i++]);
             }
-
-            // 2. Repackage the concrete values into temporary IR nodes that the dispatcher can understand.
-            // This is the key part of the fix: we now create IR_EXPR_RAW_POINTER for intermediate pointers.
+            
             IRExprNode* temp_ir_args_head = NULL;
             for (i = 0; i < arg_count; i++) {
                 IRExpr* temp_expr = NULL;
                 switch (evaluated_args[i].type) {
                     case RENDER_VAL_TYPE_INT: {
-                        char buf[32];
-                        snprintf(buf, sizeof(buf), "%ld", (long)evaluated_args[i].as.i_val);
-                        temp_expr = ir_new_expr_literal(buf, "int");
-                        break;
+                        char buf[32]; snprintf(buf, sizeof(buf), "%ld", (long)evaluated_args[i].as.i_val);
+                        temp_expr = ir_new_expr_literal(buf, "int"); break;
                     }
                     case RENDER_VAL_TYPE_BOOL:
-                        temp_expr = ir_new_expr_literal(evaluated_args[i].as.b_val ? "true" : "false", "bool");
-                        break;
+                        temp_expr = ir_new_expr_literal(evaluated_args[i].as.b_val ? "true" : "false", "bool"); break;
                     case RENDER_VAL_TYPE_COLOR: {
-                        char buf[32];
-                        snprintf(buf, sizeof(buf), "%u", lv_color_to_u32(evaluated_args[i].as.color_val));
-                        temp_expr = ir_new_expr_literal(buf, "lv_color_t");
-                        break;
+                         char buf[32]; snprintf(buf, sizeof(buf), "%u", lv_color_to_u32(evaluated_args[i].as.color_val));
+                        temp_expr = ir_new_expr_literal(buf, "lv_color_t"); break;
                     }
                     case RENDER_VAL_TYPE_STRING:
                         temp_expr = ir_new_expr_literal(evaluated_args[i].as.s_val, "const char*");
-                        ((IRExprLiteral*)temp_expr)->is_string = true;
-                        break;
+                        ((IRExprLiteral*)temp_expr)->is_string = true; break;
                     case RENDER_VAL_TYPE_POINTER:
                     case RENDER_VAL_TYPE_NULL: {
                         void* ptr = evaluated_args[i].as.p_val;
                         const char* id = registry_get_id_from_pointer(registry, ptr);
                         if (id) {
-                             // If the pointer is registered, pass its ID so it can be looked up again.
                             temp_expr = ir_new_expr_literal(id, "void*");
                             ((IRExprLiteral*)temp_expr)->is_string = true;
                         } else {
-                            // If the pointer is not registered, it's an intermediate result.
-                            // Pass the raw pointer value directly.
                             temp_expr = ir_new_expr_raw_pointer(ptr, "void*");
                         }
                         break;
                     }
                 }
-                if (temp_expr) {
-                    ir_expr_list_add(&temp_ir_args_head, temp_expr);
-                }
+                if (temp_expr) ir_expr_list_add(&temp_ir_args_head, temp_expr);
             }
 
-            // 3. Create a C-style array of IRNode* for the dispatcher from the linked list.
             IRNode** final_ir_args_array = arg_count > 0 ? calloc(arg_count, sizeof(IRNode*)) : NULL;
             if (arg_count > 0 && !final_ir_args_array) render_abort("Failed to alloc final_ir_args_array");
-
             i = 0;
-            IRExprNode* current_arg_node = temp_ir_args_head;
-            while(current_arg_node) {
-                final_ir_args_array[i++] = (IRNode*)current_arg_node->expr;
-                current_arg_node = current_arg_node->next;
-            }
-
-            // 4. Determine target and final arguments for the dispatcher
+            for (IRExprNode* n = temp_ir_args_head; n; n = n->next) final_ir_args_array[i++] = (IRNode*)n->expr;
+            
             void* target_obj = NULL;
             IRNode** dispatcher_args = NULL;
             int dispatcher_arg_count = 0;
-
             const FunctionArg* f_args = api_spec_get_function_args_by_name(spec, call->func_name);
             bool first_arg_is_target = f_args && f_args->type && (strstr(f_args->type, "_t*") != NULL);
 
@@ -522,17 +345,13 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
                 dispatcher_arg_count = arg_count;
             }
 
-            // 5. Dispatch the call
             *out_val = dynamic_lvgl_call_ir(call->func_name, target_obj, dispatcher_args, dispatcher_arg_count, spec);
-
-            // 6. Cleanup
+            
             free(evaluated_args);
-            // Free the temporary IR expression list we created
-            ir_expr_list_add(&temp_ir_args_head, NULL); // Hack to call ir_free on the list
+            ir_free((IRNode*)temp_ir_args_head);
             free(final_ir_args_array);
             return;
         }
-
         default:
             DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: evaluate_expression called on un-evaluatable node type %d", expr->base.type);
             out_val->type = RENDER_VAL_TYPE_NULL;

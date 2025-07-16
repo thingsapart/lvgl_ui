@@ -166,12 +166,12 @@ IRWarning* ir_new_warning(const char* message) {
     return warn;
 }
 
-IRObserver* ir_new_observer(const char* state_name, observer_update_type_t update_type, const char* format) {
+IRObserver* ir_new_observer(const char* state_name, observer_update_type_t update_type, IRExpr* config_expr) {
     IRObserver* obs = calloc(1, sizeof(IRObserver));
     obs->base.type = IR_NODE_OBSERVER;
     obs->state_name = safe_strdup(state_name);
     obs->update_type = update_type;
-    obs->format_string = safe_strdup(format);
+    obs->config_expr = config_expr;
     return obs;
 }
 
@@ -378,7 +378,7 @@ void ir_free(IRNode* node) {
         case IR_NODE_OBSERVER: {
             IRObserver* obs = (IRObserver*)node;
             free(obs->state_name);
-            free(obs->format_string);
+            free_expr(obs->config_expr);
             break;
         }
         case IR_NODE_ACTION: {

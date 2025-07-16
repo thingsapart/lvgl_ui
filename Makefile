@@ -92,14 +92,15 @@ run: $(TARGET)
 	./$(TARGET) $(API_SPEC_JSON) ./ui.json
 
 # --- CNC Example Targets ---
-TARGET_CNC_RENDERED = ex_cnc/ex_cnc_rendered
+TARGET_CNC_RENDERED = ./ex_cnc/ex_cnc_rendered
 ex_cnc_rendered: $(TARGET_CNC_RENDERED)
 $(TARGET_CNC_RENDERED): $(OBJECTS) $(LVGL_LIB) ex_cnc/cnc_app.o ex_cnc/cnc_main_live.o
 	@echo "\n--- Building CNC Example (Renderer) ---\n"
 	# $(MAKE) -C ex_cnc run_renderer
-	$(CC) $(CFLAGS) -o ex_cnc/cnc_rendered $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $(TARGET_CNC_RENDERED) $^ $(LIBS)
+	$(TARGET_CNC_RENDERED)
 
-TARGET_CNC_NATIVE = ex_cnc/ex_cnc_native
+TARGET_CNC_NATIVE = ./ex_cnc/ex_cnc_native
 ex_cnc_native: $(TARGET_CNC_NATIVE)
 C_GEN_DIR = ./c_gen
 GENERATED_UI_SOURCE = $(C_GEN_DIR)/create_ui.c
@@ -115,8 +116,8 @@ $(GENERATED_UI_SOURCE) $(GENERATED_UI_HEADER): $(EX_CNC_UI_YAML) $(TARGET)
 $(TARGET_CNC_NATIVE): $(OBJECTS) $(LVGL_LIB) ex_cnc/cnc_app.o ex_cnc/cnc_main_native.o $(GENERATED_UI_OBJ)
 	@echo "\n--- Delegating to CNC Example Makefile (Native) ---\n"
 	# $(MAKE) -C ex_cnc all
-	$(CC) $(CFLAGS) -o ex_cnc/cnc_app_live $^ $(LIBS)
-	./ex_cnc/cnc_app_live
+	$(CC) $(CFLAGS) -o $(TARGET_CNC_NATIVE) $^ $(LIBS)
+	$(TARGET_CNC_NATIVE)
 
 ex_cnc/cnc_main_live.o: ex_cnc/cnc_main.c
 	$(CC) $(CFLAGS) -DCNC_LIVE_RENDER_MODE -c $< -o $@

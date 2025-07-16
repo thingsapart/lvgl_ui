@@ -337,30 +337,32 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             }
         } else if (strcmp(key, "observes") == 0) {
             if (cJSON_IsObject(item)) {
-                cJSON* obs_item;
-                cJSON_ArrayForEach(obs_item, item) {
-                    const char* state_name = obs_item->string;
-                    char* format_str = NULL;
-                    observer_update_type_t update_type;
-                    if (strcmp(ir_obj->json_type, "label") == 0) update_type = OBSERVER_TYPE_LABEL_TEXT;
-                    else if (strcmp(ir_obj->json_type, "switch") == 0) update_type = OBSERVER_TYPE_SWITCH_STATE;
-                    else if (strcmp(ir_obj->json_type, "slider") == 0) update_type = OBSERVER_TYPE_SLIDER_VALUE;
-                    else {
-                        print_warning("Widget type '%s' not supported for 'observes'.", ir_obj->json_type);
+                cJSON* state_item;
+                cJSON_ArrayForEach(state_item, item) {
+                    const char* state_name = state_item->string;
+                    if (!cJSON_IsObject(state_item)) {
+                        print_warning("Value for observable '%s' must be an object.", state_name);
                         continue;
                     }
 
-                    if (cJSON_IsObject(obs_item) && obs_item->child) {
-                        if (cJSON_IsNull(obs_item->child)) {
-                            format_str = NULL;
-                        } else {
-                            format_str = cJSON_GetStringValue(obs_item->child);
+                    cJSON* binding_item;
+                    cJSON_ArrayForEach(binding_item, state_item) {
+                        const char* binding_key = binding_item->string;
+                        observer_update_type_t update_type;
+
+                        if (strcmp(binding_key, "text") == 0) update_type = OBSERVER_TYPE_TEXT;
+                        else if (strcmp(binding_key, "style") == 0) update_type = OBSERVER_TYPE_STYLE;
+                        else if (strcmp(binding_key, "visible") == 0) update_type = OBSERVER_TYPE_VISIBLE;
+                        else if (strcmp(binding_key, "checked") == 0) update_type = OBSERVER_TYPE_CHECKED;
+                        else if (strcmp(binding_key, "disabled") == 0) update_type = OBSERVER_TYPE_DISABLED;
+                        else {
+                            print_warning("Unknown binding type '%s' for observable '%s'.", binding_key, state_name);
+                            continue;
                         }
-                    } else if (cJSON_IsString(obs_item)) {
-                        format_str = obs_item->valuestring;
+
+                        IRExpr* config_expr = unmarshal_value(ctx, binding_item, new_scope_context, "unknown", parent_c_name, ir_obj->c_name, ir_obj);
+                        ir_operation_list_add(&ir_obj->operations, (IRNode*)ir_new_observer(state_name, update_type, config_expr));
                     }
-                    
-                    ir_operation_list_add(&ir_obj->operations, (IRNode*)ir_new_observer(state_name, update_type, format_str));
                 }
             }
         } else if (strcmp(key, "action") == 0) {
@@ -422,10 +424,8 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                 if (expected_arg_list_for_user) expected_arg_list_for_user = expected_arg_list_for_user->next;
             }
 
-            // If the value for a property is a JSON array, we "spread" its elements as arguments
-            // to the function call. This is the general case.
-            // If one of those elements is itself an array, unmarshal_value will correctly
-            // turn it into an IR_EXPR_ARRAY, thus handling nested arrays as C arrays.
+            // The convention is that if a property's value is a top-level array,
+            // its elements are "spread" as arguments to the setter function.
             if (cJSON_IsArray(item)) {
                 cJSON* val_item = item->child;
                 while(val_item) {
@@ -435,7 +435,6 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                     val_item = val_item->next;
                 }
             } else {
-                 // The value is a scalar (string, number, bool, object), so it's a single argument.
                  const char* expected_type = expected_arg_list_for_user ? expected_arg_list_for_user->type : "unknown";
                  ir_expr_list_add(&final_args, unmarshal_value(ctx, item, new_scope_context, expected_type, parent_c_name, ir_obj->c_name, ir_obj));
             }
@@ -552,7 +551,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             if (!error) {
                 char buf[32];
                 snprintf(buf, sizeof(buf), "%ld", final_val);
-                const char* final_type = (expected_c_type && strcmp(expected_c_type, "unknown") != 0) ? expected_c_type : "int";
+                const char* final_type = (expected_c_type && strcmp(expected_c_type, "unknown") != 0) ? expected_c_type : "float";
                 return ir_new_expr_literal(buf, final_type);
             }
         }
@@ -571,7 +570,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
             char buf[32];
             snprintf(buf, sizeof(buf), "%ld", const_val);
-            return ir_new_expr_literal(buf, "int");
+            return ir_new_expr_literal(buf, "float");
         }
 
         size_t len = strlen(s);
@@ -603,7 +602,6 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             char* endptr;
             strtol(trimmed_num_part, &endptr, 10); // Try to parse it as an integer
 
-            // If the entire trimmed string was a valid number, endptr will point to the null terminator
             if (*endptr == '\0' && endptr != trimmed_num_part) {
                 IRExprNode* args = NULL;
                 ir_expr_list_add(&args, ir_new_expr_literal(trimmed_num_part, "int32_t"));
@@ -635,25 +633,8 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
     if (cJSON_IsNumber(value)) {
         char buf[32];
         snprintf(buf, sizeof(buf), "%g", value->valuedouble);
-        const char* type_str = "int";
-        if (expected_c_type) {
-            if (strstr(expected_c_type, "int") || strstr(expected_c_type, "coord") || strstr(expected_c_type, "opa_t") || strstr(expected_c_type, "selector")) {
-                type_str = expected_c_type;
-            }
-        }
-        if (ir_obj_for_warnings && expected_c_type) {
-            const cJSON* enum_type_json = cJSON_GetObjectItem(ctx->api_spec->enums, expected_c_type);
-            if (enum_type_json) { // It's an enum type
-                long int_val = (long)value->valuedouble;
-                const char* symbol = api_spec_find_enum_symbol_by_value(ctx->api_spec, expected_c_type, int_val);
-                if (symbol) {
-                    char warning_msg[256];
-                    snprintf(warning_msg, sizeof(warning_msg), "For a '%s' argument, you provided the integer '%ld'. For clarity, consider using the symbolic name '%s' instead.", expected_c_type, int_val, symbol);
-                    ir_operation_list_add(&ir_obj_for_warnings->operations, (IRNode*)ir_new_warning(warning_msg));
-                }
-            }
-        }
-        return ir_new_expr_literal(buf, type_str);
+        // Always unmarshal numbers as floats for binding system consistency
+        return ir_new_expr_literal(buf, "float");
     }
     if (cJSON_IsBool(value)) {
         return ir_new_expr_literal(cJSON_IsTrue(value) ? "true" : "false", "bool");
@@ -669,28 +650,60 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         return ir_new_expr_array(elements, (char*)expected_c_type);
     }
     if (cJSON_IsObject(value)) {
+        // Check for a single-key object where the key is a known function.
+        // This handles cases like { "lv_palette_main": "LV_PALETTE_RED" }
+        // or { "lv_color_hex": 0xFFFFFF }
         cJSON* func_item = value->child;
-        if (func_item && func_item->string) {
+        if (func_item && func_item->next == NULL && api_spec_has_function(ctx->api_spec, func_item->string)) {
             const char* func_name = func_item->string;
-            const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, func_name);
+            const FunctionDefinition* func_def = api_spec_find_function(ctx->api_spec, func_name);
             IRExprNode* args_list = NULL;
+            const FunctionArg* expected_args = func_def ? func_def->args_head : NULL;
+
             if (cJSON_IsArray(func_item)) {
-                cJSON* arg_json;
-                const FunctionArg* expected_arg_list = api_spec_get_function_args_by_name(ctx->api_spec, func_name);
-                cJSON_ArrayForEach(arg_json, func_item) {
-                    const char* expected_type = "unknown";
-                    if (expected_arg_list) {
-                        expected_type = expected_arg_list->type;
-                        expected_arg_list = expected_arg_list->next;
-                    }
-                    ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_json, ui_context, expected_type, parent_c_name, target_c_name, ir_obj_for_warnings));
+                // Case: { "func": [arg1, arg2] }
+                cJSON* arg_item;
+                cJSON_ArrayForEach(arg_item, func_item) {
+                    const char* expected_type = expected_args ? expected_args->type : "unknown";
+                    ir_expr_list_add(&args_list, unmarshal_value(ctx, arg_item, ui_context, expected_type, parent_c_name, target_c_name, ir_obj_for_warnings));
+                    if (expected_args) expected_args = expected_args->next;
                 }
-            } else {
-                 ir_expr_list_add(&args_list, unmarshal_value(ctx, func_item, ui_context, "unknown", parent_c_name, target_c_name, ir_obj_for_warnings));
+            } else if (!cJSON_IsNull(func_item)) {
+                // Case: { "func": arg }
+                const char* expected_type = expected_args ? expected_args->type : "unknown";
+                ir_expr_list_add(&args_list, unmarshal_value(ctx, func_item, ui_context, expected_type, parent_c_name, target_c_name, ir_obj_for_warnings));
             }
-            process_and_validate_call(ctx, func_name, &args_list, ir_obj_for_warnings);
+            // Note: if value is null, args_list remains empty, which is correct.
+
+            const char* ret_type = api_spec_get_function_return_type(ctx->api_spec, func_name);
             return ir_new_expr_func_call(func_name, args_list, ret_type);
         }
+
+        // Fallback: If not a function call, treat it as a map (for data binding, etc.)
+        IRExprNode* map_elements = NULL;
+        cJSON* map_item;
+        cJSON_ArrayForEach(map_item, value) {
+            IRExprNode* pair_elements = NULL;
+            // Key
+            char* key_str = map_item->string;
+            if (strcmp(key_str, "true") == 0 || strcmp(key_str, "false") == 0) {
+                 ir_expr_list_add(&pair_elements, ir_new_expr_literal(key_str, "bool"));
+            } else {
+                 char* endptr;
+                 strtod(key_str, &endptr);
+                 if (*endptr == '\0') { // It's a pure number
+                    ir_expr_list_add(&pair_elements, ir_new_expr_literal(key_str, "float"));
+                 } else { // It's a string
+                    ir_expr_list_add(&pair_elements, ir_new_expr_literal_string(key_str, strlen(key_str)));
+                 }
+            }
+
+            // Value
+            ir_expr_list_add(&pair_elements, unmarshal_value(ctx, map_item, ui_context, "unknown", parent_c_name, target_c_name, ir_obj_for_warnings));
+            
+            ir_expr_list_add(&map_elements, ir_new_expr_array(pair_elements, "void*[]"));
+        }
+        return ir_new_expr_array(map_elements, "void*[]");
     }
     return ir_new_expr_literal("NULL", "unknown");
 }
@@ -743,16 +756,16 @@ static bool types_compatible(const char* expected, const char* actual) {
     if (strcmp(expected, "lv_style_t*") == 0 && strcmp(actual, "lv_style_t") == 0) return true;
 
 
-    // Handle integer type variations
-    const char* int_types[] = {"int", "int32_t", "uint32_t", "lv_coord_t", "lv_style_selector_t", "lv_opa_t", "bool", "lv_anim_enable_t"};
-    int num_int_types = sizeof(int_types) / sizeof(char*);
-    bool expected_is_int = false;
-    bool actual_is_int = false;
-    for(int i=0; i < num_int_types; i++) {
-        if(strcmp(expected, int_types[i]) == 0) expected_is_int = true;
-        if(strcmp(actual, int_types[i]) == 0) actual_is_int = true;
+    // Handle integer/float type variations
+    const char* num_types[] = {"int", "int32_t", "uint32_t", "lv_coord_t", "lv_style_selector_t", "lv_opa_t", "bool", "lv_anim_enable_t", "float"};
+    int num_num_types = sizeof(num_types) / sizeof(char*);
+    bool expected_is_num = false;
+    bool actual_is_num = false;
+    for(int i=0; i < num_num_types; i++) {
+        if(strcmp(expected, num_types[i]) == 0) expected_is_num = true;
+        if(strcmp(actual, num_types[i]) == 0) actual_is_num = true;
     }
-    if (expected_is_int && actual_is_int) return true;
+    if (expected_is_num && actual_is_num) return true;
 
 
     // Allow any pointer type to be passed as void*
@@ -823,11 +836,6 @@ static void process_and_validate_call(GenContext* ctx, const char* func_name, IR
              expected_arg = expected_arg->next;
              continue;
         }
-        // This warning is currently too noisy, as the unmarshaler's type inference isn't perfect.
-        // if (!types_compatible(expected_arg->type, actual_arg_node->expr->c_type)) {
-        //     print_warning("Type mismatch for argument %d of '%s'. Expected '%s', but got '%s'.",
-        //         i, func_name, expected_arg->type, actual_arg_node->expr->c_type);
-        // }
         actual_arg_node = actual_arg_node->next;
         expected_arg = expected_arg->next;
         i++;

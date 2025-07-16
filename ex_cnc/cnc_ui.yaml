@@ -45,8 +45,23 @@
   border_color: '#c82333'
 
 - type: style
+  id: "@style_btn_active"
+  shadow_color: '#007bff'
+  shadow_width: 10
+  shadow_spread: 5
+  shadow_offset_x: 0
+  shadow_offset_y: 0
+  shadow_opa: 122
+  # shadow_color: { lv_palette_main: LV_PALETTE_BLUE }
+  
+- type: style
+  id: "@style_btn_disabled"
+  bg_opa: 50
+  text_opa: 50
+  text_color: '#808080' # Make disabled text gray and readable
+
+- type: style
   id: "@style_jog_btn"
-  # Inherits properties from @style_btn conceptually
   bg_color: '#3e444c'
   border_width: 1
   border_color: '#5a626d'
@@ -55,7 +70,6 @@
   shadow_opa: 30
   shadow_offset_y: 3
   shadow_color: '#000000'
-  # Overrides
   width: 50
   height: 50
   radius: 25 # Circle
@@ -68,6 +82,14 @@
 
 - type: style
   id: '@info_label'
+  text_color: '#aaffaa'
+  
+- type: style
+  id: '@status_running'
+  text_color: '#ffc107'
+  
+- type: style
+  id: '@status_idle'
   text_color: '#aaffaa'
 
 # --- UI LAYOUT ---
@@ -91,19 +113,24 @@
       children:
         - type: label
           text: "STATUS: IDLE"
-          observes: { program|status: { string: "STATUS: %s" } }
+          observes: 
+            program|status: 
+              text: "STATUS: %s"
+              style:
+                RUNNING: '@status_running'
+                default: '@status_idle'
         - type: label
           text: "X: +000.00"
-          observes: { position|x: { float: "X: %+07.2f" } }
+          observes: { position|x: { text: "X: %+07.2f" } }
         - type: label
           text: "Y: +000.00"
-          observes: { position|y: { float: "Y: %+07.2f" } }
+          observes: { position|y: { text: "Y: %+07.2f" } }
         - type: label
           text: "Z: +000.00"
-          observes: { position|z: { float: "Z: %+07.2f" } }
+          observes: { position|z: { text: "Z: %+07.2f" } }
         - type: label
           text: "RPM: 0"
-          observes: { spindle|rpm: { float: "RPM: %.0f" } }
+          observes: { spindle|rpm: { text: "RPM: %.0f" } }
 
     # Main content area
     - type: obj
@@ -134,11 +161,11 @@
               grid_dsc_array: [ [60, 60, 60, LV_GRID_TEMPLATE_LAST], [60, 60, 60, LV_GRID_TEMPLATE_LAST] ]
               grid_align: [LV_GRID_ALIGN_CENTER, LV_GRID_ALIGN_CENTER]
               children:
-                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1], action: { jog|move|y_plus: trigger }, children: [ { type: label, text: LV_SYMBOL_UP, center: [] } ] }
-                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1], action: { jog|move|x_minus: trigger }, children: [ { type: label, text: LV_SYMBOL_LEFT, center: [] } ] }
-                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1], action: { position|home: "trigger" }, children: [ { type: label, text: LV_SYMBOL_HOME, center: [] } ] }
-                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1], action: { jog|move|x_plus: trigger }, children: [ { type: label, text: LV_SYMBOL_RIGHT, center: [] } ] }
-                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1], action: { jog|move|y_minus: trigger }, children: [ { type: label, text: LV_SYMBOL_DOWN, center: [] } ] }
+                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1], action: { jog|move|y_plus: trigger }, children: [ { type: label, text: LV_SYMBOL_UP, center: [] } ], observes: {program|status: { disabled: {RUNNING: true, default: false} }} }
+                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1], action: { jog|move|x_minus: trigger }, children: [ { type: label, text: LV_SYMBOL_LEFT, center: [] } ], observes: {program|status: { disabled: {RUNNING: true, default: false} }} }
+                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1], action: { position|home: "trigger" }, children: [ { type: label, text: LV_SYMBOL_HOME, center: [] } ], observes: {program|status: { disabled: {RUNNING: true, default: false} }} }
+                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1], action: { jog|move|x_plus: trigger }, children: [ { type: label, text: LV_SYMBOL_RIGHT, center: [] } ], observes: {program|status: { disabled: {RUNNING: true, default: false} }} }
+                - { type: button, add_style: ["@style_jog_btn", 0], grid_cell: [LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1], action: { jog|move|y_minus: trigger }, children: [ { type: label, text: LV_SYMBOL_DOWN, center: [] } ], observes: {program|status: { disabled: {RUNNING: true, default: false} }} }
 
             # Z Jog and distance
             - type: obj
@@ -149,8 +176,8 @@
               size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
               flex_align: [LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
               children:
-                - { type: button, add_style: ["@style_jog_btn", 0], action: { jog|move|z_plus: trigger }, children: [ { type: label, text: LV_SYMBOL_PLUS, center: [] } ] }
-                - type: obj # Jog step selection
+                - { type: button, add_style: ["@style_jog_btn", 0], action: { jog|move|z_plus: trigger }, children: [ { type: label, text: LV_SYMBOL_PLUS, center: [] } ], observes: { program|status: { disabled: {RUNNING: true, default: false} }} }
+                - type: obj
                   add_style: ["@style_transparent", 0]
                   layout: LV_LAYOUT_FLEX
                   flex_flow: LV_FLEX_FLOW_COLUMN
@@ -163,16 +190,17 @@
                       flex_flow: LV_FLEX_FLOW_ROW
                       pad_gap: 5
                       size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+                      pad_all: 15
                       children:
-                        - { type: button, add_style: ["@style_btn", 0], action: { jog|set_step: [1.0] }, children: [{type: label, text: "1"}] }
-                        - { type: button, add_style: ["@style_btn", 0], action: { jog|set_step: [10.0] }, children: [{type: label, text: "10"}] }
-                        - { type: button, add_style: ["@style_btn", 0], action: { jog|set_step: [20.0] }, children: [{type: label, text: "20"}] }
+                        - { type: button, add_style: ["@style_btn", 0], action: { jog|set_step: [1.0] }, children: [{type: label, text: "1"}], observes: { jog|step: { style: { 1.0: '@style_btn_active', default: null } } } }
+                        - { type: button, add_style: ["@style_btn", 0], action: { jog|set_step: [10.0] }, children: [{type: label, text: "10"}], observes: { jog|step: { style: { 10.0: '@style_btn_active', default: null } } } }
+                        - { type: button, add_style: ["@style_btn", 0], action: { jog|set_step: [20.0] }, children: [{type: label, text: "20"}], observes: { jog|step: { style: { 20.0: '@style_btn_active', default: null } } } }
                     - type: label
                       text: "Step: 1 mm"
                       margin_top: 5
                       add_style: ['@info_label', 0]
-                      observes: { jog|step: { float: "Step: %.0f mm" } }
-                - { type: button, add_style: ["@style_jog_btn", 0], action: { jog|move|z_minus: trigger }, children: [ { type: label, text: LV_SYMBOL_MINUS, center: [] } ] }
+                      observes: { jog|step: { text: "Step: %.0f mm" } }
+                - { type: button, add_style: ["@style_jog_btn", 0], action: { jog|move|z_minus: trigger }, children: [ { type: label, text: LV_SYMBOL_MINUS, center: [] } ], observes: {program|status: { disabled: {RUNNING: true, default: false} }} }
         
         # Right Panel: Machine Controls
         - type: obj
@@ -191,7 +219,7 @@
               flex_align: [LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
               children:
                 - type: switch
-                  observes: { spindle|is_on: { bool: null } }
+                  observes: { spindle|is_on: { checked: true } }
                   action: { spindle|toggle: "toggle" }
                 - type: label
                   text: "Spindle"
@@ -202,27 +230,35 @@
                   children:
                     - type: label
                       text: "Feed: 100%"
-                      observes: { feedrate|override: { int: "Feed: %d%%" } }
+                      observes: { feedrate|override: { text: "Feed: %.0f%%" } }
             - type: obj
               add_style: ["@style_transparent", 0]
               width: 100%
               layout: LV_LAYOUT_FLEX
               flex_flow: LV_FLEX_FLOW_ROW
               flex_align: [LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
-              # size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
               children:
                 - type: button
                   width: 70
                   add_style: ["@style_btn", 0]
-                  add_style: ["@style_btn_primary", 0]
                   action: { program|run: "trigger" }
                   children: [{type: label, text: "RUN", center: []}]
+                  observes:
+                    program|status:
+                      disabled: { RUNNING: true, default: false }
+                      style:
+                        IDLE: '@style_btn_primary'
+                        SPINDLE ON: '@style_btn_primary'
+                        default: null
                 - type: button
                   width: 70
                   add_style: ["@style_btn", 0]
                   add_style: ["@style_btn_warning", 0]
                   action: { program|pause: "trigger" }
                   children: [{type: label, text: "PAUSE", center: []}]
+                  observes:
+                    program|status:
+                      disabled: { RUNNING: false, default: true }
                 - type: button
                   width: 70
                   add_style: ["@style_btn", 0]

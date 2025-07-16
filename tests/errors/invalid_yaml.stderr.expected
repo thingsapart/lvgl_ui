@@ -1,1 +1,6 @@
-YAML Error on line 6: Found key-value pair in a non-object context.
+YAML Parse Error: Found key-value pair in a non-object context.
+
+[1m    ---> Error context (Line 6, Col 4):[0m
+[1m   6 |[0m    [1m[31mtext: "This text is not indented correctly"[0m
+       | [31m   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+

@@ -1,0 +1,11 @@
+# Tests inline collections for arrays ([...]) and objects ({...}).
+- type: button
+  pos: [10, 10]
+  size: [120, 50]
+  bg_color: { lv_palette_main: LV_PALETTE_BLUE }
+  center: []
+  children:
+    - type: label
+      text: A button
+      center: []
+

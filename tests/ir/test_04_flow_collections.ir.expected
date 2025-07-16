@@ -1,0 +1,41 @@
+[IR_NODE_ROOT]
+  [IR_NODE_OBJECT] c_name="button_0" json_type="button" c_type="lv_obj_t*"
+    [CONSTRUCTOR_EXPR]
+      [IR_EXPR_FUNCTION_CALL] type: <lv_obj_t*> func_name="lv_button_create"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=parent
+    [OPERATIONS]
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_set_pos"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=button_0
+          [IR_EXPR_LITERAL] type: <float> value=10 is_string=false
+          [IR_EXPR_LITERAL] type: <float> value=10 is_string=false
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_set_style_size"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=button_0
+          [IR_EXPR_LITERAL] type: <float> value=120 is_string=false
+          [IR_EXPR_LITERAL] type: <float> value=50 is_string=false
+          [IR_EXPR_LITERAL] type: <lv_style_selector_t> value=0 is_string=false
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_set_style_bg_color"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=button_0
+          [IR_EXPR_FUNCTION_CALL] type: <lv_color_t> func_name="lv_palette_main"
+            [ARGS]
+              [IR_EXPR_ENUM] type: <lv_palette_t> symbol=LV_PALETTE_BLUE
+          [IR_EXPR_LITERAL] type: <lv_style_selector_t> value=0 is_string=false
+      [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_center"
+        [ARGS]
+          [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=button_0
+      [IR_NODE_OBJECT]       [IR_NODE_OBJECT] c_name="label_1" json_type="label" c_type="lv_obj_t*"
+        [CONSTRUCTOR_EXPR]
+          [IR_EXPR_FUNCTION_CALL] type: <lv_obj_t*> func_name="lv_label_create"
+            [ARGS]
+              [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=button_0
+        [OPERATIONS]
+          [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_label_set_text"
+            [ARGS]
+              [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=label_1
+              [IR_EXPR_LITERAL] type: <const char*> value=A button is_string=true
+          [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_center"
+            [ARGS]
+              [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=label_1
