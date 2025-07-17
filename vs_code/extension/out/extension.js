@@ -6,6 +6,7 @@ const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
 const child_process_1 = require("child_process");
+const LOGGING_ENABLED = false; // Set to true for verbose debug output
 let previewPanel = undefined;
 let serverProcess = undefined;
 let outputChannel;
@@ -16,7 +17,9 @@ let renderTimeout;
 function activate(context) {
     outputChannel = vscode.window.createOutputChannel("LVGL UI Preview");
     logChannel = vscode.window.createOutputChannel("LVGL UI Preview LOG");
-    logChannel.appendLine('[EXTENSION] Starting...');
+    if (LOGGING_ENABLED) {
+        logChannel.appendLine('[EXTENSION] Starting...');
+    }
     const disposable = vscode.commands.registerCommand('lvgl-ui-generator.preview', async (uri) => {
         let targetUri = uri;
         // If the command was run from the palette, use the active editor.
@@ -80,7 +83,11 @@ function setupPreviewPanel(context) {
     }
     const workspaceFolder = previewedDocumentUri ? vscode.workspace.getWorkspaceFolder(previewedDocumentUri) : undefined;
     const cwd = workspaceFolder ? workspaceFolder.uri.fsPath : undefined;
-    serverProcess = (0, child_process_1.spawn)(serverPath, [apiSpecPath], { cwd });
+    const serverArgs = [apiSpecPath];
+    if (LOGGING_ENABLED) {
+        serverArgs.push('--log');
+    }
+    serverProcess = (0, child_process_1.spawn)(serverPath, serverArgs, { cwd });
     serverProcess.on('error', (err) => {
         outputChannel.appendLine(`Failed to start server process: ${err.message}`);
         vscode.window.showErrorMessage("Failed to start the LVGL preview server.");
@@ -99,7 +106,9 @@ function setupPreviewPanel(context) {
     const FULL_HEADER_LENGTH = MAGIC_HEADER.length + FRAME_COMMAND.length + 12; // 12 bytes for x,y,w,h,size
     function processBuffer() {
         while (true) {
-            logChannel.appendLine(`[Parser] Anomaly: Loop...`);
+            if (LOGGING_ENABLED) {
+                logChannel.appendLine(`[Parser] Anomaly: Loop...`);
+            }
             if (parserState === ParserState.IDLE) {
                 const magicIndex = buffer.indexOf(MAGIC_HEADER);
                 if (magicIndex === -1) {
@@ -107,7 +116,9 @@ function setupPreviewPanel(context) {
                 }
                 if (magicIndex > 0) {
                     //const garbage = buffer.subarray(0, magicIndex);
-                    outputChannel.appendLine(`[Parser] Anomaly: Discarding ${magicIndex} bytes of unknown data before magic header.`);
+                    if (LOGGING_ENABLED) {
+                        outputChannel.appendLine(`[Parser] Anomaly: Discarding ${magicIndex} bytes of unknown data before magic header.`);
+                    }
                 }
                 // Move buffer to start of magic header
                 buffer = buffer.subarray(magicIndex);
@@ -116,28 +127,38 @@ function setupPreviewPanel(context) {
                 }
                 const commandSlice = buffer.subarray(MAGIC_HEADER.length, MAGIC_HEADER.length + FRAME_COMMAND.length);
                 if (!commandSlice.equals(FRAME_COMMAND)) {
-                    outputChannel.appendLine(`[Parser] Anomaly: Found "DATA:" but unknown command "${commandSlice.toString()}". Discarding and searching again.`);
+                    if (LOGGING_ENABLED) {
+                        outputChannel.appendLine(`[Parser] Anomaly: Found "DATA:" but unknown command "${commandSlice.toString()}". Discarding and searching again.`);
+                    }
                     buffer = buffer.subarray(1); // Discard just the 'D' and search again
                     continue;
                 }
-                outputChannel.appendLine('[Parser] Command "|FRAME|" found. Parsing metadata.');
+                if (LOGGING_ENABLED) {
+                    outputChannel.appendLine('[Parser] Command "|FRAME|" found. Parsing metadata.');
+                }
                 const metadataOffset = MAGIC_HEADER.length + FRAME_COMMAND.length;
                 frameInfo.x = buffer.readUInt16BE(metadataOffset);
                 frameInfo.y = buffer.readUInt16BE(metadataOffset + 2);
                 frameInfo.w = buffer.readUInt16BE(metadataOffset + 4);
                 frameInfo.h = buffer.readUInt16BE(metadataOffset + 6);
                 frameInfo.payloadSize = buffer.readUInt32BE(metadataOffset + 8);
-                outputChannel.appendLine(`[Parser] Parsed frame metadata: { x: ${frameInfo.x}, y: ${frameInfo.y}, w: ${frameInfo.w}, h: ${frameInfo.h}, bytes: ${frameInfo.payloadSize} }`);
+                if (LOGGING_ENABLED) {
+                    outputChannel.appendLine(`[Parser] Parsed frame metadata: { x: ${frameInfo.x}, y: ${frameInfo.y}, w: ${frameInfo.w}, h: ${frameInfo.h}, bytes: ${frameInfo.payloadSize} }`);
+                }
                 buffer = buffer.subarray(FULL_HEADER_LENGTH);
                 parserState = ParserState.PARSING_FRAME_PAYLOAD;
             }
             if (parserState === ParserState.PARSING_FRAME_PAYLOAD) {
                 if (buffer.length < frameInfo.payloadSize) {
-                    outputChannel.appendLine(`[Parser] Waiting for frame payload. Have ${buffer.length}, need ${frameInfo.payloadSize}.`);
+                    if (LOGGING_ENABLED) {
+                        outputChannel.appendLine(`[Parser] Waiting for frame payload. Have ${buffer.length}, need ${frameInfo.payloadSize}.`);
+                    }
                     return; // Need more data for payload
                 }
                 const frameData = buffer.subarray(0, frameInfo.payloadSize);
-                outputChannel.appendLine(`[Parser] Frame complete. Read ${frameData.length} bytes (expected ${frameInfo.payloadSize}).`);
+                if (LOGGING_ENABLED) {
+                    outputChannel.appendLine(`[Parser] Frame complete. Read ${frameData.length} bytes (expected ${frameInfo.payloadSize}).`);
+                }
                 previewPanel?.webview.postMessage({
                     command: 'updateCanvas',
                     x: frameInfo.x,
@@ -146,7 +167,9 @@ function setupPreviewPanel(context) {
                     height: frameInfo.h,
                     frameBuffer: frameData.buffer // Send as ArrayBuffer
                 });
-                outputChannel.appendLine(`[Parser] Sent frame data to webview for rendering.`);
+                if (LOGGING_ENABLED) {
+                    outputChannel.appendLine(`[Parser] Sent frame data to webview for rendering.`);
+                }
                 buffer = buffer.subarray(frameInfo.payloadSize);
                 parserState = ParserState.IDLE;
             }
@@ -154,11 +177,15 @@ function setupPreviewPanel(context) {
     }
     serverProcess.stdout.on('data', (data) => {
         buffer = Buffer.concat([buffer, data]);
-        logChannel.appendLine(`[Parser] STDOUT recv... ${data.length}`);
+        if (LOGGING_ENABLED) {
+            logChannel.appendLine(`[Parser] STDOUT recv... ${data.length}`);
+        }
         processBuffer();
     });
     serverProcess.stderr.on('data', (data) => {
-        logChannel.appendLine(`[Parser] STDERR recv... ${data.length}`);
+        if (LOGGING_ENABLED) {
+            logChannel.appendLine(`[Parser] STDERR recv... ${data.length}`);
+        }
         outputChannel.appendLine(data.toString().trim());
     });
     previewPanel.onDidDispose(() => {

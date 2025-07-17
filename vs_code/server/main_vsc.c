@@ -18,6 +18,7 @@
 // --- Global Configuration ---
 bool g_strict_mode = false;
 bool g_strict_registry_mode = false;
+bool g_logging_enabled = false;
 
  int mkstemps(char *template, int suffixlen);
 
@@ -99,7 +100,9 @@ static void flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *px_m
     fwrite(rgba_buffer, 1, rgba_buf_size, stdout);
     fflush(stdout);
 
-    fprintf(stderr, "SERVER_LOG: Sent frame rect {x:%d, y:%d, w:%d, h:%d, bytes:%zu}\n", x, y, width, height, rgba_buf_size);
+    if (g_logging_enabled) {
+        fprintf(stderr, "SERVER_LOG: Sent frame rect {x:%d, y:%d, w:%d, h:%d, bytes:%zu}\n", x, y, width, height, rgba_buf_size);
+    }
 
     // Tell LVGL that we are done with the flushing.
     lv_display_flush_ready(display);
@@ -125,7 +128,9 @@ static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
     cJSON* source_item = cJSON_GetObjectItem(payload, "source");
 
     if (!cJSON_IsNumber(width_item) || !cJSON_IsNumber(height_item) || !cJSON_IsString(source_item)) {
-        fprintf(stderr, "SERVER_LOG: Invalid render command payload.\n");
+        if (g_logging_enabled) {
+            fprintf(stderr, "SERVER_LOG: Invalid render command payload.\n");
+        }
         return;
     }
 
@@ -183,9 +188,11 @@ static void handle_input_command(cJSON* payload) {
             last_input_data.point.y = (lv_coord_t)y_item->valueint;
             last_input_data.state = cJSON_IsTrue(pressed_item) ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
 
-            fprintf(stderr, "SERVER_LOG: Input received: { x: %d, y: %d, pressed: %s }\n",
-                    last_input_data.point.x, last_input_data.point.y,
-                    last_input_data.state == LV_INDEV_STATE_PRESSED ? "true" : "false");
+            if (g_logging_enabled) {
+                fprintf(stderr, "SERVER_LOG: Input received: { x: %d, y: %d, pressed: %s }\n",
+                        last_input_data.point.x, last_input_data.point.y,
+                        last_input_data.state == LV_INDEV_STATE_PRESSED ? "true" : "false");
+            }
         }
     }
 }
@@ -193,7 +200,9 @@ static void handle_input_command(cJSON* payload) {
 static void process_command_line(char* line, ApiSpec* api_spec) {
     cJSON *json = cJSON_Parse(line);
     if (!json) {
-        fprintf(stderr, "SERVER_LOG: Received invalid JSON: %s\n", line);
+        if (g_logging_enabled) {
+            fprintf(stderr, "SERVER_LOG: Received invalid JSON: %s\n", line);
+        }
         return;
     }
 
@@ -209,11 +218,19 @@ static void process_command_line(char* line, ApiSpec* api_spec) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
+    const char* api_spec_path = NULL;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--log") == 0) {
+            g_logging_enabled = true;
+        } else if (api_spec_path == NULL) {
+            api_spec_path = argv[i];
+        }
+    }
+
+    if (api_spec_path == NULL) {
         fprintf(stderr, "SERVER_FATAL_ERROR: API spec path not provided as a command-line argument.\n");
         return 1;
     }
-    const char* api_spec_path = argv[1];
 
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
@@ -250,7 +267,9 @@ int main(int argc, char* argv[]) {
     static char stdin_buffer[8192];
     static size_t stdin_buffer_len = 0;
 
-    fprintf(stderr, "SERVER_LOG: LVGL VSCode Server started successfully.\n");
+    if (g_logging_enabled) {
+        fprintf(stderr, "SERVER_LOG: LVGL VSCode Server started successfully.\n");
+    }
 
     struct timeval last_tick_tv;
     gettimeofday(&last_tick_tv, NULL);
@@ -324,6 +343,8 @@ int main(int argc, char* argv[]) {
     cJSON_Delete(api_spec_json);
     lv_deinit();
 
-    fprintf(stderr, "SERVER_LOG: Server shutting down.\n");
+    if (g_logging_enabled) {
+        fprintf(stderr, "SERVER_LOG: Server shutting down.\n");
+    }
     return 0;
 }
