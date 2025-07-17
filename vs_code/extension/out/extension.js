@@ -116,13 +116,16 @@ function setupPreviewPanel(context) {
             }
             else { // Awaiting body
                 if (buffer.length >= frameInfo.byteLength) {
-                    const frameData = buffer.subarray(0, frameInfo.byteLength);
+                    // Create a *copy* of the frame data to get a fresh ArrayBuffer of the correct size.
+                    const frameData = Buffer.from(buffer.subarray(0, frameInfo.byteLength));
                     buffer = buffer.subarray(frameInfo.byteLength);
+                    // Post the message. The ArrayBuffer will be serialized and sent to the webview.
                     previewPanel?.webview.postMessage({
                         command: 'updateCanvas',
                         width: frameInfo.width,
                         height: frameInfo.height,
-                        frameBuffer: frameData.toString('base64')
+                        // The .buffer property gets the underlying ArrayBuffer from the Node.js Buffer.
+                        frameBuffer: frameData.buffer
                     });
                     awaitingHeader = true;
                     // Continue loop to process next frame
@@ -193,47 +196,52 @@ function getWebviewContent() {
         const canvas = document.getElementById('preview-canvas');
         const ctx = canvas.getContext('2d');
         const vscode = acquireVsCodeApi();
+        
         let isMouseDown = false;
+        
+        // --- requestAnimationFrame Rendering Loop ---
+        let latestImageData = null;
+        let framePending = false;
 
-        // LVGL uses RGB565 format, which is 2 bytes per pixel.
-        function rgb565toRgba(rgb565) {
-            const r5 = (rgb565 & 0xF800) >> 11;
-            const g6 = (rgb565 & 0x07E0) >> 5;
-            const b5 = (rgb565 & 0x001F);
+        function renderLoop() {
+            // Schedule the next frame
+            requestAnimationFrame(renderLoop);
             
-            const r = (r5 * 255) / 31;
-            const g = (g6 * 255) / 63;
-            const b = (b5 * 255) / 31;
+            // If there's no new frame, do nothing
+            if (!framePending) {
+                return;
+            }
+
+            // A new frame is available, draw it
+            if (latestImageData) {
+                if (canvas.width !== latestImageData.width) canvas.width = latestImageData.width;
+                if (canvas.height !== latestImageData.height) canvas.height = latestImageData.height;
+                ctx.putImageData(latestImageData, 0, 0);
+            }
             
-            return [r, g, b, 255];
+            // Mark the frame as rendered
+            framePending = false;
         }
 
-        window.addEventListener('message', async (event) => {
+        // Start the rendering loop
+        renderLoop();
+
+        window.addEventListener('message', (event) => {
             const message = event.data;
             if (message.command === 'updateCanvas') {
-                const frameBufferBase64 = message.frameBuffer;
-                
-                // Use the modern and robust fetch API to decode the base64 data
-                const dataUrl = \`data:application/octet-stream;base64,\${frameBufferBase64}\`;
-                const response = await fetch(dataUrl);
-                const arrayBuffer = await response.arrayBuffer();
-
+                const arrayBuffer = message.frameBuffer;
                 const width = message.width;
                 const height = message.height;
-                if (canvas.width !== width) canvas.width = width;
-                if (canvas.height !== height) canvas.height = height;
-                
-                const imageData = ctx.createImageData(width, height);
-                const pixelData = new Uint16Array(arrayBuffer);
 
-                for (let i = 0; i < pixelData.length; i++) {
-                    const rgba = rgb565toRgba(pixelData[i]);
-                    imageData.data[i * 4 + 0] = rgba[0];
-                    imageData.data[i * 4 + 1] = rgba[1];
-                    imageData.data[i * 4 + 2] = rgba[2];
-                    imageData.data[i * 4 + 3] = rgba[3];
-                }
-                ctx.putImageData(imageData, 0, 0);
+                // The received buffer is already in RGBA8888 format.
+                // We create a zero-copy view on the data.
+                const pixelData = new Uint8ClampedArray(arrayBuffer);
+                
+                // Create an ImageData object from the pixel data.
+                latestImageData = new ImageData(pixelData, width, height);
+
+                // Signal to the render loop that a new frame is ready to be drawn.
+                framePending = true;
             }
         });
 

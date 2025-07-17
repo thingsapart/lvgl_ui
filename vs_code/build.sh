@@ -14,7 +14,7 @@ echo "--- Building VSCode LVGL Server ---"
 # We need to run make from the vs_code directory so it finds all the source files correctly
 cd "$VSCODE_DIR"
 echo "Running make in $(pwd)..."
-make -f Makefile clean
+# make -f Makefile clean
 make -f Makefile
 
 # --- Prepare Extension Directory ---

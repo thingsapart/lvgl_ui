@@ -8,11 +8,11 @@
 # and handles mixed line endings and introductory text correctly.
 #
 # A formatted block looks like this:
-# >> path/to/your/filename.ext
+# !>>> path/to/your/filename.ext
 # ```
 # your code goes here
 # ```
-# << end
+# !<<< end
 # ==============================================================================
 
 set -e # Exit immediately if a command exits with a non-zero status.
@@ -51,19 +51,19 @@ echo "${clipboard_content}" | tr -d '\r' | awk '
 # BEGIN block runs once before processing any input.
 BEGIN {
     # Set the Record Separator to our end-of-block marker.
-    RS = "<< end"
+    RS = "!<<< end"
 }
 
-# This pattern runs for any record that CONTAINS ">> ".
+# This pattern runs for any record that CONTAINS "!>>> ".
 # This is more robust than checking if it starts with it.
-/.*>> / {
+/.*!>>> / {
     # Make a working copy of the record ($0).
     block = $0
 
-    # THE KEY FIX: Greedily remove all text up to and including the LAST ">> " marker.
+    # THE KEY FIX: Greedily remove all text up to and including the LAST "!>>> " marker.
     # This correctly handles introductory text before the first block.
-    # For example, "intro text >> file.txt..." becomes " file.txt...".
-    sub(/.*>> /, "", block)
+    # For example, "intro text !>>> file.txt..." becomes " file.txt...".
+    sub(/.*!>>> /, "", block)
     
     # Trim leading newlines and whitespace that may result from the sub() call.
     sub(/^[ \t\n]+/, "", block)
@@ -78,7 +78,7 @@ BEGIN {
     filename = header_line
 
     if (filename == "") {
-        # This can happen if a record is just "<< end". We can safely ignore it.
+        # This can happen if a record is just "!<<< end". We can safely ignore it.
         next
     }
 
