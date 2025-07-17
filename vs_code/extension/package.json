@@ -1,0 +1,67 @@
+{
+  "name": "lvgl-ui-preview",
+  "displayName": "LVGL UI Preview",
+  "description": "Live preview for LVGL UIs defined in YAML.",
+  "version": "0.1.1",
+  "publisher": "lvgl-ui-generator-dev",
+  "engines": {
+    "vscode": "^1.88.0",
+    "node": ">=18.0.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "lvgl-ui-generator.preview",
+        "title": "Preview LVGL UI",
+        "icon": "$(device-camera-video)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceLangId == yaml",
+          "command": "lvgl-ui-generator.preview",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "LVGL UI Preview",
+      "properties": {
+        "lvglPreview.width": {
+          "type": "number",
+          "default": 480,
+          "description": "The width of the preview panel in pixels."
+        },
+        "lvglPreview.height": {
+          "type": "number",
+          "default": 320,
+          "description": "The height of the preview panel in pixels."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.88.0",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^7.7.0",
+    "@typescript-eslint/parser": "^7.7.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5",
+    "@vscode/vsce": "^2.22.0"
+  },
+  "dependencies": {}
+}

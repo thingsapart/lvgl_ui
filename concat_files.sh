@@ -85,7 +85,7 @@ Please print out whole files. Do not give me just the section that has changed, 
 
 NOTE:
 
-Format every file output the following way: start with a ">> {filename}" followed by a markdown code block and end with "<< end".
+Format every file output the following way: start with a "!>>> {filename}" followed by a markdown code block and end with "!<<< end".
 
 EG:
 

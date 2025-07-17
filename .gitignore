@@ -9,6 +9,11 @@ data/lv_def.json
 ex_cnc/ex_cnc_rendered
 ex_cnc/ex_cnc_native
 
+# Extension
+vs_code/extension/node_modules
+vs_code/extension/bin/lvgl_vsc_server
+*.vsix
+
 .*.swp
 
 # Prerequisites
