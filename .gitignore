@@ -16,6 +16,13 @@ vs_code/extension/bin/lvgl_vsc_server
 
 .*.swp
 
+# Other
+.DS_Store
+.vscode/
+path/
+vs_code/node_modules/
+vs_code/package-lock.json
+
 # Prerequisites
 *.d
 

@@ -32,7 +32,7 @@ TARGET = lvgl_ui_generator
 # Python script for generating lvgl_dispatch.c and .h
 API_SPEC_GENERATOR_PY = ./generate_dynamic_lvgl_dispatch.py
 LV_DEF_JSON = ./data/lv_def.json
-API_SPEC_JSON = ./api_spec.json 
+API_SPEC_JSON = ./api_spec.json
 DYNAMIC_LVGL_H = ./c_gen/lvgl_dispatch.h
 DYNAMIC_LVGL_C = ./c_gen/lvgl_dispatch.c
 DYNAMIC_LVGL_O = $(DYNAMIC_LVGL_C:.c=.o)
@@ -110,7 +110,7 @@ EX_CNC_UI_YAML = ex_cnc/cnc_ui.yaml
 $(GENERATED_UI_SOURCE) $(GENERATED_UI_HEADER): $(EX_CNC_UI_YAML) $(TARGET)
 	@echo "--- Generating C code from ui.yaml ---"
 	@mkdir -p $(C_GEN_DIR)
-	@rm -f  $(GENERATED_UI_SOURCE)    
+	@rm -f  $(GENERATED_UI_SOURCE)
 	./$(TARGET) $(API_SPEC_JSON) $(EX_CNC_UI_YAML) --codegen c_code > $(GENERATED_UI_SOURCE)
 	@echo "// Generated header\n#ifndef CREATE_UI_H\n#define CREATE_UI_H\n#include \"lvgl.h\"\nvoid create_ui(lv_obj_t* parent);\n#endif" > $(GENERATED_UI_HEADER)
 $(TARGET_CNC_NATIVE): $(OBJECTS) $(LVGL_LIB) ex_cnc/cnc_app.o ex_cnc/cnc_main_native.o $(GENERATED_UI_OBJ)
@@ -122,7 +122,7 @@ $(TARGET_CNC_NATIVE): $(OBJECTS) $(LVGL_LIB) ex_cnc/cnc_app.o ex_cnc/cnc_main_na
 ex_cnc/cnc_main_live.o: ex_cnc/cnc_main.c
 	$(CC) $(CFLAGS) -DCNC_LIVE_RENDER_MODE -c $< -o $@
 
-ex_cnc/cnc_main_native.o: ex_cnc/cnc_main.c
+ex_cnc/cnc_main_native.o: ex_cnc/cnc_main.c $(GENERATED_UI_HEADER)
 	$(CC) $(CFLAGS) -DCNC_STATIC_BUILD_MODE -c $< -o $@
 
 clean:

@@ -27,7 +27,8 @@ static void lv_log_print_g_cb(lv_log_level_t level, const char * buf) {
 }
 #endif
 
-// #define HIGH_DPI
+//#define HIGH_DPI
+#define MACOS_HIGH_DPI
 
 #define DEFAULT_WIDTH 1024
 #define DEFAULT_HEIGHT 480
@@ -87,13 +88,16 @@ int sdl_viewer_init(void) {
     /* Add a display
     * Use the 'monitor' driver which creates window on PC's monitor to simulate a display*/
 
-#ifndef HIGH_DPI
+#if defined(HIGH_DPI)
     lvDisplay = lv_sdl_window_create(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+#elif defined(MACOS_HIGH_DPI)
+    lvDisplay = lv_sdl_window_create(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    lv_sdl_window_set_zoom(lvDisplay, 0.5);
 #else
     lvDisplay = lv_sdl_window_create(DEFAULT_WIDTH * 2, DEFAULT_HEIGHT * 2);
     lv_sdl_window_set_zoom(lvDisplay, 2.0);
 #endif
-    
+
     if (!lvDisplay) {
         // Handle error, perhaps log and return -1
         return -1;
@@ -188,14 +192,14 @@ void sdl_viewer_loop(void) {
                 return; // Exit loop if window is closed
             }
         }
-        
+
         Uint32 current = SDL_GetTicks();
         uint32_t elapsed = current - lastTick;
         if (elapsed < 5) {
              SDL_Delay(5 - elapsed);
              current = SDL_GetTicks();
         }
-        
+
         lv_tick_inc(current - lastTick);
         lastTick = current;
         lv_timer_handler();
@@ -226,21 +230,21 @@ void sdl_viewer_take_screenshot(const char* path) {
         fprintf(stderr, "SDL_CreateRGBSurface failed: %s\n", SDL_GetError());
         return;
     }
-    
+
     SDL_RenderReadPixels(renderer, NULL, sshot->format->format, sshot->pixels, sshot->pitch);
-    
+
     unsigned error = lodepng_encode32_file(path, (const unsigned char*)sshot->pixels, w, h);
     if (error) {
         fprintf(stderr, "lodepng_encode32_file failed with error %u: %s\n", error, lodepng_error_text(error));
     }
-    
+
     SDL_FreeSurface(sshot);
 }
 
 void sdl_viewer_take_snapshot_lvgl(const char* path) {
     // 1. Force a synchronous redraw of the screen to ensure all drawing is complete.
     lv_refr_now(lv_display_get_default());
-    
+
     lv_obj_t* screen = lv_screen_active();
     if (!screen) {
         fprintf(stderr, "Cannot take snapshot: no active screen.\n");
@@ -266,7 +270,7 @@ void sdl_viewer_take_snapshot_lvgl(const char* path) {
 
     // 5. Take the snapshot into our manually allocated buffer.
     lv_result_t res = lv_snapshot_take_to_draw_buf(screen, LV_COLOR_FORMAT_ARGB8888, &draw_buf);
-    
+
     if (res != LV_RESULT_OK) {
         fprintf(stderr, "lv_snapshot_take_to_draw_buf failed with code %d\n", res);
         free(buf_data); // Clean up our buffer on failure
@@ -287,7 +291,7 @@ void sdl_viewer_take_snapshot_lvgl(const char* path) {
     if (error) {
         fprintf(stderr, "lodepng_encode32_file failed with error %u: %s\n", error, lodepng_error_text(error));
     }
-    
+
     // 8. Clean up the malloc'd buffer.
     free(buf_data);
 }

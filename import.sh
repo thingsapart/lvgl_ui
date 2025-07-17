@@ -64,7 +64,7 @@ BEGIN {
     # This correctly handles introductory text before the first block.
     # For example, "intro text !>>> file.txt..." becomes " file.txt...".
     sub(/.*!>>> /, "", block)
-    
+
     # Trim leading newlines and whitespace that may result from the sub() call.
     sub(/^[ \t\n]+/, "", block)
 
@@ -74,7 +74,12 @@ BEGIN {
     # Extract the first line (the header).
     header_line = substr(block, 1, first_newline_pos)
     # Trim any trailing whitespace from the filename.
-    sub(/\s*$/, "", header_line)
+    sub(/\n.*/, "", header_line)
+
+    # 2. Trim any remaining trailing whitespace (like spaces or tabs) from the end of the line.
+    #    Using [[:space:]] is the most portable way to do this.
+    sub(/[[:space:]]*$/, "", header_line)
+
     filename = header_line
 
     if (filename == "") {
@@ -87,6 +92,7 @@ BEGIN {
     code = substr(block, first_newline_pos + 1)
     # 2. Remove the starting "```" (with optional language) and the newline that follows.
     sub(/^\s*```[a-z]*\n/, "", code)
+    sub(/[[:space:]]*$/, "", code)
     # 3. Remove the trailing "```" and any whitespace before it.
     sub(/\n```\s*$/, "", code)
 
@@ -98,7 +104,7 @@ BEGIN {
 
     # Write the extracted code to the specified file.
     print code > filename
-    
+
     close(filename)
 }
 '

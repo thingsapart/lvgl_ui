@@ -14,6 +14,7 @@
 #include "lvgl_renderer.h"
 #include "registry.h"
 #include "yaml_parser.h"
+#include "c_gen/create_ui.h"
 
 #include <SDL2/SDL.h>
 
@@ -53,7 +54,7 @@ int main(int argc, char* argv[]) {
     char* error_msg = NULL;
     cJSON* ui_spec_json = yaml_to_cjson(ui_spec_content, &error_msg);
      if (error_msg) render_abort(error_msg);
-    
+
     IRRoot* ir_root = generate_ir_from_ui_spec(ui_spec_json, api_spec);
     Registry* registry = registry_create();
     lvgl_render_backend(ir_root, api_spec, screen, registry);
@@ -69,12 +70,12 @@ int main(int argc, char* argv[]) {
 #endif
 
     cnc_app_init();
-    
+
     // --- Main Simulation Loop (common to both modes) ---
     printf("Starting CNC simulation. Close the window to exit.\n");
     while(1) {
         uint32_t start_tick = lv_tick_get();
-        
+
         lv_timer_handler();
         cnc_app_tick();
 

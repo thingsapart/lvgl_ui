@@ -25,7 +25,7 @@ typedef struct {
 void cnc_app_init(void);
 
 // The action handler that receives commands from the UI.
-void cnc_action_handler(const char* action_name, binding_value_t value);
+void cnc_action_handler(const char* action_name, binding_value_t value, void *user_data);
 
 // Simulates one tick of the CNC machine; call this from a timer.
 void cnc_app_tick(void);

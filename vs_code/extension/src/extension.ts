@@ -6,6 +6,7 @@ import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 let previewPanel: vscode.WebviewPanel | undefined = undefined;
 let serverProcess: ChildProcessWithoutNullStreams | undefined = undefined;
 let outputChannel: vscode.OutputChannel;
+let logChannel: vscode.OutputChannel;
 
 // This will hold the URI of the document the preview was launched for.
 let previewedDocumentUri: vscode.Uri | undefined = undefined;
@@ -14,11 +15,13 @@ let renderTimeout: NodeJS.Timeout;
 
 export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel("LVGL UI Preview");
+    logChannel = vscode.window.createOutputChannel("LVGL UI Preview LOG");
+    logChannel.appendLine('[EXTENSION] Starting...')
 
     const disposable = vscode.commands.registerCommand('lvgl-ui-generator.preview', async (uri: vscode.Uri | undefined) => {
-        
+
         let targetUri: vscode.Uri | undefined = uri;
-        
+
         // If the command was run from the palette, use the active editor.
         if (!targetUri) {
             const activeEditor = vscode.window.activeTextEditor;
@@ -40,7 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         // Pin the preview to this document URI.
         previewedDocumentUri = targetUri;
-        
+
         const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === targetUri?.toString()) || await vscode.window.showTextDocument(document, vscode.ViewColumn.One);
 
         if (previewPanel) {
@@ -54,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
             );
             setupPreviewPanel(context);
         }
-        
+
         triggerRender(editor);
     });
 
@@ -83,7 +86,7 @@ function setupPreviewPanel(context: vscode.ExtensionContext) {
     if (serverProcess) {
         serverProcess.kill();
     }
-    
+
     const serverPath = path.join(context.extensionPath, 'bin', 'lvgl_vsc_server');
     if (!fs.existsSync(serverPath)) {
         vscode.window.showErrorMessage(`LVGL server executable not found at ${serverPath}. Please build the extension via the command palette ('Run Build Task').`);
@@ -98,82 +101,112 @@ function setupPreviewPanel(context: vscode.ExtensionContext) {
 
     const workspaceFolder = previewedDocumentUri ? vscode.workspace.getWorkspaceFolder(previewedDocumentUri) : undefined;
     const cwd = workspaceFolder ? workspaceFolder.uri.fsPath : undefined;
-    
+
     serverProcess = spawn(serverPath, [apiSpecPath], { cwd });
 
     serverProcess.on('error', (err) => {
         outputChannel.appendLine(`Failed to start server process: ${err.message}`);
         vscode.window.showErrorMessage("Failed to start the LVGL preview server.");
     });
-    
-    serverProcess.stderr.on('data', (data: Buffer) => {
-        outputChannel.appendLine(data.toString().trim());
-    });
 
-    // Implement a robust state-machine parser to handle the binary stream from the server.
-    // This prevents screen corruption caused by misaligned frame data.
+    // --- New Robust Parser ---
+    enum ParserState {
+        IDLE,
+        PARSING_FRAME_PAYLOAD
+    }
+
+    let parserState = ParserState.IDLE;
+    let frameInfo = { x: 0, y: 0, w: 0, h: 0, payloadSize: 0 };
     let buffer = Buffer.alloc(0);
-    let awaitingHeader = true;
-    let frameInfo = { width: 0, height: 0, byteLength: 0 };
+
+    const MAGIC_HEADER = Buffer.from("DATA:");
+    const FRAME_COMMAND = Buffer.from("|FRAME|");
+    const FULL_HEADER_LENGTH = MAGIC_HEADER.length + FRAME_COMMAND.length + 12; // 12 bytes for x,y,w,h,size
 
     function processBuffer() {
-        while (true) { // Loop to process as much of the buffer as possible
-            if (awaitingHeader) {
-                const EOL = buffer.indexOf('\n');
-                if (EOL === -1) {
-                    return; // Need more data for header
+        while (true) {
+            logChannel.appendLine(`[Parser] Anomaly: Loop...`)
+            if (parserState === ParserState.IDLE) {
+                const magicIndex = buffer.indexOf(MAGIC_HEADER);
+                if (magicIndex === -1) {
+                    return; // No magic header found, wait for more data
                 }
-                
-                const line = buffer.subarray(0, EOL).toString('utf-8');
-                buffer = buffer.subarray(EOL + 1);
 
-                const parts = line.split(' ');
-                if (parts[0] === 'FRAME_DATA' && parts.length === 4) {
-                    frameInfo.width = parseInt(parts[1], 10);
-                    frameInfo.height = parseInt(parts[2], 10);
-                    frameInfo.byteLength = parseInt(parts[3], 10);
-                    awaitingHeader = false;
-                    // Continue loop to process body
-                } else {
-                     if (line.trim().length > 0) {
-                        outputChannel.appendLine(`[SERVER STDOUT UNKNOWN]: ${line}`);
-                    }
-                    // Continue loop to find next header
+                if (magicIndex > 0) {
+                    //const garbage = buffer.subarray(0, magicIndex);
+                    outputChannel.appendLine(`[Parser] Anomaly: Discarding ${magicIndex} bytes of unknown data before magic header.`);
                 }
-            } else { // Awaiting body
-                if (buffer.length >= frameInfo.byteLength) {
-                    // Create a *copy* of the frame data to get a fresh ArrayBuffer of the correct size.
-                    const frameData = Buffer.from(buffer.subarray(0, frameInfo.byteLength));
-                    buffer = buffer.subarray(frameInfo.byteLength);
 
-                    // Post the message. The ArrayBuffer will be serialized and sent to the webview.
-                    previewPanel?.webview.postMessage({
-                        command: 'updateCanvas',
-                        width: frameInfo.width,
-                        height: frameInfo.height,
-                        // The .buffer property gets the underlying ArrayBuffer from the Node.js Buffer.
-                        frameBuffer: frameData.buffer 
-                    });
+                // Move buffer to start of magic header
+                buffer = buffer.subarray(magicIndex);
 
-                    awaitingHeader = true;
-                    // Continue loop to process next frame
-                } else {
-                    return; // Need more data for body
+                if (buffer.length < FULL_HEADER_LENGTH) {
+                    return; // Not enough data for the full header, wait for more.
                 }
+
+                const commandSlice = buffer.subarray(MAGIC_HEADER.length, MAGIC_HEADER.length + FRAME_COMMAND.length);
+                if (!commandSlice.equals(FRAME_COMMAND)) {
+                    outputChannel.appendLine(`[Parser] Anomaly: Found "DATA:" but unknown command "${commandSlice.toString()}". Discarding and searching again.`);
+                    buffer = buffer.subarray(1); // Discard just the 'D' and search again
+                    continue;
+                }
+
+                outputChannel.appendLine('[Parser] Command "|FRAME|" found. Parsing metadata.');
+                const metadataOffset = MAGIC_HEADER.length + FRAME_COMMAND.length;
+                frameInfo.x = buffer.readUInt16BE(metadataOffset);
+                frameInfo.y = buffer.readUInt16BE(metadataOffset + 2);
+                frameInfo.w = buffer.readUInt16BE(metadataOffset + 4);
+                frameInfo.h = buffer.readUInt16BE(metadataOffset + 6);
+                frameInfo.payloadSize = buffer.readUInt32BE(metadataOffset + 8);
+
+                outputChannel.appendLine(`[Parser] Parsed frame metadata: { x: ${frameInfo.x}, y: ${frameInfo.y}, w: ${frameInfo.w}, h: ${frameInfo.h}, bytes: ${frameInfo.payloadSize} }`);
+
+                buffer = buffer.subarray(FULL_HEADER_LENGTH);
+                parserState = ParserState.PARSING_FRAME_PAYLOAD;
+            }
+
+            if (parserState === ParserState.PARSING_FRAME_PAYLOAD) {
+                if (buffer.length < frameInfo.payloadSize) {
+                    outputChannel.appendLine(`[Parser] Waiting for frame payload. Have ${buffer.length}, need ${frameInfo.payloadSize}.`);
+                    return; // Need more data for payload
+                }
+
+                const frameData = buffer.subarray(0, frameInfo.payloadSize);
+                outputChannel.appendLine(`[Parser] Frame complete. Read ${frameData.length} bytes (expected ${frameInfo.payloadSize}).`);
+
+                previewPanel?.webview.postMessage({
+                    command: 'updateCanvas',
+                    x: frameInfo.x,
+                    y: frameInfo.y,
+                    width: frameInfo.w,
+                    height: frameInfo.h,
+                    frameBuffer: frameData.buffer // Send as ArrayBuffer
+                });
+                outputChannel.appendLine(`[Parser] Sent frame data to webview for rendering.`);
+
+                buffer = buffer.subarray(frameInfo.payloadSize);
+                parserState = ParserState.IDLE;
             }
         }
     }
 
+
     serverProcess.stdout.on('data', (data: Buffer) => {
         buffer = Buffer.concat([buffer, data]);
+        logChannel.appendLine(`[Parser] STDOUT recv... ${data.length}`)
         processBuffer();
+    });
+
+    serverProcess.stderr.on('data', (data: Buffer) => {
+        logChannel.appendLine(`[Parser] STDERR recv... ${data.length}`)
+        outputChannel.appendLine(data.toString().trim());
     });
 
     previewPanel.onDidDispose(() => {
         serverProcess?.kill();
         serverProcess = undefined;
         previewPanel = undefined;
-        previewedDocumentUri = undefined; 
+        previewedDocumentUri = undefined;
     }, null, context.subscriptions);
 
     previewPanel.webview.onDidReceiveMessage(message => {
@@ -193,8 +226,8 @@ function triggerRender(editor: vscode.TextEditor | undefined) {
     renderTimeout = setTimeout(() => {
         const source = editor.document.getText();
         const relativePath = vscode.workspace.asRelativePath(editor.document.uri);
-        
-        if (previewPanel) { 
+
+        if (previewPanel) {
              previewPanel.title = `LVGL Preview: ${path.basename(relativePath)}`;
         }
 
@@ -228,33 +261,37 @@ function getWebviewContent(): string {
     <canvas id="preview-canvas"></canvas>
     <script>
         const canvas = document.getElementById('preview-canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const vscode = acquireVsCodeApi();
-        
+
         let isMouseDown = false;
-        
-        // --- requestAnimationFrame Rendering Loop ---
-        let latestImageData = null;
+
+        // This queue will hold incoming frames.
+        const frameQueue = [];
         let framePending = false;
 
         function renderLoop() {
-            // Schedule the next frame
-            requestAnimationFrame(renderLoop);
-            
-            // If there's no new frame, do nothing
-            if (!framePending) {
-                return;
+            if (frameQueue.length > 0) {
+                // Get the oldest frame from the queue
+                const frame = frameQueue.shift();
+                const { imageData, x, y, width, height } = frame;
+
+                // The first frame (or any full-screen update) will typically have x=0, y=0
+                // and its dimensions will match the full preview size. We use this to set/reset the canvas size.
+                if (x === 0 && y === 0) {
+                     if (canvas.width !== width || canvas.height !== height) {
+                        canvas.width = width;
+                        canvas.height = height;
+                    }
+                }
+
+                // Draw the image data (which could be a partial frame) at the specified coordinates.
+                // This is much more efficient than creating a temporary canvas.
+                ctx.putImageData(imageData, x, y);
             }
 
-            // A new frame is available, draw it
-            if (latestImageData) {
-                if (canvas.width !== latestImageData.width) canvas.width = latestImageData.width;
-                if (canvas.height !== latestImageData.height) canvas.height = latestImageData.height;
-                ctx.putImageData(latestImageData, 0, 0);
-            }
-            
-            // Mark the frame as rendered
-            framePending = false;
+            // Schedule the next frame
+            requestAnimationFrame(renderLoop);
         }
 
         // Start the rendering loop
@@ -263,19 +300,15 @@ function getWebviewContent(): string {
         window.addEventListener('message', (event) => {
             const message = event.data;
             if (message.command === 'updateCanvas') {
-                const arrayBuffer = message.frameBuffer;
-                const width = message.width;
-                const height = message.height;
+                const { frameBuffer, x, y, width, height } = message;
 
-                // The received buffer is already in RGBA8888 format.
-                // We create a zero-copy view on the data.
-                const pixelData = new Uint8ClampedArray(arrayBuffer);
-                
-                // Create an ImageData object from the pixel data.
-                latestImageData = new ImageData(pixelData, width, height);
+                // The received buffer is an ArrayBuffer in RGBA8888 format.
+                const pixelData = new Uint8ClampedArray(frameBuffer);
 
-                // Signal to the render loop that a new frame is ready to be drawn.
-                framePending = true;
+                const imageData = new ImageData(pixelData, width, height);
+
+                // Push the complete frame data into the queue for the render loop to process.
+                frameQueue.push({ imageData, x, y, width, height });
             }
         });
 
