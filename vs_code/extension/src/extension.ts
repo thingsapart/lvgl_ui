@@ -53,6 +53,12 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
+        // If the panel is already visible and for the current file, close it (toggle behavior).
+        if (previewPanel && previewedDocumentUri?.toString() === targetUri.toString()) {
+            previewPanel.dispose();
+            return; // Command finished
+        }
+
         previewedDocumentUri = targetUri;
 
         // Load the last used resolution from workspace state for this session.
@@ -166,13 +172,13 @@ function setupPreviewPanel(context: vscode.ExtensionContext) {
                 if (editor) {
                     triggerRender(editor, currentResolution.width, currentResolution.height);
                 }
-                
+
                 buffer = buffer.subarray(INIT_HEADER_LENGTH);
                 continue; // Loop again immediately to process next command in buffer
 
             } else if (commandSlice.equals(FRAME_COMMAND)) {
                 if (buffer.length < FULL_FRAME_HEADER_LENGTH) return; // Wait for full header
-                
+
                 const metadataOffset = MAGIC_HEADER.length + COMMAND_LENGTH;
                 const totalWidth = buffer.readUInt16BE(metadataOffset);
                 const totalHeight = buffer.readUInt16BE(metadataOffset + 2);
@@ -216,9 +222,36 @@ function setupPreviewPanel(context: vscode.ExtensionContext) {
         processBuffer();
     });
 
+    let stderrBuffer = '';
     serverProcess.stderr.on('data', (data: Buffer) => {
         if (LOGGING_ENABLED) logChannel.appendLine(`[Parser] STDERR recv... ${data.length}`);
-        outputChannel.appendLine(data.toString().trim());
+
+        stderrBuffer += data.toString();
+        let eolIndex;
+        while ((eolIndex = stderrBuffer.indexOf('\n')) >= 0) {
+            const line = stderrBuffer.substring(0, eolIndex).trim();
+            stderrBuffer = stderrBuffer.substring(eolIndex + 1);
+
+            if (line) {
+                // Also log to the main output channel for debugging
+                outputChannel.appendLine(line);
+
+                // Strip ANSI color codes to simplify prefix matching
+                const cleanLine = line.replace(/\x1b\[[0-9;]*m/g, '');
+
+                const warningMatch = cleanLine.match(/^\[WARNING\]\s*(.*)/);
+                const hintMatch = cleanLine.match(/^\[HINT\]\s*(.*)/);
+                const errorMatch = cleanLine.match(/^\[ERROR\]\s*(.*)/);
+
+                if (errorMatch) {
+                    previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: 'error', text: errorMatch[1].trim() });
+                } else if (warningMatch) {
+                    previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: 'warning', text: warningMatch[1].trim() });
+                } else if (hintMatch) {
+                    previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: 'hint', text: hintMatch[1].trim() });
+                }
+            }
+        }
     });
 
     previewPanel.onDidDispose(() => {
@@ -253,6 +286,10 @@ function setupPreviewPanel(context: vscode.ExtensionContext) {
 function triggerRender(editor: vscode.TextEditor, width: number, height: number) {
     if (!previewPanel || !serverProcess) return;
 
+    // Hide the console every time a new render is triggered.
+    // It will reappear if the new render produces any warnings/errors.
+    previewPanel.webview.postMessage({ command: 'hideConsole' });
+
     clearTimeout(renderTimeout);
     renderTimeout = setTimeout(() => {
         const source = editor.document.getText();
@@ -281,20 +318,74 @@ function getWebviewContent(): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LVGL Preview</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #252526; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; flex-direction: column; background-color: #252526; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; overflow: hidden; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; /* Flexbox fix for overflow */ }
         .controls { padding: 8px; background-color: #333; width: 100%; box-sizing: border-box; text-align: center; border-bottom: 1px solid #444; flex-shrink: 0; }
         #resolution-select { background: #3c3c3c; color: #f0f0f0; border: 1px solid #666; padding: 4px; border-radius: 4px; }
         .canvas-container { flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; overflow: auto; padding: 16px; box-sizing: border-box;}
         canvas { background-color: #fff; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; box-shadow: 0 4px 12px rgba(0,0,0,0.5); flex-shrink: 0; }
+
+        /* Console Styles */
+        .console-container {
+            height: 200px;
+            background-color: #1e1e1e;
+            border-top: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .console-header {
+            background-color: #333;
+            padding: 2px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            user-select: none;
+        }
+        .console-header button {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 18px;
+            line-height: 1;
+            padding: 2px 6px;
+            cursor: pointer;
+        }
+        .console-header button:hover { background-color: #555; }
+        #console-output {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 8px;
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .console-msg { line-height: 1.4; }
+        .console-msg.error { color: #f48771; }
+        .console-msg.warning { color: #f1d75c; }
+        .console-msg.hint { color: #6fbcf1; }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <label for="resolution-select" style="margin-right: 8px;">Resolution:</label>
-        <select id="resolution-select"></select>
+    <div class="main-content">
+        <div class="controls">
+            <label for="resolution-select" style="margin-right: 8px;">Resolution:</label>
+            <select id="resolution-select"></select>
+        </div>
+        <div class="canvas-container">
+            <canvas id="preview-canvas"></canvas>
+        </div>
     </div>
-    <div class="canvas-container">
-        <canvas id="preview-canvas"></canvas>
+
+    <div id="console" class="console-container" style="display: none;">
+        <div class="console-header">
+            <span>Console</span>
+            <button id="console-close-btn">×</button>
+        </div>
+        <pre id="console-output"></pre>
     </div>
 
     <script>
@@ -302,21 +393,21 @@ function getWebviewContent(): string {
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const vscode = acquireVsCodeApi();
         const resolutionSelect = document.getElementById('resolution-select');
+        const consoleContainer = document.getElementById('console');
+        const consoleOutput = document.getElementById('console-output');
+        const consoleCloseBtn = document.getElementById('console-close-btn');
 
         let isMouseDown = false;
         const frameQueue = [];
-        
-        /**
-         * Sets the canvas size. Critically, this sets both the element's attributes (for the drawing buffer)
-         * and its CSS style (for the displayed size) to prevent the browser from scaling the canvas.
-         */
+
+        consoleCloseBtn.addEventListener('click', () => {
+            consoleContainer.style.display = 'none';
+        });
+
         function setCanvasSize(width, height) {
             if (canvas.width !== width || canvas.height !== height) {
-                // Set the drawing buffer size
                 canvas.width = width;
                 canvas.height = height;
-
-                // Set the display size
                 canvas.style.width = width + 'px';
                 canvas.style.height = height + 'px';
             }
@@ -326,13 +417,7 @@ function getWebviewContent(): string {
             if (frameQueue.length > 0) {
                 const frame = frameQueue.shift();
                 const { totalWidth, totalHeight, imageData, x, y } = frame;
-
-                // The server now tells us the total display size with EVERY frame.
-                // This is the source of truth, ensuring the canvas is always the correct size,
-                // even if the initial render comes in partial chunks.
                 setCanvasSize(totalWidth, totalHeight);
-                
-                // Draw the (potentially partial) frame data at its specified coordinates.
                 ctx.putImageData(imageData, x, y);
             }
             requestAnimationFrame(renderLoop);
@@ -344,7 +429,7 @@ function getWebviewContent(): string {
             switch (message.command) {
                 case 'initialize': {
                     const { resolution, allResolutions } = message;
-                    
+
                     setCanvasSize(resolution.width, resolution.height);
 
                     resolutionSelect.innerHTML = '';
@@ -366,6 +451,32 @@ function getWebviewContent(): string {
                     const pixelData = new Uint8ClampedArray(frameBuffer);
                     const imageData = new ImageData(pixelData, width, height);
                     frameQueue.push({ totalWidth, totalHeight, imageData, x, y });
+                    break;
+                }
+                case 'hideConsole': {
+                    consoleContainer.style.display = 'none';
+                    consoleOutput.innerHTML = ''; // Clear previous messages
+                    break;
+                }
+                case 'showConsoleMessage': {
+                    const { type, text } = message;
+                    const prefix = \`[\${type.toUpperCase()}]\`;
+
+                    const msgElement = document.createElement('div');
+                    msgElement.className = \`console-msg \${type}\`;
+
+                    const prefixSpan = document.createElement('span');
+                    prefixSpan.style.fontWeight = 'bold';
+                    prefixSpan.textContent = prefix.padEnd(10, ' ');
+
+                    msgElement.appendChild(prefixSpan);
+                    msgElement.appendChild(document.createTextNode(text));
+
+                    consoleOutput.appendChild(msgElement);
+
+                    // Show console if it's hidden and scroll to the new message
+                    consoleContainer.style.display = 'flex';
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
                     break;
                 }
             }

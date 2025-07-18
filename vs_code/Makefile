@@ -5,7 +5,7 @@ CC = gcc
 # Note: -I.. allows including files from the project root.
 # The LV_CONF_PATH is crucial for LVGL configuration.
 LV_CONF_PATH = ../viewer/lv_conf.h
-CFLAGS = -Wall -Wextra -g -I.. -I../viewer -I../cJSON -I../libs -I. -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -DLV_LVGL_H_INCLUDE_SIMPLE -I../lvgl -DLV_CONF_PATH='"$(LV_CONF_PATH)"'
+CFLAGS = -Wall -Wextra -g -I.. -I../viewer -I../cJSON -I../libs -I. -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -DLV_LVGL_H_INCLUDE_SIMPLE -I../lvgl -DLV_CONF_PATH='"$(LV_CONF_PATH)"' -DWARN_PLAIN_TEXT
 
 # Define LVGL build paths, relative to the vs_code directory
 LVGL_DIR = ../lvgl

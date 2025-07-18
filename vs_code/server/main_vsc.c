@@ -128,9 +128,11 @@ static void read_cb(lv_indev_t *in_dev, lv_indev_data_t *data) {
 // --- Server Logic ---
 
 void render_abort(const char *msg) {
-    fprintf(stderr, "SERVER_FATAL_ERROR: %s\n", msg);
+    // This function no longer aborts the server. It sends a formatted error
+    // message to stderr, which the VSCode extension will display in the
+    // webview's console. The server continues to run.
+    fprintf(stderr, ANSI_BOLD_LIGHT_RED "[ERROR] " ANSI_RESET "%s\n", msg);
     fflush(stderr);
-    exit(1);
 }
 
 static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
@@ -159,14 +161,19 @@ static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
         if (lvgl_draw_buffer) free(lvgl_draw_buffer);
         size_t lv_buf_size = (size_t)VSC_WIDTH * VSC_HEIGHT * sizeof(lv_color_t);
         lvgl_draw_buffer = malloc(lv_buf_size);
-        if (!lvgl_draw_buffer) render_abort("Failed to allocate LVGL draw buffer.");
+        if (!lvgl_draw_buffer) {
+            render_abort("Failed to allocate LVGL draw buffer.");
+            return; // Return even though render_abort doesn't exit, to prevent further execution
+        }
 
         // Reallocate the RGBA conversion buffer
         if (rgba_buffer) free(rgba_buffer);
         size_t rgba_buf_size = (size_t)VSC_WIDTH * VSC_HEIGHT * 4;
         rgba_buffer = malloc(rgba_buf_size);
-        if(!rgba_buffer) render_abort("Failed to allocate RGBA conversion buffer.");
-
+        if(!rgba_buffer) {
+            render_abort("Failed to allocate RGBA conversion buffer.");
+            return;
+        }
         // Use PARTIAL render mode for efficiency.
         lv_display_set_buffers(disp, lvgl_draw_buffer, NULL, lv_buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
         lv_display_set_resolution(disp, VSC_WIDTH, VSC_HEIGHT);
@@ -176,6 +183,7 @@ static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
     int fd = mkstemps(tmp_filename, 4);
     if (fd == -1) {
         render_abort("Failed to create temporary file for UI spec.");
+        return;
     }
     write(fd, source_item->valuestring, strlen(source_item->valuestring));
     close(fd);
@@ -243,7 +251,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (api_spec_path == NULL) {
-        fprintf(stderr, "SERVER_FATAL_ERROR: API spec path not provided as a command-line argument.\n");
+        fprintf(stderr, "[ERROR] API spec path not provided as a command-line argument.\n");
         return 1;
     }
 
@@ -280,14 +288,21 @@ int main(int argc, char* argv[]) {
         char err_msg[512];
         snprintf(err_msg, sizeof(err_msg), "Could not read API spec file at '%s'", api_spec_path);
         render_abort(err_msg);
+        exit(1); // Still exit here, server can't start.
     }
 
     cJSON* api_spec_json = cJSON_Parse(api_spec_content);
-    if (!api_spec_json) render_abort("Could not parse api_spec.json");
+    if (!api_spec_json) {
+        render_abort("Could not parse api_spec.json");
+        exit(1); // Still exit here, server can't start.
+    }
     free(api_spec_content);
 
     ApiSpec* api_spec = api_spec_parse(api_spec_json);
-    if (!api_spec) render_abort("Failed to parse API spec into internal structures.");
+    if (!api_spec) {
+        render_abort("Failed to parse API spec into internal structures.");
+        exit(1); // Still exit here, server can't start.
+    }
 
     // Set stdin to non-blocking mode
     int flags = fcntl(STDIN_FILENO, F_GETFL, 0);

@@ -3,6 +3,9 @@
 
 #include <stddef.h> // For size_t
 
+// When defined, warning/hint output is plain text for easier parsing by IDEs
+// #define WARN_PLAIN_TEXT
+
 // ANSI color codes for terminal output
 #define ANSI_BOLD_RED     "\x1b[1;31m"
 #define ANSI_YELLOW       "\x1b[0;33m"
@@ -46,7 +49,8 @@ struct ApiSpec;
 // Helper to get enum value from IRNode, potentially looking up string symbols
 long ir_node_get_enum_value(struct IRNode* node, const char* expected_enum_c_type, struct ApiSpec* spec);
 
-// Function to call when a rendering or code generation error occurs that should stop execution.
+// Function to call when a rendering or code generation error occurs.
+// In the VSC server, this sends an error to the client instead of exiting.
 extern void render_abort(const char *msg);
 
 // Shows a formatted warning.
