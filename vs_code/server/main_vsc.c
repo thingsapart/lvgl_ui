@@ -80,20 +80,29 @@ static void flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *px_m
     // Convert the rendered LVGL buffer (ARGB8888) to RGBA8888 for the webview.
     convert_argb8888_to_rgba8888(px_map, rgba_buffer, pixel_count);
 
-    // Prepare header for the new length-prefixed protocol
-    char header[24];
+    // Prepare header for the new length-prefixed protocol.
+    // The header now includes the TOTAL display dimensions with every frame.
+    char header[28]; // Increased size for total_w, total_h
     memcpy(header, "DATA:|FRAME|", 12);
+
+    // Add total display dimensions
+    uint16_t net_total_w = htons(lv_display_get_horizontal_resolution(display));
+    uint16_t net_total_h = htons(lv_display_get_vertical_resolution(display));
+    memcpy(header + 12, &net_total_w, 2);
+    memcpy(header + 14, &net_total_h, 2);
+
+    // Add partial frame dimensions
     uint16_t net_x = htons(x);
     uint16_t net_y = htons(y);
     uint16_t net_w = htons(width);
     uint16_t net_h = htons(height);
     uint32_t net_size = htonl(rgba_buf_size);
 
-    memcpy(header + 12, &net_x, 2);
-    memcpy(header + 14, &net_y, 2);
-    memcpy(header + 16, &net_w, 2);
-    memcpy(header + 18, &net_h, 2);
-    memcpy(header + 20, &net_size, 4);
+    memcpy(header + 16, &net_x, 2);
+    memcpy(header + 18, &net_y, 2);
+    memcpy(header + 20, &net_w, 2);
+    memcpy(header + 22, &net_h, 2);
+    memcpy(header + 24, &net_size, 4);
 
     // Send header and payload
     fwrite(header, 1, sizeof(header), stdout);
@@ -101,7 +110,9 @@ static void flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *px_m
     fflush(stdout);
 
     if (g_logging_enabled) {
-        fprintf(stderr, "SERVER_LOG: Sent frame rect {x:%d, y:%d, w:%d, h:%d, bytes:%zu}\n", x, y, width, height, rgba_buf_size);
+        fprintf(stderr, "SERVER_LOG: Sent frame total_dim{%dx%d} rect {x:%d, y:%d, w:%d, h:%d, bytes:%zu}\n",
+                lv_display_get_horizontal_resolution(display), lv_display_get_vertical_resolution(display),
+                x, y, width, height, rgba_buf_size);
     }
 
     // Tell LVGL that we are done with the flushing.
@@ -139,6 +150,10 @@ static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
     if (new_width != VSC_WIDTH || new_height != VSC_HEIGHT || lvgl_draw_buffer == NULL) {
         VSC_WIDTH = new_width > 0 ? new_width : 1;
         VSC_HEIGHT = new_height > 0 ? new_height : 1;
+
+        if (g_logging_enabled) {
+            fprintf(stderr, "SERVER_LOG: Resolution changing to %dx%d.\n", VSC_WIDTH, VSC_HEIGHT);
+        }
 
         // Reallocate the LVGL draw buffer
         if (lvgl_draw_buffer) free(lvgl_draw_buffer);
@@ -245,6 +260,20 @@ int main(int argc, char* argv[]) {
     lv_indev_set_read_cb(indev, read_cb);
     lv_indev_set_display(indev, disp);
     memset(&last_input_data, 0, sizeof(lv_indev_data_t));
+
+    // Send initial handshake message with the starting resolution
+    // Using a specific command "INIT" to distinguish from "FRAME"
+    char init_header[16]; // DATA:|INIT |wwww_hhhh
+    memcpy(init_header, "DATA:|INIT |", 12); // Note the space after INIT
+    uint16_t net_w = htons(VSC_WIDTH);
+    uint16_t net_h = htons(VSC_HEIGHT);
+    memcpy(init_header + 12, &net_w, 2);
+    memcpy(init_header + 14, &net_h, 2);
+    fwrite(init_header, 1, sizeof(init_header), stdout);
+    fflush(stdout);
+    if (g_logging_enabled) {
+        fprintf(stderr, "SERVER_LOG: Sent INIT handshake with resolution %dx%d\n", VSC_WIDTH, VSC_HEIGHT);
+    }
 
     char* api_spec_content = read_file(api_spec_path);
     if (!api_spec_content) {
