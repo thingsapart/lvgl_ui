@@ -1,0 +1,14 @@
+# TICKS: 4
+- type: data-binding
+  state:
+    - is_active: false
+    - counter: 10.0
+    - time: 0.0
+  updates:
+    - is_active:
+        set: true
+        when: [>, time, 0.05]
+    
+    - counter:
+        dec: 1
+        when: is_active

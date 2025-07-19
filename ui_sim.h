@@ -25,18 +25,26 @@ void ui_sim_init(void);
 bool ui_sim_process_node(cJSON* node);
 
 /**
- * @brief Starts the UI Simulator.
+ * @brief Prepares the UI Simulator to run.
  * This function should be called after the UI has been fully rendered.
- * It registers the simulator's action handler, notifies the UI of all initial state
- * values, and starts the periodic update timer.
+ * It registers the simulator's action handler and notifies the UI of all initial state
+ * values. IT DOES NOT start the periodic updates.
  */
 void ui_sim_start(void);
 
 /**
- * @brief Stops the UI Simulator.
- * Kills the timer and cleans up runtime resources.
+ * @brief Stops the UI Simulator and cleans up resources.
+ * This is automatically called by ui_sim_init().
  */
 void ui_sim_stop(void);
+
+/**
+ * @brief Advances the simulation by one tick.
+ * This should be called periodically by an external loop (e.g., the main application
+ * loop or a test runner).
+ * @param dt The delta-time in seconds since the last tick (e.g., 0.033 for 30fps).
+ */
+void ui_sim_tick(float dt);
 
 
 // --- Internal Data Structures (exposed for potential debugging) ---

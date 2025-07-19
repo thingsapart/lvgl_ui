@@ -1,0 +1,7 @@
+# TICKS: 3
+- type: data-binding
+  state:
+    - counter: 0.0
+    - time: 0.0
+  updates:
+    - counter: { inc: 1.0 }
