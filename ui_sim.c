@@ -248,7 +248,7 @@ static bool parse_state(cJSON* state_array, SimParseContext* ctx) {
             const char* type_str = state_def->valuestring;
             if (strcmp(type_str, "float") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_FLOAT, .as.f_val = 0.0f}; }
             else if (strcmp(type_str, "bool") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_BOOL, .as.b_val = false}; }
-            else if (strcmp(type_str, "string") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_STRING, .as.s_val = strdup("")}; }
+            else if (strcmp(type_str, "string") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_STRING, .as.s_val = strdup("")}; } // *** FIX: Default to empty string ***
             else { sim_abort(ctx, "Unknown state type '%s'. Use 'float', 'bool', or 'string'.", type_str); return false; }
         } else if (cJSON_IsNumber(state_def)) {
             state->value = (binding_value_t){.type = BINDING_TYPE_FLOAT, .as.f_val = (float)state_def->valuedouble};
@@ -501,12 +501,10 @@ static bool set_state_value(SimStateVariable* state, binding_value_t new_value) 
         }
         if(state->value.type == BINDING_TYPE_STRING) free((void*)state->value.as.s_val);
 
-        // *** FIX: value is now owned by the state, no extra strdup needed ***
         state->value = new_value;
         state->is_dirty = true;
         return true;
     } else {
-        // *** FIX: If the value is an unused string, we must free it ***
         if (new_value.type == BINDING_TYPE_STRING) {
             free((void*)new_value.as.s_val);
         }
@@ -581,7 +579,6 @@ static void execute_modifications_list(SimModification* head, binding_value_t ac
                 case MOD_SET: {
                     binding_value_t val = evaluate_expression(mod->value_expr, action_value);
                     set_state_value(target_state, val);
-                    // The string is now owned by set_state_value, so we don't free it here
                     break;
                 }
                 case MOD_INC: {
@@ -657,7 +654,6 @@ static binding_value_t evaluate_expression(SimExpression* expr, binding_value_t 
 
     switch(expr->type) {
         case SIM_EXPR_LITERAL:
-            // *** FIX: If it's a string literal, we must return a COPY ***
             if (expr->as.literal.type == BINDING_TYPE_STRING) {
                 return (binding_value_t){.type = BINDING_TYPE_STRING, .as.s_val = strdup(expr->as.literal.as.s_val)};
             }
@@ -672,7 +668,6 @@ static binding_value_t evaluate_expression(SimExpression* expr, binding_value_t 
                 if(expr->as.state_ref.is_negated && state->value.type == BINDING_TYPE_BOOL) {
                     return (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=!state->value.as.b_val};
                 }
-                // *** FIX: If it's a string state, we must return a COPY ***
                 if (state->value.type == BINDING_TYPE_STRING) {
                     return (binding_value_t){.type = BINDING_TYPE_STRING, .as.s_val = strdup(state->value.as.s_val)};
                 }
