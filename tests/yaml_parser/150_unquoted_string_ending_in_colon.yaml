@@ -1,0 +1,5 @@
+# Unquoted strings cannot end in a colon.
+# But a URL can contain one. This is a key test.
+# The parser must correctly identify the whole URL as the value.
+protocol: http:
+api_endpoint: http://my-api:8080/

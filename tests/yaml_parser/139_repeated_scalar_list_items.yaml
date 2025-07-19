@@ -1,0 +1,5 @@
+# Simple sanity check for repeated scalar values in a list.
+- item
+- item
+- another_item
+- item

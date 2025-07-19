@@ -1,0 +1,18 @@
+
+# Document Start
+key1: value1
+
+
+# A big gap
+# With comments
+
+
+key2:
+  # indented comment
+  - item1
+  - item2
+
+
+
+# Document End
+

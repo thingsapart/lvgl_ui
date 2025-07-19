@@ -1,0 +1,4 @@
+# A mix of styles resulting in duplicate keys
+key: { value: flow }
+key:
+  value: block

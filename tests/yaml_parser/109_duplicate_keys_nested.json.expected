@@ -1,6 +1,10 @@
 [{
 		"parent":	{
 			"child":	{
+				"key":	"first",
+				"another":	1
+			},
+			"child":	{
 				"key":	"second",
 				"final":	true
 			}

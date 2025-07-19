@@ -1,0 +1,10 @@
+[{
+		"key":	"item1"
+	}, {
+		"key":	"item2",
+		"value":	{
+			"nested":	true
+		}
+	}, {
+		"key":	"item3"
+	}]

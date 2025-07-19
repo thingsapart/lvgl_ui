@@ -1,0 +1,5 @@
+# A list containing both flow-style and block-style maps.
+- { name: flow_item, value: 1 }
+- name: block_item
+  value: 2
+- { name: another_flow, value: 3 }

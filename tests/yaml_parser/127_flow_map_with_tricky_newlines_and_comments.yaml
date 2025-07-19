@@ -1,0 +1,11 @@
+# Tests robust parsing of flow maps spread across multiple lines with comments.
+config: {
+  key1:
+    value1, # comment
+  # Another comment
+  key2: value2
+  , key3: [
+    1,
+    2
+  ]
+}

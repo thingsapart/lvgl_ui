@@ -1,0 +1,4 @@
+# Tests that explicitly empty quoted strings are parsed correctly as empty strings.
+empty_double: ""
+empty_single: ''
+not_empty: " "

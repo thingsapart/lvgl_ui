@@ -1,0 +1,5 @@
+# Unquoted keys with dots are common in Java/Spring config files.
+# This tests that they are parsed as single string keys.
+server.port: 8080
+spring.application.name: my-app
+logging.level.root: INFO

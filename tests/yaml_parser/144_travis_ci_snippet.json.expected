@@ -1,0 +1,11 @@
+[{
+		"language":	"node_js",
+		"node_js":	["14", "16"],
+		"script":	["npm test", "npm run build"],
+		"matrix":	{
+			"include":	[{
+					"node_js":	"16",
+					"env":	"TEST_SUITE=unit"
+				}]
+		}
+	}]

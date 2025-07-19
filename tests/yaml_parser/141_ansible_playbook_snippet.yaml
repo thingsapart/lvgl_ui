@@ -1,0 +1,14 @@
+# A simple Ansible playbook.
+# Tests a list of maps, keys with underscores, and unquoted keywords.
+- name: Update web servers
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Ensure nginx is at the latest version
+      apt:
+        name: nginx
+        state: latest
+    - name: Write the nginx configuration
+      template:
+        src: /srv/nginx.j2
+        dest: /etc/nginx/nginx.conf

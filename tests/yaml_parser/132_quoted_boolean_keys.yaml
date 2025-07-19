@@ -1,0 +1,3 @@
+# In JSON, all keys must be strings. This tests that keys that
+# look like booleans are correctly parsed as strings when quoted.
+{ "true": "is a string key", "false": 1, ok: true }

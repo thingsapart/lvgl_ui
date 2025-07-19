@@ -1,0 +1,9 @@
+# In some configurations, especially during merges, duplicates can appear.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+  labels:
+    app: backend
+  labels:
+    tier: "1"

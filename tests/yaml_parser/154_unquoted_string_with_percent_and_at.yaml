@@ -1,0 +1,5 @@
+# The '%' and '@' characters are allowed in unquoted strings.
+# The parser should handle them correctly.
+discount: 10%
+user: @admin
+message: Sale is 20% off for @everyone!

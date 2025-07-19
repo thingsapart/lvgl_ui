@@ -1,0 +1,2 @@
+# Tests that an apostrophe can exist in an unquoted string.
+message: it's a value with an apostrophe

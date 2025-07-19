@@ -34,22 +34,74 @@ typedef struct {
 
 // --- Forward Declarations ---
 static cJSON *parse_flow_collection(ParserState *state);
-static cJSON *parse_value(ParserState *state);
+static cJSON *parse_value(ParserState *state, bool is_flow_context);
+static cJSON *parse_scalar(ParserState *state, bool is_flow_context);
 static void parse_line(ParserState *state, int line_idx);
 static void set_error(ParserState *state, const char* token_start, size_t token_len, const char *format, ...);
 static int get_next_content_line_info(ParserState *state, int current_line_idx, int* out_indent, char* out_first_char);
+static char* find_unquoted_toplevel_char(const char* s, char c);
 
 
 // --- cJSON Helper ---
 static void cjson_add_item_to_object_with_duplicates(cJSON *object, const char *string, cJSON *item) {
     if (!object || !string || !item || !cJSON_IsObject(object)) return;
-    cJSON* existing_item = cJSON_DetachItemFromObjectCaseSensitive(object, string);
-    if (existing_item) cJSON_Delete(existing_item);
+    // cJSON_AddItemToObject itself just appends to the linked list of children.
+    // It does not check for or replace existing items with the same key.
+    // This allows for duplicate keys, which can be accessed by iterating
+    // through the `child` linked list. cJSON_Print will also render all of them.
     cJSON_AddItemToObject(object, string, item);
 }
 
 
 // --- String & Line Helpers ---
+
+// Finds the first occurrence of `c` in `s` that is not inside a matching pair of single or double quotes.
+static char* find_unquoted_toplevel_char(const char* s, char c) {
+    char quote = 0;
+    while (*s) {
+        if (quote == *s) {
+            quote = 0; // End quote
+        } else if (quote == 0) {
+            if (*s == c) {
+                return (char*)s; // Found target char
+            }
+            if (*s == '\'' || *s == '"') {
+                quote = *s; // Start quote
+            }
+        }
+        s++;
+    }
+    return NULL;
+}
+
+// Strips an inline YAML comment (` # ...`) from the end of a string.
+// It is quote-aware and will not strip a '#' from inside a quoted string.
+static void strip_trailing_comment(char* str) {
+    if (!str) return;
+    char* p = str;
+    char quote_char = 0;
+    while (*p) {
+        if (quote_char) { // We are inside a quote
+            if (*p == '\\') { // Handle escape sequence
+                p++;
+            } else if (*p == quote_char) {
+                quote_char = 0; // End of quote
+            }
+        } else { // We are not inside a quote
+            if (*p == '\'' || *p == '"') {
+                quote_char = *p; // Start of quote
+            } else if (*p == '#') {
+                // A comment is a '#' preceded by a space.
+                if (p > str && isspace((unsigned char)*(p-1))) {
+                    *p = '\0'; // Terminate string here
+                    return;
+                }
+            }
+        }
+        if (*p) p++; else break;
+    }
+}
+
 
 static int get_indent(const char *line) {
     if (!line) return 0;
@@ -117,7 +169,7 @@ static void skip_whitespace(ParserState *state) {
 }
 
 
-static cJSON *parse_scalar(ParserState *state) {
+static cJSON *parse_scalar(ParserState *state, bool is_flow_context) {
     char buffer[YAML_PARSER_MAX_LINE_LEN];
     char* write_ptr = buffer;
     const char* p = state->ptr;
@@ -159,8 +211,18 @@ static cJSON *parse_scalar(ParserState *state) {
                 *write_ptr++ = *p++;
             }
         } else { // Unquoted
-            if (!*p || strchr(",[]{}", *p) || (*p == ':' && (isspace((unsigned char)*(p + 1)) || *(p + 1) == '\0')) || (*p == '#' && isspace((unsigned char)*(p-1)))) {
-                break;
+            if (is_flow_context) {
+                // In flow context, we must stop at syntax characters
+                if (!*p || strchr(",[]{}", *p) || (*p == ':' && (isspace((unsigned char)*(p + 1)) || *(p + 1) == '\0')) || (*p == '#' && p > state->ptr && isspace((unsigned char)*(p-1)))) {
+                    break;
+                }
+            } else {
+                // In block context, the value is the rest of the line.
+                // Comments should have been stripped by the caller (parse_line).
+                // We only need to stop at the end of the string.
+                if (!*p) {
+                    break;
+                }
             }
             *write_ptr++ = *p++;
         }
@@ -193,12 +255,12 @@ static cJSON *parse_scalar(ParserState *state) {
     return node;
 }
 
-static cJSON* parse_value(ParserState *state) {
+static cJSON* parse_value(ParserState *state, bool is_flow_context) {
     skip_whitespace(state);
     if (*state->ptr == '[' || *state->ptr == '{') {
         return parse_flow_collection(state);
     }
-    return parse_scalar(state);
+    return parse_scalar(state, is_flow_context);
 }
 
 static cJSON *parse_flow_collection(ParserState *state) {
@@ -255,10 +317,10 @@ static cJSON *parse_flow_collection(ParserState *state) {
         }
 
         if (cJSON_IsArray(root)) {
-            cJSON_AddItemToArray(root, parse_value(state));
+            cJSON_AddItemToArray(root, parse_value(state, true));
         } else { // It's an object
             const char* key_start_ptr = state->ptr;
-            cJSON* key_node = parse_value(state);
+            cJSON* key_node = parse_value(state, true);
 
             char key_string[256];
             if (cJSON_IsString(key_node)) {
@@ -266,6 +328,12 @@ static cJSON *parse_flow_collection(ParserState *state) {
                 key_string[sizeof(key_string) - 1] = '\0';
             } else if (cJSON_IsNumber(key_node)) {
                 snprintf(key_string, sizeof(key_string), "%g", key_node->valuedouble);
+            } else if (cJSON_IsTrue(key_node)) {
+                strncpy(key_string, "true", sizeof(key_string));
+            } else if (cJSON_IsFalse(key_node)) {
+                strncpy(key_string, "false", sizeof(key_string));
+            } else if (cJSON_IsNull(key_node)) {
+                strncpy(key_string, "null", sizeof(key_string));
             } else {
                 set_error(state, key_start_ptr, (state->ptr - key_start_ptr), "Invalid key in flow-style map");
                 cJSON_Delete(key_node); cJSON_Delete(root); return cJSON_CreateNull();
@@ -279,7 +347,7 @@ static cJSON *parse_flow_collection(ParserState *state) {
             }
             state->ptr++;
 
-            cJSON* value_node = parse_value(state);
+            cJSON* value_node = parse_value(state, true);
             cjson_add_item_to_object_with_duplicates(root, key_string, value_node);
         }
 
@@ -428,14 +496,17 @@ void parse_line(ParserState *state, int line_idx) {
             return;
         }
 
-        char* colon = strchr(p, ':');
-        char* bracket = strpbrk(p, "[{");
+        char* colon = find_unquoted_toplevel_char(p, ':');
+        char* bracket = strpbrk(p, "[{"); // No need to make this quote-aware
         if (colon && (!bracket || colon < bracket)) {
             cJSON* new_map_item = cJSON_CreateObject();
             cJSON_AddItemToArray(list_context, new_map_item);
             push_stack(state, new_map_item, indent);
         } else {
-            cJSON* val_node = parse_value(state);
+            char* val_str = p;
+            strip_trailing_comment(val_str);
+            state->ptr = val_str;
+            cJSON* val_node = parse_value(state, false);
             cJSON_AddItemToArray(list_context, val_node);
             return;
         }
@@ -448,7 +519,7 @@ void parse_line(ParserState *state, int line_idx) {
         return;
     }
 
-    char* colon = strchr(p, ':');
+    char* colon = find_unquoted_toplevel_char(p, ':');
     if (!colon) {
         set_error(state, p, strlen(p), "Invalid mapping (missing ':')");
         return;
@@ -456,6 +527,7 @@ void parse_line(ParserState *state, int line_idx) {
 
     *colon = '\0';
     char* key = trim_whitespace(p);
+    // Unquote the key if it's quoted
     if ((*key == '"' || *key == '\'') && key[strlen(key)-1] == *key) {
         key[strlen(key)-1] = '\0';
         key++;
@@ -463,16 +535,7 @@ void parse_line(ParserState *state, int line_idx) {
 
 
     char* val_str = colon + 1;
-    char* comment = val_str;
-    bool in_quotes = false;
-    while(*comment) {
-        if (*comment == '"' || *comment == '\'') in_quotes = !in_quotes;
-        if (*comment == '#' && !in_quotes && isspace((unsigned char)*(comment-1))) {
-            *comment = '\0';
-            break;
-        }
-        comment++;
-    }
+    strip_trailing_comment(val_str);
     val_str = trim_whitespace(val_str);
 
     if (*val_str == '\0') {
@@ -484,7 +547,7 @@ void parse_line(ParserState *state, int line_idx) {
             if (next_first_char == '[' || next_first_char == '{') {
                  state->current_line_idx = next_line_idx;
                  state->ptr = trim_whitespace(state->lines[state->current_line_idx]);
-                 cJSON* val_node = parse_value(state);
+                 cJSON* val_node = parse_value(state, false);
                  cjson_add_item_to_object_with_duplicates(current_parent, key, val_node);
             } else {
                 cJSON* container = (next_first_char == '-') ? cJSON_CreateArray() : cJSON_CreateObject();
@@ -496,7 +559,7 @@ void parse_line(ParserState *state, int line_idx) {
         }
     } else {
         state->ptr = val_str;
-        cJSON* val_node = parse_value(state);
+        cJSON* val_node = parse_value(state, false);
         cjson_add_item_to_object_with_duplicates(current_parent, key, val_node);
     }
 }
@@ -541,12 +604,15 @@ cJSON* yaml_to_cjson(const char* yaml_content, char** error_message) {
     } else {
         state.ptr = first_line_content;
         state.current_line_idx = first_content_line_idx;
+        state.line_num = first_content_line_idx + 1;
+
 
         // If the document starts with a flow collection, parse it directly.
-        if (first_char == '{' || (first_char == '[' && strchr(state.ptr, ':') == NULL)) {
-            root = parse_value(&state);
-        } else if (strchr(state.ptr, ':') == NULL && first_char != '-') {
-            root = parse_scalar(&state);
+        if (first_char == '{' || first_char == '[') {
+            root = parse_value(&state, true);
+        } else if (find_unquoted_toplevel_char(state.ptr, ':') == NULL && first_char != '-') {
+            // No colon on the line and not a list item: must be a root scalar.
+             root = parse_value(&state, false);
         } else {
             // Otherwise, start the line-by-line block parser.
             root = (first_char == '-') ? cJSON_CreateArray() : cJSON_CreateObject();
@@ -562,11 +628,18 @@ cJSON* yaml_to_cjson(const char* yaml_content, char** error_message) {
     if (state.error && *state.error) {
         cJSON_Delete(root);
         root = NULL;
-    } else if (root && !cJSON_IsArray(root)) {
+    } else if (root && !cJSON_IsArray(root) && !cJSON_IsObject(root)) {
+        // Wrap root scalar in an array
         cJSON* array_wrapper = cJSON_CreateArray();
         cJSON_AddItemToArray(array_wrapper, root);
         root = array_wrapper;
-    } else if (!root) {
+    } else if (root && cJSON_IsObject(root)) {
+        // Wrap root object in an array
+        cJSON* array_wrapper = cJSON_CreateArray();
+        cJSON_AddItemToArray(array_wrapper, root);
+        root = array_wrapper;
+    }
+    else if (!root) {
         root = cJSON_CreateArray();
     }
 

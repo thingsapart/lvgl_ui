@@ -1,0 +1,3 @@
+# A URL is a common unquoted string value that contains a colon.
+# This must be parsed as a single string.
+endpoint: https://api.example.com/v1/users

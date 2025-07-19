@@ -1,0 +1,19 @@
+# A common docker-compose file structure
+# Tests map of maps, map of lists, and different value types.
+version: '3.8'
+services:
+  web:
+    image: myapp:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - './app:/app'
+    environment:
+      - DEBUG=1
+      - DB_HOST=database
+  database:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+

@@ -1,0 +1,6 @@
+# Tests proper handling of empty collections inside a nested list structure.
+- - item_1a
+  - {} # empty flow map
+  - item_1b
+- - item_2a
+  - [] # empty flow list

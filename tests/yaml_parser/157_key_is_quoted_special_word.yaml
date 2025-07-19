@@ -1,0 +1,6 @@
+# Tests that YAML keywords, when quoted, are treated as string keys.
+{
+  "null": "is a key",
+  "true": "is another key",
+  "false": false
+}

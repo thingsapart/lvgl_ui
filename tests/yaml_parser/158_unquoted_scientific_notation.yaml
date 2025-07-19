@@ -1,0 +1,5 @@
+# Ensures that various forms of scientific notation are parsed as numbers.
+small: 1.23e-4
+large: -5E+10
+positive_exponent: 3.14e2
+no_plus_exponent: 1e10

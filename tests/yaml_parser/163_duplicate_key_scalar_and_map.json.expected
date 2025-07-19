@@ -1,0 +1,6 @@
+[{
+		"key":	"scalar_value",
+		"key":	{
+			"nested_key":	"nested_value"
+		}
+	}]

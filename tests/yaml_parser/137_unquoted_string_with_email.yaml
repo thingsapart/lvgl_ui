@@ -1,0 +1,2 @@
+# The '@' symbol is allowed in unquoted strings and should be parsed correctly.
+email: john.doe@example.com
