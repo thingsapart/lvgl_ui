@@ -453,7 +453,6 @@ void parse_line(ParserState *state, int line_idx) {
             return;
         }
 
-        cJSON *original_parent_for_this_line = current_parent;
         cJSON *list_context = current_parent;
         // Iteratively handle nested lists like `- - - item`
         while (*p == '-') {
@@ -462,6 +461,8 @@ void parse_line(ParserState *state, int line_idx) {
                 cJSON* new_list = cJSON_CreateArray();
                 cJSON_AddItemToArray(list_context, new_list);
                 list_context = new_list;
+                // THIS IS THE FIX: The new list is a new scope for subsequent lines.
+                push_stack(state, list_context, indent);
                 p = next_char;
                 continue;
             }
@@ -480,18 +481,14 @@ void parse_line(ParserState *state, int line_idx) {
                  cJSON_AddItemToArray(list_context, container);
                  push_stack(state, container, indent);
             } else {
-                 if (list_context == original_parent_for_this_line) {
-                    // This is a simple `-` or an indented `  -`. We distinguish them by
-                    // checking if the parent on the stack is a brand-new, empty list
-                    // that is less indented than the current line. This pattern
-                    // (`-\n  -`) means we should do nothing. Otherwise, it's a simple
-                    // empty item that should be an object.
-                    int parent_indent = state->stack[state->stack_top].indent;
-                    if (!(cJSON_GetArraySize(list_context) == 0 && indent > parent_indent)) {
-                        cJSON_AddItemToArray(list_context, cJSON_CreateObject());
-                    }
-                 }
-                 // if list_context != original_parent, it's an empty list created by `- -`, so do nothing.
+                // This case handles a list item that is just " - " and is a sibling
+                // to the previous item, implying an empty map should be added.
+                // We must check that we are not creating an empty map for a `-`
+                // that is *less* indented than the current context, which would be
+                // a syntax error handled elsewhere. This is for `- \n  - key:val`
+                if (state->stack_top > 0 && indent == state->stack[state->stack_top].indent) {
+                     cJSON_AddItemToArray(list_context, cJSON_CreateObject());
+                }
             }
             return;
         }
