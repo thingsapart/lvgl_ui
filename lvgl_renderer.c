@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "generator.h"
 #include "viewer/view_inspector.h"
+#include "ui_sim.h" // ADDED: For UI-Sim lifecycle management
 #include <stdlib.h>
 #include <string.h>
 
@@ -58,8 +59,10 @@ void lvgl_renderer_reload_ui_from_string(const char* ui_spec_string, ApiSpec* ap
     }
     obj_registry_deinit();
     data_binding_init();
+    ui_sim_init(); // ADDED: Reset the UI Simulator
 
     // --- IR Generation ---
+    // This will also process any `data-binding` block and populate the UI-Sim model
     IRRoot* ir_root = generate_ir_from_string(ui_spec_string, api_spec);
 
     // --- Handle Generation Result ---
@@ -87,6 +90,9 @@ void lvgl_renderer_reload_ui_from_string(const char* ui_spec_string, ApiSpec* ap
 
     // Free the IR, it's not needed anymore for this cycle
     ir_free((IRNode*)ir_root);
+
+    // ADDED: Start the UI Simulator *after* the UI has been rendered.
+    ui_sim_start();
 
     DEBUG_LOG(LOG_MODULE_RENDERER, "UI reload complete.");
 }

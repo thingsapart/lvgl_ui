@@ -47,7 +47,7 @@ DYNAMIC_LVGL_CFLAGS ?= -DENABLE_IR_INPUTS # Default to only IR inputs
 # Add DYNAMIC_LVGL_CFLAGS to general CFLAGS
 CFLAGS += $(DYNAMIC_LVGL_CFLAGS)
 
-SOURCES = api_spec.c ir.c registry.c generator.c ir_printer.c ir_debug_printer.c c_code_printer.c utils.c debug_log.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c viewer/lvgl_assert_handler.c viewer/view_inspector.c lvgl_renderer.c yaml_parser.c warning_printer.c data_binding.c libs/lodepng.c
+SOURCES = api_spec.c ir.c registry.c generator.c ir_printer.c ir_debug_printer.c c_code_printer.c utils.c debug_log.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c viewer/lvgl_assert_handler.c viewer/view_inspector.c lvgl_renderer.c yaml_parser.c warning_printer.c data_binding.c libs/lodepng.c ui_sim.c
 OBJECTS = $(SOURCES:.c=.o)
 
 # Main target rule now depends on the LVGL library
