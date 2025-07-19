@@ -1,0 +1,10 @@
+[{
+		"type":	"label",
+		"text":	"First"
+	}, {
+		"type":	"button",
+		"text":	"Second"
+	}, {
+		"type":	"slider",
+		"value":	50
+	}]

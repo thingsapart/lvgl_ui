@@ -1,0 +1,9 @@
+- type: container
+  # Main container for the view
+  size: ["100%", # width
+         "100%"  # height
+        ]
+  children:
+    # A list of children
+    - { type: label, text: "Hello", # Inline in flow map
+      }

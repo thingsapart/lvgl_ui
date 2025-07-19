@@ -1,0 +1,6 @@
+[{
+		"":	"empty key",
+		"key with #":	"hash value",
+		"key with :":	"colon value",
+		"true":	"bool key"
+	}]

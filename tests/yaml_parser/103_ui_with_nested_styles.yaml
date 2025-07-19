@@ -1,0 +1,12 @@
+- type: obj
+  "style-group":
+    normal:
+      bg_color: "#FFFFFF"
+      text_color: "#000000"
+    pressed: { bg_color: "#CCCCCC" }
+  children:
+    - type: label
+      text: "Styled Text"
+      "style-group":
+        normal:
+          text_color: "#333333"

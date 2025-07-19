@@ -1,0 +1,4 @@
+[["first", {
+			"key":	"value",
+			"another":	[1, 2]
+		}, "last"]]

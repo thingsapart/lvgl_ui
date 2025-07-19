@@ -1,0 +1,6 @@
+# The parser should only process the first document.
+- doc: one
+  item: 1
+---
+- doc: two
+  item: 2

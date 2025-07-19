@@ -1,0 +1,6 @@
+[{
+		"item":	"A",
+		"sublist":	["sub_item_1"]
+	}, {
+		"item":	"B"
+	}]

@@ -1,0 +1,6 @@
+- [ item1, {
+    "key": [
+        "nested_item_1",
+        { "deepest": "value" }
+    ]
+  }, item2 ]

@@ -1,0 +1,30 @@
+[{
+		"type":	"data-binding",
+		"state":	[{
+				"counter":	0
+			}, {
+				"is_active":	true
+			}],
+		"actions":	[{
+				"increment":	{
+					"inc":	{
+						"counter":	1
+					}
+				}
+			}, {
+				"toggle":	{
+					"toggle":	"is_active"
+				}
+			}]
+	}, {
+		"type":	"screen",
+		"children":	[{
+				"type":	"label",
+				"id":	"counter_label",
+				"text":	"@= \"Value: {counter}\""
+			}, {
+				"type":	"button",
+				"text":	"Increment",
+				"on_click":	"increment"
+			}]
+	}]
