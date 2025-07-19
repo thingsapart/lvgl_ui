@@ -24,7 +24,7 @@ SDL_CFLAGS = `pkg-config sdl2 -cflags`
 LVGL_INC = -I./lvgl/src
 
 # Set __DEV_MODE__ for debug logging in the main generator tool
-CFLAGS = -Wall -g -std=c11 -I. -D__DEV_MODE__ $(INC_CJSON) -I./cJSON -D_GNU_SOURCE -I./lvgl -DLV_CONF_PATH='"$(LV_CONF_PATH)"' -DLV_BUILD_CONF_PATH='"$(LV_CONF_PATH)"' $(SDL_CFLAGS) $(LVGL_INC)
+CFLAGS = -Wall -g -std=c11 -I. -D__DEV_MODE__ $(INC_CJSON) -I./cJSON -D_GNU_SOURCE -I./lvgl -DLV_CONF_PATH='"$(LV_CONF_PATH)"' -DLV_BUILD_CONF_PATH='"$(LV_CONF_PATH)"' $(SDL_CFLAGS) $(LVGL_INC) -I./viewer
 LIBS = $(LIB_CJSON) -lm $(LVGL_LIB) $(SDL_LIBS)
 
 TARGET = lvgl_ui_generator
@@ -47,7 +47,7 @@ DYNAMIC_LVGL_CFLAGS ?= -DENABLE_IR_INPUTS # Default to only IR inputs
 # Add DYNAMIC_LVGL_CFLAGS to general CFLAGS
 CFLAGS += $(DYNAMIC_LVGL_CFLAGS)
 
-SOURCES = api_spec.c ir.c registry.c generator.c ir_printer.c ir_debug_printer.c c_code_printer.c utils.c debug_log.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c viewer/view_inspector.c lvgl_renderer.c yaml_parser.c warning_printer.c data_binding.c libs/lodepng.c
+SOURCES = api_spec.c ir.c registry.c generator.c ir_printer.c ir_debug_printer.c c_code_printer.c utils.c debug_log.c cJSON/cJSON.c $(DYNAMIC_LVGL_C) viewer/sdl_viewer.c viewer/lvgl_assert_handler.c viewer/view_inspector.c lvgl_renderer.c yaml_parser.c warning_printer.c data_binding.c libs/lodepng.c
 OBJECTS = $(SOURCES:.c=.o)
 
 # Main target rule now depends on the LVGL library
@@ -98,7 +98,7 @@ $(TARGET_CNC_RENDERED): $(OBJECTS) $(LVGL_LIB) ex_cnc/cnc_app.o ex_cnc/cnc_main_
 	@echo "\n--- Building CNC Example (Renderer) ---\n"
 	# $(MAKE) -C ex_cnc run_renderer
 	$(CC) $(CFLAGS) -o $(TARGET_CNC_RENDERED) $^ $(LIBS)
-	$(TARGET_CNC_RENDERED)
+	-$(TARGET_CNC_RENDERED)
 
 TARGET_CNC_NATIVE = ./ex_cnc/ex_cnc_native
 ex_cnc_native: $(TARGET_CNC_NATIVE)

@@ -424,8 +424,9 @@
 #define LV_USE_ASSERT_OBJ           1   /**< Check the object's type and existence (e.g. not deleted). (Slow) */
 
 /** Add a custom handler when assert happens e.g. to restart MCU. */
-#define LV_ASSERT_HANDLER_INCLUDE <stdint.h>
-#define LV_ASSERT_HANDLER while(1);     /**< Halt by default */
+#define LV_ASSERT_HANDLER_INCLUDE <lvgl_assert_handler.h>
+// #define LV_ASSERT_HANDLER while(1);     /**< Halt by default */
+#define LV_ASSERT_HANDLER do { if(g_lvgl_assert_abort_cb) g_lvgl_assert_abort_cb("LVGL Assert Failure"); else while(1); } while(0);
 
 /*-------------
  * Debug

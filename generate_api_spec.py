@@ -195,7 +195,8 @@ class LVGLApiParser:
                 f.write('\n'.join(c_source_lines))
 
             cjson_c_path = os.path.join("cJSON", "cJSON.c")
-            compile_command = ["gcc", "-o", exe_file_path, c_file_path, cjson_c_path] + include_paths + ["-lm", "-L./lvgl/build/lib", "-llvgl"]
+            lv_assert_c_path = os.path.join("viewer", "lvgl_assert_handler.c")
+            compile_command = ["gcc", "-o", exe_file_path, c_file_path, cjson_c_path, lv_assert_c_path] + include_paths + ["-lm", "-L./lvgl/build/lib", "-llvgl"]
 
             print("Compiling temporary C program to resolve constants...", file=sys.stderr)
             print(', '.join(compile_command), file=sys.stderr)

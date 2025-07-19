@@ -14,11 +14,15 @@
 #include "registry.h"
 #include "utils.h"
 #include "cJSON.h"
+#include "lvgl_assert_handler.h"
 
 // --- Global Configuration ---
 bool g_strict_mode = false;
 bool g_strict_registry_mode = false;
 bool g_logging_enabled = false;
+
+// Define the global function pointer that LVGL's assert handler will see.
+void (*g_lvgl_assert_abort_cb)(const char *msg) = NULL;
 
  int mkstemps(char *template, int suffixlen);
 
@@ -131,8 +135,26 @@ void render_abort(const char *msg) {
     // This function no longer aborts the server. It sends a formatted error
     // message to stderr, which the VSCode extension will display in the
     // webview's console. The server continues to run.
-    fprintf(stderr, ANSI_BOLD_LIGHT_RED "[ERROR] " ANSI_RESET "%s\n", msg);
+    fprintf(stderr, "[ERROR] %s\n", msg);
     fflush(stderr);
+}
+
+/**
+ * @brief The callback function that LVGL will invoke when an LV_ASSERT fails.
+ * This function reports an unrecoverable error and exits the server, allowing the
+ * VSCode extension to restart it on the next render attempt.
+ */
+static void lvgl_assert_handler_cb(const char *msg) {
+  const char *fmt = "LVGL ASSERT FAILED! Likely invalid argument, like NULL or object of invalid passed to LVGL function. The server will now exit and be restarted on the next change.\n    %s";
+
+  int len = snprintf(NULL, 0, fmt, msg);
+  char *buffer = (char *)malloc(len + 1);
+  snprintf(buffer, 0, fmt, msg);
+  render_abort(buffer);
+
+  // An LVGL assert means the library's internal state is corrupt.
+  // The most robust action is to exit immediately.
+  exit(1);
 }
 
 static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
@@ -163,7 +185,7 @@ static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
         lvgl_draw_buffer = malloc(lv_buf_size);
         if (!lvgl_draw_buffer) {
             render_abort("Failed to allocate LVGL draw buffer.");
-            return; // Return even though render_abort doesn't exit, to prevent further execution
+            return;
         }
 
         // Reallocate the RGBA conversion buffer
@@ -179,19 +201,9 @@ static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
         lv_display_set_resolution(disp, VSC_WIDTH, VSC_HEIGHT);
     }
 
-    char tmp_filename[] = "/tmp/lvgl_vsc_ui_XXXXXX.yml";
-    int fd = mkstemps(tmp_filename, 4);
-    if (fd == -1) {
-        render_abort("Failed to create temporary file for UI spec.");
-        return;
-    }
-    write(fd, source_item->valuestring, strlen(source_item->valuestring));
-    close(fd);
-
-    lv_obj_clean(lv_screen_active());
-    lvgl_renderer_reload_ui(tmp_filename, api_spec, lv_screen_active(), NULL);
-
-    unlink(tmp_filename);
+    // lvgl_renderer_reload_ui_from_string will handle parsing and rendering.
+    // It also handles cleaning the screen internally, both on success and failure.
+    lvgl_renderer_reload_ui_from_string(source_item->valuestring, api_spec, lv_screen_active(), NULL);
 
     // Invalidate the screen to force LVGL to redraw it in the next lv_timer_handler call.
     lv_obj_invalidate(lv_screen_active());
@@ -259,6 +271,9 @@ int main(int argc, char* argv[]) {
     setvbuf(stderr, NULL, _IONBF, 0);
 
     lv_init();
+
+    // Set our custom assert handler callback *before* any other LVGL operations.
+    g_lvgl_assert_abort_cb = lvgl_assert_handler_cb;
 
     disp = lv_display_create(VSC_WIDTH, VSC_HEIGHT);
     lv_display_set_flush_cb(disp, flush_cb);
@@ -369,7 +384,7 @@ int main(int argc, char* argv[]) {
                     stdin_buffer_len = remaining_len;
                     stdin_buffer[stdin_buffer_len] = '\0';
                 }
-            } else if (bytes_read <= 0) {
+            } else if (bytes_read < 0) {
                 // stdin closed or error, exit loop
                 break;
             }

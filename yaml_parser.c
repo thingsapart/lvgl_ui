@@ -1,10 +1,10 @@
 #include "yaml_parser.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <string.h>
 #include "utils.h"
 
 #define YAML_PARSER_MAX_DEPTH 64
@@ -98,7 +98,7 @@ static cJSON* parse_value(const char **p_str, ParserState *state) {
         char start_char = *ptr;
         char end_char = (start_char == '[') ? ']' : '}';
         cJSON *root = (start_char == '[') ? cJSON_CreateArray() : cJSON_CreateObject();
-        
+
         ptr++;
 
         while (*ptr) {
@@ -110,7 +110,7 @@ static cJSON* parse_value(const char **p_str, ParserState *state) {
             } else { // Object
                 const char* key_start_ptr = ptr;
                 cJSON* key_node = parse_value(&ptr, state);
-                
+
                 char key_string[128];
                 if (cJSON_IsString(key_node)) {
                     strncpy(key_string, key_node->valuestring, sizeof(key_string) - 1);
@@ -177,7 +177,7 @@ static cJSON* parse_value(const char **p_str, ParserState *state) {
     if (strcmp(trimmed_val, "null") == 0) { free(val); return cJSON_CreateNull(); }
     if (strcmp(trimmed_val, "true") == 0) { free(val); return cJSON_CreateTrue(); }
     if (strcmp(trimmed_val, "false") == 0) { free(val); return cJSON_CreateFalse(); }
-    
+
     char* endptr;
     double num = strtod(trimmed_val, &endptr);
     if (*endptr == '\0' && endptr != trimmed_val) {
@@ -236,9 +236,9 @@ static void set_error(ParserState *state, const char* token_start, size_t token_
         char underline[YAML_PARSER_MAX_LINE_LEN] = {0};
         memset(underline, ' ', col);
         memset(underline + col, '^', len);
-        
+
         char temp_line_buffer[YAML_PARSER_MAX_LINE_LEN + 128];
-        snprintf(temp_line_buffer, sizeof(temp_line_buffer), "%.*s%s%.*s%s%s", 
+        snprintf(temp_line_buffer, sizeof(temp_line_buffer), "%.*s%s%.*s%s%s",
                  col, line_start,                                     // Part before token
                  ANSI_BOLD ANSI_COLOR_RED, (int)len, token_start,      // The token, highlighted
                  ANSI_COLOR_RESET,                                     // Reset color
@@ -254,7 +254,7 @@ static void set_error(ParserState *state, const char* token_start, size_t token_
                  ANSI_COLOR_RED, underline, ANSI_COLOR_RESET
                 );
     }
-    
+
     size_t total_len = strlen(message_buffer) + strlen(context_buffer) + 64;
     char *err_str = malloc(total_len);
     if (err_str) {
@@ -274,15 +274,15 @@ static void set_error(ParserState *state, const char* token_start, size_t token_
 void parse_line(ParserState *state, int line_idx) {
     state->line_num = line_idx + 1;
     char* original_line = state->lines[line_idx];
-    
+
     int indent = get_indent(original_line);
     char* content = trim_whitespace(original_line + indent);
     if (*content == '\0' || *content == '#') {
         return;
     }
-    
+
     const char* error_pos = content;
-    
+
     while (state->stack_top > 0 && indent <= state->stack[state->stack_top].indent) {
         pop_stack(state);
     }
@@ -308,7 +308,7 @@ void parse_line(ParserState *state, int line_idx) {
         cJSON *new_obj = cJSON_CreateObject();
         cJSON_AddItemToArray(parent, new_obj);
         push_stack(state, new_obj, indent);
-        
+
         parent = new_obj;
 
         if (*item_content != '\0') {
@@ -318,12 +318,12 @@ void parse_line(ParserState *state, int line_idx) {
             return;
         }
     }
-    
+
     if (!cJSON_IsObject(parent)) {
         set_error(state, error_pos, strlen(content), "Found key-value pair in a non-object context.");
         return;
     }
-    
+
     char *colon = strchr(content, ':');
     if (!colon) {
         set_error(state, error_pos, strlen(content), "Invalid mapping (missing ':')");
@@ -427,7 +427,7 @@ cJSON* yaml_to_cjson(const char* yaml_content, char** error_message) {
         cJSON_AddItemToArray(array_wrapper, root);
         root = array_wrapper;
     }
-    
+
     // Free all allocated memory
     free(state.original_content_buffer);
     for(int i=0; i<state.num_lines; i++) free(state.lines[i]);

@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 
-const LOGGING_ENABLED = false; // Set to true for verbose debug output
+const LOGGING_ENABLED = true; // Set to true for verbose debug output
 
 const RESOLUTIONS = [
     { name: 'Default (480x320)', width: 480, height: 320 },
@@ -31,6 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel("LVGL UI Preview");
     logChannel = vscode.window.createOutputChannel("LVGL UI Preview LOG");
     if (LOGGING_ENABLED) {
+        logChannel.show(true); // Show the log channel on activation if enabled
         logChannel.appendLine('[EXTENSION] Starting...');
     }
 
@@ -75,7 +76,14 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         if (previewPanel) {
+            // If the panel exists but is for a different file, we need to restart the server
+            // for the new file context. We kill the old one, and startServerProcess will be called.
+            if (serverProcess) {
+                serverProcess.kill();
+                serverProcess = undefined;
+            }
             previewPanel.reveal(vscode.ViewColumn.Beside, true);
+            startServerProcess(context);
         } else {
             previewPanel = vscode.window.createWebviewPanel(
                 'lvglPreview',
@@ -83,11 +91,8 @@ export function activate(context: vscode.ExtensionContext) {
                 { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
                 { enableScripts: true, retainContextWhenHidden: true }
             );
-            setupPreviewPanel(context);
+            setupPreviewPanel(context); // This will call startServerProcess internally
         }
-
-        // IMPORTANT: The initial render is now triggered by the server handshake,
-        // not immediately on panel creation. This ensures the server is ready.
     });
 
     vscode.workspace.onDidChangeTextDocument(event => {
@@ -95,7 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
             const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
             if(editor) {
                 // Re-render with the currently active resolution.
-                triggerRender(editor, currentResolution.width, currentResolution.height);
+                triggerRender(editor, currentResolution.width, currentResolution.height, context);
             }
         }
     });
@@ -107,9 +112,45 @@ function setupPreviewPanel(context: vscode.ExtensionContext) {
     if (!previewPanel) return;
 
     previewPanel.webview.html = getWebviewContent();
+    startServerProcess(context);
 
+    previewPanel.onDidDispose(() => {
+        serverProcess?.kill();
+        serverProcess = undefined;
+        previewPanel = undefined;
+        previewedDocumentUri = undefined;
+    }, null, context.subscriptions);
+
+    previewPanel.webview.onDidReceiveMessage(message => {
+        if (message.command === 'changeResolution') {
+            const { width, height } = message.resolution;
+            if (LOGGING_ENABLED) logChannel.appendLine(`[Extension] Resolution change request from webview: ${width}x${height}`);
+
+            currentResolution = { width, height };
+            context.workspaceState.update(STORAGE_KEY_RESOLUTION, `${width}x${height}`);
+
+            const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
+            if (editor) {
+                triggerRender(editor, width, height, context);
+            }
+            return;
+        }
+
+        // Forward other messages (like input) to the server if it's running
+        if (!serverProcess) return;
+        const command = { command: "input", ...message };
+        serverProcess.stdin.write(JSON.stringify(command) + '\n');
+    });
+}
+
+function startServerProcess(context: vscode.ExtensionContext) {
     if (serverProcess) {
-        serverProcess.kill();
+        if (LOGGING_ENABLED) logChannel.appendLine('[Server] Attempted to start server, but one is already running.');
+        return;
+    }
+    if (!previewPanel) {
+        if (LOGGING_ENABLED) logChannel.appendLine('[Server] Attempted to start server, but preview panel is closed.');
+        return;
     }
 
     const serverPath = path.join(context.extensionPath, 'bin', 'lvgl_vsc_server');
@@ -131,167 +172,122 @@ function setupPreviewPanel(context: vscode.ExtensionContext) {
     if (LOGGING_ENABLED) {
         serverArgs.push('--log');
     }
+
+    if (LOGGING_ENABLED) logChannel.appendLine(`[Server] Spawning server process: ${serverPath} ${serverArgs.join(' ')}`);
     serverProcess = spawn(serverPath, serverArgs, { cwd });
 
     serverProcess.on('error', (err) => {
-        outputChannel.appendLine(`Failed to start server process: ${err.message}`);
+        if (LOGGING_ENABLED) logChannel.appendLine(`[Server] Failed to start server process: ${err.message}`);
         vscode.window.showErrorMessage("Failed to start the LVGL preview server.");
+        serverProcess = undefined; // Ensure we know the server is dead
     });
 
-    // --- New Robust Parser ---
+    serverProcess.on('exit', (code, signal) => {
+        if (LOGGING_ENABLED) logChannel.appendLine(`[Server] Process exited with code ${code}, signal ${signal}.`);
+        previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: 'error', text: 'Render server has stopped. It will restart on the next change.' });
+        serverProcess = undefined; // CRITICAL: Mark server as dead
+    });
+
     let buffer = Buffer.alloc(0);
     const MAGIC_HEADER = Buffer.from("DATA:");
     const FRAME_COMMAND = Buffer.from("|FRAME|");
     const INIT_COMMAND = Buffer.from("|INIT |");
-    const COMMAND_LENGTH = 7;
-    const FULL_FRAME_HEADER_LENGTH = MAGIC_HEADER.length + COMMAND_LENGTH + 16; // + total_w,h + x,y,w,h + size
-    const INIT_HEADER_LENGTH = MAGIC_HEADER.length + COMMAND_LENGTH + 4; // + w,h
 
-    function processBuffer() {
+    serverProcess.stdout.on('data', (data: Buffer) => {
+        buffer = Buffer.concat([buffer, data]);
+        if (LOGGING_ENABLED) logChannel.appendLine(`[Parser] STDOUT recv... ${data.length}`);
+
         while (true) {
             const magicIndex = buffer.indexOf(MAGIC_HEADER);
-            if (magicIndex === -1) {
-                return; // Wait for more data
-            }
-            // Discard any data before the magic header
-            if (magicIndex > 0) {
-                buffer = buffer.subarray(magicIndex);
-            }
+            if (magicIndex === -1) return;
+            if (magicIndex > 0) buffer = buffer.subarray(magicIndex);
+            if (buffer.length < 12) return;
 
-            if (buffer.length < MAGIC_HEADER.length + COMMAND_LENGTH) {
-                return; // Not enough data for a command, wait for more.
-            }
-
-            const commandSlice = buffer.subarray(MAGIC_HEADER.length, MAGIC_HEADER.length + COMMAND_LENGTH);
+            const commandSlice = buffer.subarray(5, 12);
 
             if (commandSlice.equals(INIT_COMMAND)) {
-                if (buffer.length < INIT_HEADER_LENGTH) return; // Wait for full header
+                if (buffer.length < 16) return;
 
                 const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
                 previewPanel?.webview.postMessage({ command: 'initialize', resolution: currentResolution, allResolutions: RESOLUTIONS });
                 if (editor) {
-                    triggerRender(editor, currentResolution.width, currentResolution.height);
+                    triggerRender(editor, currentResolution.width, currentResolution.height, context);
                 }
-
-                buffer = buffer.subarray(INIT_HEADER_LENGTH);
-                continue; // Loop again immediately to process next command in buffer
-
+                buffer = buffer.subarray(16);
+                continue;
             } else if (commandSlice.equals(FRAME_COMMAND)) {
-                if (buffer.length < FULL_FRAME_HEADER_LENGTH) return; // Wait for full header
+                if (buffer.length < 28) return;
 
-                const metadataOffset = MAGIC_HEADER.length + COMMAND_LENGTH;
-                const totalWidth = buffer.readUInt16BE(metadataOffset);
-                const totalHeight = buffer.readUInt16BE(metadataOffset + 2);
-                const x = buffer.readUInt16BE(metadataOffset + 4);
-                const y = buffer.readUInt16BE(metadataOffset + 6);
-                const w = buffer.readUInt16BE(metadataOffset + 8);
-                const h = buffer.readUInt16BE(metadataOffset + 10);
-                const payloadSize = buffer.readUInt32BE(metadataOffset + 12);
+                const payloadSize = buffer.readUInt32BE(24);
+                if (buffer.length < 28 + payloadSize) return;
 
-                if (buffer.length < FULL_FRAME_HEADER_LENGTH + payloadSize) return; // Wait for full payload
-
-                const payload = buffer.subarray(FULL_FRAME_HEADER_LENGTH, FULL_FRAME_HEADER_LENGTH + payloadSize);
+                const totalWidth = buffer.readUInt16BE(12);
+                const totalHeight = buffer.readUInt16BE(14);
+                const x = buffer.readUInt16BE(16);
+                const y = buffer.readUInt16BE(18);
+                const w = buffer.readUInt16BE(20);
+                const h = buffer.readUInt16BE(22);
+                const payload = buffer.subarray(28, 28 + payloadSize);
 
                 previewPanel?.webview.postMessage({
                     command: 'updateCanvas',
                     totalWidth, totalHeight,
                     x, y, width: w, height: h,
-                    // FIX: Create a clean slice of the ArrayBuffer to send.
-                    // The payload Buffer is a view on a larger ArrayBuffer. payload.buffer is the *entire*
-                    // original buffer. Slicing it properly ensures we only send the relevant data.
                     frameBuffer: payload.buffer.slice(payload.byteOffset, payload.byteOffset + payload.length)
                 });
 
-                if(LOGGING_ENABLED) logChannel.appendLine(`[Parser] Processed frame total_dim{${totalWidth}x${totalHeight}} rect:{ x: ${x}, y: ${y}, w: ${w}, h: ${h}}`);
-
-                buffer = buffer.subarray(FULL_FRAME_HEADER_LENGTH + payloadSize);
-                continue; // Loop again immediately
-
+                if (LOGGING_ENABLED) logChannel.appendLine(`[Parser] Processed frame total_dim{${totalWidth}x${totalHeight}} rect:{ x: ${x}, y: ${y}, w: ${w}, h: ${h}}`);
+                buffer = buffer.subarray(28 + payloadSize);
+                continue;
             } else {
-                // Unknown command, discard the 'D' from 'DATA:' and search again
-                if(LOGGING_ENABLED) logChannel.appendLine(`[Parser] Anomaly: Unknown command. Discarding byte and retrying.`);
+                if (LOGGING_ENABLED) logChannel.appendLine(`[Parser] Anomaly: Unknown command. Discarding byte and retrying.`);
                 buffer = buffer.subarray(1);
                 continue;
             }
         }
-    }
-
-    serverProcess.stdout.on('data', (data: Buffer) => {
-        buffer = Buffer.concat([buffer, data]);
-        if (LOGGING_ENABLED) logChannel.appendLine(`[Parser] STDOUT recv... ${data.length}`);
-        processBuffer();
     });
 
     let stderrBuffer = '';
     serverProcess.stderr.on('data', (data: Buffer) => {
         if (LOGGING_ENABLED) logChannel.appendLine(`[Parser] STDERR recv... ${data.length}`);
-
         stderrBuffer += data.toString();
         let eolIndex;
         while ((eolIndex = stderrBuffer.indexOf('\n')) >= 0) {
             const line = stderrBuffer.substring(0, eolIndex).trim();
             stderrBuffer = stderrBuffer.substring(eolIndex + 1);
+            if (!line) continue;
 
-            if (line) {
-                // Also log to the main output channel for debugging
-                outputChannel.appendLine(line);
-
-                // Strip ANSI color codes to simplify prefix matching
-                const cleanLine = line.replace(/\x1b\[[0-9;]*m/g, '');
-
-                const warningMatch = cleanLine.match(/^\[WARNING\]\s*(.*)/);
-                const hintMatch = cleanLine.match(/^\[HINT\]\s*(.*)/);
-                const errorMatch = cleanLine.match(/^\[ERROR\]\s*(.*)/);
-
-                if (errorMatch) {
-                    previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: 'error', text: errorMatch[1].trim() });
-                } else if (warningMatch) {
-                    previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: 'warning', text: warningMatch[1].trim() });
-                } else if (hintMatch) {
-                    previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: 'hint', text: hintMatch[1].trim() });
-                }
+            outputChannel.appendLine(line);
+            const cleanLine = line.replace(/\x1b\[[0-9;]*m/g, '');
+            const match = cleanLine.match(/^\[(ERROR|WARNING|HINT)\]\s*(.*)/);
+            if (match) {
+                previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: match[1].toLowerCase(), text: match[2].trim() });
             }
         }
-    });
-
-    previewPanel.onDidDispose(() => {
-        serverProcess?.kill();
-        serverProcess = undefined;
-        previewPanel = undefined;
-        previewedDocumentUri = undefined;
-    }, null, context.subscriptions);
-
-    previewPanel.webview.onDidReceiveMessage(message => {
-        if (!serverProcess) return;
-
-        if (message.command === 'changeResolution') {
-            const { width, height } = message.resolution;
-            if (LOGGING_ENABLED) logChannel.appendLine(`[Extension] Resolution change request from webview: ${width}x${height}`);
-
-            currentResolution = { width, height };
-            context.workspaceState.update(STORAGE_KEY_RESOLUTION, `${width}x${height}`);
-
-            const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
-            if (editor) {
-                triggerRender(editor, width, height);
-            }
-            return;
-        }
-
-        const command = { command: "input", ...message };
-        serverProcess.stdin.write(JSON.stringify(command) + '\n');
     });
 }
 
-function triggerRender(editor: vscode.TextEditor, width: number, height: number) {
-    if (!previewPanel || !serverProcess) return;
+function triggerRender(editor: vscode.TextEditor, width: number, height: number, context: vscode.ExtensionContext) {
+    if (!previewPanel) return;
 
-    // Hide the console every time a new render is triggered.
-    // It will reappear if the new render produces any warnings/errors.
+    // If the server process has died, restart it. The new process will send an
+    // INIT command which will trigger a render automatically.
+    if (!serverProcess) {
+        if (LOGGING_ENABLED) logChannel.appendLine('[Extension] Server is not running. Attempting to restart...');
+        startServerProcess(context);
+        return; // Stop here. The restarted server will trigger the render.
+    }
+
     previewPanel.webview.postMessage({ command: 'hideConsole' });
 
     clearTimeout(renderTimeout);
     renderTimeout = setTimeout(() => {
+        // Re-check server process existence inside the timeout, in case it died
+        if (!serverProcess) {
+            if (LOGGING_ENABLED) logChannel.appendLine('[Extension] Server died before render timeout fired. Aborting render command.');
+            return;
+        }
+
         const source = editor.document.getText();
         const relativePath = vscode.workspace.asRelativePath(editor.document.uri);
         if (previewPanel) {
@@ -306,7 +302,7 @@ function triggerRender(editor: vscode.TextEditor, width: number, height: number)
             width: width,
             height: height
         };
-        serverProcess?.stdin.write(JSON.stringify(command) + '\n');
+        serverProcess.stdin.write(JSON.stringify(command) + '\n');
     }, 250);
 }
 

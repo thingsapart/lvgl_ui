@@ -5,7 +5,7 @@ CC = gcc
 # Note: -I.. allows including files from the project root.
 # The LV_CONF_PATH is crucial for LVGL configuration.
 LV_CONF_PATH = ../viewer/lv_conf.h
-CFLAGS = -Wall -Wextra -g -I.. -I../viewer -I../cJSON -I../libs -I. -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -DLV_LVGL_H_INCLUDE_SIMPLE -I../lvgl -DLV_CONF_PATH='"$(LV_CONF_PATH)"' -DWARN_PLAIN_TEXT
+CFLAGS = -Wall -Wextra -g -I.. -I../viewer -I../cJSON -I../libs -I. -I../viewer -D_GNU_SOURCE -DLV_LVGL_H_INCLUDE_SIMPLE -I../lvgl -DLV_CONF_PATH='"$(LV_CONF_PATH)"' -DWARN_PLAIN_TEXT -DRENDERER_ABORT_ON_UNRESOLVED_REFERENCE
 
 # Define LVGL build paths, relative to the vs_code directory
 LVGL_DIR = ../lvgl
@@ -23,7 +23,7 @@ SDL_CFLAGS = `pkg-config sdl2 -cflags`
 SRCS_BASE := $(wildcard ../*.c)
 SRCS_BASE := $(filter-out ../main.c, $(SRCS_BASE))
 SRCS_VIEWER := $(wildcard ../viewer/*.c)
-SRCS_VIEWER := $(filter-out ../viewer/sdl_viewer.c, $(SRCS_VIEWER))
+SRCS_VIEWER := $(filter-out ../viewer/sdl_viewer.c ../viewer/lvgl_assert_handler.c, $(SRCS_VIEWER))
 SRCS_CJSON := ../cJSON/cJSON.c
 SRCS_GEN_DISPATCH := ../c_gen/lvgl_dispatch.c
 
