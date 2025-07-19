@@ -1,0 +1,7 @@
+level1:
+  items:
+    - name: A
+      sublist:
+        - 1
+        - { p: q }
+    - B

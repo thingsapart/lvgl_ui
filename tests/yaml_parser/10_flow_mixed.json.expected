@@ -1,0 +1,7 @@
+[{
+		"name":	"item1",
+		"options":	[1, 2, 3]
+	}, {
+		"name":	"item2",
+		"options":	[4, 5, 6]
+	}]

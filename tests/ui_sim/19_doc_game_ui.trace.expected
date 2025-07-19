@@ -1,0 +1,27 @@
+--- UI-Sim Trace Start ---
+STATE_SET: health = 100.000 (old: null)
+STATE_SET: mana = 50.000 (old: null)
+NOTIFY: health = 100.000
+NOTIFY: mana = 50.000
+
+--- TICK 1 ---
+ACTION: take_damage value=null
+STATE_SET: health = 80.000 (old: 100.000)
+NOTIFY: health = 80.000
+
+--- TICK 2 ---
+ACTION: take_damage value=null
+STATE_SET: health = 60.000 (old: 80.000)
+NOTIFY: health = 60.000
+
+--- TICK 3 ---
+ACTION: use_potion value=null
+STATE_SET: health = 100.000 (old: 60.000)
+NOTIFY: health = 100.000
+
+--- TICK 4 ---
+ACTION: cast_spell value=null
+STATE_SET: mana = 40.000 (old: 50.000)
+NOTIFY: mana = 40.000
+
+--- UI-Sim Trace End ---

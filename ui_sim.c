@@ -20,6 +20,7 @@ typedef struct {
 typedef struct {
     bool is_active;
     bool has_definition;
+    uint32_t current_tick;
 
     SimStateVariable states[UI_SIM_MAX_STATES];
     uint32_t state_count;
@@ -28,6 +29,9 @@ typedef struct {
     uint32_t action_count;
 
     SimModification* updates_head;
+
+    SimScheduledAction scheduled_actions[UI_SIM_MAX_SCHEDULED_ACTIONS];
+    uint32_t scheduled_action_count;
 } SimContext;
 
 static SimContext g_sim;
@@ -36,11 +40,12 @@ static SimContext g_sim;
 static void free_expression(SimExpression* expr);
 static void free_modification_list(SimModification* head);
 static SimExpression* parse_expression(cJSON* json, SimParseContext* ctx);
-static SimModification* parse_modification(const char* state_name, cJSON* mod_json, SimParseContext* ctx);
+static SimModification* parse_modification(const char* key, cJSON* value_json, SimParseContext* ctx);
 static SimModification* parse_modification_block(cJSON* obj_json, SimParseContext* ctx);
 static bool parse_state(cJSON* state_array, SimParseContext* ctx);
 static bool parse_actions(cJSON* action_array, SimParseContext* ctx);
 static bool parse_updates(cJSON* update_array, SimParseContext* ctx);
+static bool parse_schedule(cJSON* schedule_array, SimParseContext* ctx);
 
 // --- Forward Declarations: Runtime ---
 static void sim_action_handler(const char* action_name, binding_value_t value, void* user_data);
@@ -90,6 +95,12 @@ void ui_sim_init(void) {
         free_modification_list(g_sim.actions[i].modifications_head);
     }
     free_modification_list(g_sim.updates_head);
+    for (uint32_t i = 0; i < g_sim.scheduled_action_count; i++) {
+        free(g_sim.scheduled_actions[i].name);
+        if (g_sim.scheduled_actions[i].value.type == BINDING_TYPE_STRING) {
+            free((void*)g_sim.scheduled_actions[i].value.as.s_val);
+        }
+    }
 
     memset(&g_sim, 0, sizeof(SimContext));
     DEBUG_LOG(LOG_MODULE_DATABINDING, "UI Simulator initialized.");
@@ -116,6 +127,10 @@ bool ui_sim_process_node(cJSON* node) {
     cJSON* updates_json = cJSON_GetObjectItem(node, "updates");
     if (updates_json && !parse_updates(updates_json, &ctx)) return false;
 
+    ctx.current_block = "schedule";
+    cJSON* schedule_json = cJSON_GetObjectItem(node, "schedule");
+    if (schedule_json && !parse_schedule(schedule_json, &ctx)) return false;
+
     g_sim.has_definition = true;
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Successfully processed UI-Sim definition.");
     return true;
@@ -128,6 +143,8 @@ void ui_sim_start(void) {
 
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Starting UI Simulator...");
     data_binding_register_action_handler(sim_action_handler, NULL);
+
+    g_sim.current_tick = 0;
 
     if (g_ui_sim_trace_enabled) {
         for (uint32_t i = 0; i < g_sim.state_count; i++) {
@@ -153,6 +170,21 @@ void ui_sim_stop(void) {
 void ui_sim_tick(float dt) {
     if (!g_sim.is_active) return;
 
+    g_sim.current_tick++;
+
+    // 1. Execute any scheduled actions for this tick.
+    for (uint32_t i = 0; i < g_sim.scheduled_action_count; i++) {
+        if (g_sim.scheduled_actions[i].tick == g_sim.current_tick) {
+            binding_value_t value_copy = g_sim.scheduled_actions[i].value;
+            // The receiver (evaluate_expression) will free this string if it's consumed.
+            if (value_copy.type == BINDING_TYPE_STRING && value_copy.as.s_val) {
+                value_copy.as.s_val = strdup(value_copy.as.s_val);
+            }
+            sim_action_handler(g_sim.scheduled_actions[i].name, value_copy, NULL);
+        }
+    }
+
+    // 2. Execute the periodic 'updates'.
     SimStateVariable* time_state = find_state("time");
     if (time_state) {
         binding_value_t old_val = time_state->value;
@@ -161,6 +193,8 @@ void ui_sim_tick(float dt) {
     }
 
     execute_modifications_list(g_sim.updates_head, (binding_value_t){.type = BINDING_TYPE_NULL});
+
+    // 3. Notify about all changes from the 'updates' block and any derived state changes.
     notify_changed_states();
 }
 
@@ -249,7 +283,10 @@ static bool parse_state(cJSON* state_array, SimParseContext* ctx) {
             if (strcmp(type_str, "float") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_FLOAT, .as.f_val = 0.0f}; }
             else if (strcmp(type_str, "bool") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_BOOL, .as.b_val = false}; }
             else if (strcmp(type_str, "string") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_STRING, .as.s_val = strdup("")}; } // *** FIX: Default to empty string ***
-            else { sim_abort(ctx, "Unknown state type '%s'. Use 'float', 'bool', or 'string'.", type_str); return false; }
+            else { // It's an inferred string initial value
+                state->value.type = BINDING_TYPE_STRING;
+                state->value.as.s_val = strdup(type_str);
+            }
         } else if (cJSON_IsNumber(state_def)) {
             state->value = (binding_value_t){.type = BINDING_TYPE_FLOAT, .as.f_val = (float)state_def->valuedouble};
         } else if (cJSON_IsBool(state_def)) {
@@ -312,71 +349,174 @@ static bool parse_updates(cJSON* update_array, SimParseContext* ctx) {
     return true;
 }
 
+static bool parse_schedule(cJSON* schedule_array, SimParseContext* ctx) {
+    cJSON* item;
+    cJSON_ArrayForEach(item, schedule_array) {
+        if (g_sim.scheduled_action_count >= UI_SIM_MAX_SCHEDULED_ACTIONS) {
+            sim_abort(ctx, "Exceeded maximum number of scheduled actions (%d).", UI_SIM_MAX_SCHEDULED_ACTIONS);
+            return false;
+        }
+        if (!cJSON_IsObject(item)) {
+            sim_abort(ctx, "Invalid 'schedule' entry. Each entry must be an object.");
+            return false;
+        }
+
+        cJSON* tick_json = cJSON_GetObjectItem(item, "tick");
+        cJSON* action_json = cJSON_GetObjectItem(item, "action");
+        cJSON* with_json = cJSON_GetObjectItem(item, "with");
+
+        if (!tick_json || !cJSON_IsNumber(tick_json) || !action_json || !cJSON_IsString(action_json)) {
+            sim_abort(ctx, "Scheduled action requires a numeric 'tick' and a string 'action'.");
+            return false;
+        }
+
+        SimScheduledAction* sa = &g_sim.scheduled_actions[g_sim.scheduled_action_count];
+        sa->tick = (uint32_t)tick_json->valuedouble;
+        sa->name = strdup(action_json->valuestring);
+        if (!sa->name) { sim_abort(ctx, "Out of memory"); return false; }
+
+        if (with_json) {
+            if (cJSON_IsNumber(with_json)) sa->value = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=(float)with_json->valuedouble};
+            else if (cJSON_IsBool(with_json)) sa->value = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=cJSON_IsTrue(with_json)};
+            else if (cJSON_IsString(with_json)) sa->value = (binding_value_t){.type=BINDING_TYPE_STRING, .as.s_val=strdup(with_json->valuestring)};
+            else sa->value.type = BINDING_TYPE_NULL;
+        } else {
+            sa->value.type = BINDING_TYPE_NULL;
+        }
+        g_sim.scheduled_action_count++;
+    }
+    ctx->current_key = NULL;
+    return true;
+}
+
 static SimModification* parse_modification_block(cJSON* obj_json, SimParseContext* ctx) {
     SimModification* head = NULL;
     SimModification* tail = NULL;
 
-    cJSON* item;
-    cJSON_ArrayForEach(item, obj_json) {
-        const char* key = item->string;
-        ctx->current_key = key;
-
-        SimModification* new_mod = parse_modification(key, item, ctx);
-        if (!new_mod) {
-            free_modification_list(head);
-            return NULL;
+    if (cJSON_IsArray(obj_json)) {
+        cJSON* item_json;
+        cJSON_ArrayForEach(item_json, obj_json) {
+            SimModification* new_mods = parse_modification_block(item_json, ctx);
+            if (!new_mods) {
+                free_modification_list(head);
+                return NULL;
+            }
+            if (!head) {
+                head = tail = new_mods;
+            } else {
+                tail->next = new_mods;
+            }
+            while(tail && tail->next) tail = tail->next;
         }
-
-        if (!head) {
-            head = tail = new_mod;
-        } else {
-            tail->next = new_mod;
-            tail = new_mod;
+    } else if (cJSON_IsObject(obj_json)) {
+        cJSON* item;
+        cJSON_ArrayForEach(item, obj_json) {
+            ctx->current_key = item->string;
+            SimModification* new_mods = parse_modification(item->string, item, ctx);
+            if (!new_mods) {
+                free_modification_list(head);
+                return NULL;
+            }
+            if (!head) {
+                head = tail = new_mods;
+            } else {
+                tail->next = new_mods;
+            }
+            while(tail && tail->next) tail = tail->next;
         }
-        while(tail->next) tail = tail->next;
     }
+
     return head;
 }
 
 
-static SimModification* parse_modification(const char* state_name, cJSON* mod_json, SimParseContext* ctx) {
-    SimModification* mod = calloc(1, sizeof(SimModification));
-    if (!mod) { sim_abort(ctx, "Out of memory"); return NULL; }
-    mod->target_state_name = strdup(state_name);
-    if (!mod->target_state_name) { sim_abort(ctx, "Out of memory"); free(mod); return NULL; }
+static SimModification* parse_modification(const char* key, cJSON* value_json, SimParseContext* ctx) {
+    bool key_is_modifier = (strcmp(key, "set") == 0 || strcmp(key, "inc") == 0 ||
+                           strcmp(key, "dec") == 0 || strcmp(key, "toggle") == 0 ||
+                           strcmp(key, "cycle") == 0 || strcmp(key, "range") == 0);
+    bool key_is_control = (strcmp(key, "when") == 0);
 
-    if (cJSON_IsObject(mod_json) && mod_json->child) {
-        cJSON* when_json = cJSON_GetObjectItem(mod_json, "when");
-        if(when_json) mod->condition_expr = parse_expression(when_json, ctx);
+    if (key_is_modifier || key_is_control) {
+        SimModification* head = NULL;
+        SimModification* tail = NULL;
 
-        cJSON* then_json = cJSON_GetObjectItem(mod_json, "then");
-        if(then_json) {
-            if(!when_json) {
-                sim_abort(ctx, "'then' clause can only be used inside a 'when' clause.");
-                free_modification_list(mod);
-                return NULL;
+        if (key_is_control) {
+            SimModification* mod = calloc(1, sizeof(SimModification));
+            if (!mod) { sim_abort(ctx, "Out of memory"); return NULL; }
+            mod->target_state_name = NULL;
+            mod->condition_expr = parse_expression(cJSON_GetObjectItem(value_json, "condition"), ctx);
+            cJSON* then_json = cJSON_GetObjectItem(value_json, "then");
+            if (then_json) {
+                mod->next = parse_modification_block(then_json, ctx);
             }
-             mod->next = parse_modification_block(then_json, ctx);
-        }
-
-        const char* mod_type_str = mod_json->child->string;
-        if(strcmp(mod_type_str, "set") == 0) mod->type = MOD_SET;
-        else if(strcmp(mod_type_str, "inc") == 0) mod->type = MOD_INC;
-        else if(strcmp(mod_type_str, "dec") == 0) mod->type = MOD_DEC;
-        else if(strcmp(mod_type_str, "toggle") == 0) mod->type = MOD_TOGGLE;
-        else if(strcmp(mod_type_str, "cycle") == 0) mod->type = MOD_CYCLE;
-        else if(strcmp(mod_type_str, "range") == 0) mod->type = MOD_RANGE;
-        else {
-            mod->type = MOD_SET;
-            mod->value_expr = parse_expression(mod_json, ctx);
             return mod;
         }
-        mod->value_expr = parse_expression(mod_json->child, ctx);
+
+        if (!cJSON_IsObject(value_json)) { sim_abort(ctx, "Value for '%s' must be an object.", key); return NULL; }
+
+        cJSON* state_item;
+        cJSON_ArrayForEach(state_item, value_json) {
+            SimModification* mod = calloc(1, sizeof(SimModification));
+            if (!mod) { sim_abort(ctx, "Out of memory"); free_modification_list(head); return NULL; }
+
+            mod->target_state_name = strdup(state_item->string);
+            if (strcmp(key, "set") == 0) mod->type = MOD_SET;
+            else if (strcmp(key, "inc") == 0) mod->type = MOD_INC;
+            else if (strcmp(key, "dec") == 0) mod->type = MOD_DEC;
+            else if (strcmp(key, "toggle") == 0) mod->type = MOD_TOGGLE;
+            else if (strcmp(key, "cycle") == 0) mod->type = MOD_CYCLE;
+            else if (strcmp(key, "range") == 0) mod->type = MOD_RANGE;
+
+            mod->value_expr = parse_expression(state_item, ctx);
+             if (!mod->value_expr) { free(mod->target_state_name); free(mod); free_modification_list(head); return NULL; }
+
+            if (!head) { head = tail = mod; } else { tail->next = mod; tail = mod; }
+        }
+        return head;
+
     } else {
-        mod->type = MOD_SET;
-        mod->value_expr = parse_expression(mod_json, ctx);
+        SimModification* mod = calloc(1, sizeof(SimModification));
+        if (!mod) { sim_abort(ctx, "Out of memory"); return NULL; }
+        mod->target_state_name = strdup(key);
+
+        if (!cJSON_IsObject(value_json) || !value_json->child) {
+            mod->type = MOD_SET;
+            mod->value_expr = parse_expression(value_json, ctx);
+            return mod;
+        }
+
+        cJSON* when_json = cJSON_GetObjectItem(value_json, "when");
+        if(when_json) mod->condition_expr = parse_expression(when_json, ctx);
+
+        cJSON* mod_item = value_json->child;
+        while(mod_item && strcmp(mod_item->string, "when") == 0) {
+            mod_item = mod_item->next;
+        }
+
+        if (!mod_item) {
+            mod->type = MOD_SET;
+            mod->value_expr = parse_expression(value_json, ctx);
+            return mod;
+        }
+
+        const char* mod_type_str = mod_item->string;
+        if (strcmp(mod_type_str, "set") == 0) mod->type = MOD_SET;
+        else if (strcmp(mod_type_str, "inc") == 0) mod->type = MOD_INC;
+        else if (strcmp(mod_type_str, "dec") == 0) mod->type = MOD_DEC;
+        else if (strcmp(mod_type_str, "toggle") == 0) mod->type = MOD_TOGGLE;
+        else if (strcmp(mod_type_str, "cycle") == 0) mod->type = MOD_CYCLE;
+        else if (strcmp(mod_type_str, "range") == 0) mod->type = MOD_RANGE;
+        else {
+            mod->type = MOD_SET;
+            mod->value_expr = parse_expression(value_json, ctx);
+            return mod;
+        }
+
+        mod->value_expr = parse_expression(mod_item, ctx);
+        if (!mod->value_expr) { free(mod->target_state_name); free(mod); return NULL; }
+
+        return mod;
     }
-    return mod;
 }
 
 static SimExpression* parse_expression(cJSON* json, SimParseContext* ctx) {
@@ -553,6 +693,11 @@ static void sim_action_handler(const char* action_name, binding_value_t value, v
     } else {
         print_warning("UI-Sim: Received unhandled action '%s'.", action_name);
     }
+
+    if (value.type == BINDING_TYPE_STRING && value.as.s_val) {
+        // This string was allocated specifically for this handler call, so we must free it.
+        free((void*)value.as.s_val);
+    }
 }
 
 static void execute_modifications_list(SimModification* head, binding_value_t action_value) {
@@ -569,9 +714,22 @@ static void execute_modifications_list(SimModification* head, binding_value_t ac
         }
 
         if (condition_met) {
+            if (mod->target_state_name == NULL) { // Handle when:{then:{...}} block
+                execute_modifications_list(mod->next, action_value);
+                SimModification* temp = mod->next;
+                while (temp && temp->next) temp = temp->next;
+                mod = temp;
+                if (!mod) break;
+                continue;
+            }
+
             SimStateVariable* target_state = find_state(mod->target_state_name);
             if (!target_state) {
                 print_warning("UI-Sim: Attempted to modify unknown state '%s'.", mod->target_state_name);
+                continue;
+            }
+            if (target_state->is_derived) {
+                print_warning("UI-Sim: Cannot modify derived state '%s'.", mod->target_state_name);
                 continue;
             }
 
@@ -609,12 +767,18 @@ static void execute_modifications_list(SimModification* head, binding_value_t ac
                     break;
                 }
                 case MOD_CYCLE: {
-                    if (mod->value_expr->type == SIM_EXPR_FUNCTION && strcmp(mod->value_expr->as.function.func_name, "cycle") == 0 && mod->value_expr->as.function.args_head) {
+                    SimExpression* list_expr = mod->value_expr;
+                    if(list_expr->type == SIM_EXPR_FUNCTION && strcmp(list_expr->as.function.func_name, "cycle") == 0) {
+                        list_expr = list_expr->as.function.args_head->expr;
+                    }
+
+                    if (list_expr->type == SIM_EXPR_FUNCTION && strcmp(list_expr->as.function.func_name, "pair") == 0) {
                         uint32_t count = 0;
-                        for(SimExpressionNode* n = mod->value_expr->as.function.args_head; n; n=n->next) count++;
+                        for(SimExpressionNode* n = list_expr->as.function.args_head; n; n=n->next) count++;
+
                         if (count > 0) {
                             target_state->cycle_index = (target_state->cycle_index + 1) % count;
-                            SimExpressionNode* node_to_eval = mod->value_expr->as.function.args_head;
+                            SimExpressionNode* node_to_eval = list_expr->as.function.args_head;
                             for(uint32_t i=0; i < target_state->cycle_index; i++) node_to_eval = node_to_eval->next;
                             binding_value_t val = evaluate_expression(node_to_eval->expr, action_value);
                             set_state_value(target_state, val);
@@ -659,7 +823,12 @@ static binding_value_t evaluate_expression(SimExpression* expr, binding_value_t 
             }
             return expr->as.literal;
         case SIM_EXPR_ACTION_VALUE:
-            if(action_value.type == expr->as.action_value_type) return action_value;
+            if(action_value.type == expr->as.action_value_type) {
+                if(action_value.type == BINDING_TYPE_STRING && action_value.as.s_val) {
+                    return (binding_value_t){.type = BINDING_TYPE_STRING, .as.s_val = strdup(action_value.as.s_val)};
+                }
+                return action_value;
+            }
             print_hint("UI-Sim Hint: Action payload 'value' was requested as the wrong type.");
             return (binding_value_t){.type = BINDING_TYPE_NULL};
         case SIM_EXPR_STATE_REF: {

@@ -1,0 +1,5 @@
+# This is not valid for the app which expects a list of objects,
+# but the parser should handle it and the generator will fail later.
+# A pure parser test should pass.
+# The wrapper in main will turn this into a list.
+Just a string

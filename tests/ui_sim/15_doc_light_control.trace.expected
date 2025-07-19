@@ -1,0 +1,32 @@
+--- UI-Sim Trace Start ---
+STATE_SET: light_on = false (old: null)
+STATE_SET: brightness = 100.000 (old: null)
+NOTIFY: light_on = false
+NOTIFY: brightness = 100.000
+
+--- TICK 1 ---
+ACTION: toggle_light value=null
+STATE_SET: light_on = true (old: false)
+NOTIFY: light_on = true
+
+--- TICK 2 ---
+ACTION: set_brightness value=50.000
+STATE_SET: brightness = 50.000 (old: 100.000)
+NOTIFY: brightness = 50.000
+
+--- TICK 3 ---
+ACTION: set_brightness value=120.000
+STATE_SET: brightness = 100.000 (old: 50.000)
+NOTIFY: brightness = 100.000
+
+--- TICK 4 ---
+ACTION: set_brightness value=-10.000
+STATE_SET: brightness = 0.000 (old: 100.000)
+NOTIFY: brightness = 0.000
+
+--- TICK 5 ---
+ACTION: toggle_light value=null
+STATE_SET: light_on = false (old: true)
+NOTIFY: light_on = false
+
+--- UI-Sim Trace End ---

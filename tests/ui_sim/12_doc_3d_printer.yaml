@@ -1,0 +1,29 @@
+# TICKS: 6
+# NOTE: Shortened total time for a more interesting trace
+- type: data-binding
+  state:
+    - printing: false
+    - progress_pct: 0.0
+    - time_elapsed: 0.0
+    - time_total: 10.0 # Shortened from 3600
+    - time_remaining: 10.0
+  actions:
+    - start_print:
+        set: { printing: true, progress_pct: 0.0, time_elapsed: 0.0 }
+    - cancel_print:
+        set: { printing: false }
+  updates:
+    - when:
+        condition: printing
+        then:
+          - inc: { time_elapsed: 1 } # Assume 1 tick = 1 second
+          - set:
+              progress_pct: [clamp, [mul, [div, time_elapsed, time_total], 100], 0, 100]
+          - set: { time_remaining: [sub, time_total, time_elapsed] }
+          - when:
+              condition: [>=, progress_pct, 100]
+              then:
+                - set: { printing: false }
+  schedule:
+    - { tick: 2, action: start_print }
+    - { tick: 5, action: cancel_print }```

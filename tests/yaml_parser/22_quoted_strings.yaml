@@ -1,0 +1,5 @@
+single_quoted: 'A string with '' single quotes'
+double_quoted: "A string with \" double quotes"
+special_chars: "!@#$%^&*()"
+looks_like_num: "123"
+looks_like_bool: "true"

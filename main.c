@@ -39,20 +39,23 @@ bool g_ui_sim_trace_enabled = false; // ADDED: For UI-Sim test tracing
 // --- Function Declarations ---
 void print_usage(const char* prog_name);
 int run_sim_test_mode(const char* api_spec_path, const char* ui_spec_path, int num_ticks);
+int run_yaml_parse_mode(const char* yaml_path);
 
 
 // --- Main Application ---
 
 void print_usage(const char* prog_name) {
     fprintf(stderr, "Usage: %s <api_spec.json> <ui_spec.json|yaml> [options]\n", prog_name);
-    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "Special Modes (override standard usage):\n");
+    fprintf(stderr, "  --parse-yaml-to-json <file.yaml>  Parse YAML and print resulting JSON to stdout.\n");
+    fprintf(stderr, "  --run-sim-test <ticks> --api-spec <api.json> --ui-spec <ui.yaml> Run UI-Sim test.\n");
+    fprintf(stderr, "\nStandard Options:\n");
     fprintf(stderr, "  --codegen <backends>     Comma-separated list of backends (ir_print, c_code, lvgl_render).\n");
     fprintf(stderr, "  --debug_out <modules>    Comma-separated list of debug modules to enable (e.g., 'GENERATOR,RENDERER' or 'ALL').\n");
     fprintf(stderr, "  --strict                 Enable strict mode (fail on warnings).\n");
     fprintf(stderr, "  --strict-registry        Fail only on unresolved registry references.\n");
     fprintf(stderr, "  --screenshot-and-exit <path> For visual testing. Renders UI, saves screenshot, and exits.\n");
     fprintf(stderr, "  --watch                  Enable live-reloading of the UI spec file.\n");
-    fprintf(stderr, "  --run-sim-test <ticks>   Run UI-Sim logic for a number of ticks and print trace.\n");
     fprintf(stderr, "  --trace-sim              Enable UI-Sim tracing in normal lvgl_render mode.\n");
 }
 
@@ -61,6 +64,37 @@ void render_abort(const char *msg) {
     fflush(stderr);
     exit(1);
 }
+
+int run_yaml_parse_mode(const char* yaml_path) {
+    char* yaml_content = read_file(yaml_path);
+    if (!yaml_content) {
+        fprintf(stderr, "Error reading YAML file: %s\n", yaml_path);
+        return 1;
+    }
+
+    char* error_msg = NULL;
+    cJSON* json = yaml_to_cjson(yaml_content, &error_msg);
+    free(yaml_content);
+
+    if (error_msg) {
+        render_abort(error_msg);
+        free(error_msg);
+        return 1;
+    }
+
+    if (!json) {
+        render_abort("YAML parser returned NULL without an error message.");
+        return 1;
+    }
+
+    char* json_string = cJSON_Print(json);
+    printf("%s\n", json_string);
+    free(json_string);
+    cJSON_Delete(json);
+
+    return 0;
+}
+
 
 int run_sim_test_mode(const char* api_spec_path, const char* ui_spec_path, int num_ticks) {
     g_ui_sim_trace_enabled = true;
@@ -72,7 +106,7 @@ int run_sim_test_mode(const char* api_spec_path, const char* ui_spec_path, int n
     if (!api_spec_json) { fprintf(stderr, "Error parsing API spec JSON: %s\n", cJSON_GetErrorPtr()); free(api_spec_content); return 1; }
     ApiSpec* api_spec = api_spec_parse(api_spec_json);
     if (!api_spec) { fprintf(stderr, "Failed to parse API spec.\n"); cJSON_Delete(api_spec_json); free(api_spec_content); return 1; }
-    
+
     // --- 2. Load UI Spec & Process UI-Sim block ---
     // This call will populate the g_sim structure
     IRRoot* ir_root = generate_ir_from_file(ui_spec_path, api_spec);
@@ -113,27 +147,43 @@ int main(int argc, char* argv[]) {
     char* backend_list_copy = NULL;
     Registry* renderer_registry = NULL;
 
-    // --- 1. Argument Parsing ---
+    // --- 1. Argument Parsing for Special Modes ---
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--parse-yaml-to-json") == 0 && i + 1 < argc) {
+            return run_yaml_parse_mode(argv[++i]);
+        }
+        if (strcmp(argv[i], "--run-sim-test") == 0 && i + 1 < argc) {
+            int ticks = atoi(argv[++i]);
+            const char* sim_api_spec = NULL;
+            const char* sim_ui_spec = NULL;
+            for (int j = 1; j < argc; ++j) {
+                if (strcmp(argv[j], "--api-spec") == 0 && j + 1 < argc) sim_api_spec = argv[++j];
+                if (strcmp(argv[j], "--ui-spec") == 0 && j + 1 < argc) sim_ui_spec = argv[++j];
+            }
+             if (!sim_api_spec || !sim_ui_spec) { print_usage(argv[0]); return 1; }
+            return run_sim_test_mode(sim_api_spec, sim_ui_spec, ticks);
+        }
+    }
+
+    // --- 2. Standard Argument Parsing ---
     const char* api_spec_path = NULL;
     const char* ui_spec_path = NULL;
     const char* codegen_list_str = "ir_print";
     const char* debug_out_str = NULL;
     const char* screenshot_path = NULL;
     bool watch_mode = false;
-    int sim_test_ticks = -1;
 
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--codegen") == 0 && i + 1 < argc) { codegen_list_str = argv[++i]; }
         else if (strcmp(argv[i], "--debug_out") == 0 && i + 1 < argc) { debug_out_str = argv[++i]; }
         else if (strcmp(argv[i], "--screenshot-and-exit") == 0 && i + 1 < argc) { screenshot_path = argv[++i]; }
-        else if (strcmp(argv[i], "--run-sim-test") == 0 && i + 1 < argc) { sim_test_ticks = atoi(argv[++i]); }
         else if (strcmp(argv[i], "--strict") == 0) { g_strict_mode = true; }
         else if (strcmp(argv[i], "--strict-registry") == 0) { g_strict_registry_mode = true; }
         else if (strcmp(argv[i], "--watch") == 0) { watch_mode = true; }
         else if (strcmp(argv[i], "--trace-sim") == 0) { g_ui_sim_trace_enabled = true; }
         else if (!api_spec_path) { api_spec_path = argv[i]; }
         else if (!ui_spec_path) { ui_spec_path = argv[i]; }
-        else { print_usage(argv[0]); return 1; }
+        // else ignore args already handled by special modes
     }
 
     debug_log_init();
@@ -143,19 +193,13 @@ int main(int argc, char* argv[]) {
 
     if (!api_spec_path || !ui_spec_path) { print_usage(argv[0]); return 1; }
 
-    // --- Handle special execution modes ---
-    if (sim_test_ticks >= 0) {
-        return run_sim_test_mode(api_spec_path, ui_spec_path, sim_test_ticks);
-    }
-
-
-    // --- 2. File Loading & JSON/YAML Parsing ---
+    // --- 3. File Loading & JSON/YAML Parsing ---
     api_spec_content = read_file(api_spec_path);
     if (!api_spec_content) { fprintf(stderr, "Error reading API spec file: %s\n", api_spec_path); return_code = 1; goto cleanup; }
     api_spec_json = cJSON_Parse(api_spec_content);
     if (!api_spec_json) { fprintf(stderr, "Error parsing API spec JSON: %s\n", cJSON_GetErrorPtr()); return_code = 1; goto cleanup; }
 
-    // --- 3. IR Generation ---
+    // --- 4. IR Generation ---
     api_spec = api_spec_parse(api_spec_json);
     if (!api_spec) { fprintf(stderr, "Failed to parse the loaded API spec into internal structures.\n"); return_code = 1; goto cleanup; }
 
@@ -165,7 +209,7 @@ int main(int argc, char* argv[]) {
     }
 
 
-    // --- 4. Run Code Generation Backends ---
+    // --- 5. Run Code Generation Backends ---
     backend_list_copy = strdup(codegen_list_str);
     if (!backend_list_copy) render_abort("Failed to duplicate codegen string.");
 
@@ -223,23 +267,23 @@ int main(int argc, char* argv[]) {
                     DEBUG_LOG(LOG_MODULE_MAIN, "SDL viewer exited.\n");
                 }
             }
-            
+
             sdl_viewer_deinit();
             obj_registry_deinit();
-            
+
         } else {
             fprintf(stderr, "Warning: Unknown codegen backend '%s'.\n", backend_name);
         }
         backend_name = strtok(NULL, ",");
     }
 
-    // --- 4.5. Run Warning Summary Backend (Always runs last) ---
+    // --- 6. Run Warning Summary Backend (Always runs last) ---
     if (ir_root) {
         warning_print_backend(ir_root);
     }
 
 cleanup:
-    // --- 5. Cleanup ---
+    // --- 7. Cleanup ---
     if(renderer_registry) registry_free(renderer_registry);
     if(backend_list_copy) free(backend_list_copy);
     if(ir_root) ir_free((IRNode*)ir_root);

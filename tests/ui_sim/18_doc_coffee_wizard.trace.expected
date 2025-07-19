@@ -1,0 +1,34 @@
+--- UI-Sim Trace Start ---
+STATE_SET: setup_step = 0.000 (old: null)
+NOTIFY: setup_step = 0.000
+
+--- TICK 1 ---
+ACTION: next_step value=null
+STATE_SET: setup_step = 1.000 (old: 0.000)
+NOTIFY: setup_step = 1.000
+
+--- TICK 2 ---
+ACTION: next_step value=null
+STATE_SET: setup_step = 2.000 (old: 1.000)
+NOTIFY: setup_step = 2.000
+
+--- TICK 3 ---
+ACTION: next_step value=null
+STATE_SET: setup_step = 3.000 (old: 2.000)
+NOTIFY: setup_step = 3.000
+
+--- TICK 4 ---
+ACTION: next_step value=null
+STATE_SET: setup_step = 3.000 (old: 3.000)
+
+--- TICK 5 ---
+ACTION: prev_step value=null
+STATE_SET: setup_step = 2.000 (old: 3.000)
+NOTIFY: setup_step = 2.000
+
+--- TICK 6 ---
+ACTION: finish_setup value=null
+STATE_SET: setup_step = 0.000 (old: 2.000)
+NOTIFY: setup_step = 0.000
+
+--- UI-Sim Trace End ---

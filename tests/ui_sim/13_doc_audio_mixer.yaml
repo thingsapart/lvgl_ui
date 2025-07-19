@@ -1,0 +1,17 @@
+# TICKS: 5
+- type: data-binding
+  state:
+    - waveform: [string, "SINE"]
+    - frequency: 440.0
+    - amplitude: 0.8
+  actions:
+    - cycle_waveform:
+        cycle: { waveform: ["SINE", "SQUARE", "SAW", "TRIANGLE"] }
+    - set_frequency:
+        set: { frequency: value.float }
+  schedule:
+    - { tick: 1, action: cycle_waveform }
+    - { tick: 2, action: set_frequency, with: 220.0 }
+    - { tick: 3, action: cycle_waveform }
+    - { tick: 4, action: cycle_waveform }
+    - { tick: 5, action: cycle_waveform }

@@ -1,0 +1,47 @@
+--- UI-Sim Trace Start ---
+STATE_SET: current_temp = 22.000 (old: null)
+STATE_SET: target_temp = 22.000 (old: null)
+STATE_SET: heater_on = false (old: null)
+NOTIFY: current_temp = 22.000
+NOTIFY: target_temp = 22.000
+NOTIFY: heater_on = false
+
+--- TICK 1 ---
+
+--- TICK 2 ---
+ACTION: temp_up value=null
+STATE_SET: target_temp = 22.500 (old: 22.000)
+NOTIFY: target_temp = 22.500
+STATE_SET: current_temp = 22.100 (old: 22.000)
+STATE_SET: heater_on = true (old: false)
+NOTIFY: current_temp = 22.100
+NOTIFY: heater_on = true
+
+--- TICK 3 ---
+STATE_SET: current_temp = 22.200 (old: 22.100)
+NOTIFY: current_temp = 22.200
+
+--- TICK 4 ---
+ACTION: temp_up value=null
+STATE_SET: target_temp = 23.000 (old: 22.500)
+NOTIFY: target_temp = 23.000
+STATE_SET: current_temp = 22.300 (old: 22.200)
+NOTIFY: current_temp = 22.300
+
+--- TICK 5 ---
+STATE_SET: current_temp = 22.400 (old: 22.300)
+NOTIFY: current_temp = 22.400
+
+--- TICK 6 ---
+STATE_SET: current_temp = 22.500 (old: 22.400)
+NOTIFY: current_temp = 22.500
+
+--- TICK 7 ---
+ACTION: temp_down value=null
+STATE_SET: target_temp = 22.500 (old: 23.000)
+NOTIFY: target_temp = 22.500
+STATE_SET: current_temp = 22.500 (old: 22.500)
+STATE_SET: heater_on = false (old: true)
+NOTIFY: heater_on = false
+
+--- UI-Sim Trace End ---

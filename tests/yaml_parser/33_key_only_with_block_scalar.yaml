@@ -1,0 +1,5 @@
+# This tests literal block scalars, which the parser might not support,
+# but it's a common pattern. A simple parser might see this as a key
+# followed by a string value. For now, we will assume this is not supported
+# and the correct test is with quoted strings. This file is a placeholder.
+message: "Hello\nWorld"

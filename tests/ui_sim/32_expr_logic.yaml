@@ -1,0 +1,13 @@
+# TICKS: 1
+- type: data-binding
+  state:
+    - t: true
+    - f: false
+
+    - and_tt: { derived_expr: [and, t, t] }
+    - and_tf: { derived_expr: [and, t, f] }
+    - or_tf:  { derived_expr: [or, t, f] }
+    - or_ff:  { derived_expr: [or, f, f] }
+    - not_t:  { derived_expr: [not, t] }
+    - not_f:  { derived_expr: [not, f] }
+    - negated_ref: { derived_expr: !f }

@@ -52,6 +52,7 @@ void ui_sim_tick(float dt);
 #define UI_SIM_MAX_STATES 128
 #define UI_SIM_MAX_ACTIONS 128
 #define UI_SIM_MAX_FUNC_ARGS 8
+#define UI_SIM_MAX_SCHEDULED_ACTIONS 64
 
 // --- Expressions ---
 
@@ -110,6 +111,13 @@ typedef struct {
     char* name;
     SimModification* modifications_head;
 } SimAction;
+
+// --- Scheduled Actions ---
+typedef struct {
+    uint32_t tick;
+    char* name;
+    binding_value_t value;
+} SimScheduledAction;
 
 
 // --- State ---

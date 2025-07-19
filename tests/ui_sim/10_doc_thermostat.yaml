@@ -1,0 +1,25 @@
+# TICKS: 7
+- type: data-binding
+  state:
+    - current_temp: 22.0
+    - target_temp: 22.0
+    - heater_on: false
+  actions:
+    - temp_up:
+        target_temp: { inc: 0.5 }
+    - temp_down:
+        target_temp: { dec: 0.5 }
+  updates:
+    # Simulate current temperature moving towards target
+    - current_temp: { inc: 0.1, when: [<, current_temp, target_temp] }
+    - current_temp: { dec: 0.1, when: [>, current_temp, target_temp] }
+    # Set heater status based on temperature diff
+    - heater_on:
+        set:
+          case:
+            - [[>, [sub, target_temp, current_temp], 0.2], true]
+            - [true, false]
+  schedule:
+    - { tick: 2, action: temp_up }
+    - { tick: 4, action: temp_up }
+    - { tick: 7, action: temp_down }

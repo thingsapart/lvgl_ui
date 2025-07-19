@@ -1,0 +1,15 @@
+# TICKS: 3
+- type: data-binding
+  state:
+    - num_val: 1.0
+    - str_val: "A"
+    - bool_val: true
+  actions:
+    - cycle_all:
+        num_val: { cycle: }
+        str_val: { cycle: ["A", "B", "C"] }
+        bool_val: { cycle: [true, false] }
+  schedule:
+    - { tick: 1, action: cycle_all }
+    - { tick: 2, action: cycle_all }
+    - { tick: 3, action: cycle_all }

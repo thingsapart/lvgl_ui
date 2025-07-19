@@ -1,0 +1,6 @@
+items: [
+  apple, # comment
+  banana,
+  # another comment
+  cherry
+]

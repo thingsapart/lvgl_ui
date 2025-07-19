@@ -1,0 +1,37 @@
+--- UI-Sim Trace Start ---
+STATE_SET: time = 0.000 (old: null)
+STATE_SET: ecg_val = 0.000 (old: null)
+STATE_SET: display_frozen = false (old: null)
+NOTIFY: time = 0.000
+NOTIFY: ecg_val = 0.000
+NOTIFY: display_frozen = false
+
+--- TICK 1 ---
+STATE_SET: time = 0.050 (old: 0.000)
+STATE_SET: ecg_val = 0.016 (old: 0.000)
+NOTIFY: time = 0.050
+NOTIFY: ecg_val = 0.016
+
+--- TICK 2 ---
+STATE_SET: time = 0.100 (old: 0.050)
+STATE_SET: ecg_val = 0.031 (old: 0.016)
+NOTIFY: time = 0.100
+NOTIFY: ecg_val = 0.031
+
+--- TICK 3 ---
+ACTION: toggle_freeze value=null
+STATE_SET: display_frozen = true (old: false)
+NOTIFY: display_frozen = true
+
+--- TICK 4 ---
+
+--- TICK 5 ---
+ACTION: toggle_freeze value=null
+STATE_SET: display_frozen = false (old: true)
+NOTIFY: display_frozen = false
+STATE_SET: time = 0.150 (old: 0.100)
+STATE_SET: ecg_val = 0.046 (old: 0.031)
+NOTIFY: time = 0.150
+NOTIFY: ecg_val = 0.046
+
+--- UI-Sim Trace End ---

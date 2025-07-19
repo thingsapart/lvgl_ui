@@ -1,0 +1,35 @@
+# TICKS: 5
+- type: data-binding
+  state:
+    - time: 0.0
+    - program_running: false
+    - spindle_on: false
+    - pos_x: 0.0
+    - pos_y: 0.0
+    - spindle_rpm: 0.0
+    - program_status:
+        derived_expr:
+          case:
+            - [program_running, "RUNNING"]
+            - [spindle_on, "SPINDLE ON"]
+            - [true, "IDLE"]
+  actions:
+    - program_run:
+        set: { program_running: true, spindle_on: true }
+    - program_stop:
+        set: { program_running: false, spindle_on: false }
+  updates:
+    - inc: { time: 0.033 }
+    - set:
+        spindle_rpm:
+          case:
+            - [spindle_on, [add, 8000, [mul, 200, [sin, [mul, time, 10]]]]]
+            - [true, 0]
+    - when:
+        condition: program_running
+        then:
+          - set: { pos_x: [mul, 50, [cos, time]] }
+          - set: { pos_y: [mul, 50, [sin, time]] }
+  schedule:
+    - { tick: 2, action: program_run }
+    - { tick: 5, action: program_stop }```

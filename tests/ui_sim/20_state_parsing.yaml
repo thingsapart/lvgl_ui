@@ -1,0 +1,9 @@
+# TICKS: 1
+- type: data-binding
+  state:
+    - inferred_float: 1.23
+    - inferred_bool: true
+    - inferred_string: "hello"
+    - explicit_type: float
+    - explicit_array: [string, "world"]
+    - default_string: string

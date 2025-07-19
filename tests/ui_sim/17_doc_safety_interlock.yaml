@@ -1,0 +1,19 @@
+# TICKS: 4
+- type: data-binding
+  state:
+    - safety_key_on: false
+    - x_pos: 100.0
+    - jog_speed: 10.0
+  actions:
+    - key_turned:
+        toggle: safety_key_on
+    - jog_x_plus:
+        when:
+          condition: [and, safety_key_on, [>, x_pos, 0]]
+          then:
+            - dec: { x_pos: jog_speed }
+  schedule:
+    - { tick: 1, action: jog_x_plus }
+    - { tick: 2, action: key_turned }
+    - { tick: 3, action: jog_x_plus }
+    - { tick: 4, action: jog_x_plus }

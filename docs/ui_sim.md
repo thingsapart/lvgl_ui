@@ -6,13 +6,14 @@ This enables a rapid design-and-test workflow where a UI designer can build and 
 
 ## Core Concepts
 
-The system is controlled by a single `type: data-binding` block in your UI spec. This block defines three key things:
+The system is controlled by a single `type: data-binding` block in your UI spec. This block defines four key things:
 
 1.  **`state`**: The data model of your mock application. This is a collection of named variables (e.g., `temperature`, `is_running`, `status_message`) that represent the state of your simulated device.
 2.  **`actions`**: The logic that runs when a UI widget triggers an action (e.g., a button is clicked). Actions modify the `state`.
 3.  **`updates`**: The logic that runs periodically on a timer (about 30 times per second). This is used to simulate continuous processes, like a changing sensor value, a running motor, or an animated progress bar.
+4.  **`schedule`**: (For Testing) A list of actions to be triggered automatically at specific ticks. This is essential for creating automated, reproducible tests of your action logic.
 
-When any variable in the `state` is changed (either by an `action` or an `update`), UI-Sim automatically notifies the data binding system, and any widget observing that variable will update itself.
+When any variable in the `state` is changed (either by an `action`, an `update`, or the `schedule`), UI-Sim automatically notifies the data binding system, and any widget observing that variable will update itself.
 
 ---
 
@@ -30,6 +31,8 @@ This is the root object for the UI-Sim definition. There should only be one in a
     # ... action handlers ...
   updates:
     # ... periodic update rules ...
+  schedule:
+    # ... scheduled test actions ...
 ```
 
 ### The `state` Block
@@ -58,6 +61,28 @@ actions:
 updates:
   # On every tick, run this modification.
   - target_state: { modifier: arguments, when: [condition] }
+```
+
+### The `schedule` Block (For Testing)
+
+This block defines a series of actions that will be automatically executed by the test runner (`--run-sim-test`).
+
+**Syntax:** a list of scheduled action objects.
+
+```yaml
+schedule:
+  - { tick: <tick_number>, action: "<action_name>", with: <value> }
+```
+
+*   `tick`: The 1-based tick number on which to trigger the action.
+*   `action`: The name of the action to trigger (must be defined in the `actions` block).
+*   `with`: (Optional) The payload value to send with the action. This corresponds to `value.float`, `value.bool`, etc., inside the action's expression logic.
+
+**Example:**
+```yaml
+schedule:
+  - { tick: 2, action: "start_machine" }
+  - { tick: 5, action: "set_speed", with: 120.5 }
 ```
 
 ### Modification Reference
@@ -403,4 +428,3 @@ program_status:
           condition: [>=, mana, 10]
           then:
             - dec: { mana: 10 }
-```
