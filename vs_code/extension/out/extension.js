@@ -6,7 +6,7 @@ const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
 const child_process_1 = require("child_process");
-const LOGGING_ENABLED = false; // Set to true for verbose debug output
+const LOGGING_ENABLED = true; // Set to true for verbose debug output
 const RESOLUTIONS = [
     { name: 'Default (480x320)', width: 480, height: 320 },
     { name: 'Phone Portrait (320x480)', width: 320, height: 480 },
@@ -30,6 +30,7 @@ function activate(context) {
     outputChannel = vscode.window.createOutputChannel("LVGL UI Preview");
     logChannel = vscode.window.createOutputChannel("LVGL UI Preview LOG");
     if (LOGGING_ENABLED) {
+        logChannel.show(true); // Show the log channel on activation if enabled
         logChannel.appendLine('[EXTENSION] Starting...');
     }
     const disposable = vscode.commands.registerCommand('lvgl-ui-generator.preview', async (uri) => {
@@ -46,6 +47,11 @@ function activate(context) {
             vscode.window.showInformationMessage('The selected file is not a YAML file. This preview only works for YAML files.');
             return;
         }
+        // If the panel is already visible and for the current file, close it (toggle behavior).
+        if (previewPanel && previewedDocumentUri?.toString() === targetUri.toString()) {
+            previewPanel.dispose();
+            return; // Command finished
+        }
         previewedDocumentUri = targetUri;
         // Load the last used resolution from workspace state for this session.
         const savedRes = context.workspaceState.get(STORAGE_KEY_RESOLUTION);
@@ -61,21 +67,26 @@ function activate(context) {
             currentResolution = { width: defaultRes.width, height: defaultRes.height };
         }
         if (previewPanel) {
+            // If the panel exists but is for a different file, we need to restart the server
+            // for the new file context. We kill the old one, and startServerProcess will be called.
+            if (serverProcess) {
+                serverProcess.kill();
+                serverProcess = undefined;
+            }
             previewPanel.reveal(vscode.ViewColumn.Beside, true);
+            startServerProcess(context);
         }
         else {
             previewPanel = vscode.window.createWebviewPanel('lvglPreview', 'LVGL Preview', { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true }, { enableScripts: true, retainContextWhenHidden: true });
-            setupPreviewPanel(context);
+            setupPreviewPanel(context); // This will call startServerProcess internally
         }
-        // IMPORTANT: The initial render is now triggered by the server handshake,
-        // not immediately on panel creation. This ensures the server is ready.
     });
     vscode.workspace.onDidChangeTextDocument(event => {
         if (previewPanel && event.document.uri.toString() === previewedDocumentUri?.toString()) {
             const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
             if (editor) {
                 // Re-render with the currently active resolution.
-                triggerRender(editor, currentResolution.width, currentResolution.height);
+                triggerRender(editor, currentResolution.width, currentResolution.height, context);
             }
         }
     });
@@ -85,8 +96,43 @@ function setupPreviewPanel(context) {
     if (!previewPanel)
         return;
     previewPanel.webview.html = getWebviewContent();
+    startServerProcess(context);
+    previewPanel.onDidDispose(() => {
+        serverProcess?.kill();
+        serverProcess = undefined;
+        previewPanel = undefined;
+        previewedDocumentUri = undefined;
+    }, null, context.subscriptions);
+    previewPanel.webview.onDidReceiveMessage(message => {
+        if (message.command === 'changeResolution') {
+            const { width, height } = message.resolution;
+            if (LOGGING_ENABLED)
+                logChannel.appendLine(`[Extension] Resolution change request from webview: ${width}x${height}`);
+            currentResolution = { width, height };
+            context.workspaceState.update(STORAGE_KEY_RESOLUTION, `${width}x${height}`);
+            const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
+            if (editor) {
+                triggerRender(editor, width, height, context);
+            }
+            return;
+        }
+        // Forward other messages (like input) to the server if it's running
+        if (!serverProcess)
+            return;
+        const command = { command: "input", ...message };
+        serverProcess.stdin.write(JSON.stringify(command) + '\n');
+    });
+}
+function startServerProcess(context) {
     if (serverProcess) {
-        serverProcess.kill();
+        if (LOGGING_ENABLED)
+            logChannel.appendLine('[Server] Attempted to start server, but one is already running.');
+        return;
+    }
+    if (!previewPanel) {
+        if (LOGGING_ENABLED)
+            logChannel.appendLine('[Server] Attempted to start server, but preview panel is closed.');
+        return;
     }
     const serverPath = path.join(context.extensionPath, 'bin', 'lvgl_vsc_server');
     if (!fs.existsSync(serverPath)) {
@@ -104,122 +150,121 @@ function setupPreviewPanel(context) {
     if (LOGGING_ENABLED) {
         serverArgs.push('--log');
     }
+    if (LOGGING_ENABLED)
+        logChannel.appendLine(`[Server] Spawning server process: ${serverPath} ${serverArgs.join(' ')}`);
     serverProcess = (0, child_process_1.spawn)(serverPath, serverArgs, { cwd });
     serverProcess.on('error', (err) => {
-        outputChannel.appendLine(`Failed to start server process: ${err.message}`);
+        if (LOGGING_ENABLED)
+            logChannel.appendLine(`[Server] Failed to start server process: ${err.message}`);
         vscode.window.showErrorMessage("Failed to start the LVGL preview server.");
+        serverProcess = undefined; // Ensure we know the server is dead
     });
-    // --- New Robust Parser ---
+    serverProcess.on('exit', (code, signal) => {
+        if (LOGGING_ENABLED)
+            logChannel.appendLine(`[Server] Process exited with code ${code}, signal ${signal}.`);
+        previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: 'error', text: 'Render server has stopped. It will restart on the next change.' });
+        serverProcess = undefined; // CRITICAL: Mark server as dead
+    });
     let buffer = Buffer.alloc(0);
     const MAGIC_HEADER = Buffer.from("DATA:");
     const FRAME_COMMAND = Buffer.from("|FRAME|");
     const INIT_COMMAND = Buffer.from("|INIT |");
-    const COMMAND_LENGTH = 7;
-    const FULL_FRAME_HEADER_LENGTH = MAGIC_HEADER.length + COMMAND_LENGTH + 16; // + total_w,h + x,y,w,h + size
-    const INIT_HEADER_LENGTH = MAGIC_HEADER.length + COMMAND_LENGTH + 4; // + w,h
-    function processBuffer() {
+    serverProcess.stdout.on('data', (data) => {
+        buffer = Buffer.concat([buffer, data]);
+        if (LOGGING_ENABLED)
+            logChannel.appendLine(`[Parser] STDOUT recv... ${data.length}`);
         while (true) {
             const magicIndex = buffer.indexOf(MAGIC_HEADER);
-            if (magicIndex === -1) {
-                return; // Wait for more data
-            }
-            // Discard any data before the magic header
-            if (magicIndex > 0) {
+            if (magicIndex === -1)
+                return;
+            if (magicIndex > 0)
                 buffer = buffer.subarray(magicIndex);
-            }
-            if (buffer.length < MAGIC_HEADER.length + COMMAND_LENGTH) {
-                return; // Not enough data for a command, wait for more.
-            }
-            const commandSlice = buffer.subarray(MAGIC_HEADER.length, MAGIC_HEADER.length + COMMAND_LENGTH);
+            if (buffer.length < 12)
+                return;
+            const commandSlice = buffer.subarray(5, 12);
             if (commandSlice.equals(INIT_COMMAND)) {
-                if (buffer.length < INIT_HEADER_LENGTH)
-                    return; // Wait for full header
+                if (buffer.length < 16)
+                    return;
                 const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
                 previewPanel?.webview.postMessage({ command: 'initialize', resolution: currentResolution, allResolutions: RESOLUTIONS });
                 if (editor) {
-                    triggerRender(editor, currentResolution.width, currentResolution.height);
+                    triggerRender(editor, currentResolution.width, currentResolution.height, context);
                 }
-                buffer = buffer.subarray(INIT_HEADER_LENGTH);
-                continue; // Loop again immediately to process next command in buffer
+                buffer = buffer.subarray(16);
+                continue;
             }
             else if (commandSlice.equals(FRAME_COMMAND)) {
-                if (buffer.length < FULL_FRAME_HEADER_LENGTH)
-                    return; // Wait for full header
-                const metadataOffset = MAGIC_HEADER.length + COMMAND_LENGTH;
-                const totalWidth = buffer.readUInt16BE(metadataOffset);
-                const totalHeight = buffer.readUInt16BE(metadataOffset + 2);
-                const x = buffer.readUInt16BE(metadataOffset + 4);
-                const y = buffer.readUInt16BE(metadataOffset + 6);
-                const w = buffer.readUInt16BE(metadataOffset + 8);
-                const h = buffer.readUInt16BE(metadataOffset + 10);
-                const payloadSize = buffer.readUInt32BE(metadataOffset + 12);
-                if (buffer.length < FULL_FRAME_HEADER_LENGTH + payloadSize)
-                    return; // Wait for full payload
-                const payload = buffer.subarray(FULL_FRAME_HEADER_LENGTH, FULL_FRAME_HEADER_LENGTH + payloadSize);
+                if (buffer.length < 28)
+                    return;
+                const payloadSize = buffer.readUInt32BE(24);
+                if (buffer.length < 28 + payloadSize)
+                    return;
+                const totalWidth = buffer.readUInt16BE(12);
+                const totalHeight = buffer.readUInt16BE(14);
+                const x = buffer.readUInt16BE(16);
+                const y = buffer.readUInt16BE(18);
+                const w = buffer.readUInt16BE(20);
+                const h = buffer.readUInt16BE(22);
+                const payload = buffer.subarray(28, 28 + payloadSize);
                 previewPanel?.webview.postMessage({
                     command: 'updateCanvas',
                     totalWidth, totalHeight,
                     x, y, width: w, height: h,
-                    // FIX: Create a clean slice of the ArrayBuffer to send.
-                    // The payload Buffer is a view on a larger ArrayBuffer. payload.buffer is the *entire*
-                    // original buffer. Slicing it properly ensures we only send the relevant data.
                     frameBuffer: payload.buffer.slice(payload.byteOffset, payload.byteOffset + payload.length)
                 });
                 if (LOGGING_ENABLED)
                     logChannel.appendLine(`[Parser] Processed frame total_dim{${totalWidth}x${totalHeight}} rect:{ x: ${x}, y: ${y}, w: ${w}, h: ${h}}`);
-                buffer = buffer.subarray(FULL_FRAME_HEADER_LENGTH + payloadSize);
-                continue; // Loop again immediately
+                buffer = buffer.subarray(28 + payloadSize);
+                continue;
             }
             else {
-                // Unknown command, discard the 'D' from 'DATA:' and search again
                 if (LOGGING_ENABLED)
                     logChannel.appendLine(`[Parser] Anomaly: Unknown command. Discarding byte and retrying.`);
                 buffer = buffer.subarray(1);
                 continue;
             }
         }
-    }
-    serverProcess.stdout.on('data', (data) => {
-        buffer = Buffer.concat([buffer, data]);
-        if (LOGGING_ENABLED)
-            logChannel.appendLine(`[Parser] STDOUT recv... ${data.length}`);
-        processBuffer();
     });
+    let stderrBuffer = '';
     serverProcess.stderr.on('data', (data) => {
         if (LOGGING_ENABLED)
             logChannel.appendLine(`[Parser] STDERR recv... ${data.length}`);
-        outputChannel.appendLine(data.toString().trim());
-    });
-    previewPanel.onDidDispose(() => {
-        serverProcess?.kill();
-        serverProcess = undefined;
-        previewPanel = undefined;
-        previewedDocumentUri = undefined;
-    }, null, context.subscriptions);
-    previewPanel.webview.onDidReceiveMessage(message => {
-        if (!serverProcess)
-            return;
-        if (message.command === 'changeResolution') {
-            const { width, height } = message.resolution;
-            if (LOGGING_ENABLED)
-                logChannel.appendLine(`[Extension] Resolution change request from webview: ${width}x${height}`);
-            currentResolution = { width, height };
-            context.workspaceState.update(STORAGE_KEY_RESOLUTION, `${width}x${height}`);
-            const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
-            if (editor) {
-                triggerRender(editor, width, height);
+        stderrBuffer += data.toString();
+        let eolIndex;
+        while ((eolIndex = stderrBuffer.indexOf('\n')) >= 0) {
+            const line = stderrBuffer.substring(0, eolIndex).trim();
+            stderrBuffer = stderrBuffer.substring(eolIndex + 1);
+            if (!line)
+                continue;
+            outputChannel.appendLine(line);
+            const cleanLine = line.replace(/\x1b\[[0-9;]*m/g, '');
+            const match = cleanLine.match(/^\[(ERROR|WARNING|HINT)\]\s*(.*)/);
+            if (match) {
+                previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: match[1].toLowerCase(), text: match[2].trim() });
             }
-            return;
         }
-        const command = { command: "input", ...message };
-        serverProcess.stdin.write(JSON.stringify(command) + '\n');
     });
 }
-function triggerRender(editor, width, height) {
-    if (!previewPanel || !serverProcess)
+function triggerRender(editor, width, height, context) {
+    if (!previewPanel)
         return;
+    // If the server process has died, restart it. The new process will send an
+    // INIT command which will trigger a render automatically.
+    if (!serverProcess) {
+        if (LOGGING_ENABLED)
+            logChannel.appendLine('[Extension] Server is not running. Attempting to restart...');
+        startServerProcess(context);
+        return; // Stop here. The restarted server will trigger the render.
+    }
+    previewPanel.webview.postMessage({ command: 'hideConsole' });
     clearTimeout(renderTimeout);
     renderTimeout = setTimeout(() => {
+        // Re-check server process existence inside the timeout, in case it died
+        if (!serverProcess) {
+            if (LOGGING_ENABLED)
+                logChannel.appendLine('[Extension] Server died before render timeout fired. Aborting render command.');
+            return;
+        }
         const source = editor.document.getText();
         const relativePath = vscode.workspace.asRelativePath(editor.document.uri);
         if (previewPanel) {
@@ -233,7 +278,7 @@ function triggerRender(editor, width, height) {
             width: width,
             height: height
         };
-        serverProcess?.stdin.write(JSON.stringify(command) + '\n');
+        serverProcess.stdin.write(JSON.stringify(command) + '\n');
     }, 250);
 }
 function getWebviewContent() {
@@ -244,20 +289,74 @@ function getWebviewContent() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LVGL Preview</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #252526; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; flex-direction: column; background-color: #252526; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; overflow: hidden; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; /* Flexbox fix for overflow */ }
         .controls { padding: 8px; background-color: #333; width: 100%; box-sizing: border-box; text-align: center; border-bottom: 1px solid #444; flex-shrink: 0; }
         #resolution-select { background: #3c3c3c; color: #f0f0f0; border: 1px solid #666; padding: 4px; border-radius: 4px; }
         .canvas-container { flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; overflow: auto; padding: 16px; box-sizing: border-box;}
         canvas { background-color: #fff; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; box-shadow: 0 4px 12px rgba(0,0,0,0.5); flex-shrink: 0; }
+
+        /* Console Styles */
+        .console-container {
+            height: 200px;
+            background-color: #1e1e1e;
+            border-top: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .console-header {
+            background-color: #333;
+            padding: 2px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            user-select: none;
+        }
+        .console-header button {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 18px;
+            line-height: 1;
+            padding: 2px 6px;
+            cursor: pointer;
+        }
+        .console-header button:hover { background-color: #555; }
+        #console-output {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 8px;
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .console-msg { line-height: 1.4; }
+        .console-msg.error { color: #f48771; }
+        .console-msg.warning { color: #f1d75c; }
+        .console-msg.hint { color: #6fbcf1; }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <label for="resolution-select" style="margin-right: 8px;">Resolution:</label>
-        <select id="resolution-select"></select>
+    <div class="main-content">
+        <div class="controls">
+            <label for="resolution-select" style="margin-right: 8px;">Resolution:</label>
+            <select id="resolution-select"></select>
+        </div>
+        <div class="canvas-container">
+            <canvas id="preview-canvas"></canvas>
+        </div>
     </div>
-    <div class="canvas-container">
-        <canvas id="preview-canvas"></canvas>
+
+    <div id="console" class="console-container" style="display: none;">
+        <div class="console-header">
+            <span>Console</span>
+            <button id="console-close-btn">×</button>
+        </div>
+        <pre id="console-output"></pre>
     </div>
 
     <script>
@@ -265,21 +364,21 @@ function getWebviewContent() {
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const vscode = acquireVsCodeApi();
         const resolutionSelect = document.getElementById('resolution-select');
+        const consoleContainer = document.getElementById('console');
+        const consoleOutput = document.getElementById('console-output');
+        const consoleCloseBtn = document.getElementById('console-close-btn');
 
         let isMouseDown = false;
         const frameQueue = [];
-        
-        /**
-         * Sets the canvas size. Critically, this sets both the element's attributes (for the drawing buffer)
-         * and its CSS style (for the displayed size) to prevent the browser from scaling the canvas.
-         */
+
+        consoleCloseBtn.addEventListener('click', () => {
+            consoleContainer.style.display = 'none';
+        });
+
         function setCanvasSize(width, height) {
             if (canvas.width !== width || canvas.height !== height) {
-                // Set the drawing buffer size
                 canvas.width = width;
                 canvas.height = height;
-
-                // Set the display size
                 canvas.style.width = width + 'px';
                 canvas.style.height = height + 'px';
             }
@@ -289,13 +388,7 @@ function getWebviewContent() {
             if (frameQueue.length > 0) {
                 const frame = frameQueue.shift();
                 const { totalWidth, totalHeight, imageData, x, y } = frame;
-
-                // The server now tells us the total display size with EVERY frame.
-                // This is the source of truth, ensuring the canvas is always the correct size,
-                // even if the initial render comes in partial chunks.
                 setCanvasSize(totalWidth, totalHeight);
-                
-                // Draw the (potentially partial) frame data at its specified coordinates.
                 ctx.putImageData(imageData, x, y);
             }
             requestAnimationFrame(renderLoop);
@@ -307,7 +400,7 @@ function getWebviewContent() {
             switch (message.command) {
                 case 'initialize': {
                     const { resolution, allResolutions } = message;
-                    
+
                     setCanvasSize(resolution.width, resolution.height);
 
                     resolutionSelect.innerHTML = '';
@@ -329,6 +422,32 @@ function getWebviewContent() {
                     const pixelData = new Uint8ClampedArray(frameBuffer);
                     const imageData = new ImageData(pixelData, width, height);
                     frameQueue.push({ totalWidth, totalHeight, imageData, x, y });
+                    break;
+                }
+                case 'hideConsole': {
+                    consoleContainer.style.display = 'none';
+                    consoleOutput.innerHTML = ''; // Clear previous messages
+                    break;
+                }
+                case 'showConsoleMessage': {
+                    const { type, text } = message;
+                    const prefix = \`[\${type.toUpperCase()}]\`;
+
+                    const msgElement = document.createElement('div');
+                    msgElement.className = \`console-msg \${type}\`;
+
+                    const prefixSpan = document.createElement('span');
+                    prefixSpan.style.fontWeight = 'bold';
+                    prefixSpan.textContent = prefix.padEnd(10, ' ');
+
+                    msgElement.appendChild(prefixSpan);
+                    msgElement.appendChild(document.createTextNode(text));
+
+                    consoleOutput.appendChild(msgElement);
+
+                    // Show console if it's hidden and scroll to the new message
+                    consoleContainer.style.display = 'flex';
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
                     break;
                 }
             }

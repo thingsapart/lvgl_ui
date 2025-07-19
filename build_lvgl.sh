@@ -47,7 +47,7 @@ cmake -S . -B "${LVGL_BUILD_DIR}" \
     -DLV_BUILD_EXAMPLES=OFF \
     -DLV_BUILD_TESTS=OFF \
     -DCMAKE_C_COMPILER=gcc \
-    -DCMAKE_C_FLAGS="${SDL_INCLUDES}" \
+    -DCMAKE_C_FLAGS="${SDL_INCLUDES} -I$(pwd)/viewer" \
     -DCMAKE_LD_FLAGS="${SDL_LIBS}"
 
 echo "Building LVGL library..."

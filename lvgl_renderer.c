@@ -8,11 +8,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+// --- Render Context ---
+// This struct is passed through the recursive render functions to manage state
+// and gracefully handle errors without crashing.
+typedef struct {
+    ApiSpec* spec;
+    Registry* registry;
+    bool error_occurred;
+} RenderContext;
+
 
 // --- Forward Declarations ---
-static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry);
-static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry* registry);
-static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr, RenderValue* out_val);
+static void render_object_list(RenderContext* ctx, IRObject* head);
+static void render_single_object(RenderContext* ctx, IRObject* current_obj);
+static void evaluate_expression(RenderContext* ctx, IRExpr* expr, RenderValue* out_val);
 
 // --- Main Backend Entry Point ---
 
@@ -27,61 +36,87 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent, Regi
     obj_registry_add("parent", parent);
 
     DEBUG_LOG(LOG_MODULE_RENDERER, "Starting LVGL render backend.");
-    render_object_list(api_spec, root->root_objects, registry);
+
+    RenderContext ctx = { .spec = api_spec, .registry = registry, .error_occurred = false };
+    render_object_list(&ctx, root->root_objects);
+
     DEBUG_LOG(LOG_MODULE_RENDERER, "LVGL render backend finished.");
 
     lv_obj_update_layout(parent);
     DEBUG_LOG(LOG_MODULE_RENDERER, "Forcing layout update on parent container.");
 }
 
-void lvgl_renderer_reload_ui(const char* ui_spec_path, ApiSpec* api_spec, lv_obj_t* preview_panel, lv_obj_t* inspector_panel) {
-    DEBUG_LOG(LOG_MODULE_RENDERER, "Reloading UI from %s", ui_spec_path);
+void lvgl_renderer_reload_ui_from_string(const char* ui_spec_string, ApiSpec* api_spec, lv_obj_t* preview_panel, lv_obj_t* inspector_panel) {
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Reloading UI from string");
 
-    // 1. Generate new IR from the file
-    IRRoot* ir_root = generate_ir_from_file(ui_spec_path, api_spec);
-    if (!ir_root) {
-        // Display an error message on the screen
-        lv_obj_clean(preview_panel);
-        lv_obj_t* label = lv_label_create(preview_panel);
-        lv_label_set_text(label, "#f04040 Error parsing UI file.\nSee console for details.#");
-        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-        lv_obj_center(label);
-        return;
-    }
-
-    // 2. Clean the target panels in the live UI
+    // --- State Reset ---
+    // Unconditionally clean the UI and reset global registries at the beginning of every reload.
+    // This ensures that we always start from a known-good state, even if the previous render failed.
     lv_obj_clean(preview_panel);
     if (inspector_panel) {
         lv_obj_clean(inspector_panel);
     }
-
-    // 3. Reset runtime registries
     obj_registry_deinit();
-    data_binding_init(); // Also reset data binding state
+    data_binding_init();
 
-    // 4. Re-render the UI using the new IR
+    // --- IR Generation ---
+    IRRoot* ir_root = generate_ir_from_string(ui_spec_string, api_spec);
+
+    // --- Handle Generation Result ---
+    if (!ir_root) {
+        // Generation failed. The generator already logged the error via render_abort().
+        // The screen is already clean, so just display an error message.
+        lv_obj_t* label = lv_label_create(preview_panel);
+        lv_label_set_text(label, "#f04040 Error generating UI.\nSee VSCode console for details.#");
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_center(label);
+        // Do not proceed. The UI will show this error until the next successful render.
+        return;
+    }
+
+    // --- Render a valid IR ---
     Registry* renderer_registry = registry_create();
     if (renderer_registry) {
         lvgl_render_backend(ir_root, api_spec, preview_panel, renderer_registry);
         registry_free(renderer_registry);
     }
 
-    // 5. Re-initialize the inspector with the new IR
     if (inspector_panel) {
         view_inspector_init(inspector_panel, ir_root, api_spec);
     }
-    
-    // 6. Free the IR, it's not needed anymore for this cycle
+
+    // Free the IR, it's not needed anymore for this cycle
     ir_free((IRNode*)ir_root);
 
     DEBUG_LOG(LOG_MODULE_RENDERER, "UI reload complete.");
 }
 
 
-// --- Core Rendering Logic ---
-static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* registry, IRExprArray* arr, uint32_t* out_count);
+void lvgl_renderer_reload_ui(const char* ui_spec_path, ApiSpec* api_spec, lv_obj_t* preview_panel, lv_obj_t* inspector_panel) {
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Loading UI spec from file: %s", ui_spec_path);
+    char* content = read_file(ui_spec_path);
+    if (!content) {
+        print_warning("Failed to read UI spec file: %s", ui_spec_path);
+        // Display an error message on the screen
+        lv_obj_clean(preview_panel);
+        lv_obj_t* label = lv_label_create(preview_panel);
+        lv_label_set_text_fmt(label, "#f04040 Error reading file:\n%s#", ui_spec_path);
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_center(label);
+        return;
+    }
 
-static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry* registry) {
+    lvgl_renderer_reload_ui_from_string(content, api_spec, preview_panel, inspector_panel);
+
+    free(content);
+}
+
+
+// --- Core Rendering Logic ---
+static binding_value_t* evaluate_binding_array_expr(RenderContext* ctx, IRExprArray* arr, uint32_t* out_count);
+
+static void render_single_object(RenderContext* ctx, IRObject* current_obj) {
+    if (ctx->error_occurred) return;
     DEBUG_LOG(LOG_MODULE_RENDERER, "Rendering object: c_name='%s', json_type='%s'", current_obj->c_name, current_obj->json_type);
 
     RenderValue constructor_result = { .type = RENDER_VAL_TYPE_NULL, .as.p_val = NULL };
@@ -95,10 +130,12 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
             if (strcmp(current_obj->c_type, "lv_style_t*") == 0) {
                 c_obj = malloc(sizeof(lv_style_t));
             } else {
-                 render_abort("Renderer Error: Don't know how to malloc this type");
+                 render_abort("Renderer Error: Unknown object type, cannot malloc.");
             }
         } else {
-            evaluate_expression(spec, registry, current_obj->constructor_expr, &constructor_result);
+            evaluate_expression(ctx, current_obj->constructor_expr, &constructor_result);
+            if (ctx->error_occurred) return; // Unwind if evaluation failed
+
             if(constructor_result.type == RENDER_VAL_TYPE_POINTER) {
                 c_obj = constructor_result.as.p_val;
             }
@@ -107,19 +144,21 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
 
     if (c_obj) view_inspector_set_object_pointer((IRNode*)current_obj, c_obj);
 
-    registry_add_pointer(registry, c_obj, current_obj->c_name, current_obj->json_type, current_obj->c_type);
+    registry_add_pointer(ctx->registry, c_obj, current_obj->c_name, current_obj->json_type, current_obj->c_type);
     obj_registry_add(current_obj->c_name, c_obj);
 
     if (current_obj->registered_id) {
-         registry_add_pointer(registry, c_obj, current_obj->registered_id, current_obj->json_type, current_obj->c_type);
+         registry_add_pointer(ctx->registry, c_obj, current_obj->registered_id, current_obj->json_type, current_obj->c_type);
          obj_registry_add(current_obj->registered_id, c_obj);
     }
 
     if (current_obj->operations) {
         for (IROperationNode* op_node = current_obj->operations; op_node; op_node = op_node->next) {
+            if (ctx->error_occurred) break; // Stop processing operations if a prior one failed
+
             IRNode* node = op_node->op_node;
             if (node->type == IR_NODE_OBJECT) {
-                render_single_object(spec, (IRObject*)node, registry);
+                render_single_object(ctx, (IRObject*)node);
             } else if (node->type == IR_NODE_WARNING) {
                 print_hint("%s", ((IRWarning*)node)->message);
             } else if (node->type == IR_NODE_OBSERVER) {
@@ -129,7 +168,8 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
                 const void* default_ptr = NULL;
 
                 RenderValue val;
-                evaluate_expression(spec, registry, obs->config_expr, &val);
+                evaluate_expression(ctx, obs->config_expr, &val);
+                if (ctx->error_occurred) continue;
 
                 if (obs->config_expr->base.type == IR_EXPR_LITERAL) {
                     if (((IRExprLiteral*)obs->config_expr)->is_string) {
@@ -142,14 +182,16 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
                     config_len = 0;
                     for (IRExprNode* n = map_arr->elements; n; n = n->next) config_len++;
                     binding_map_entry_t* map = calloc(config_len, sizeof(binding_map_entry_t));
-                    
+
                     int i = 0;
                     int final_count = 0;
                     for (IRExprNode* n = map_arr->elements; n; n = n->next, i++) {
                         IRExprArray* pair = (IRExprArray*)n->expr;
                         RenderValue key, value;
-                        evaluate_expression(spec, registry, pair->elements->expr, &key);
-                        evaluate_expression(spec, registry, pair->elements->next->expr, &value);
+                        evaluate_expression(ctx, pair->elements->expr, &key);
+                        if(ctx->error_occurred) break;
+                        evaluate_expression(ctx, pair->elements->next->expr, &value);
+                        if(ctx->error_occurred) break;
 
                         if(key.type == RENDER_VAL_TYPE_STRING && strcmp(key.as.s_val, "default") == 0) {
                             if (obs->update_type == OBSERVER_TYPE_STYLE) default_ptr = value.as.p_val;
@@ -158,11 +200,15 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
                             if (key.type == RENDER_VAL_TYPE_STRING) map[final_count].key = (binding_value_t){.type=BINDING_TYPE_STRING, .as.s_val=key.as.s_val};
                             else if (key.type == RENDER_VAL_TYPE_BOOL) map[final_count].key = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=key.as.b_val};
                             else map[final_count].key = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=(float)key.as.i_val};
-                            
+
                             if (obs->update_type == OBSERVER_TYPE_STYLE) map[final_count].value.p_val = value.as.p_val;
                             else map[final_count].value.b_val = value.as.b_val;
                             final_count++;
                         }
+                    }
+                    if(ctx->error_occurred) {
+                        free(map);
+                        continue;
                     }
                     config_ptr = map;
                     config_len = final_count;
@@ -174,39 +220,52 @@ static void render_single_object(ApiSpec* spec, IRObject* current_obj, Registry*
                 binding_value_t* cycle_values = NULL;
                 uint32_t cycle_count = 0;
                 if (act->action_type == ACTION_TYPE_CYCLE && act->data_expr && act->data_expr->base.type == IR_EXPR_ARRAY) {
-                    cycle_values = evaluate_binding_array_expr(spec, registry, (IRExprArray*)act->data_expr, &cycle_count);
+                    cycle_values = evaluate_binding_array_expr(ctx, (IRExprArray*)act->data_expr, &cycle_count);
+                }
+                if (ctx->error_occurred) {
+                    free(cycle_values);
+                    continue;
                 }
                 data_binding_add_action(c_obj, act->action_name, act->action_type, cycle_values, cycle_count);
                 if (cycle_values) free(cycle_values);
             } else {
                 RenderValue ignored;
-                evaluate_expression(spec, registry, (IRExpr*)node, &ignored);
+                evaluate_expression(ctx, (IRExpr*)node, &ignored);
             }
         }
     }
 }
 
-static void render_object_list(ApiSpec* spec, IRObject* head, Registry* registry) {
+static void render_object_list(RenderContext* ctx, IRObject* head) {
     for (IRObject* current_obj = head; current_obj; current_obj = current_obj->next) {
-        render_single_object(spec, current_obj, registry);
+        if (ctx->error_occurred) break;
+        render_single_object(ctx, current_obj);
     }
 }
 
 
 // --- Recursive Expression Evaluator ---
-static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* registry, IRExprArray* arr, uint32_t* out_count) {
+static binding_value_t* evaluate_binding_array_expr(RenderContext* ctx, IRExprArray* arr, uint32_t* out_count) {
     int count = 0;
     for (IRExprNode* n = arr->elements; n; n = n->next) count++;
     *out_count = count;
     if (count == 0) return NULL;
 
     binding_value_t* result_array = calloc(count, sizeof(binding_value_t));
-    if (!result_array) render_abort("Failed to allocate binding_value_t array");
+    if (!result_array) {
+        render_abort("Failed to allocate binding_value_t array");
+        ctx->error_occurred = true;
+        return NULL;
+    }
 
     int i = 0;
     for (IRExprNode* n = arr->elements; n; n = n->next, i++) {
         RenderValue val;
-        evaluate_expression(spec, registry, n->expr, &val);
+        evaluate_expression(ctx, n->expr, &val);
+        if(ctx->error_occurred) {
+            free(result_array);
+            return NULL;
+        }
         switch(val.type) {
             case RENDER_VAL_TYPE_STRING: result_array[i] = (binding_value_t){.type=BINDING_TYPE_STRING, .as.s_val=val.as.s_val}; break;
             case RENDER_VAL_TYPE_BOOL: result_array[i] = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=val.as.b_val}; break;
@@ -217,7 +276,8 @@ static binding_value_t* evaluate_binding_array_expr(ApiSpec* spec, Registry* reg
     return result_array;
 }
 
-static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr, RenderValue* out_val) {
+static void evaluate_expression(RenderContext* ctx, IRExpr* expr, RenderValue* out_val) {
+    if (ctx->error_occurred) return;
     if (!expr) {
         out_val->type = RENDER_VAL_TYPE_NULL;
         out_val->as.p_val = NULL;
@@ -257,9 +317,15 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
         case IR_EXPR_REGISTRY_REF: {
             const char* name = ((IRExprRegistryRef*)expr)->name;
             out_val->type = RENDER_VAL_TYPE_POINTER;
-            out_val->as.p_val = registry_get_pointer(registry, name, NULL);
+            out_val->as.p_val = registry_get_pointer(ctx->registry, name, NULL);
             if (!out_val->as.p_val) {
-                 DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Registry reference '%s' resolved to NULL.", name);
+                #if RENDERER_ABORT_ON_UNRESOLVED_REFERENCE == 1
+                    print_warning("Reference Error: Object with ID '%s' not found in the registry. Aborting...", name);
+                    // The generator should have already provided hints.
+                    ctx->error_occurred = true;
+                #else
+                    DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Registry reference '%s' resolved to NULL.", name);
+                #endif
             }
             return;
         }
@@ -274,7 +340,7 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
 
             int element_count = 0;
             for (IRExprNode* n = arr->elements; n; n=n->next) element_count++;
-            
+
             char* base_type = get_array_base_type(arr->base.c_type);
             size_t element_size = 0;
 
@@ -284,16 +350,27 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             else if(strcmp(base_type, "void*") == 0) element_size = sizeof(void*);
             else {
                 render_abort("Unsupported array base type for renderer");
+                free(base_type);
+                ctx->error_occurred = true;
+                return;
             }
             free(base_type);
 
             void* c_array = malloc(element_count * element_size);
-            if (!c_array) render_abort("Failed to allocate memory for static array.");
+            if (!c_array) {
+                render_abort("Failed to allocate memory for static array.");
+                ctx->error_occurred = true;
+                return;
+            }
 
             int i = 0;
             for (IRExprNode* n = arr->elements; n; n=n->next) {
                 RenderValue elem_val;
-                evaluate_expression(spec, registry, n->expr, &elem_val);
+                evaluate_expression(ctx, n->expr, &elem_val);
+                if (ctx->error_occurred) {
+                    free(c_array);
+                    return;
+                }
                 if (elem_val.type == RENDER_VAL_TYPE_INT) {
                     if (element_size == sizeof(lv_coord_t)) ((lv_coord_t*)c_array)[i] = (lv_coord_t)elem_val.as.i_val;
                     else if (element_size == sizeof(int32_t)) ((int32_t*)c_array)[i] = (int32_t)elem_val.as.i_val;
@@ -303,19 +380,20 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
                 }
                 i++;
             }
-            
+
             arr->static_array_ptr = c_array;
-            registry_add_static_array(registry, c_array);
-            
+            registry_add_static_array(ctx->registry, c_array);
+
             out_val->type = RENDER_VAL_TYPE_POINTER;
             out_val->as.p_val = c_array;
             return;
         }
-        
+
         case IR_EXPR_RUNTIME_REG_ADD: {
             IRExprRuntimeRegAdd* reg = (IRExprRuntimeRegAdd*)expr;
             RenderValue obj_to_reg;
-            evaluate_expression(spec, registry, reg->object_expr, &obj_to_reg);
+            evaluate_expression(ctx, reg->object_expr, &obj_to_reg);
+            if (ctx->error_occurred) return;
             if (obj_to_reg.type == RENDER_VAL_TYPE_POINTER) {
                 obj_registry_add(reg->id, obj_to_reg.as.p_val);
             }
@@ -330,12 +408,21 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             int arg_count = 0;
             for (IRExprNode* n = call->args; n; n = n->next) arg_count++;
             RenderValue* evaluated_args = arg_count > 0 ? calloc(arg_count, sizeof(RenderValue)) : NULL;
-            if (arg_count > 0 && !evaluated_args) render_abort("Failed to allocate evaluated_args array");
+            if (arg_count > 0 && !evaluated_args) {
+                render_abort("Failed to allocate evaluated_args array");
+                ctx->error_occurred = true;
+                return;
+            }
+
             int i = 0;
             for (IRExprNode* n = call->args; n; n = n->next) {
-                evaluate_expression(spec, registry, n->expr, &evaluated_args[i++]);
+                evaluate_expression(ctx, n->expr, &evaluated_args[i++]);
+                if (ctx->error_occurred) {
+                    free(evaluated_args);
+                    return; // Unwind
+                }
             }
-            
+
             IRExprNode* temp_ir_args_head = NULL;
             for (i = 0; i < arg_count; i++) {
                 IRExpr* temp_expr = NULL;
@@ -356,7 +443,7 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
                     case RENDER_VAL_TYPE_POINTER:
                     case RENDER_VAL_TYPE_NULL: {
                         void* ptr = evaluated_args[i].as.p_val;
-                        const char* id = registry_get_id_from_pointer(registry, ptr);
+                        const char* id = registry_get_id_from_pointer(ctx->registry, ptr);
                         if (id) {
                             temp_expr = ir_new_expr_literal(id, "void*");
                             ((IRExprLiteral*)temp_expr)->is_string = true;
@@ -370,14 +457,20 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
             }
 
             IRNode** final_ir_args_array = arg_count > 0 ? calloc(arg_count, sizeof(IRNode*)) : NULL;
-            if (arg_count > 0 && !final_ir_args_array) render_abort("Failed to alloc final_ir_args_array");
+            if (arg_count > 0 && !final_ir_args_array) {
+                render_abort("Failed to alloc final_ir_args_array");
+                ctx->error_occurred = true;
+                free(evaluated_args);
+                ir_free((IRNode*)temp_ir_args_head);
+                return;
+            }
             i = 0;
             for (IRExprNode* n = temp_ir_args_head; n; n = n->next) final_ir_args_array[i++] = (IRNode*)n->expr;
-            
+
             void* target_obj = NULL;
             IRNode** dispatcher_args = NULL;
             int dispatcher_arg_count = 0;
-            const FunctionArg* f_args = api_spec_get_function_args_by_name(spec, call->func_name);
+            const FunctionArg* f_args = api_spec_get_function_args_by_name(ctx->spec, call->func_name);
             bool first_arg_is_target = f_args && f_args->type && (strstr(f_args->type, "_t*") != NULL);
 
             if (first_arg_is_target && arg_count > 0) {
@@ -390,8 +483,8 @@ static void evaluate_expression(ApiSpec* spec, Registry* registry, IRExpr* expr,
                 dispatcher_arg_count = arg_count;
             }
 
-            *out_val = dynamic_lvgl_call_ir(call->func_name, target_obj, dispatcher_args, dispatcher_arg_count, spec);
-            
+            *out_val = dynamic_lvgl_call_ir(call->func_name, target_obj, dispatcher_args, dispatcher_arg_count, ctx->spec);
+
             free(evaluated_args);
             ir_free((IRNode*)temp_ir_args_head);
             free(final_ir_args_array);

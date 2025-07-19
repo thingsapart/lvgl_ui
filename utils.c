@@ -224,7 +224,11 @@ long ir_node_get_enum_value(struct IRNode* node, const char* expected_enum_c_typ
 void print_warning(const char *format, ...) {
     va_list args;
     va_start(args, format);
+#ifdef WARN_PLAIN_TEXT
+    fprintf(stderr, "[WARNING] ");
+#else
     fprintf(stderr, ANSI_BOLD_RED "[WARNING] " ANSI_RESET);
+#endif
     vfprintf(stderr, format, args);
     va_end(args);
     fprintf(stderr, "\n");
@@ -233,7 +237,11 @@ void print_warning(const char *format, ...) {
 void print_hint(const char* format, ...) {
     va_list args;
     va_start(args, format);
+#ifdef WARN_PLAIN_TEXT
+    fprintf(stderr, "[HINT] ");
+#else
     fprintf(stderr, ANSI_YELLOW "[HINT] " ANSI_RESET);
+#endif
     vfprintf(stderr, format, args);
     va_end(args);
     fprintf(stderr, "\n");
@@ -292,16 +300,16 @@ char* get_array_base_type(const char* array_c_type) {
     if (!array_c_type) return strdup("unknown");
 
     char* type_copy = strdup(array_c_type);
-    
+
     // Find the last '*' or '['
     char* last_ptr = strrchr(type_copy, '*');
     char* last_bracket = strrchr(type_copy, '[');
     char* split_at = (last_ptr > last_bracket) ? last_ptr : last_bracket;
-    
+
     if (split_at) {
         *split_at = '\0'; // Terminate the string at the pointer/array symbol
     }
-    
+
     // Trim trailing whitespace
     char* end = type_copy + strlen(type_copy) - 1;
     while (end >= type_copy && isspace((unsigned char)*end)) {
@@ -313,7 +321,7 @@ char* get_array_base_type(const char* array_c_type) {
     if (strncmp(start, "const ", 6) == 0) {
         start += 6;
     }
-    
+
     char* result = strdup(start);
     free(type_copy);
     return result;

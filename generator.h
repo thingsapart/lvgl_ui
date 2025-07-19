@@ -37,4 +37,20 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
  */
 IRRoot* generate_ir_from_file(const char* ui_spec_path, const ApiSpec* api_spec);
 
+/**
+ * @brief Parses a UI specification string (JSON or YAML) and generates an IR tree.
+ *
+ * This is a convenience wrapper that handles parsing before calling
+ * `generate_ir_from_ui_spec`. It cleans up its own intermediate resources (cJSON object).
+ * This is the preferred method for in-memory operations like the VSCode server.
+ *
+ * @param ui_spec_string A string containing the UI specification.
+ * @param api_spec The parsed LVGL API specification.
+ * @return A pointer to the root of the generated IR tree (IRRoot), or NULL on any error
+ *         (parse error, generation error). The caller is responsible for freeing the
+ *         returned tree.
+ */
+IRRoot* generate_ir_from_string(const char* ui_spec_string, const ApiSpec* api_spec);
+
+
 #endif // GENERATOR_H
