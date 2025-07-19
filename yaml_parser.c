@@ -102,10 +102,20 @@ static int get_next_content_line_info(ParserState *state, int current_line_idx, 
 // --- Recursive-Descent Value Parsers ---
 
 static void skip_whitespace(ParserState *state) {
-    while (*state->ptr && isspace((unsigned char)*state->ptr)) {
-        state->ptr++;
+    while (true) {
+        while (*state->ptr && isspace((unsigned char)*state->ptr)) {
+            state->ptr++;
+        }
+        if (*state->ptr == '\0' && state->current_line_idx + 1 < state->num_lines) {
+             state->current_line_idx++;
+             state->line_num = state->current_line_idx + 1;
+             state->ptr = state->lines[state->current_line_idx];
+             continue;
+        }
+        break;
     }
 }
+
 
 static cJSON *parse_scalar(ParserState *state) {
     char buffer[YAML_PARSER_MAX_LINE_LEN];
@@ -204,11 +214,10 @@ static cJSON *parse_flow_collection(ParserState *state) {
         // Robustly skip all whitespace, newlines, and comments across multiple lines
         while (true) {
             if (*state->ptr == '\0') { // End of a line buffer
-                state->current_line_idx++;
-                if (state->current_line_idx >= state->num_lines) {
-                    // End of document
+                if (state->current_line_idx + 1 >= state->num_lines) {
                     goto end_of_input;
                 }
+                state->current_line_idx++;
                 state->line_num = state->current_line_idx + 1;
                 state->ptr = state->lines[state->current_line_idx];
                 continue;
@@ -369,18 +378,6 @@ void parse_line(ParserState *state, int line_idx) {
 
     cJSON *current_parent = state->stack[state->stack_top].node;
 
-    // --- Handle Flow Collection as a block item ---
-    if (*p == '{' || *p == '[') {
-        if (cJSON_IsArray(current_parent)) {
-            state->ptr = p;
-            cJSON_AddItemToArray(current_parent, parse_value(state));
-            return;
-        } else {
-             set_error(state, p, 1, "Flow collection found in a map context without a key.");
-             return;
-        }
-    }
-
     // --- Handle List Item ---
     if (*p == '-') {
         if (!cJSON_IsArray(current_parent)) {
@@ -388,13 +385,15 @@ void parse_line(ParserState *state, int line_idx) {
             return;
         }
 
+        cJSON *original_parent_for_this_line = current_parent;
+        cJSON *list_context = current_parent;
         // Iteratively handle nested lists like `- - - item`
         while (*p == '-') {
             char* next_char = trim_whitespace(p + 1);
             if (*next_char == '-') {
                 cJSON* new_list = cJSON_CreateArray();
-                cJSON_AddItemToArray(current_parent, new_list);
-                current_parent = new_list;
+                cJSON_AddItemToArray(list_context, new_list);
+                list_context = new_list;
                 p = next_char;
                 continue;
             }
@@ -405,40 +404,44 @@ void parse_line(ParserState *state, int line_idx) {
         state->ptr = p;
 
         if (*p == '\0') { // Line ends after `-` or `- -` etc.
-             // Look ahead to see if it's a block map/list
             int next_indent = -1;
             char next_first_char = '\0';
             get_next_content_line_info(state, line_idx, &next_indent, &next_first_char);
             if (next_indent > indent) {
                  cJSON* container = (next_first_char == '-') ? cJSON_CreateArray() : cJSON_CreateObject();
-                 cJSON_AddItemToArray(current_parent, container);
+                 cJSON_AddItemToArray(list_context, container);
                  push_stack(state, container, indent);
             } else {
-                // A standalone `-` implies an empty map.
-                cJSON_AddItemToArray(current_parent, cJSON_CreateObject());
+                 if (list_context == original_parent_for_this_line) {
+                    // This is a simple `-` or an indented `  -`. We distinguish them by
+                    // checking if the parent on the stack is a brand-new, empty list
+                    // that is less indented than the current line. This pattern
+                    // (`-\n  -`) means we should do nothing. Otherwise, it's a simple
+                    // empty item that should be an object.
+                    int parent_indent = state->stack[state->stack_top].indent;
+                    if (!(cJSON_GetArraySize(list_context) == 0 && indent > parent_indent)) {
+                        cJSON_AddItemToArray(list_context, cJSON_CreateObject());
+                    }
+                 }
+                 // if list_context != original_parent, it's an empty list created by `- -`, so do nothing.
             }
             return;
         }
 
-        // Check for inline map `key: value` after the dashes
         char* colon = strchr(p, ':');
         char* bracket = strpbrk(p, "[{");
         if (colon && (!bracket || colon < bracket)) {
             cJSON* new_map_item = cJSON_CreateObject();
-            cJSON_AddItemToArray(current_parent, new_map_item);
+            cJSON_AddItemToArray(list_context, new_map_item);
             push_stack(state, new_map_item, indent);
-            // Fallthrough to map parsing logic below
         } else {
-            // It's a simple scalar or flow collection.
             cJSON* val_node = parse_value(state);
-            cJSON_AddItemToArray(current_parent, val_node);
+            cJSON_AddItemToArray(list_context, val_node);
             return;
         }
     }
 
     // --- Handle Mapping ---
-    // At this point, `p` points to a `key: value` string.
-    // The parent MUST be an object. We refetch from the stack in case a list item created a new one.
     current_parent = state->stack[state->stack_top].node;
     if (!cJSON_IsObject(current_parent)) {
         if (*p != '\0') set_error(state, p, strlen(p), "Invalid mapping (not in an object context)");
@@ -453,7 +456,6 @@ void parse_line(ParserState *state, int line_idx) {
 
     *colon = '\0';
     char* key = trim_whitespace(p);
-    // Unquote key if needed
     if ((*key == '"' || *key == '\'') && key[strlen(key)-1] == *key) {
         key[strlen(key)-1] = '\0';
         key++;
@@ -461,8 +463,6 @@ void parse_line(ParserState *state, int line_idx) {
 
 
     char* val_str = colon + 1;
-
-    // Trim trailing comments from value
     char* comment = val_str;
     bool in_quotes = false;
     while(*comment) {
@@ -476,19 +476,16 @@ void parse_line(ParserState *state, int line_idx) {
     val_str = trim_whitespace(val_str);
 
     if (*val_str == '\0') {
-        // Key for a block value on the next line(s).
         int next_indent = -1;
         char next_first_char = '\0';
         int next_line_idx = get_next_content_line_info(state, line_idx, &next_indent, &next_first_char);
 
         if (next_line_idx != -1 && next_indent > indent) {
-            // Handle indented flow collection as a value
             if (next_first_char == '[' || next_first_char == '{') {
-                 state->ptr = trim_whitespace(state->lines[next_line_idx]);
+                 state->current_line_idx = next_line_idx;
+                 state->ptr = trim_whitespace(state->lines[state->current_line_idx]);
                  cJSON* val_node = parse_value(state);
                  cjson_add_item_to_object_with_duplicates(current_parent, key, val_node);
-                 // We consumed the next line(s), so advance the main loop's counter
-                 state->current_line_idx = state->line_num - 1;
             } else {
                 cJSON* container = (next_first_char == '-') ? cJSON_CreateArray() : cJSON_CreateObject();
                 cjson_add_item_to_object_with_duplicates(current_parent, key, container);
@@ -498,7 +495,6 @@ void parse_line(ParserState *state, int line_idx) {
             cjson_add_item_to_object_with_duplicates(current_parent, key, cJSON_CreateNull());
         }
     } else {
-        // Key with an inline value.
         state->ptr = val_str;
         cJSON* val_node = parse_value(state);
         cjson_add_item_to_object_with_duplicates(current_parent, key, val_node);
@@ -528,39 +524,37 @@ cJSON* yaml_to_cjson(const char* yaml_content, char** error_message) {
     cJSON *root = NULL;
     int first_content_line_idx = -1;
     char first_char = '\0';
+    char* first_line_content = NULL;
 
     for (int i = 0; i < state.num_lines; i++) {
         char* content = trim_whitespace(state.lines[i]);
         if (*content != '\0' && *content != '#') {
             first_content_line_idx = i;
             first_char = *content;
+            first_line_content = content;
             break;
         }
     }
 
     if (first_content_line_idx == -1) {
-        // Handle empty or comment-only files
         root = cJSON_CreateArray();
     } else {
+        state.ptr = first_line_content;
         state.current_line_idx = first_content_line_idx;
-        state.ptr = trim_whitespace(state.lines[first_content_line_idx]);
 
-        // If root is a flow collection
-        if (first_char == '[' || first_char == '{') {
+        // If the document starts with a flow collection, parse it directly.
+        if (first_char == '{' || (first_char == '[' && strchr(state.ptr, ':') == NULL)) {
             root = parse_value(&state);
         } else if (strchr(state.ptr, ':') == NULL && first_char != '-') {
-            // Root is a scalar
             root = parse_scalar(&state);
         } else {
-            // Root is a block map or list
+            // Otherwise, start the line-by-line block parser.
             root = (first_char == '-') ? cJSON_CreateArray() : cJSON_CreateObject();
             push_stack(&state, root, -1);
-            int i = first_content_line_idx;
-            while(i < state.num_lines) {
-                if (state.error && *state.error) break;
+            for (int i = first_content_line_idx; i < state.num_lines; i++) {
                 parse_line(&state, i);
-                // The line index may have been advanced by a multiline parser
-                i = state.current_line_idx + 1;
+                if (state.error && *state.error) break;
+                i = state.current_line_idx;
             }
         }
     }
@@ -569,13 +563,10 @@ cJSON* yaml_to_cjson(const char* yaml_content, char** error_message) {
         cJSON_Delete(root);
         root = NULL;
     } else if (root && !cJSON_IsArray(root)) {
-        // The application expects a list at the root. If we parsed a single
-        // item (map, scalar), wrap it in an array.
         cJSON* array_wrapper = cJSON_CreateArray();
         cJSON_AddItemToArray(array_wrapper, root);
         root = array_wrapper;
     } else if (!root) {
-        // Ensure we always return a valid cJSON object (empty array if nothing else)
         root = cJSON_CreateArray();
     }
 
