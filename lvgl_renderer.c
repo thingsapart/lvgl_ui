@@ -77,6 +77,13 @@ void lvgl_renderer_reload_ui_from_string(const char* ui_spec_string, ApiSpec* ap
         return;
     }
 
+    // --- ADDED: Unconditional Hint for Empty UI ---
+    if (ir_root->root_objects == NULL) {
+        fprintf(stderr, "[HINT] UI specification is empty or contains no renderable objects. The preview will be blank.\n");
+        fflush(stderr);
+    }
+
+
     // --- Render a valid IR ---
     Registry* renderer_registry = registry_create();
     if (renderer_registry) {

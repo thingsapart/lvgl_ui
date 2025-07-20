@@ -310,10 +310,10 @@ void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_t
             free(user_data);
             return;
         }
-        
+
         binding_value_t* copied_values = malloc(cycle_value_count * sizeof(binding_value_t));
         if (!copied_values) render_abort("Failed to allocate memory for cycle action values.");
-        
+
         for (uint32_t i = 0; i < cycle_value_count; i++) {
             copied_values[i] = cycle_values[i];
             if (cycle_values[i].type == BINDING_TYPE_STRING && cycle_values[i].as.s_val) {
@@ -321,12 +321,15 @@ void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_t
                 if (!copied_values[i].as.s_val) render_abort("Failed to duplicate string in cycle action values.");
             }
         }
-        
+
         user_data->values = copied_values;
         user_data->value_count = cycle_value_count;
     }
-    
+
     lv_obj_add_event_cb(widget, cb, code, user_data);
+    if (code == LV_EVENT_CLICKED) {
+      lv_obj_add_flag(widget, LV_OBJ_FLAG_CLICKABLE);
+    }
     lv_obj_add_event_cb(widget, free_action_user_data_cb, LV_EVENT_DELETE, user_data);
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Added action '%s' (type %d) to widget %p.", action_name, type, (void*)widget);
 }
@@ -389,7 +392,7 @@ static void generic_action_event_cb(lv_event_t* e) {
             }
             break;
     }
-    
+
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Dispatching action: '%s'", user_data->action_name);
     if (app_action_handler) {
         app_action_handler(user_data->action_name, val, app_user_data);

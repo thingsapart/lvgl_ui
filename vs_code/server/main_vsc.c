@@ -15,11 +15,19 @@
 #include "utils.h"
 #include "cJSON.h"
 #include "lvgl_assert_handler.h"
+#include "ui_sim.h" // ADDED: For UI-Sim
+
+// --- Configuration Defines ---
+#define STDIN_BUFFER_SIZE 65536 // 64KB buffer for input commands
+#define RENDER_FPS 10
 
 // --- Global Configuration ---
 bool g_strict_mode = false;
 bool g_strict_registry_mode = false;
 bool g_logging_enabled = false;
+// IMPORTANT: UI-Sim tracing MUST be disabled for the VSCode server, as its printf
+// statements to stdout would corrupt the binary data stream to the extension.
+// The simulation will still run, but its trace log is suppressed.
 bool g_ui_sim_trace_enabled = false;
 
 // Define the global function pointer that LVGL's assert handler will see.
@@ -324,7 +332,7 @@ int main(int argc, char* argv[]) {
     int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
 
-    static char stdin_buffer[8192];
+    static char stdin_buffer[STDIN_BUFFER_SIZE];
     static size_t stdin_buffer_len = 0;
 
     if (g_logging_enabled) {
@@ -336,48 +344,76 @@ int main(int argc, char* argv[]) {
 
     while(1) {
         // --- 1. Determine wait time and use select() for efficient waiting ---
-        uint32_t wait_ms = 100;
+        // This might run continuously, better to cap FPS as below.
+        //uint32_t wait_ms = lv_timer_get_idle();
+
+        // Cap FPS.
+        uint32_t wait_ms = (1000 / RENDER_FPS);
+        if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Loop start. Waiting for input or timeout (idle: %u ms)...\n", wait_ms);
 
         fd_set readfds;
         FD_ZERO(&readfds);
         FD_SET(STDIN_FILENO, &readfds);
 
         struct timeval timeout;
-        if (wait_ms >= 1000) {
-            timeout.tv_sec = 1; // Wait a reasonable max time
-            timeout.tv_usec = 0;
+        if (wait_ms > 500) { // Cap wait time to stay responsive
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 500 * 1000;
         } else {
             timeout.tv_sec = wait_ms / 1000;
             timeout.tv_usec = (wait_ms % 1000) * 1000;
         }
 
         int retval = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
+        if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: select() returned %d.\n", retval);
+
 
         if (retval == -1) {
+            if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: select() error, shutting down.\n");
             perror("select()");
             break; // Exit on select error
         }
 
-        // --- 2. Increment LVGL tick based on actual elapsed time ---
+        // --- 2. Increment system ticks based on actual elapsed time ---
         struct timeval now_tv;
         gettimeofday(&now_tv, NULL);
         long elapsed_ms = (now_tv.tv_sec - last_tick_tv.tv_sec) * 1000 +
                           (now_tv.tv_usec - last_tick_tv.tv_usec) / 1000;
         if (elapsed_ms > 0) {
+            if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Elapsed time: %ld ms. Advancing ticks.\n", elapsed_ms);
             lv_tick_inc(elapsed_ms);
+            // ADDED: Drive the UI simulator forward
+            ui_sim_tick((float)elapsed_ms / 1000.0f);
         }
         last_tick_tv = now_tv;
 
         // --- 3. Process commands from stdin if available ---
         if (retval > 0 && FD_ISSET(STDIN_FILENO, &readfds)) {
-            ssize_t bytes_read = read(STDIN_FILENO, stdin_buffer + stdin_buffer_len, sizeof(stdin_buffer) - stdin_buffer_len - 1);
+            if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: stdin is readable, attempting to read...\n");
+
+            // Check for buffer overrun BEFORE reading
+            size_t remaining_space = sizeof(stdin_buffer) - stdin_buffer_len - 1;
+            if (remaining_space == 0) {
+                char err_msg[256];
+                snprintf(err_msg, sizeof(err_msg), "Input command buffer overrun. The UI spec is likely too large (max: %d bytes).", STDIN_BUFFER_SIZE);
+                render_abort(err_msg);
+                // We must exit, as we can't process the truncated command.
+                break;
+            }
+
+            ssize_t bytes_read = read(STDIN_FILENO, stdin_buffer + stdin_buffer_len, remaining_space);
+
             if (bytes_read > 0) {
+                 if (g_logging_enabled) {
+                    fprintf(stderr, "SERVER_LOG: Read %zd bytes from stdin. Current buffer content: '%.*s'\n", bytes_read, (int)(stdin_buffer_len + bytes_read), stdin_buffer);
+                }
                 stdin_buffer_len += bytes_read;
                 stdin_buffer[stdin_buffer_len] = '\0';
 
                 char* line_end;
                 while ((line_end = strchr(stdin_buffer, '\n')) != NULL) {
                     *line_end = '\0';
+                    if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Processing command line: '%s'\n", stdin_buffer);
                     process_command_line(stdin_buffer, api_spec);
 
                     size_t remaining_len = stdin_buffer_len - (line_end - stdin_buffer + 1);
@@ -385,13 +421,22 @@ int main(int argc, char* argv[]) {
                     stdin_buffer_len = remaining_len;
                     stdin_buffer[stdin_buffer_len] = '\0';
                 }
-            } else if (bytes_read < 0) {
-                // stdin closed or error, exit loop
-                break;
+            } else if (bytes_read == 0) {
+                // This means stdin was closed by the parent process.
+                if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: stdin closed (EOF detected). Shutting down.\n");
+                break; // This is a clean way for the extension to terminate the server.
+            } else { // bytes_read < 0
+                // An actual read error occurred (not just EAGAIN, which select prevents)
+                if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                    if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: stdin read error (%s). Shutting down.\n", strerror(errno));
+                    break;
+                }
+                 if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Read returned EAGAIN/EWOULDBLOCK despite select(). Ignoring.\n");
             }
         }
 
         // --- 4. Drive LVGL's internal state forward ---
+        if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Loop end. Calling lv_timer_handler().\n");
         // This will call flush_cb if a redraw is needed.
         lv_timer_handler();
     }

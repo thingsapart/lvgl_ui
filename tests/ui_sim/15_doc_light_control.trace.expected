@@ -1,8 +1,8 @@
 --- UI-Sim Trace Start ---
-STATE_SET: light_on = false (old: null)
 STATE_SET: brightness = 100.000 (old: null)
-NOTIFY: light_on = false
+STATE_SET: light_on = false (old: null)
 NOTIFY: brightness = 100.000
+NOTIFY: light_on = false
 
 --- TICK 1 ---
 ACTION: toggle_light value=null

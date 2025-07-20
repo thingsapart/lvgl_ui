@@ -498,7 +498,7 @@
 ## Main UI Layout ##
 ####################
 
-# - type: grid
+- type: grid
   add_style: ['@container', 0]
   # cols: [LV_GRID_CONTENT, LV_GRID_FR_1]
   # rows: [100%]

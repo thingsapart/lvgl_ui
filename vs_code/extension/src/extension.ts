@@ -139,7 +139,11 @@ function setupPreviewPanel(context: vscode.ExtensionContext) {
         // Forward other messages (like input) to the server if it's running
         if (!serverProcess) return;
         const command = { command: "input", ...message };
-        serverProcess.stdin.write(JSON.stringify(command) + '\n');
+        const commandString = JSON.stringify(command) + '\n';
+        if (LOGGING_ENABLED) {
+            logChannel.appendLine(`[Extension] Sending input command string (${commandString.length} bytes): ${commandString.substring(0, 1024)}`);
+        }
+        serverProcess.stdin.write(commandString);
     });
 }
 
@@ -249,7 +253,7 @@ function startServerProcess(context: vscode.ExtensionContext) {
 
     let stderrBuffer = '';
     serverProcess.stderr.on('data', (data: Buffer) => {
-        if (LOGGING_ENABLED) logChannel.appendLine(`[Parser] STDERR recv... ${data.length}`);
+        if (LOGGING_ENABLED) logChannel.appendLine(`[Parser] STDERR recv... ${data.length}: ${data.toString()}`);
         stderrBuffer += data.toString();
         let eolIndex;
         while ((eolIndex = stderrBuffer.indexOf('\n')) >= 0) {
@@ -294,15 +298,17 @@ function triggerRender(editor: vscode.TextEditor, width: number, height: number,
              previewPanel.title = `LVGL Preview: ${path.basename(relativePath)}`;
         }
 
-        if (LOGGING_ENABLED) logChannel.appendLine(`[Extension] Triggering render at ${width}x${height}`);
-
         const command = {
             command: 'render',
             source: source,
             width: width,
             height: height
         };
-        serverProcess.stdin.write(JSON.stringify(command) + '\n');
+        const commandString = JSON.stringify(command) + '\n';
+        if (LOGGING_ENABLED) {
+            logChannel.appendLine(`[Extension] Sending command string (${commandString.length} bytes): ${commandString.substring(0, 1024)}...`);
+        }
+        serverProcess.stdin.write(commandString);
     }, 250);
 }
 

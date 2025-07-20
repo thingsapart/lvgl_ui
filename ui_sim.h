@@ -7,7 +7,7 @@
 #include "data_binding.h"
 
 #define UI_SIM_MAX_STATES 64
-#define UI_SIM_MAX_ACTIONS 32
+#define UI_SIM_MAX_ACTIONS 128
 #define UI_SIM_MAX_SCHEDULED_ACTIONS 64
 #define UI_SIM_MAX_FUNC_ARGS 16
 
