@@ -1,0 +1,3 @@
+[{
+		"invalid":	"Unknown escape: \\q, Short hex: \\u123, Bad hex: \\u123G, Trailing backslash at end: \\"
+	}]

@@ -1,0 +1,34 @@
+--- UI-Sim Trace Start ---
+STATE_SET: amplitude = 0.800 (old: null)
+STATE_SET: frequency = 440.000 (old: null)
+STATE_SET: waveform = "SINE" (old: null)
+NOTIFY: amplitude = 0.800
+NOTIFY: frequency = 440.000
+NOTIFY: waveform = "SINE"
+
+--- TICK 1 ---
+ACTION: cycle_waveform value=null
+STATE_SET: waveform = "SQUARE" (old: "SINE")
+NOTIFY: waveform = "SQUARE"
+
+--- TICK 2 ---
+ACTION: set_frequency value=220.000
+STATE_SET: frequency = 220.000 (old: 440.000)
+NOTIFY: frequency = 220.000
+
+--- TICK 3 ---
+ACTION: cycle_waveform value=null
+STATE_SET: waveform = "SAW" (old: "SQUARE")
+NOTIFY: waveform = "SAW"
+
+--- TICK 4 ---
+ACTION: cycle_waveform value=null
+STATE_SET: waveform = "TRIANGLE" (old: "SAW")
+NOTIFY: waveform = "TRIANGLE"
+
+--- TICK 5 ---
+ACTION: cycle_waveform value=null
+STATE_SET: waveform = "SINE" (old: "TRIANGLE")
+NOTIFY: waveform = "SINE"
+
+--- UI-Sim Trace End ---

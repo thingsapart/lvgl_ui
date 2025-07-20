@@ -1,0 +1,4 @@
+# Tests a mix of hex, standard, and unicode escapes.
+# \x41 -> A, \x42 -> B, \x43 -> C
+# \u03a3 -> Sigma (Σ)
+mixed: "Hex: \x41\x42\x43\nUnicode: \u03a3"

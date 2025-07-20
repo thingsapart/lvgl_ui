@@ -1,0 +1,2 @@
+# Tests standard \uXXXX and extended \UXXXXXXXX unicode escape sequences.
+escapes: "Euro: \u20AC, Heart: \u2665, Pi: \u03c0, Emoji: \U0001F602"

@@ -1,0 +1,2 @@
+# Tests basic C-style escape sequences in double-quoted strings.
+message: "Line 1\nLine 2\tIndented\nQuote: \" Backslash: \\ Forward-slash: \/"
