@@ -1,0 +1,6 @@
+# This is a root comment
+key: value # This is an inline comment
+list:
+  - item1 # comment in list
+  # another comment
+  - item2

@@ -5,6 +5,7 @@
 #include "debug_log.h"
 #include "utils.h"
 #include "yaml_parser.h"
+#include "ui_sim.h" // ADDED: For UI-Sim processing
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -65,24 +66,26 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
     cJSON_ArrayForEach(item_json, ui_spec_root) {
         if (cJSON_IsObject(item_json)) {
             cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item_json, "type");
-            if (type_item && cJSON_IsString(type_item) && strcmp(type_item->valuestring, "component") == 0) {
-                cJSON* id_item = cJSON_GetObjectItemCaseSensitive(item_json, "id");
-                cJSON* content_item = cJSON_GetObjectItemCaseSensitive(item_json, "content");
-                if (id_item && cJSON_IsString(id_item) && content_item && cJSON_IsObject(content_item)) {
-                    registry_add_component(ctx.registry, id_item->valuestring, content_item);
-                    DEBUG_LOG(LOG_MODULE_GENERATOR, "Registered component: %s", id_item->valuestring);
-                } else {
-                  if (!id_item) {
-                    print_warning("Found 'component' with missing 'id'.");
-                  } else if (!cJSON_IsString(id_item)) {
-                    print_warning("Found 'component' with 'id' that is not a string.");
-                  }
-                  if (!content_item) {
-                    print_warning("Found 'component' with missing 'content'.");
+            if (type_item && cJSON_IsString(type_item)) {
+                if (strcmp(type_item->valuestring, "component") == 0) {
+                    cJSON* id_item = cJSON_GetObjectItemCaseSensitive(item_json, "id");
+                    cJSON* content_item = cJSON_GetObjectItemCaseSensitive(item_json, "content");
+                    if (id_item && cJSON_IsString(id_item) && content_item && cJSON_IsObject(content_item)) {
+                        registry_add_component(ctx.registry, id_item->valuestring, content_item);
+                        DEBUG_LOG(LOG_MODULE_GENERATOR, "Registered component: %s", id_item->valuestring);
+                    } else {
+                      if (!id_item) {
+                        print_warning("Found 'component' with missing 'id'.");
+                      } else if (!cJSON_IsString(id_item)) {
+                        print_warning("Found 'component' with 'id' that is not a string.");
+                      }
+                      if (!content_item) {
+                        print_warning("Found 'component' with missing 'content'.");
 
-                  } else if (!cJSON_IsObject(content_item)) {
-                    print_warning("Found 'component' with 'content' that is not an 'object' (aka 'hash' or 'dict').");
-                  }
+                      } else if (!cJSON_IsObject(content_item)) {
+                        print_warning("Found 'component' with 'content' that is not an 'object' (aka 'hash' or 'dict').");
+                      }
+                    }
                 }
             }
         }
@@ -99,8 +102,18 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
 
         if (cJSON_IsObject(obj_json)) {
             cJSON* type_item = cJSON_GetObjectItemCaseSensitive(obj_json, "type");
-            if (type_item && cJSON_IsString(type_item) && strcmp(type_item->valuestring, "component") == 0) {
-                continue;
+            if (type_item && cJSON_IsString(type_item)) {
+                // --- Handle special top-level block types ---
+                if (strcmp(type_item->valuestring, "component") == 0) {
+                    continue; // Skip component definitions in the main rendering pass
+                }
+                if (strcmp(type_item->valuestring, "data-binding") == 0) {
+                    if (!ui_sim_process_node(obj_json)) {
+                        // Error already reported by ui_sim
+                        ctx.error_occurred = true;
+                    }
+                    continue; // This block is consumed by UI-Sim, not rendered as a widget
+                }
             }
 
             IRObject* new_obj = parse_object(&ctx, obj_json, root_parent_name, NULL);

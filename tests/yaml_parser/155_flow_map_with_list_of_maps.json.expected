@@ -1,0 +1,10 @@
+[{
+		"title":	"My List",
+		"items":	[{
+				"id":	1,
+				"type":	"A"
+			}, {
+				"id":	2,
+				"type":	"B"
+			}]
+	}]

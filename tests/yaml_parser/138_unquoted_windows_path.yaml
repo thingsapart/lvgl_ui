@@ -1,0 +1,3 @@
+# Backslashes in unquoted strings are literal characters.
+# cJSON output will escape them.
+path: C:\Users\Default\Documents

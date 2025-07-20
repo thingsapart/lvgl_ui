@@ -1,0 +1,6 @@
+# Explicitly tests the handling of a trailing comma in a multi-line flow list.
+- [
+    "alpha",
+    "beta",
+    "gamma",
+  ]

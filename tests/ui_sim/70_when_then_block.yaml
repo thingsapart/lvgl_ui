@@ -1,0 +1,25 @@
+# TICKS: 4
+- type: data-binding
+  state:
+    - enable: false
+    - x: 0
+    - y: 0
+  actions:
+    - start:
+        set: { enable: true }
+    - stop:
+        set: { enable: false }
+  updates:
+    - when:
+        condition: enable
+        then:
+          - inc: { x: 1 }
+          - inc: { y: 1 }
+    - when:
+        condition: enable
+        then:
+          - set: { y: [add, y, 9] }
+
+  schedule:
+    - { tick: 2, action: start }
+    - { tick: 4, action: stop }

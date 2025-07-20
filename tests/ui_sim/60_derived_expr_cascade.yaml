@@ -1,0 +1,12 @@
+# TICKS: 2
+- type: data-binding
+  state:
+    - a: 1.0
+    - b: { derived_expr: [mul, a, 2] }
+    - c: { derived_expr: [add, b, 1] }
+  actions:
+    - inc_a:
+        inc: { a: 1.0 }
+  schedule:
+    - { tick: 1, action: inc_a }
+    - { tick: 2, action: inc_a }

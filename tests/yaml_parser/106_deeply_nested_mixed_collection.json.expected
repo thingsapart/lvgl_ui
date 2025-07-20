@@ -1,0 +1,12 @@
+[{
+		"level1":	["list_item_1", {
+				"map_item_1":	{
+					"level3_list":	[{
+							"level4_map":	{
+								"level5_key":	["a", "b", "c"]
+							}
+						}, "L4 scalar"]
+				}
+			}, "list_item_2"],
+		"level1_sibling":	true
+	}]

@@ -1,0 +1,18 @@
+# A 'real-world' example for this tool: a widget template.
+# Tests data-binding strings, which was the source of the original error.
+- type: widget-template
+  name: LabeledInput
+  properties:
+    - label: { type: string, default: "Input:" }
+    - value: { type: string, default: "" }
+  events:
+    - on_change
+  body:
+    - type: container
+      style_flex_flow: row
+      children:
+        - type: label
+          text: "@= properties.label"
+        - type: input
+          value: "@= properties.value"
+          on_change: "@= fire_event('on_change', self.value)"

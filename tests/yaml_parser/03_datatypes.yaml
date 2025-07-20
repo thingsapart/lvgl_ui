@@ -1,0 +1,7 @@
+a_string: "Hello World"
+another_string: this is a string
+an_int: 123
+a_float: 45.67
+a_bool_true: true
+a_bool_false: false
+a_null: null

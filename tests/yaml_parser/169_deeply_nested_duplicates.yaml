@@ -1,0 +1,7 @@
+level1:
+  level2:
+    key: "A"
+    key: "B"
+    level3:
+      key: "C"
+      key: "D"

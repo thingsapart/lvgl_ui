@@ -1,0 +1,30 @@
+- type: data-binding
+  state:
+    - time: 0.0
+    - ecg_val: 0.0
+    - display_frozen: false
+  actions:
+    - toggle_freeze:
+        toggle: display_frozen
+  updates:
+    - when:
+        condition: !display_frozen
+        then:
+          - inc: { time: 0.05 }
+          - set:
+              ecg_val: [
+                # Approximation of P-QRS-T
+                add,
+                  [add,
+                    [mul, 0.1, [sin, [mul, time, 3.14]]],
+                    [mul, 1.5, [sin, [mul, [sub, time, 0.5], 30]]]
+                  ],
+                  [mul, 0.3, [sin, [mul, [sub, time, 0.9], 4]]]
+                ]
+          - when:
+              condition: [>, time, 6.28]
+              then:
+                - set: { time: 0.0 }
+  schedule:
+    - { tick: 3, action: toggle_freeze }
+    - { tick: 5, action: toggle_freeze }

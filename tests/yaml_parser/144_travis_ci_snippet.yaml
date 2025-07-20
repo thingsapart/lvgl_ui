@@ -1,0 +1,13 @@
+# A snippet from a .travis.yml file.
+# Tests list of strings and a matrix with include/exclude.
+language: node_js
+node_js:
+  - "14"
+  - "16"
+script:
+  - npm test
+  - npm run build
+matrix:
+  include:
+    - node_js: "16"
+      env: TEST_SUITE=unit

@@ -1,0 +1,16 @@
+# TICKS: 5
+- type: data-binding
+  state:
+    - light_on: false
+    - brightness: 100.0 # As a percentage
+  actions:
+    - toggle_light:
+        toggle: light_on
+    - set_brightness:
+        set: { brightness: [clamp, value.float, 0, 100] }
+  schedule:
+    - { tick: 1, action: toggle_light }
+    - { tick: 2, action: set_brightness, with: 50 }
+    - { tick: 3, action: set_brightness, with: 120 }
+    - { tick: 4, action: set_brightness, with: -10 }
+    - { tick: 5, action: toggle_light }

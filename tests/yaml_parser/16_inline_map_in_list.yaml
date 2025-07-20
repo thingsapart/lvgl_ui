@@ -1,0 +1,4 @@
+- type: obj
+  id: obj1
+- type: label
+  text: "Hello"

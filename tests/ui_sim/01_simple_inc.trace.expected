@@ -1,0 +1,25 @@
+--- UI-Sim Trace Start ---
+STATE_SET: counter = 0.000 (old: null)
+STATE_SET: time = 0.000 (old: null)
+NOTIFY: counter = 0.000
+NOTIFY: time = 0.000
+
+--- TICK 1 ---
+STATE_SET: counter = 1.000 (old: 0.000)
+STATE_SET: time = 0.033 (old: 0.000)
+NOTIFY: counter = 1.000
+NOTIFY: time = 0.033
+
+--- TICK 2 ---
+STATE_SET: counter = 2.000 (old: 1.000)
+STATE_SET: time = 0.066 (old: 0.033)
+NOTIFY: counter = 2.000
+NOTIFY: time = 0.066
+
+--- TICK 3 ---
+STATE_SET: counter = 3.000 (old: 2.000)
+STATE_SET: time = 0.099 (old: 0.066)
+NOTIFY: counter = 3.000
+NOTIFY: time = 0.099
+
+--- UI-Sim Trace End ---

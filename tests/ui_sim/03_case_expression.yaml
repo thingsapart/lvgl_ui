@@ -1,0 +1,15 @@
+# TICKS: 4
+- type: data-binding
+  state:
+    - step: 0.0
+    - status: [string, "INIT"]
+    - time: 0.0
+  updates:
+    - step: { inc: 1.0 }
+    - status:
+        set:
+          case:
+            - [[==, step, 1.0], "STARTING"]
+            - [[==, step, 2.0], "RUNNING"]
+            - [[==, step, 3.0], "STOPPING"]
+            - [true, "IDLE"]

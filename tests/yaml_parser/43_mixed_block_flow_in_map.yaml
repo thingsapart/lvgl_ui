@@ -1,0 +1,4 @@
+block_key:
+  - a
+  - b
+flow_key: {c: d}

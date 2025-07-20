@@ -1,0 +1,23 @@
+- type: screen
+  id: main_screen
+  style_bg_color: "#E0E0E0"
+  children:
+    - type: container
+      id: side_panel
+      size: [200, "100%"]
+      children:
+        - type: button
+          id: btn_1
+          text: "Action 1"
+        - type: button
+          id: btn_2
+          text: "Action 2"
+    - type: container
+      id: main_content
+      size: ["fill", "100%"]
+      children:
+        - type: label
+          text: "Welcome to the Dashboard"
+          style_font_size: 24
+        - type: chart
+          series: [{name: "series_a", data: [1, 5, 3, 8]}]

@@ -8,6 +8,10 @@ set -e # Exit immediately if a command exits with a non-zero status.
 BASEDIR=$(dirname "$0")
 cd "$BASEDIR"
 
+echo "--- Running YAML Parser Tests ---"
+(cd yaml_parser && ./run.sh)
+echo ""
+
 echo "--- Running Codegen Tests ---"
 (cd codegen && ./run.sh)
 echo ""

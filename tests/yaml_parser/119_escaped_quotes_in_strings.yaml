@@ -1,0 +1,4 @@
+single_in_double: "a 'quoted' string"
+double_in_single: 'a "quoted" string'
+escaped_single: 'it''s a string'
+escaped_double: "it\"s a string"

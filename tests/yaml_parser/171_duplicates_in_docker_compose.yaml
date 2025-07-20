@@ -1,0 +1,6 @@
+services:
+  web:
+    ports:
+      - "80:80"
+    ports:
+      - "443:443"

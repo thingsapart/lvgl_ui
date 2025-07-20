@@ -1,0 +1,4 @@
+- [ 1, # comment
+    2 ]
+- { a: b # comment
+  }

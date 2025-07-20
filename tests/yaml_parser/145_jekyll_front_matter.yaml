@@ -1,0 +1,5 @@
+# A typical Jekyll front matter block.
+# Tests a simple map at the root of a file.
+layout: post
+title: "Blogging Like a Hacker"
+tags: [jekyll, blog]

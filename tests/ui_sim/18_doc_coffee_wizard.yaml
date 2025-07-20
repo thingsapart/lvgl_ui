@@ -1,0 +1,18 @@
+# TICKS: 6
+- type: data-binding
+  state:
+    - setup_step: 0 # 0=Welcome, 1=Strength, 2=Size, 3=Confirm
+  actions:
+    - next_step:
+        set: { setup_step: [clamp, [add, setup_step, 1], 0, 3] }
+    - prev_step:
+        set: { setup_step: [clamp, [sub, setup_step, 1], 0, 3] }
+    - finish_setup:
+        set: { setup_step: 0 } # Reset after completion
+  schedule:
+    - { tick: 1, action: next_step }
+    - { tick: 2, action: next_step }
+    - { tick: 3, action: next_step }
+    - { tick: 4, action: next_step } # Should be clamped
+    - { tick: 5, action: prev_step }
+    - { tick: 6, action: finish_setup }

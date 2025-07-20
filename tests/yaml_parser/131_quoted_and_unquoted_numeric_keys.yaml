@@ -1,0 +1,2 @@
+# Tests that numeric-like keys, both quoted and not, are handled correctly.
+{ "123": a string, 456: another string, 7.89: a float key }

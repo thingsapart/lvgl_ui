@@ -1,0 +1,4 @@
+# A file with only a document start separator should be treated as empty.
+# The parser only considers the first document.
+---
+# This should be ignored.

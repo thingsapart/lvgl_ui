@@ -1,0 +1,20 @@
+# TICKS: 4
+- type: data-binding
+  state:
+    - health: 100.0
+    - mana: 50.0
+  actions:
+    - take_damage:
+        set: { health: [clamp, [sub, health, 20], 0, 100] }
+    - use_potion:
+        set: { health: [clamp, [add, health, 50], 0, 100] }
+    - cast_spell:
+        when:
+          condition: [>=, mana, 10]
+          then:
+            - dec: { mana: 10 }
+  schedule:
+    - { tick: 1, action: take_damage }
+    - { tick: 2, action: take_damage }
+    - { tick: 3, action: use_potion }
+    - { tick: 4, action: cast_spell }

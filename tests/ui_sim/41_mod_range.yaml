@@ -1,0 +1,14 @@
+# TICKS: 3
+- type: data-binding
+  state:
+    - count_up: 0.0
+    - count_down: 10.0
+  actions:
+    - step:
+        range:
+          count_up: [0, 2, 1]
+          count_down: [0, 10, -2]
+  schedule:
+    - { tick: 1, action: step }
+    - { tick: 2, action: step }
+    - { tick: 3, action: step }

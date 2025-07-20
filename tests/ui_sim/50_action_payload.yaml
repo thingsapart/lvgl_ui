@@ -1,0 +1,19 @@
+# TICKS: 5
+- type: data-binding
+  state:
+    - from_float: 0.0
+    - from_bool: false
+    - from_string: string
+  actions:
+    - set_f:
+        set: { from_float: value.float }
+    - set_b:
+        set: { from_bool: value.bool }
+    - set_s:
+        set: { from_string: value.string }
+  schedule:
+    - { tick: 1, action: set_f, with: 123.45 }
+    - { tick: 2, action: set_b, with: true }
+    - { tick: 3, action: set_s, with: "testing" }
+    - { tick: 4, action: set_b, with: false }
+    - { tick: 5, action: set_s, with: "" }

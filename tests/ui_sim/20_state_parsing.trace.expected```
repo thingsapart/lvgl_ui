@@ -1,0 +1,17 @@
+--- UI-Sim Trace Start ---
+STATE_SET: inferred_float = 1.230 (old: null)
+STATE_SET: inferred_bool = true (old: null)
+STATE_SET: inferred_string = "hello" (old: null)
+STATE_SET: explicit_type = 0.000 (old: null)
+STATE_SET: explicit_array = "world" (old: null)
+STATE_SET: default_string = "" (old: null)
+NOTIFY: inferred_float = 1.230
+NOTIFY: inferred_bool = true
+NOTIFY: inferred_string = "hello"
+NOTIFY: explicit_type = 0.000
+NOTIFY: explicit_array = "world"
+NOTIFY: default_string = ""
+
+--- TICK 1 ---
+
+--- UI-Sim Trace End ---

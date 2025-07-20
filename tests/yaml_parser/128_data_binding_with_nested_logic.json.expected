@@ -1,0 +1,24 @@
+[{
+		"type":	"data-binding",
+		"updates":	[{
+				"when":	{
+					"condition":	"is_active",
+					"then":	[{
+							"set":	{
+								"value":	["+", "value", 1]
+							}
+						}, {
+							"when":	{
+								"condition":	[">", "value", 10],
+								"then":	[{
+										"set":	{
+											"value":	0
+										}
+									}, {
+										"fire_event":	"reset_occurred"
+									}]
+							}
+						}]
+				}
+			}]
+	}]

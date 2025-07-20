@@ -1,0 +1,11 @@
+# A root list containing scalars of many different types.
+# Good for testing type inference vs. quoted strings.
+- 123
+- 3.14159
+- true
+- false
+- null
+- a string
+- "123"
+- "true"
+- "null"

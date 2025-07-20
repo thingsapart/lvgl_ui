@@ -1,0 +1,8 @@
+[{
+		"name":	"first task",
+		"apt":	"name=nginx"
+	}, {
+		"name":	"second task",
+		"apt":	"name=apache2",
+		"apt":	"name=php"
+	}]

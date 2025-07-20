@@ -1,0 +1,25 @@
+# TICKS: 1
+- type: data-binding
+  state:
+    - a: 5.0
+    - b: 5.0
+    - c: 6.0
+    - s1: "hello"
+    - s2: "hello"
+    - s3: "world"
+    - b1: true
+    - b2: true
+
+    - eq_f:  { derived_expr: [==, a, b] }
+    - neq_f: { derived_expr: [!=, a, c] }
+    - gt_f:  { derived_expr: [>, a, c] }
+    - lt_f:  { derived_expr: [<, a, c] }
+    - gte_f: { derived_expr: [>=, a, b] }
+    - lte_f: { derived_expr: [<=, a, c] }
+
+    - eq_s:  { derived_expr: [==, s1, s2] }
+    - neq_s: { derived_expr: [!=, s1, s3] }
+    
+    - eq_b: { derived_expr: [==, b1, b2] }
+
+    - cross_type: { derived_expr: [==, a, s1] }

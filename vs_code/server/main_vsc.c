@@ -20,6 +20,7 @@
 bool g_strict_mode = false;
 bool g_strict_registry_mode = false;
 bool g_logging_enabled = false;
+bool g_ui_sim_trace_enabled = false;
 
 // Define the global function pointer that LVGL's assert handler will see.
 void (*g_lvgl_assert_abort_cb)(const char *msg) = NULL;

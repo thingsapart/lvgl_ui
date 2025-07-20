@@ -1,0 +1,15 @@
+# An example of a UI using grid layout properties.
+# Tests lists of unquoted strings (1fr) and nested maps.
+- type: container
+  style_display: grid
+  style_grid_template_columns: [1fr, 2fr, 1fr]
+  style_grid_template_rows: [50px, auto]
+  children:
+    - type: label
+      text: Header
+      style_grid_cell: { column: 1, row: 1, column-span: 3 }
+    - type: button
+      text: OK
+      style_grid_cell:
+        column: 3
+        row: 2

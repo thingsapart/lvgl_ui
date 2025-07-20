@@ -1,0 +1,6 @@
+config: {
+  key: value, # comment 1
+  num: 123,
+  # comment 2
+  valid: true
+}

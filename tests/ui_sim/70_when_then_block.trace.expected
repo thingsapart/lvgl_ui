@@ -1,0 +1,33 @@
+--- UI-Sim Trace Start ---
+STATE_SET: enable = false (old: null)
+STATE_SET: x = 0.000 (old: null)
+STATE_SET: y = 0.000 (old: null)
+NOTIFY: enable = false
+NOTIFY: x = 0.000
+NOTIFY: y = 0.000
+
+--- TICK 1 ---
+
+--- TICK 2 ---
+ACTION: start value=null
+STATE_SET: enable = true (old: false)
+STATE_SET: x = 1.000 (old: 0.000)
+STATE_SET: y = 1.000 (old: 0.000)
+STATE_SET: y = 10.000 (old: 1.000)
+NOTIFY: enable = true
+NOTIFY: x = 1.000
+NOTIFY: y = 10.000
+
+--- TICK 3 ---
+STATE_SET: x = 2.000 (old: 1.000)
+STATE_SET: y = 11.000 (old: 10.000)
+STATE_SET: y = 20.000 (old: 11.000)
+NOTIFY: x = 2.000
+NOTIFY: y = 20.000
+
+--- TICK 4 ---
+ACTION: stop value=null
+STATE_SET: enable = false (old: true)
+NOTIFY: enable = false
+
+--- UI-Sim Trace End ---

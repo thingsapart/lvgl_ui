@@ -1,0 +1,5 @@
+a_null_string: "null"
+a_bool_string: "true"
+a_num_string: "123.45"
+an_empty_string: ""
+a_quoted_empty_string: "''"

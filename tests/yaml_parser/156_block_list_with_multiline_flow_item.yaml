@@ -1,0 +1,7 @@
+# A block list that contains a flow map spread over multiple lines.
+- key: item1
+- {
+    key: item2,
+    value: { nested: true }
+  }
+- key: item3

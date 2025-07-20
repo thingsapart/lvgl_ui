@@ -1,0 +1,2 @@
+# Tests more complex JSON-style escapes inside a double-quoted string.
+message: "First line.\n\tSecond line, indented.\n\"A quote\" and a \\ backslash."

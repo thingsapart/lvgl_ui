@@ -1,0 +1,20 @@
+[{
+		"id":	"1609456789123",
+		"alias":	"Turn on light when motion detected",
+		"trigger":	[{
+				"platform":	"state",
+				"entity_id":	"binary_sensor.motion_sensor",
+				"to":	"on"
+			}],
+		"condition":	[{
+				"condition":	"time",
+				"after":	"07:00:00",
+				"before":	"22:00:00"
+			}],
+		"action":	[{
+				"service":	"light.turn_on",
+				"target":	{
+					"entity_id":	"light.living_room"
+				}
+			}]
+	}]

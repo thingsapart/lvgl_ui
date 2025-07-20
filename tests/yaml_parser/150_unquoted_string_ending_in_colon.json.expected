@@ -1,0 +1,4 @@
+[{
+		"protocol":	"http:",
+		"api_endpoint":	"http://my-api:8080/"
+	}]

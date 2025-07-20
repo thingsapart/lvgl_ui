@@ -1,0 +1,34 @@
+--- UI-Sim Trace Start ---
+STATE_SET: from_bool = false (old: null)
+STATE_SET: from_float = 0.000 (old: null)
+STATE_SET: from_string = "" (old: null)
+NOTIFY: from_bool = false
+NOTIFY: from_float = 0.000
+NOTIFY: from_string = ""
+
+--- TICK 1 ---
+ACTION: set_f value=123.450
+STATE_SET: from_float = 123.450 (old: 0.000)
+NOTIFY: from_float = 123.450
+
+--- TICK 2 ---
+ACTION: set_b value=true
+STATE_SET: from_bool = true (old: false)
+NOTIFY: from_bool = true
+
+--- TICK 3 ---
+ACTION: set_s value="testing"
+STATE_SET: from_string = "testing" (old: "")
+NOTIFY: from_string = "testing"
+
+--- TICK 4 ---
+ACTION: set_b value=false
+STATE_SET: from_bool = false (old: true)
+NOTIFY: from_bool = false
+
+--- TICK 5 ---
+ACTION: set_s value=""
+STATE_SET: from_string = "" (old: "testing")
+NOTIFY: from_string = ""
+
+--- UI-Sim Trace End ---

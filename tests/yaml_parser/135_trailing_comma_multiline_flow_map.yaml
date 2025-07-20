@@ -1,0 +1,5 @@
+# Explicitly tests the handling of a trailing comma in a multi-line flow map.
+- {
+    "key1": 1,
+    "key2": 2,
+  }

@@ -1,0 +1,27 @@
+--- UI-Sim Trace Start ---
+STATE_SET: jog_speed = 10.000 (old: null)
+STATE_SET: safety_key_on = false (old: null)
+STATE_SET: x_pos = 100.000 (old: null)
+NOTIFY: jog_speed = 10.000
+NOTIFY: safety_key_on = false
+NOTIFY: x_pos = 100.000
+
+--- TICK 1 ---
+ACTION: jog_x_plus value=null
+
+--- TICK 2 ---
+ACTION: key_turned value=null
+STATE_SET: safety_key_on = true (old: false)
+NOTIFY: safety_key_on = true
+
+--- TICK 3 ---
+ACTION: jog_x_plus value=null
+STATE_SET: x_pos = 90.000 (old: 100.000)
+NOTIFY: x_pos = 90.000
+
+--- TICK 4 ---
+ACTION: jog_x_plus value=null
+STATE_SET: x_pos = 80.000 (old: 90.000)
+NOTIFY: x_pos = 80.000
+
+--- UI-Sim Trace End ---

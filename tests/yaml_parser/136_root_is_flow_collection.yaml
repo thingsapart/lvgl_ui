@@ -1,0 +1,6 @@
+# Tests when the entire document is a single flow collection.
+# The parser should not wrap an existing root array.
+[
+  { "id": 1, "name": "one" },
+  { "id": 2, "name": "two" }
+]

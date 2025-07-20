@@ -1,0 +1,12 @@
+# TICKS: 1
+- type: data-binding
+  state:
+    - a: 10.0
+    - b: 3.0
+    - c: 0.0
+    - sum: { derived_expr: [add, a, b] }
+    - diff: { derived_expr: [sub, a, b] }
+    - prod: { derived_expr: [mul, a, b] }
+    - quot: { derived_expr: [div, a, b] }
+    - quot_zero: { derived_expr: [div, a, c] }
+    - nested: { derived_expr: [add, a, [mul, b, 2]] }

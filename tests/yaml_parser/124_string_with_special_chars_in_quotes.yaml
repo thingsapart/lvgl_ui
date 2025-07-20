@@ -1,0 +1,3 @@
+# Tests that special YAML characters are ignored inside quoted strings.
+text: "A string with [ and { and : and # inside it"
+another: 'Another string with [ and { and : and # inside it'
