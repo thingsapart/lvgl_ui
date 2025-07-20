@@ -56,11 +56,11 @@ Both blocks use the same syntax: a list of modification rules. For `actions`, th
 actions:
   # When the UI dispatches an action named "my_action", run this modification.
   - my_action:
-      target_state: { modifier: arguments }
+      modifier: arguments
 
 updates:
   # On every tick, run this modification.
-  - target_state: { modifier: arguments, when: [condition] }
+  - modifier: { target_state: arguments, when: [condition] }
 ```
 
 ### The `schedule` Block (For Testing)
@@ -91,12 +91,12 @@ A modification is an operation that changes a state variable.
 
 | Modifier | Argument(s) | Description |
 | :--- | :--- | :--- |
-| **`set`** | `value_expression` | Sets the state variable to the result of the expression. |
-| **`inc`** | `numeric_expression` | Increments a numeric state by the result of the expression. |
-| **`dec`** | `numeric_expression` | Decrements a numeric state by the result of the expression. |
-| **`toggle`** | (none) | Flips a boolean state variable from `true` to `false` or vice-versa. |
-| **`cycle`** | `[val1, val2, ...]` | Cycles through a list of values. Sets the state to the next value on each execution. |
-| **`range`** | `[min, max, step]` | A cyclic increment. Increments the state by `step`. If the result exceeds `max`, it wraps to `min`. |
+| **`set`** | `{ <state>: <expr> }` | Sets the state variable to the result of the expression. |
+| **`inc`** | `{ <state>: <expr> }` | Increments a numeric state by the result of the expression. |
+| **`dec`** | `{ <state>: <expr> }` | Decrements a numeric state by the result of the expression. |
+| **`toggle`** | `<state_name_string>` | Flips a boolean state variable from `true` to `false` or vice-versa. |
+| **`cycle`** | `{ <state>: [val1, ...]}` | Cycles through a list of values. Sets the state to the next value on each execution. |
+| **`range`** | `{ <state>: [min, max, step]}` | A cyclic increment. Increments the state by `step`. If it exceeds `max` or `min`, it wraps. |
 
 ---
 
@@ -114,6 +114,7 @@ UI-Sim uses a simple but powerful expression language based on LISP-style "S-exp
 | **State Reference** | `state_name` | The current value of another state variable. |
 | **Negated Boolean** | `!state_name` | The negated value of a boolean state variable. |
 | **Action Payload** | `value.float` | The incoming value from a UI action (e.g., a toggle switch). Use `value.bool` or `value.string` for other types. |
+| **Time** | `time` | A special read-only variable managed by the simulator. It increments by a small amount each tick and can be used for animations and time-based logic. |
 
 ### Functions and Operators
 
@@ -143,12 +144,12 @@ This provides `if/else if/else` functionality. It evaluates conditions top-to-bo
 
 ```yaml
 # Example: Determine a status string
-program_status:
-  set:
-    case:
-      - [program_running, "RUNNING"]
-      - [spindle_on, "SPINDLE ON"]
-      - [true, "IDLE"] # The 'else' case
+- program_status:
+    set:
+      case:
+        - [program_running, "RUNNING"]
+        - [spindle_on, "SPINDLE ON"]
+        - [true, "IDLE"] # The 'else' case
 ```
 
 ---
@@ -173,11 +174,11 @@ program_status:
         dec: { target_temp: 0.5 }
   updates:
     # Simulate current temperature moving towards target
-    - inc: { current_temp: 0.1, when: [<, current_temp, target_temp] }
-    - dec: { current_temp: 0.1, when: [>, current_temp, target_temp] }
+    - current_temp: { inc: 0.1, when: [<, current_temp, target_temp] }
+    - current_temp: { dec: 0.1, when: [>, current_temp, target_temp] }
     # Set heater status based on temperature diff
-    - set:
-        heater_on:
+    - heater_on:
+        set:
           case:
             - [[>, [sub, target_temp, current_temp], 0.2], true]
             - [true, false]
@@ -209,7 +210,6 @@ program_status:
     - program_stop:
         set: { program_running: false, spindle_on: false }
   updates:
-    - inc: { time: 0.033 }
     - set:
         spindle_rpm:
           case:
@@ -268,7 +268,7 @@ program_status:
     - amplitude: 0.8
   actions:
     - cycle_waveform:
-        cycle: { waveform: [cycle, ["SINE", "SQUARE", "SAW", "TRIANGLE"]] }
+        cycle: { waveform: ["SINE", "SQUARE", "SAW", "TRIANGLE"] }
     - set_frequency: # Assumes a slider sends value.float
         set: { frequency: value.float }
 ```
@@ -286,20 +286,18 @@ program_status:
     - display_frozen: false
   actions:
     - toggle_freeze:
-        toggle: { display_frozen: true }
+        toggle: display_frozen
   updates:
     - when:
         condition: !display_frozen
         then:
-          # Simple P-QRS-T approximation
-          - inc: { time: 0.05 }
           - set:
               ecg_val:
-                add:
-                  - [mul, 0.1, [sin, [mul, time, 3.14]]]  # P wave
-                  - [mul, 1.5, [sin, [mul, [sub, time, 0.5], 30]]] # QRS complex
-                  - [mul, 0.3, [sin, [mul, [sub, time, 0.9], 4]]]   # T wave
-          # Reset time to make it loop
+                - add
+                - add
+                  - [mul, 0.1, [sin, [mul, time, 3.14]]]
+                  - [mul, 1.5, [sin, [mul, [sub, time, 0.5], 30]]]
+                - [mul, 0.3, [sin, [mul, [sub, time, 0.9], 4]]]
           - when:
               condition: [>, time, 6.28]
               then:
@@ -318,7 +316,7 @@ program_status:
     - brightness: 100.0 # As a percentage
   actions:
     - toggle_light:
-        toggle: { light_on: true }
+        toggle: light_on
     - set_brightness:
         set: { brightness: [clamp, value.float, 0, 100] }
 ```
@@ -378,7 +376,7 @@ program_status:
     - jog_speed: 10.0
   actions:
     - key_turned:
-        toggle: { safety_key_on: true }
+        toggle: safety_key_on
     - jog_x_plus:
         when:
           # Both conditions must be true to execute
@@ -428,3 +426,5 @@ program_status:
           condition: [>=, mana, 10]
           then:
             - dec: { mana: 10 }
+
+```

@@ -1,118 +1,76 @@
 #ifndef UI_SIM_H
 #define UI_SIM_H
 
-#include <cJSON.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include "cJSON.h"
 #include "data_binding.h"
-#include "lvgl.h"
 
-// --- Public API ---
-
-/**
- * @brief Initializes or re-initializes the UI Simulator system.
- * Frees all previously allocated resources, making it safe for live-reloading.
- */
-void ui_sim_init(void);
-
-/**
- * @brief Parses a 'data-binding' cJSON node from the UI specification.
- * This builds the internal state model, action handlers, and update rules for the simulator.
- * This should be called by the generator before the UI is rendered.
- * If a previous definition existed, it is freed and replaced.
- *
- * @param node The cJSON object with "type": "data-binding".
- * @return true on successful parsing, false on failure.
- */
-bool ui_sim_process_node(cJSON* node);
-
-/**
- * @brief Prepares the UI Simulator to run.
- * This function should be called after the UI has been fully rendered.
- * It registers the simulator's action handler and notifies the UI of all initial state
- * values. IT DOES NOT start the periodic updates.
- */
-void ui_sim_start(void);
-
-/**
- * @brief Stops the UI Simulator and cleans up resources.
- * This is automatically called by ui_sim_init().
- */
-void ui_sim_stop(void);
-
-/**
- * @brief Advances the simulation by one tick.
- * This should be called periodically by an external loop (e.g., the main application
- * loop or a test runner).
- * @param dt The delta-time in seconds since the last tick (e.g., 0.033 for 30fps).
- */
-void ui_sim_tick(float dt);
-
-
-// --- Internal Data Structures (exposed for potential debugging) ---
-
-#define UI_SIM_MAX_STATES 128
-#define UI_SIM_MAX_ACTIONS 128
-#define UI_SIM_MAX_FUNC_ARGS 8
+#define UI_SIM_MAX_STATES 64
+#define UI_SIM_MAX_ACTIONS 32
 #define UI_SIM_MAX_SCHEDULED_ACTIONS 64
+#define UI_SIM_MAX_FUNC_ARGS 16
 
-// --- Expressions ---
+// --- Data Structures ---
 
-typedef struct SimExpressionNode SimExpressionNode;
+typedef enum {
+    SIM_EXPR_LITERAL,
+    SIM_EXPR_STATE_REF,
+    SIM_EXPR_FUNCTION,
+    SIM_EXPR_ACTION_VALUE,
+} SimExpressionType;
 
 typedef struct SimExpression {
-    enum {
-        SIM_EXPR_LITERAL,      // A literal value (float, bool, string)
-        SIM_EXPR_STATE_REF,    // A reference to another state variable (e.g., "spindle_on" or "!spindle_on")
-        SIM_EXPR_ACTION_VALUE, // The incoming 'value' from a UI action (e.g., "value.bool")
-        SIM_EXPR_FUNCTION      // A function call (e.g., [add, 1, 2])
-    } type;
-
+    SimExpressionType type;
     union {
         binding_value_t literal;
         struct {
             char* state_name;
-            bool is_negated; // For the "!" shorthand
+            bool is_negated;
         } state_ref;
-        binding_value_type_t action_value_type;
         struct {
             char* func_name;
-            SimExpressionNode* args_head;
+            struct SimExpressionNode* args_head;
         } function;
+        binding_value_type_t action_value_type;
     } as;
 } SimExpression;
 
-struct SimExpressionNode {
+typedef struct SimExpressionNode {
     SimExpression* expr;
-    SimExpressionNode* next;
-};
+    struct SimExpressionNode* next;
+} SimExpressionNode;
 
-
-// --- Modifications ---
+typedef enum {
+    MOD_SET,
+    MOD_INC,
+    MOD_DEC,
+    MOD_TOGGLE,
+    MOD_CYCLE,
+    MOD_RANGE,
+} SimModificationType;
 
 typedef struct SimModification {
-    enum {
-        MOD_SET,
-        MOD_INC,
-        MOD_DEC,
-        MOD_TOGGLE,
-        MOD_CYCLE,
-        MOD_RANGE
-    } type;
-
+    SimModificationType type;
     char* target_state_name;
-    SimExpression* value_expr;     // Expression for the new value (used by set, inc, dec)
-    SimExpression* condition_expr; // Optional 'when' condition
+    SimExpression* value_expr;
+    SimExpression* condition_expr;
     struct SimModification* next;
 } SimModification;
 
-
-// --- Actions ---
+typedef struct {
+    char* name;
+    binding_value_t value;
+    bool is_dirty;
+    bool is_derived;
+    SimExpression* derived_expr;
+} SimStateVariable;
 
 typedef struct {
     char* name;
     SimModification* modifications_head;
 } SimAction;
 
-// --- Scheduled Actions ---
 typedef struct {
     uint32_t tick;
     char* name;
@@ -120,18 +78,38 @@ typedef struct {
 } SimScheduledAction;
 
 
-// --- State ---
+// --- Public API ---
 
-typedef struct {
-    char* name;
-    binding_value_t value;
-    bool is_derived;
-    SimExpression* derived_expr;
+/**
+ * @brief Initializes or re-initializes the UI simulator, clearing all existing state.
+ */
+void ui_sim_init(void);
 
-    // Runtime state
-    bool is_dirty;
-    uint32_t cycle_index;
-} SimStateVariable;
+/**
+ * @brief Parses a `data-binding` cJSON node and configures the simulator.
+ * This is the main entry point for defining the simulation's behavior from a UI spec.
+ * @param node The cJSON object representing the `data-binding` block.
+ * @return true on successful parsing, false on error.
+ */
+bool ui_sim_process_node(cJSON* node);
 
+/**
+ * @brief Starts the simulator. It registers its action handler and performs the initial
+ * state notifications. Does nothing if already active or if no definition has been processed.
+ */
+void ui_sim_start(void);
+
+/**
+ * @brief Stops the simulator. It will no longer process ticks or actions.
+ */
+void ui_sim_stop(void);
+
+/**
+ * @brief Advances the simulator by one time step.
+ * This function executes any scheduled actions for the current tick, runs the `updates` logic,
+ * increments the internal `time` state, and notifies the UI of any changes.
+ * @param dt The delta time for this tick, used to increment the internal `time` state.
+ */
+void ui_sim_tick(float dt);
 
 #endif // UI_SIM_H

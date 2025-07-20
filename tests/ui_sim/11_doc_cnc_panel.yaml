@@ -19,7 +19,6 @@
     - program_stop:
         set: { program_running: false, spindle_on: false }
   updates:
-    - inc: { time: 0.033 }
     - set:
         spindle_rpm:
           case:
@@ -32,4 +31,4 @@
           - set: { pos_y: [mul, 50, [sin, time]] }
   schedule:
     - { tick: 2, action: program_run }
-    - { tick: 5, action: program_stop }```
+    - { tick: 5, action: program_stop }

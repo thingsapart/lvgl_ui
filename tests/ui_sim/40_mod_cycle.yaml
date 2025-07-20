@@ -6,9 +6,10 @@
     - bool_val: true
   actions:
     - cycle_all:
-        num_val: { cycle: }
-        str_val: { cycle: ["A", "B", "C"] }
-        bool_val: { cycle: [true, false] }
+        cycle:
+          num_val: [1.0, 2.0, 3.0]
+          str_val: ["A", "B", "C"]
+          bool_val: [true, false]
   schedule:
     - { tick: 1, action: cycle_all }
     - { tick: 2, action: cycle_all }

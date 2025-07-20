@@ -1,9 +1,9 @@
 --- UI-Sim Trace Start ---
-STATE_SET: from_float = 0.000 (old: null)
 STATE_SET: from_bool = false (old: null)
+STATE_SET: from_float = 0.000 (old: null)
 STATE_SET: from_string = "" (old: null)
-NOTIFY: from_float = 0.000
 NOTIFY: from_bool = false
+NOTIFY: from_float = 0.000
 NOTIFY: from_string = ""
 
 --- TICK 1 ---

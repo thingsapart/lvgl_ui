@@ -156,7 +156,8 @@ int main(int argc, char* argv[]) {
             int ticks = atoi(argv[++i]);
             const char* sim_api_spec = NULL;
             const char* sim_ui_spec = NULL;
-            for (int j = 1; j < argc; ++j) {
+            // Scan for the spec files AFTER the run-sim-test flag.
+            for (int j = i + 1; j < argc; ++j) {
                 if (strcmp(argv[j], "--api-spec") == 0 && j + 1 < argc) sim_api_spec = argv[++j];
                 if (strcmp(argv[j], "--ui-spec") == 0 && j + 1 < argc) sim_ui_spec = argv[++j];
             }
@@ -181,6 +182,9 @@ int main(int argc, char* argv[]) {
         else if (strcmp(argv[i], "--strict-registry") == 0) { g_strict_registry_mode = true; }
         else if (strcmp(argv[i], "--watch") == 0) { watch_mode = true; }
         else if (strcmp(argv[i], "--trace-sim") == 0) { g_ui_sim_trace_enabled = true; }
+        else if (strcmp(argv[i], "--run-sim-test") == 0) { i++; continue; } // Skip already handled args
+        else if (strcmp(argv[i], "--api-spec") == 0) { i++; continue; }   // Skip already handled args
+        else if (strcmp(argv[i], "--ui-spec") == 0) { i++; continue; }    // Skip already handled args
         else if (!api_spec_path) { api_spec_path = argv[i]; }
         else if (!ui_spec_path) { ui_spec_path = argv[i]; }
         // else ignore args already handled by special modes

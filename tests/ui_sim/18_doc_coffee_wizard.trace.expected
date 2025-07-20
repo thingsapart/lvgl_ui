@@ -19,7 +19,6 @@ NOTIFY: setup_step = 3.000
 
 --- TICK 4 ---
 ACTION: next_step value=null
-STATE_SET: setup_step = 3.000 (old: 3.000)
 
 --- TICK 5 ---
 ACTION: prev_step value=null

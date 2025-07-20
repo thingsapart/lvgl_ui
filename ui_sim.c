@@ -37,6 +37,8 @@ typedef struct {
 static SimContext g_sim;
 
 // --- Forward Declarations: Parsers ---
+static SimExpression* clone_expression(SimExpression* src);
+static void free_expression_list(SimExpressionNode* head);
 static void free_expression(SimExpression* expr);
 static void free_modification_list(SimModification* head);
 static SimExpression* parse_expression(cJSON* json, SimParseContext* ctx);
@@ -46,10 +48,11 @@ static bool parse_state(cJSON* state_array, SimParseContext* ctx);
 static bool parse_actions(cJSON* action_array, SimParseContext* ctx);
 static bool parse_updates(cJSON* update_array, SimParseContext* ctx);
 static bool parse_schedule(cJSON* schedule_array, SimParseContext* ctx);
+static bool is_known_function(const char* name);
 
 // --- Forward Declarations: Runtime ---
 static void sim_action_handler(const char* action_name, binding_value_t value, void* user_data);
-static void execute_modifications_list(SimModification* head, binding_value_t action_value);
+static bool execute_modifications_list(SimModification* head, binding_value_t action_value);
 static binding_value_t evaluate_expression(SimExpression* expr, binding_value_t action_value);
 static void notify_changed_states(void);
 static SimStateVariable* find_state(const char* name);
@@ -146,6 +149,13 @@ void ui_sim_start(void) {
 
     g_sim.current_tick = 0;
 
+    // Evaluate derived expressions on startup
+    for (uint32_t i = 0; i < g_sim.state_count; i++) {
+        if (g_sim.states[i].is_derived) {
+            g_sim.states[i].value = evaluate_expression(g_sim.states[i].derived_expr, (binding_value_t){.type=BINDING_TYPE_NULL});
+        }
+    }
+
     if (g_ui_sim_trace_enabled) {
         for (uint32_t i = 0; i < g_sim.state_count; i++) {
             printf("STATE_SET: %s = ", g_sim.states[i].name);
@@ -172,11 +182,10 @@ void ui_sim_tick(float dt) {
 
     g_sim.current_tick++;
 
-    // 1. Execute any scheduled actions for this tick.
+    // 1. Execute scheduled actions for this tick.
     for (uint32_t i = 0; i < g_sim.scheduled_action_count; i++) {
         if (g_sim.scheduled_actions[i].tick == g_sim.current_tick) {
             binding_value_t value_copy = g_sim.scheduled_actions[i].value;
-            // The receiver (evaluate_expression) will free this string if it's consumed.
             if (value_copy.type == BINDING_TYPE_STRING && value_copy.as.s_val) {
                 value_copy.as.s_val = strdup(value_copy.as.s_val);
             }
@@ -184,7 +193,10 @@ void ui_sim_tick(float dt) {
         }
     }
 
-    // 2. Execute the periodic 'updates'.
+    // 2. Run the updates block.
+    execute_modifications_list(g_sim.updates_head, (binding_value_t){.type = BINDING_TYPE_NULL});
+
+    // 3. Increment time at the end of the tick logic.
     SimStateVariable* time_state = find_state("time");
     if (time_state) {
         binding_value_t old_val = time_state->value;
@@ -192,14 +204,59 @@ void ui_sim_tick(float dt) {
         set_state_value(time_state, new_val);
     }
 
-    execute_modifications_list(g_sim.updates_head, (binding_value_t){.type = BINDING_TYPE_NULL});
-
-    // 3. Notify about all changes from the 'updates' block and any derived state changes.
+    // 4. Notify UI about all changes that occurred in this tick.
     notify_changed_states();
 }
 
 
 // --- Memory Management Helpers ---
+static SimExpressionNode* clone_expression_list(SimExpressionNode* src_head) {
+    if (!src_head) return NULL;
+
+    SimExpressionNode* new_head = calloc(1, sizeof(SimExpressionNode));
+    if (!new_head) return NULL;
+    new_head->expr = clone_expression(src_head->expr);
+
+    SimExpressionNode* current_new = new_head;
+    SimExpressionNode* current_src = src_head->next;
+
+    while (current_src) {
+        current_new->next = calloc(1, sizeof(SimExpressionNode));
+        if (!current_new->next) { free_expression_list(new_head); return NULL; }
+        current_new = current_new->next;
+        current_new->expr = clone_expression(current_src->expr);
+        current_src = current_src->next;
+    }
+    return new_head;
+}
+
+static SimExpression* clone_expression(SimExpression* src) {
+    if (!src) return NULL;
+    SimExpression* dest = calloc(1, sizeof(SimExpression));
+    if (!dest) return NULL;
+
+    dest->type = src->type;
+    switch (src->type) {
+        case SIM_EXPR_LITERAL:
+            dest->as.literal = src->as.literal;
+            if (src->as.literal.type == BINDING_TYPE_STRING) {
+                dest->as.literal.as.s_val = strdup(src->as.literal.as.s_val);
+            }
+            break;
+        case SIM_EXPR_STATE_REF:
+            dest->as.state_ref.state_name = strdup(src->as.state_ref.state_name);
+            dest->as.state_ref.is_negated = src->as.state_ref.is_negated;
+            break;
+        case SIM_EXPR_FUNCTION:
+            dest->as.function.func_name = strdup(src->as.function.func_name);
+            dest->as.function.args_head = clone_expression_list(src->as.function.args_head);
+            break;
+        case SIM_EXPR_ACTION_VALUE:
+            dest->as.action_value_type = src->as.action_value_type;
+            break;
+    }
+    return dest;
+}
 
 static void free_expression_list(SimExpressionNode* head) {
     while(head) {
@@ -242,6 +299,21 @@ static void free_modification_list(SimModification* head) {
 
 // --- Parsing Logic ---
 
+static bool is_known_function(const char* name) {
+    if (!name) return false;
+    const char* known_funcs[] = {
+        "add", "sub", "mul", "div", "sin", "cos", "clamp",
+        "==", "!=", ">", "<", ">=", "<=", "and", "or", "not",
+        "case"
+    };
+    for (size_t i = 0; i < sizeof(known_funcs)/sizeof(known_funcs[0]); i++) {
+        if (strcmp(name, known_funcs[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static bool parse_state(cJSON* state_array, SimParseContext* ctx) {
     cJSON* item;
     cJSON_ArrayForEach(item, state_array) {
@@ -282,7 +354,7 @@ static bool parse_state(cJSON* state_array, SimParseContext* ctx) {
             const char* type_str = state_def->valuestring;
             if (strcmp(type_str, "float") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_FLOAT, .as.f_val = 0.0f}; }
             else if (strcmp(type_str, "bool") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_BOOL, .as.b_val = false}; }
-            else if (strcmp(type_str, "string") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_STRING, .as.s_val = strdup("")}; } // *** FIX: Default to empty string ***
+            else if (strcmp(type_str, "string") == 0) { state->value = (binding_value_t){.type = BINDING_TYPE_STRING, .as.s_val = strdup("")}; }
             else { // It's an inferred string initial value
                 state->value.type = BINDING_TYPE_STRING;
                 state->value.as.s_val = strdup(type_str);
@@ -402,11 +474,12 @@ static SimModification* parse_modification_block(cJSON* obj_json, SimParseContex
                 return NULL;
             }
             if (!head) {
-                head = tail = new_mods;
+                head = new_mods;
             } else {
                 tail->next = new_mods;
             }
-            while(tail && tail->next) tail = tail->next;
+            while(new_mods->next) new_mods = new_mods->next; // Find the new tail
+            tail = new_mods;
         }
     } else if (cJSON_IsObject(obj_json)) {
         cJSON* item;
@@ -418,11 +491,12 @@ static SimModification* parse_modification_block(cJSON* obj_json, SimParseContex
                 return NULL;
             }
             if (!head) {
-                head = tail = new_mods;
+                head = new_mods;
             } else {
                 tail->next = new_mods;
             }
-            while(tail && tail->next) tail = tail->next;
+            while(new_mods->next) new_mods = new_mods->next; // Find the new tail
+            tail = new_mods;
         }
     }
 
@@ -431,24 +505,71 @@ static SimModification* parse_modification_block(cJSON* obj_json, SimParseContex
 
 
 static SimModification* parse_modification(const char* key, cJSON* value_json, SimParseContext* ctx) {
+    bool is_control_when = (strcmp(key, "when") == 0);
+
+    // Handle `when: { condition: ..., then: ... }` blocks by propagating the condition.
+    if (is_control_when) {
+        cJSON* cond_json = cJSON_GetObjectItem(value_json, "condition");
+        cJSON* then_json = cJSON_GetObjectItem(value_json, "then");
+        if (!cond_json || !then_json) {
+            sim_abort(ctx, "'when' block must have 'condition' and 'then' keys.");
+            return NULL;
+        }
+
+        SimExpression* outer_cond_expr = parse_expression(cond_json, ctx);
+        if (!outer_cond_expr) return NULL; // Error already reported
+
+        SimModification* then_mods = parse_modification_block(then_json, ctx);
+        if (!then_mods) {
+            free_expression(outer_cond_expr);
+            return NULL;
+        }
+
+        // Propagate the condition to all modifications in the 'then' block.
+        for (SimModification* mod = then_mods; mod; mod = mod->next) {
+            if (mod->condition_expr != NULL) {
+                 // Combine the conditions with an AND expression
+                 SimExpression* inner_cond_expr = mod->condition_expr;
+                 SimExpression* and_expr = calloc(1, sizeof(SimExpression));
+                 and_expr->type = SIM_EXPR_FUNCTION;
+                 and_expr->as.function.func_name = strdup("and");
+
+                 SimExpressionNode* arg1 = calloc(1, sizeof(SimExpressionNode));
+                 arg1->expr = clone_expression(outer_cond_expr);
+
+                 SimExpressionNode* arg2 = calloc(1, sizeof(SimExpressionNode));
+                 arg2->expr = inner_cond_expr; // Transfer ownership, don't clone
+
+                 arg1->next = arg2;
+                 and_expr->as.function.args_head = arg1;
+                 mod->condition_expr = and_expr;
+            } else {
+                mod->condition_expr = clone_expression(outer_cond_expr);
+            }
+        }
+
+        free_expression(outer_cond_expr); // Free the original, clones have been made
+        return then_mods;
+    }
+
     bool key_is_modifier = (strcmp(key, "set") == 0 || strcmp(key, "inc") == 0 ||
                            strcmp(key, "dec") == 0 || strcmp(key, "toggle") == 0 ||
                            strcmp(key, "cycle") == 0 || strcmp(key, "range") == 0);
-    bool key_is_control = (strcmp(key, "when") == 0);
 
-    if (key_is_modifier || key_is_control) {
+    if (key_is_modifier) {
         SimModification* head = NULL;
         SimModification* tail = NULL;
 
-        if (key_is_control) {
+        if (strcmp(key, "toggle") == 0) {
+            const char* state_name_to_toggle = cJSON_GetStringValue(value_json);
+            if (!state_name_to_toggle) {
+                sim_abort(ctx, "Value for 'toggle' must be a string (the state name).");
+                return NULL;
+            }
             SimModification* mod = calloc(1, sizeof(SimModification));
             if (!mod) { sim_abort(ctx, "Out of memory"); return NULL; }
-            mod->target_state_name = NULL;
-            mod->condition_expr = parse_expression(cJSON_GetObjectItem(value_json, "condition"), ctx);
-            cJSON* then_json = cJSON_GetObjectItem(value_json, "then");
-            if (then_json) {
-                mod->next = parse_modification_block(then_json, ctx);
-            }
+            mod->target_state_name = strdup(state_name_to_toggle);
+            mod->type = MOD_TOGGLE;
             return mod;
         }
 
@@ -463,7 +584,6 @@ static SimModification* parse_modification(const char* key, cJSON* value_json, S
             if (strcmp(key, "set") == 0) mod->type = MOD_SET;
             else if (strcmp(key, "inc") == 0) mod->type = MOD_INC;
             else if (strcmp(key, "dec") == 0) mod->type = MOD_DEC;
-            else if (strcmp(key, "toggle") == 0) mod->type = MOD_TOGGLE;
             else if (strcmp(key, "cycle") == 0) mod->type = MOD_CYCLE;
             else if (strcmp(key, "range") == 0) mod->type = MOD_RANGE;
 
@@ -474,7 +594,7 @@ static SimModification* parse_modification(const char* key, cJSON* value_json, S
         }
         return head;
 
-    } else {
+    } else { // This is the `target_state: { modifier: ... }` syntax
         SimModification* mod = calloc(1, sizeof(SimModification));
         if (!mod) { sim_abort(ctx, "Out of memory"); return NULL; }
         mod->target_state_name = strdup(key);
@@ -493,7 +613,7 @@ static SimModification* parse_modification(const char* key, cJSON* value_json, S
             mod_item = mod_item->next;
         }
 
-        if (!mod_item) {
+        if (!mod_item) { // Only a 'when' was present
             mod->type = MOD_SET;
             mod->value_expr = parse_expression(value_json, ctx);
             return mod;
@@ -506,7 +626,7 @@ static SimModification* parse_modification(const char* key, cJSON* value_json, S
         else if (strcmp(mod_type_str, "toggle") == 0) mod->type = MOD_TOGGLE;
         else if (strcmp(mod_type_str, "cycle") == 0) mod->type = MOD_CYCLE;
         else if (strcmp(mod_type_str, "range") == 0) mod->type = MOD_RANGE;
-        else {
+        else { // No known modifier, assume 'set' on the whole object
             mod->type = MOD_SET;
             mod->value_expr = parse_expression(value_json, ctx);
             return mod;
@@ -555,8 +675,25 @@ static SimExpression* parse_expression(cJSON* json, SimParseContext* ctx) {
         }
     } else if (cJSON_IsArray(json)) {
         expr->type = SIM_EXPR_FUNCTION;
-        cJSON* func_name_json = cJSON_GetArrayItem(json, 0);
-        if (!cJSON_IsString(func_name_json)) {
+        cJSON* first_item = cJSON_GetArrayItem(json, 0);
+        const char* potential_func_name = cJSON_GetStringValue(first_item);
+
+        if (is_known_function(potential_func_name)) {
+            // This is a function call like [add, 1, 2]
+            expr->as.function.func_name = strdup(potential_func_name);
+            SimExpressionNode* arg_tail = NULL;
+            for (int i = 1; i < cJSON_GetArraySize(json); i++) {
+                SimExpressionNode* new_arg_node = calloc(1, sizeof(SimExpressionNode));
+                new_arg_node->expr = parse_expression(cJSON_GetArrayItem(json, i), ctx);
+                if (!expr->as.function.args_head) {
+                    expr->as.function.args_head = arg_tail = new_arg_node;
+                } else {
+                    arg_tail->next = new_arg_node;
+                    arg_tail = new_arg_node;
+                }
+            }
+        } else {
+            // This is a list of values, like ["A", "B", "C"] or [1, 2, 3] or [[cond, val]]
             expr->as.function.func_name = strdup("pair");
             SimExpressionNode* arg_tail = NULL;
             cJSON* element;
@@ -569,20 +706,6 @@ static SimExpression* parse_expression(cJSON* json, SimParseContext* ctx) {
                     arg_tail->next = new_arg_node;
                     arg_tail = new_arg_node;
                 }
-            }
-            return expr;
-        }
-        expr->as.function.func_name = strdup(cJSON_GetStringValue(func_name_json));
-
-        SimExpressionNode* arg_tail = NULL;
-        for (int i = 1; i < cJSON_GetArraySize(json); i++) {
-            SimExpressionNode* new_arg_node = calloc(1, sizeof(SimExpressionNode));
-            new_arg_node->expr = parse_expression(cJSON_GetArrayItem(json, i), ctx);
-            if (!expr->as.function.args_head) {
-                expr->as.function.args_head = arg_tail = new_arg_node;
-            } else {
-                arg_tail->next = new_arg_node;
-                arg_tail = new_arg_node;
             }
         }
     } else if (cJSON_IsObject(json) && cJSON_HasObjectItem(json, "case")) {
@@ -689,18 +812,17 @@ static void sim_action_handler(const char* action_name, binding_value_t value, v
     SimAction* action = find_action(action_name);
     if (action) {
         execute_modifications_list(action->modifications_head, value);
-        notify_changed_states();
     } else {
         print_warning("UI-Sim: Received unhandled action '%s'.", action_name);
     }
 
     if (value.type == BINDING_TYPE_STRING && value.as.s_val) {
-        // This string was allocated specifically for this handler call, so we must free it.
         free((void*)value.as.s_val);
     }
 }
 
-static void execute_modifications_list(SimModification* head, binding_value_t action_value) {
+static bool execute_modifications_list(SimModification* head, binding_value_t action_value) {
+    bool any_state_changed = false;
     for (SimModification* mod = head; mod; mod = mod->next) {
         bool condition_met = true;
         if (mod->condition_expr) {
@@ -711,18 +833,15 @@ static void execute_modifications_list(SimModification* head, binding_value_t ac
                 print_warning("UI-Sim: 'when' condition for state '%s' did not evaluate to a boolean.", mod->target_state_name);
                 condition_met = false;
             }
+            if(cond_val.type == BINDING_TYPE_STRING) free((void*)cond_val.as.s_val);
         }
 
         if (condition_met) {
-            if (mod->target_state_name == NULL) { // Handle when:{then:{...}} block
-                execute_modifications_list(mod->next, action_value);
-                SimModification* temp = mod->next;
-                while (temp && temp->next) temp = temp->next;
-                mod = temp;
-                if (!mod) break;
+            if (mod->target_state_name && strcmp(mod->target_state_name, "time") == 0) {
+                // The 'time' variable is special and managed by the simulator engine.
+                // We silently ignore user attempts to modify it to prevent confusion.
                 continue;
             }
-
             SimStateVariable* target_state = find_state(mod->target_state_name);
             if (!target_state) {
                 print_warning("UI-Sim: Attempted to modify unknown state '%s'.", mod->target_state_name);
@@ -736,14 +855,14 @@ static void execute_modifications_list(SimModification* head, binding_value_t ac
             switch (mod->type) {
                 case MOD_SET: {
                     binding_value_t val = evaluate_expression(mod->value_expr, action_value);
-                    set_state_value(target_state, val);
+                    if (set_state_value(target_state, val)) any_state_changed = true;
                     break;
                 }
                 case MOD_INC: {
                     binding_value_t val = evaluate_expression(mod->value_expr, action_value);
                     if (target_state->value.type == BINDING_TYPE_FLOAT && val.type == BINDING_TYPE_FLOAT) {
                         binding_value_t new_val = {.type=BINDING_TYPE_FLOAT, .as.f_val=target_state->value.as.f_val + val.as.f_val};
-                        set_state_value(target_state, new_val);
+                        if (set_state_value(target_state, new_val)) any_state_changed = true;
                     }
                     if(val.type == BINDING_TYPE_STRING) free((void*)val.as.s_val);
                     break;
@@ -752,7 +871,7 @@ static void execute_modifications_list(SimModification* head, binding_value_t ac
                      binding_value_t val = evaluate_expression(mod->value_expr, action_value);
                     if (target_state->value.type == BINDING_TYPE_FLOAT && val.type == BINDING_TYPE_FLOAT) {
                         binding_value_t new_val = {.type=BINDING_TYPE_FLOAT, .as.f_val=target_state->value.as.f_val - val.as.f_val};
-                        set_state_value(target_state, new_val);
+                        if (set_state_value(target_state, new_val)) any_state_changed = true;
                     }
                     if(val.type == BINDING_TYPE_STRING) free((void*)val.as.s_val);
                     break;
@@ -760,47 +879,81 @@ static void execute_modifications_list(SimModification* head, binding_value_t ac
                 case MOD_TOGGLE: {
                     if (target_state->value.type == BINDING_TYPE_BOOL) {
                         binding_value_t new_val = {.type=BINDING_TYPE_BOOL, .as.b_val=!target_state->value.as.b_val};
-                        set_state_value(target_state, new_val);
+                        if (set_state_value(target_state, new_val)) any_state_changed = true;
                     } else {
                         print_warning("UI-Sim: 'toggle' can only be used on boolean states. State '%s' is not a boolean.", target_state->name);
                     }
                     break;
                 }
                 case MOD_CYCLE: {
-                    SimExpression* list_expr = mod->value_expr;
-                    if(list_expr->type == SIM_EXPR_FUNCTION && strcmp(list_expr->as.function.func_name, "cycle") == 0) {
-                        list_expr = list_expr->as.function.args_head->expr;
+                    if (!mod->value_expr || mod->value_expr->type != SIM_EXPR_FUNCTION || strcmp(mod->value_expr->as.function.func_name, "pair") != 0) {
+                        print_warning("UI-Sim: 'cycle' modifier for state '%s' has invalid value list.", target_state->name);
+                        break;
                     }
 
-                    if (list_expr->type == SIM_EXPR_FUNCTION && strcmp(list_expr->as.function.func_name, "pair") == 0) {
-                        uint32_t count = 0;
-                        for(SimExpressionNode* n = list_expr->as.function.args_head; n; n=n->next) count++;
+                    uint32_t count = 0;
+                    for(SimExpressionNode* n = mod->value_expr->as.function.args_head; n; n=n->next) count++;
 
-                        if (count > 0) {
-                            target_state->cycle_index = (target_state->cycle_index + 1) % count;
-                            SimExpressionNode* node_to_eval = list_expr->as.function.args_head;
-                            for(uint32_t i=0; i < target_state->cycle_index; i++) node_to_eval = node_to_eval->next;
-                            binding_value_t val = evaluate_expression(node_to_eval->expr, action_value);
-                            set_state_value(target_state, val);
+                    if (count > 0) {
+                        // Find the index of the current value in the cycle list
+                        int current_idx = -1;
+                        SimExpressionNode* n = mod->value_expr->as.function.args_head;
+                        for(int i = 0; n; n = n->next, i++) {
+                            binding_value_t list_val = evaluate_expression(n->expr, action_value);
+                            if (values_are_equal(target_state->value, list_val)) {
+                                current_idx = i;
+                            }
+                            // We created a temporary value, free it if it was a string
+                            if (list_val.type == BINDING_TYPE_STRING) {
+                                free((void*)list_val.as.s_val);
+                            }
+                            if (current_idx != -1) {
+                                break;
+                            }
                         }
+
+                        // If current value not found, start from the end so that the next index is 0.
+                        if (current_idx == -1) {
+                            current_idx = count - 1;
+                        }
+
+                        int next_idx = (current_idx + 1) % count;
+
+                        // Get the expression node for the next value
+                        SimExpressionNode* node_to_eval = mod->value_expr->as.function.args_head;
+                        for(int i = 0; i < next_idx; i++) {
+                            node_to_eval = node_to_eval->next;
+                        }
+
+                        // Evaluate and set the new value
+                        binding_value_t val = evaluate_expression(node_to_eval->expr, action_value);
+                        if (set_state_value(target_state, val)) any_state_changed = true;
                     }
                     break;
                 }
                  case MOD_RANGE: {
-                    if (mod->value_expr->type == SIM_EXPR_FUNCTION && strcmp(mod->value_expr->as.function.func_name, "range") == 0 && mod->value_expr->as.function.args_head) {
+                    if (!mod->value_expr) {
+                        print_warning("UI-Sim: 'range' modifier for state '%s' has no [min, max, step] values.", target_state->name);
+                        break;
+                    }
+                    if (mod->value_expr->type == SIM_EXPR_FUNCTION && strcmp(mod->value_expr->as.function.func_name, "pair") == 0 && mod->value_expr->as.function.args_head) {
                         SimExpressionNode* n = mod->value_expr->as.function.args_head;
+                        if (!n || !n->next || !n->next->next) {
+                            print_warning("UI-Sim: 'range' modifier for state '%s' requires 3 arguments: [min, max, step].", target_state->name);
+                            break;
+                        }
                         binding_value_t min_v = evaluate_expression(n->expr, action_value);
                         binding_value_t max_v = evaluate_expression(n->next->expr, action_value);
                         binding_value_t step_v = evaluate_expression(n->next->next->expr, action_value);
 
-                        if(target_state->value.type == BINDING_TYPE_FLOAT) {
+                        if(target_state->value.type == BINDING_TYPE_FLOAT && min_v.type == BINDING_TYPE_FLOAT && max_v.type == BINDING_TYPE_FLOAT && step_v.type == BINDING_TYPE_FLOAT) {
                             float current = target_state->value.as.f_val;
                             current += step_v.as.f_val;
                             if (step_v.as.f_val > 0 && current > max_v.as.f_val) current = min_v.as.f_val;
                             else if (step_v.as.f_val < 0 && current < min_v.as.f_val) current = max_v.as.f_val;
-                            set_state_value(target_state, (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=current});
+                            if (set_state_value(target_state, (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=current})) any_state_changed = true;
                         } else {
-                             print_warning("UI-Sim: 'range' can only be used on float states. State '%s' is not a float.", target_state->name);
+                             print_warning("UI-Sim: 'range' can only be used on float states with float arguments. State '%s' is not a float.", target_state->name);
                         }
                         if(min_v.type == BINDING_TYPE_STRING) free((void*)min_v.as.s_val);
                         if(max_v.type == BINDING_TYPE_STRING) free((void*)max_v.as.s_val);
@@ -811,6 +964,7 @@ static void execute_modifications_list(SimModification* head, binding_value_t ac
             }
         }
     }
+    return any_state_changed;
 }
 
 static binding_value_t evaluate_expression(SimExpression* expr, binding_value_t action_value) {
@@ -860,9 +1014,16 @@ static binding_value_t evaluate_expression(SimExpression* expr, binding_value_t 
             binding_value_t ret = {.type = BINDING_TYPE_NULL};
             const char* name = expr->as.function.func_name;
 
-            if(strcmp(name, "add") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=arg_values[0].as.f_val + arg_values[1].as.f_val};
+            if (strcmp(name, "add") == 0 && argc >= 2) {
+                float sum = 0.0f;
+                for (int i=0; i < argc; i++) { if (IS_FLOAT(arg_values[i])) sum += arg_values[i].as.f_val; }
+                ret = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=sum};
+            } else if (strcmp(name, "mul") == 0 && argc >= 2) {
+                float product = 1.0f;
+                for (int i=0; i < argc; i++) { if (IS_FLOAT(arg_values[i])) product *= arg_values[i].as.f_val; }
+                ret = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=product};
+            }
             else if(strcmp(name, "sub") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=arg_values[0].as.f_val - arg_values[1].as.f_val};
-            else if(strcmp(name, "mul") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=arg_values[0].as.f_val * arg_values[1].as.f_val};
             else if(strcmp(name, "div") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=arg_values[1].as.f_val==0.0f? 0.0f : arg_values[0].as.f_val / arg_values[1].as.f_val};
             else if(strcmp(name, "sin") == 0 && argc==1 && IS_FLOAT(arg_values[0])) ret = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=sinf(arg_values[0].as.f_val)};
             else if(strcmp(name, "cos") == 0 && argc==1 && IS_FLOAT(arg_values[0])) ret = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=cosf(arg_values[0].as.f_val)};

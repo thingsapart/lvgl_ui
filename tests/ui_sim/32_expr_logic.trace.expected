@@ -1,22 +1,22 @@
 --- UI-Sim Trace Start ---
-STATE_SET: t = true (old: null)
-STATE_SET: f = false (old: null)
-STATE_SET: and_tt = true (old: null)
 STATE_SET: and_tf = false (old: null)
-STATE_SET: or_tf = true (old: null)
-STATE_SET: or_ff = false (old: null)
-STATE_SET: not_t = false (old: null)
-STATE_SET: not_f = true (old: null)
+STATE_SET: and_tt = true (old: null)
+STATE_SET: f = false (old: null)
 STATE_SET: negated_ref = true (old: null)
-NOTIFY: t = true
-NOTIFY: f = false
-NOTIFY: and_tt = true
+STATE_SET: not_f = true (old: null)
+STATE_SET: not_t = false (old: null)
+STATE_SET: or_ff = false (old: null)
+STATE_SET: or_tf = true (old: null)
+STATE_SET: t = true (old: null)
 NOTIFY: and_tf = false
-NOTIFY: or_tf = true
-NOTIFY: or_ff = false
-NOTIFY: not_t = false
-NOTIFY: not_f = true
+NOTIFY: and_tt = true
+NOTIFY: f = false
 NOTIFY: negated_ref = true
+NOTIFY: not_f = true
+NOTIFY: not_t = false
+NOTIFY: or_ff = false
+NOTIFY: or_tf = true
+NOTIFY: t = true
 
 --- TICK 1 ---
 

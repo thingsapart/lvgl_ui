@@ -3,24 +3,28 @@
   state:
     - status: [string, "Available"]
     - energy_delivered: 0.0
-    - charge_rate_kw: 0.0
+    - charge_rate_kw:
+        derived_expr:
+          case:
+            - [[==, status, "Charging"], 11.0]
+            - [true, 0.0]
     - battery_pct: 35.0
   actions:
     - plug_in:
         when:
           condition: [==, status, "Available"]
           then:
-            - set: { status: "Plugged In", charge_rate_kw: 0.0 }
+            - set: { status: "Plugged In" }
     - start_charge:
         when:
           condition: [==, status, "Plugged In"]
           then:
-            - set: { status: "Charging", charge_rate_kw: 11.0 }
+            - set: { status: "Charging" }
     - stop_charge:
         when:
           condition: [==, status, "Charging"]
           then:
-            - set: { status: "Finished", charge_rate_kw: 0.0 }
+            - set: { status: "Finished" }
   updates:
     - when:
         condition: [==, status, "Charging"]
@@ -32,7 +36,7 @@
           - when:
               condition: [>=, battery_pct, 100]
               then:
-                - set: { status: "Finished", charge_rate_kw: 0.0, battery_pct: 100.0 }
+                - set: { status: "Finished", battery_pct: 100.0 }
   schedule:
     - { tick: 1, action: plug_in }
     - { tick: 3, action: start_charge }

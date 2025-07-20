@@ -1,44 +1,38 @@
-```--- UI-Sim Trace Start ---
-STATE_SET: status = "Available" (old: null)
-STATE_SET: energy_delivered = 0.000 (old: null)
-STATE_SET: charge_rate_kw = 0.000 (old: null)
+--- UI-Sim Trace Start ---
 STATE_SET: battery_pct = 35.000 (old: null)
-NOTIFY: status = "Available"
-NOTIFY: energy_delivered = 0.000
-NOTIFY: charge_rate_kw = 0.000
+STATE_SET: charge_rate_kw = 0.000 (old: null)
+STATE_SET: energy_delivered = 0.000 (old: null)
+STATE_SET: status = "Available" (old: null)
 NOTIFY: battery_pct = 35.000
+NOTIFY: charge_rate_kw = 0.000
+NOTIFY: energy_delivered = 0.000
+NOTIFY: status = "Available"
 
 --- TICK 1 ---
 ACTION: plug_in value=null
 STATE_SET: status = "Plugged In" (old: "Available")
-STATE_SET: charge_rate_kw = 0.000 (old: 0.000)
 NOTIFY: status = "Plugged In"
-NOTIFY: charge_rate_kw = 0.000
 
 --- TICK 2 ---
 
 --- TICK 3 ---
 ACTION: start_charge value=null
-STATE_SET: status = "Charging" (old: "Plugged In")
 STATE_SET: charge_rate_kw = 11.000 (old: 0.000)
-NOTIFY: status = "Charging"
+STATE_SET: status = "Charging" (old: "Plugged In")
 NOTIFY: charge_rate_kw = 11.000
-STATE_SET: energy_delivered = 0.003 (old: 0.000)
-STATE_SET: battery_pct = 35.011 (old: 35.000)
-NOTIFY: energy_delivered = 0.003
-NOTIFY: battery_pct = 35.011
+NOTIFY: status = "Charging"
 
 --- TICK 4 ---
-STATE_SET: energy_delivered = 0.006 (old: 0.003)
-STATE_SET: battery_pct = 35.022 (old: 35.011)
-NOTIFY: energy_delivered = 0.006
-NOTIFY: battery_pct = 35.022
+STATE_SET: battery_pct = 35.011 (old: 35.000)
+STATE_SET: energy_delivered = 0.003 (old: 0.000)
+NOTIFY: battery_pct = 35.011
+NOTIFY: energy_delivered = 0.003
 
 --- TICK 5 ---
 ACTION: stop_charge value=null
-STATE_SET: status = "Finished" (old: "Charging")
 STATE_SET: charge_rate_kw = 0.000 (old: 11.000)
-NOTIFY: status = "Finished"
+STATE_SET: status = "Finished" (old: "Charging")
 NOTIFY: charge_rate_kw = 0.000
+NOTIFY: status = "Finished"
 
 --- UI-Sim Trace End ---

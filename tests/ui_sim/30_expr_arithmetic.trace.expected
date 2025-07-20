@@ -2,21 +2,21 @@
 STATE_SET: a = 10.000 (old: null)
 STATE_SET: b = 3.000 (old: null)
 STATE_SET: c = 0.000 (old: null)
-STATE_SET: sum = 13.000 (old: null)
 STATE_SET: diff = 7.000 (old: null)
+STATE_SET: nested = 16.000 (old: null)
 STATE_SET: prod = 30.000 (old: null)
 STATE_SET: quot = 3.333 (old: null)
 STATE_SET: quot_zero = 0.000 (old: null)
-STATE_SET: nested = 16.000 (old: null)
+STATE_SET: sum = 13.000 (old: null)
 NOTIFY: a = 10.000
 NOTIFY: b = 3.000
 NOTIFY: c = 0.000
-NOTIFY: sum = 13.000
 NOTIFY: diff = 7.000
+NOTIFY: nested = 16.000
 NOTIFY: prod = 30.000
 NOTIFY: quot = 3.333
 NOTIFY: quot_zero = 0.000
-NOTIFY: nested = 16.000
+NOTIFY: sum = 13.000
 
 --- TICK 1 ---
 

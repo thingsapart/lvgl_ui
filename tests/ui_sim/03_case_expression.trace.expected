@@ -1,41 +1,41 @@
 --- UI-Sim Trace Start ---
-STATE_SET: step = 0.000 (old: null)
 STATE_SET: status = "INIT" (old: null)
+STATE_SET: step = 0.000 (old: null)
 STATE_SET: time = 0.000 (old: null)
-NOTIFY: step = 0.000
 NOTIFY: status = "INIT"
+NOTIFY: step = 0.000
 NOTIFY: time = 0.000
 
 --- TICK 1 ---
-STATE_SET: time = 0.033 (old: 0.000)
-STATE_SET: step = 1.000 (old: 0.000)
 STATE_SET: status = "STARTING" (old: "INIT")
-NOTIFY: step = 1.000
+STATE_SET: step = 1.000 (old: 0.000)
+STATE_SET: time = 0.033 (old: 0.000)
 NOTIFY: status = "STARTING"
+NOTIFY: step = 1.000
 NOTIFY: time = 0.033
 
 --- TICK 2 ---
-STATE_SET: time = 0.066 (old: 0.033)
-STATE_SET: step = 2.000 (old: 1.000)
 STATE_SET: status = "RUNNING" (old: "STARTING")
-NOTIFY: step = 2.000
+STATE_SET: step = 2.000 (old: 1.000)
+STATE_SET: time = 0.066 (old: 0.033)
 NOTIFY: status = "RUNNING"
+NOTIFY: step = 2.000
 NOTIFY: time = 0.066
 
 --- TICK 3 ---
-STATE_SET: time = 0.099 (old: 0.066)
-STATE_SET: step = 3.000 (old: 2.000)
 STATE_SET: status = "STOPPING" (old: "RUNNING")
-NOTIFY: step = 3.000
+STATE_SET: step = 3.000 (old: 2.000)
+STATE_SET: time = 0.099 (old: 0.066)
 NOTIFY: status = "STOPPING"
+NOTIFY: step = 3.000
 NOTIFY: time = 0.099
 
 --- TICK 4 ---
-STATE_SET: time = 0.132 (old: 0.099)
-STATE_SET: step = 4.000 (old: 3.000)
 STATE_SET: status = "IDLE" (old: "STOPPING")
-NOTIFY: step = 4.000
+STATE_SET: step = 4.000 (old: 3.000)
+STATE_SET: time = 0.132 (old: 0.099)
 NOTIFY: status = "IDLE"
+NOTIFY: step = 4.000
 NOTIFY: time = 0.132
 
 --- UI-Sim Trace End ---

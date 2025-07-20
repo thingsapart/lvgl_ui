@@ -1,10 +1,10 @@
 --- UI-Sim Trace Start ---
+STATE_SET: jog_speed = 10.000 (old: null)
 STATE_SET: safety_key_on = false (old: null)
 STATE_SET: x_pos = 100.000 (old: null)
-STATE_SET: jog_speed = 10.000 (old: null)
+NOTIFY: jog_speed = 10.000
 NOTIFY: safety_key_on = false
 NOTIFY: x_pos = 100.000
-NOTIFY: jog_speed = 10.000
 
 --- TICK 1 ---
 ACTION: jog_x_plus value=null

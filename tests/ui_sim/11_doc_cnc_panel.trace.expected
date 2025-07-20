@@ -1,18 +1,18 @@
 --- UI-Sim Trace Start ---
-STATE_SET: time = 0.000 (old: null)
-STATE_SET: program_running = false (old: null)
-STATE_SET: spindle_on = false (old: null)
 STATE_SET: pos_x = 0.000 (old: null)
 STATE_SET: pos_y = 0.000 (old: null)
-STATE_SET: spindle_rpm = 0.000 (old: null)
+STATE_SET: program_running = false (old: null)
 STATE_SET: program_status = "IDLE" (old: null)
-NOTIFY: time = 0.000
-NOTIFY: program_running = false
-NOTIFY: spindle_on = false
+STATE_SET: spindle_on = false (old: null)
+STATE_SET: spindle_rpm = 0.000 (old: null)
+STATE_SET: time = 0.000 (old: null)
 NOTIFY: pos_x = 0.000
 NOTIFY: pos_y = 0.000
-NOTIFY: spindle_rpm = 0.000
+NOTIFY: program_running = false
 NOTIFY: program_status = "IDLE"
+NOTIFY: spindle_on = false
+NOTIFY: spindle_rpm = 0.000
+NOTIFY: time = 0.000
 
 --- TICK 1 ---
 STATE_SET: time = 0.033 (old: 0.000)
@@ -20,52 +20,52 @@ NOTIFY: time = 0.033
 
 --- TICK 2 ---
 ACTION: program_run value=null
+STATE_SET: pos_x = 49.973 (old: 0.000)
+STATE_SET: pos_y = 1.650 (old: 0.000)
 STATE_SET: program_running = true (old: false)
-STATE_SET: spindle_on = true (old: false)
 STATE_SET: program_status = "RUNNING" (old: "IDLE")
-NOTIFY: program_running = true
-NOTIFY: spindle_on = true
-NOTIFY: program_status = "RUNNING"
+STATE_SET: spindle_on = true (old: false)
+STATE_SET: spindle_rpm = 8064.809 (old: 0.000)
 STATE_SET: time = 0.066 (old: 0.033)
-STATE_SET: spindle_rpm = 8011.834 (old: 0.000)
-STATE_SET: pos_x = 49.891 (old: 0.000)
-STATE_SET: pos_y = 3.300 (old: 0.000)
+NOTIFY: pos_x = 49.973
+NOTIFY: pos_y = 1.650
+NOTIFY: program_running = true
+NOTIFY: program_status = "RUNNING"
+NOTIFY: spindle_on = true
+NOTIFY: spindle_rpm = 8064.809
 NOTIFY: time = 0.066
-NOTIFY: spindle_rpm = 8011.834
-NOTIFY: pos_x = 49.891
-NOTIFY: pos_y = 3.300
 
 --- TICK 3 ---
+STATE_SET: pos_x = 49.891 (old: 49.973)
+STATE_SET: pos_y = 3.298 (old: 1.650)
+STATE_SET: spindle_rpm = 8122.624 (old: 8064.809)
 STATE_SET: time = 0.099 (old: 0.066)
-STATE_SET: spindle_rpm = 7864.883 (old: 8011.834)
-STATE_SET: pos_x = 49.518 (old: 49.891)
-STATE_SET: pos_y = 4.945 (old: 3.300)
+NOTIFY: pos_x = 49.891
+NOTIFY: pos_y = 3.298
+NOTIFY: spindle_rpm = 8122.624
 NOTIFY: time = 0.099
-NOTIFY: spindle_rpm = 7864.883
-NOTIFY: pos_x = 49.518
-NOTIFY: pos_y = 4.945
 
 --- TICK 4 ---
+STATE_SET: pos_x = 49.755 (old: 49.891)
+STATE_SET: pos_y = 4.942 (old: 3.298)
+STATE_SET: spindle_rpm = 8167.205 (old: 8122.624)
 STATE_SET: time = 0.132 (old: 0.099)
-STATE_SET: spindle_rpm = 7943.434 (old: 7864.883)
-STATE_SET: pos_x = 48.883 (old: 49.518)
-STATE_SET: pos_y = 6.581 (old: 4.945)
+NOTIFY: pos_x = 49.755
+NOTIFY: pos_y = 4.942
+NOTIFY: spindle_rpm = 8167.205
 NOTIFY: time = 0.132
-NOTIFY: spindle_rpm = 7943.434
-NOTIFY: pos_x = 48.883
-NOTIFY: pos_y = 6.581
 
 --- TICK 5 ---
 ACTION: program_stop value=null
 STATE_SET: program_running = false (old: true)
-STATE_SET: spindle_on = false (old: true)
 STATE_SET: program_status = "IDLE" (old: "RUNNING")
-NOTIFY: program_running = false
-NOTIFY: spindle_on = false
-NOTIFY: program_status = "IDLE"
+STATE_SET: spindle_on = false (old: true)
+STATE_SET: spindle_rpm = 0.000 (old: 8167.205)
 STATE_SET: time = 0.165 (old: 0.132)
-STATE_SET: spindle_rpm = 0.000 (old: 7943.434)
-NOTIFY: time = 0.165
+NOTIFY: program_running = false
+NOTIFY: program_status = "IDLE"
+NOTIFY: spindle_on = false
 NOTIFY: spindle_rpm = 0.000
+NOTIFY: time = 0.165
 
 --- UI-Sim Trace End ---

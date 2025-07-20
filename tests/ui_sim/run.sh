@@ -18,6 +18,7 @@ NC="\033[0m"
 GENERATOR_EXE="../../lvgl_ui_generator"
 API_SPEC_PATH="../../api_spec.json"
 TEST_DIR=$(dirname "$0")
+NORMALIZER="${TEST_DIR}/normalize_trace.py"
 
 UPDATE_MODE=0
 if [ "$1" = "--update" ]; then
@@ -33,12 +34,19 @@ if [ ! -x "$GENERATOR_EXE" ]; then
     exit 1
 fi
 
+if [ ! -x "$NORMALIZER" ]; then
+    echo -e "${RED}Error: Normalizer script not found or not executable at '$NORMALIZER'.${NC}"
+    exit 1
+fi
+
+
 for test_yaml in "$TEST_DIR"/*.yaml; do
     test_count=$((test_count + 1))
     test_name=$(basename "${test_yaml}" .yaml)
     expected_file="${TEST_DIR}/${test_name}.trace.expected"
-    output_file="/tmp/${test_name}.trace.actual"
-    
+    raw_output_file="/tmp/${test_name}.trace.raw"
+    normalized_output_file="/tmp/${test_name}.trace.actual"
+
     # Extract number of ticks from the first line of the YAML file, e.g., "# TICKS: 5"
     ticks=$(grep '^# TICKS:' "$test_yaml" | awk '{print $3}')
     if [ -z "$ticks" ]; then
@@ -47,7 +55,10 @@ for test_yaml in "$TEST_DIR"/*.yaml; do
 
     if [ "$UPDATE_MODE" -eq 1 ]; then
         echo "[UPDATING] UI-Sim Trace: ${test_name}.trace.expected (Ticks: $ticks)"
-        "$GENERATOR_EXE" "$API_SPEC_PATH" "$test_yaml" --run-sim-test "$ticks" > "$expected_file"
+        # When updating, we also normalize the output to ensure consistency
+        "$GENERATOR_EXE" --run-sim-test "$ticks" --api-spec "$API_SPEC_PATH" --ui-spec "$test_yaml" > "$raw_output_file"
+        "$NORMALIZER" "$raw_output_file" > "$expected_file"
+        rm "$raw_output_file"
         continue
     fi
 
@@ -58,16 +69,20 @@ for test_yaml in "$TEST_DIR"/*.yaml; do
 
     printf "[RUNNING] UI-Sim: %-30s" "${test_name}"
 
-    "$GENERATOR_EXE" "$API_SPEC_PATH" "$test_yaml" --run-sim-test "$ticks" > "$output_file"
+    # Generate raw output, then normalize it before comparing
+    "$GENERATOR_EXE" --run-sim-test "$ticks" --api-spec "$API_SPEC_PATH" --ui-spec "$test_yaml" > "$raw_output_file"
+    "$NORMALIZER" "$raw_output_file" > "$normalized_output_file"
 
-    if diff -q -w -B "$expected_file" "$output_file" > /dev/null 2>&1; then
+
+    if diff -q -w -B "$expected_file" "$normalized_output_file" > /dev/null 2>&1; then
         printf "\r[ ${GREEN}PASS${NC}  ] UI-Sim: %-30s\n" "${test_name}"
-        rm "$output_file"
+        rm "$raw_output_file" "$normalized_output_file"
     else
         printf "\r[ ${RED}FAIL${NC}  ] UI-Sim: %-30s\n" "${test_name}"
         failed_tests=$((failed_tests + 1))
         echo "  - Diff:"
-        diff -u "$expected_file" "$output_file" | sed 's/^/    /'
+        # Diff against the normalized output
+        diff -u "$expected_file" "$normalized_output_file" | sed 's/^/    /'
     fi
 done
 

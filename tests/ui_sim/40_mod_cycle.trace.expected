@@ -1,33 +1,35 @@
 --- UI-Sim Trace Start ---
+STATE_SET: bool_val = true (old: null)
 STATE_SET: num_val = 1.000 (old: null)
 STATE_SET: str_val = "A" (old: null)
-STATE_SET: bool_val = true (old: null)
+NOTIFY: bool_val = true
 NOTIFY: num_val = 1.000
 NOTIFY: str_val = "A"
-NOTIFY: bool_val = true
 
 --- TICK 1 ---
 ACTION: cycle_all value=null
+STATE_SET: bool_val = false (old: true)
 STATE_SET: num_val = 2.000 (old: 1.000)
 STATE_SET: str_val = "B" (old: "A")
-STATE_SET: bool_val = false (old: true)
+NOTIFY: bool_val = false
 NOTIFY: num_val = 2.000
 NOTIFY: str_val = "B"
-NOTIFY: bool_val = false
 
 --- TICK 2 ---
 ACTION: cycle_all value=null
+STATE_SET: bool_val = true (old: false)
 STATE_SET: num_val = 3.000 (old: 2.000)
 STATE_SET: str_val = "C" (old: "B")
-STATE_SET: bool_val = true (old: false)
+NOTIFY: bool_val = true
 NOTIFY: num_val = 3.000
 NOTIFY: str_val = "C"
-NOTIFY: bool_val = true
 
 --- TICK 3 ---
 ACTION: cycle_all value=null
+STATE_SET: bool_val = false (old: true)
 STATE_SET: num_val = 1.000 (old: 3.000)
 STATE_SET: str_val = "A" (old: "C")
+NOTIFY: bool_val = false
 NOTIFY: num_val = 1.000
 NOTIFY: str_val = "A"
 
