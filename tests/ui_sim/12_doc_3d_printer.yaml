@@ -26,4 +26,4 @@
                 - set: { printing: false }
   schedule:
     - { tick: 2, action: start_print }
-    - { tick: 5, action: cancel_print }```
+    - { tick: 5, action: cancel_print }

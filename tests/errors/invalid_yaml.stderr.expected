@@ -1,9 +1,9 @@
 [1;31m
-FATAL ERROR: YAML Parse Error: Found key-value pair in a non-object context.
+FATAL ERROR: YAML Parse Error: Invalid mapping (not in an object context)
 
-[1m    ---> Error context (Line 6, Col 4):[0m
-[1m   6 |[0m    [1m[31mtext: "This text is not indented correctly"[0m
-       | [31m   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+    ---> Error context (Line 6, Col 4):
+   6 |    text: "This text is not indented correctly"
+     | [1m[31m   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
 
 
 [0m

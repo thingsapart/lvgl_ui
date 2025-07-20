@@ -52,6 +52,58 @@ static void cjson_add_item_to_object_with_duplicates(cJSON *object, const char *
     cJSON_AddItemToObject(object, string, item);
 }
 
+// --- Escape Sequence Helpers ---
+
+static int hex_to_int(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+// Parses a sequence of `len` hex characters from `p` into `codepoint`.
+// Returns a pointer to the character after the parsed sequence, or NULL on failure.
+static const char* parse_hex(const char* p, int len, unsigned int* codepoint) {
+    *codepoint = 0;
+    for (int i = 0; i < len; i++) {
+        if (!p[i] || !isxdigit((unsigned char)p[i])) return NULL;
+        *codepoint = (*codepoint << 4) | hex_to_int(p[i]);
+    }
+    return p + len;
+}
+
+// Encodes a Unicode codepoint into a UTF-8 sequence in `buffer`.
+// Returns the number of bytes written (1-4).
+// `buffer` must have at least 4 bytes of space.
+static int encode_utf8(unsigned int codepoint, char* buffer) {
+    if (codepoint <= 0x7F) {
+        buffer[0] = (char)codepoint;
+        return 1;
+    }
+    if (codepoint <= 0x7FF) {
+        buffer[0] = 0xC0 | (codepoint >> 6);
+        buffer[1] = 0x80 | (codepoint & 0x3F);
+        return 2;
+    }
+    // Check for surrogates, which are invalid in UTF-8
+    if (codepoint >= 0xD800 && codepoint <= 0xDFFF) return 0;
+
+    if (codepoint <= 0xFFFF) {
+        buffer[0] = 0xE0 | (codepoint >> 12);
+        buffer[1] = 0x80 | ((codepoint >> 6) & 0x3F);
+        buffer[2] = 0x80 | (codepoint & 0x3F);
+        return 3;
+    }
+    if (codepoint <= 0x10FFFF) {
+        buffer[0] = 0xF0 | (codepoint >> 18);
+        buffer[1] = 0x80 | ((codepoint >> 12) & 0x3F);
+        buffer[2] = 0x80 | ((codepoint >> 6) & 0x3F);
+        buffer[3] = 0x80 | (codepoint & 0x3F);
+        return 4;
+    }
+    return 0; // Invalid codepoint
+}
+
 
 // --- String & Line Helpers ---
 
@@ -182,7 +234,7 @@ static cJSON *parse_scalar(ParserState *state, bool is_flow_context) {
         had_quote = true;
     }
 
-    while (write_ptr < buffer + sizeof(buffer) - 1) {
+    while (write_ptr < buffer + sizeof(buffer) - 5) { // Reserve 5 bytes for safety (e.g. \U + null)
         if (had_quote) {
             if (!*p) { break; } // Unterminated string
             if (*p == quote) {
@@ -195,18 +247,63 @@ static cJSON *parse_scalar(ParserState *state, bool is_flow_context) {
                 break;
             }
             if (*p == '\\' && quote == '"') {
-                p++;
+                p++; // Consume backslash
+                if (!*p) break; // Trailing backslash
+
+                unsigned int codepoint;
+                const char* next_p;
+
                 switch (*p) {
-                    case 'n': *write_ptr++ = '\n'; break;
-                    case 'r': *write_ptr++ = '\r'; break;
-                    case 't': *write_ptr++ = '\t'; break;
-                    case 'b': *write_ptr++ = '\b'; break;
-                    case 'f': *write_ptr++ = '\f'; break;
-                    case '"': *write_ptr++ = '"'; break;
-                    case '\\': *write_ptr++ = '\\'; break;
-                    default: *write_ptr++ = *p; break;
+                    case 'n': *write_ptr++ = '\n'; p++; break;
+                    case 'r': *write_ptr++ = '\r'; p++; break;
+                    case 't': *write_ptr++ = '\t'; p++; break;
+                    case 'b': *write_ptr++ = '\b'; p++; break;
+                    case 'f': *write_ptr++ = '\f'; p++; break;
+                    case '"': *write_ptr++ = '"'; p++; break;
+                    case '\\': *write_ptr++ = '\\'; p++; break;
+                    case '/': *write_ptr++ = '/'; p++; break;
+                    case 'u':
+                        next_p = parse_hex(p + 1, 4, &codepoint);
+                        if (next_p) {
+                            int written = encode_utf8(codepoint, write_ptr);
+                            if (written) {
+                                write_ptr += written;
+                                p = next_p;
+                            } else { // Invalid codepoint (e.g., surrogate)
+                                *write_ptr++ = '\\'; *write_ptr++ = *p++;
+                            }
+                        } else { // Invalid hex sequence
+                            *write_ptr++ = '\\'; *write_ptr++ = *p++;
+                        }
+                        break;
+                    case 'U':
+                        next_p = parse_hex(p + 1, 8, &codepoint);
+                        if (next_p) {
+                             int written = encode_utf8(codepoint, write_ptr);
+                            if (written) {
+                                write_ptr += written;
+                                p = next_p;
+                            } else { // Invalid codepoint
+                                *write_ptr++ = '\\'; *write_ptr++ = *p++;
+                            }
+                        } else { // Invalid hex sequence
+                            *write_ptr++ = '\\'; *write_ptr++ = *p++;
+                        }
+                        break;
+                    case 'x':
+                        next_p = parse_hex(p + 1, 2, &codepoint);
+                        if (next_p && codepoint <= 0xFF) {
+                            *write_ptr++ = (char)codepoint;
+                            p = next_p;
+                        } else {
+                            *write_ptr++ = '\\'; *write_ptr++ = *p++;
+                        }
+                        break;
+                    default:
+                        // Per JSON standard, any other escaped character is just the character itself.
+                        *write_ptr++ = *p++;
+                        break;
                 }
-                p++;
             } else {
                 *write_ptr++ = *p++;
             }

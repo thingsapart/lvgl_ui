@@ -1062,7 +1062,7 @@ static binding_value_t evaluate_expression(SimExpression* expr, binding_value_t 
             return ret;
         }
     }
-    return (binding_value_t){.type=BINDING_TYPE_NULL};
+    return (binding_value_t){.type = BINDING_TYPE_NULL};
 }
 
 // --- Utility Functions ---
