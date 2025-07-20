@@ -38,8 +38,10 @@ NOTIFY: current_temp = 22.500
 
 --- TICK 7 ---
 ACTION: temp_down value=null
+STATE_SET: current_temp = 22.400 (old: 22.500)
 STATE_SET: heater_on = false (old: true)
 STATE_SET: target_temp = 22.500 (old: 23.000)
+NOTIFY: current_temp = 22.400
 NOTIFY: heater_on = false
 NOTIFY: target_temp = 22.500
 

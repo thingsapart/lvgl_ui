@@ -1010,6 +1010,7 @@ static binding_value_t evaluate_expression(SimExpression* expr, binding_value_t 
 
             #define IS_FLOAT(v) ((v).type == BINDING_TYPE_FLOAT)
             #define IS_BOOL(v) ((v).type == BINDING_TYPE_BOOL)
+            #define FLOAT_EPSILON 1e-6f
 
             binding_value_t ret = {.type = BINDING_TYPE_NULL};
             const char* name = expr->as.function.func_name;
@@ -1030,10 +1031,10 @@ static binding_value_t evaluate_expression(SimExpression* expr, binding_value_t 
             else if(strcmp(name, "clamp") == 0 && argc==3 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1]) && IS_FLOAT(arg_values[2])) { float v=arg_values[0].as.f_val; float min=arg_values[1].as.f_val; float max=arg_values[2].as.f_val; ret = (binding_value_t){.type=BINDING_TYPE_FLOAT, .as.f_val=fmaxf(min, fminf(v, max))};}
             else if(strcmp(name, "==") == 0 && argc==2) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=values_are_equal(arg_values[0], arg_values[1])};
             else if(strcmp(name, "!=") == 0 && argc==2) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=!values_are_equal(arg_values[0], arg_values[1])};
-            else if(strcmp(name, ">") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=arg_values[0].as.f_val > arg_values[1].as.f_val};
-            else if(strcmp(name, "<") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=arg_values[0].as.f_val < arg_values[1].as.f_val};
-            else if(strcmp(name, ">=") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=arg_values[0].as.f_val >= arg_values[1].as.f_val};
-            else if(strcmp(name, "<=") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=arg_values[0].as.f_val <= arg_values[1].as.f_val};
+            else if(strcmp(name, ">") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=(arg_values[0].as.f_val - arg_values[1].as.f_val) > FLOAT_EPSILON};
+            else if(strcmp(name, "<") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=(arg_values[1].as.f_val - arg_values[0].as.f_val) > FLOAT_EPSILON};
+            else if(strcmp(name, ">=") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=(arg_values[0].as.f_val - arg_values[1].as.f_val) > -FLOAT_EPSILON};
+            else if(strcmp(name, "<=") == 0 && argc==2 && IS_FLOAT(arg_values[0]) && IS_FLOAT(arg_values[1])) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=(arg_values[1].as.f_val - arg_values[0].as.f_val) > -FLOAT_EPSILON};
             else if(strcmp(name, "and") == 0 && argc > 0) { bool r = true; for(int i=0; i<argc; i++) { if(!IS_BOOL(arg_values[i]) || !arg_values[i].as.b_val) { r=false; break; } } ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=r}; }
             else if(strcmp(name, "or") == 0 && argc > 0) { bool r = false; for(int i=0; i<argc; i++) { if(IS_BOOL(arg_values[i]) && arg_values[i].as.b_val) { r=true; break; } } ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=r}; }
             else if(strcmp(name, "not") == 0 && argc == 1 && IS_BOOL(arg_values[0])) ret = (binding_value_t){.type=BINDING_TYPE_BOOL, .as.b_val=!arg_values[0].as.b_val};
@@ -1071,7 +1072,7 @@ static bool values_are_equal(binding_value_t v1, binding_value_t v2) {
     switch(v1.type) {
         case BINDING_TYPE_NULL: return true;
         case BINDING_TYPE_BOOL: return v1.as.b_val == v2.as.b_val;
-        case BINDING_TYPE_FLOAT: return fabsf(v1.as.f_val - v2.as.f_val) < 1e-6;
+        case BINDING_TYPE_FLOAT: return fabsf(v1.as.f_val - v2.as.f_val) < FLOAT_EPSILON;
         case BINDING_TYPE_STRING:
             if (v1.as.s_val == NULL || v2.as.s_val == NULL) return v1.as.s_val == v2.as.s_val;
             return strcmp(v1.as.s_val, v2.as.s_val) == 0;

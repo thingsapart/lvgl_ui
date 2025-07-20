@@ -6,9 +6,9 @@
     - heater_on: false
   actions:
     - temp_up:
-        target_temp: { inc: 0.5 }
+        inc: { target_temp: 0.5 }
     - temp_down:
-        target_temp: { dec: 0.5 }
+        dec: { target_temp: 0.5 }
   updates:
     # Simulate current temperature moving towards target
     - current_temp: { inc: 0.1, when: [<, current_temp, target_temp] }
@@ -17,7 +17,7 @@
     - heater_on:
         set:
           case:
-            - [[>, [sub, target_temp, current_temp], 0.2], true]
+            - [[and, [>, target_temp, current_temp], [>, [sub, target_temp, current_temp], 0.2]], true]
             - [true, false]
   schedule:
     - { tick: 2, action: temp_up }
