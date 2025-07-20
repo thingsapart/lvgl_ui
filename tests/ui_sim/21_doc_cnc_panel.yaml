@@ -1,0 +1,209 @@
+# TICKS: 12
+- type: data-binding
+  state:
+    # -- Machine State --
+    - time: 0.0
+    - program_running: false
+    - spindle_on: false
+    - coolant_on: false
+
+    # -- Machine Absolute Position (G53) --
+    - pos_x: 10.0
+    - pos_y: 15.0
+    - pos_z: 50.0
+
+    # -- Work Coordinate Systems (WCS) --
+    - wcs_name: [string, "G54"] # Active WCS
+    - wcs54_x_zero: 250.5
+    - wcs54_y_zero: 175.2
+    - wcs54_z_zero: 100.0
+    - wcs55_x_zero: 450.0
+    - wcs55_y_zero: 175.2
+    - wcs55_z_zero: 120.5
+
+    # -- Probing Geometry (Defines the imaginary part to probe) --
+    - probe_stock_min_x: 45.5      # Left edge
+    - probe_stock_max_x: 180.5     # Right edge (45.5 + 135mm)
+    - probe_stock_min_y: -69.75    # Front edge (30.25 - 100mm)
+    - probe_stock_max_y: 30.25     # Back edge
+    - probe_stock_min_z: 0.0       # Bottom surface
+    - probe_stock_max_z: 35.0      # Top surface (0.0 + 35mm)
+
+    # -- Overrides --
+    - jog_speed: 10.0 # mm per click
+    - feed_override: 1.0 # 1.0 = 100%
+    - speed_override: 1.0 # 1.0 = 100%
+    - spindle_rpm: 0.0
+
+    # -------------------
+    # -- DERIVED STATE --
+    # -------------------
+    - program_status:
+        derived_expr:
+          case:
+            - [program_running, "RUNNING"]
+            - [spindle_on, "SPINDLE ON"]
+            - [coolant_on, "COOLANT ON"]
+            - [true, "IDLE"]
+
+    # -- Derived WCS Position (Machine Position - WCS Zero) --
+    - wcs_pos_x:
+        derived_expr:
+          case:
+            - [[==, wcs_name, "G54"], [sub, pos_x, wcs54_x_zero]]
+            - [[==, wcs_name, "G55"], [sub, pos_x, wcs55_x_zero]]
+            - [true, 0.0]
+    - wcs_pos_y:
+        derived_expr:
+          case:
+            - [[==, wcs_name, "G54"], [sub, pos_y, wcs54_y_zero]]
+            - [[==, wcs_name, "G55"], [sub, pos_y, wcs55_y_zero]]
+            - [true, 0.0]
+    - wcs_pos_z:
+        derived_expr:
+          case:
+            - [[==, wcs_name, "G54"], [sub, pos_z, wcs54_z_zero]]
+            - [[==, wcs_name, "G55"], [sub, pos_z, wcs55_z_zero]]
+            - [true, 0.0]
+
+    # -- Derived Delta Position / Distance To Go (Simulated) --
+    - delta_pos_x:
+        derived_expr:
+          case:
+            - [program_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 7.3]]]]]
+            - [true, 0.0]
+    - delta_pos_y:
+        derived_expr:
+          case:
+            - [program_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 8.1]]]]]
+            - [true, 0.0]
+    - delta_pos_z:
+        derived_expr:
+          case:
+            - [program_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 6.5]]]]]
+            - [true, 0.0]
+
+  actions:
+    # -- Program and Spindle Control --
+    - program_run:
+        set: { program_running: true, spindle_on: true, coolant_on: true }
+    - program_stop:
+        set: { program_running: false, spindle_on: false, coolant_on: false }
+    - toggle_spindle:
+        toggle: spindle_on
+    - toggle_coolant:
+        toggle: coolant_on
+
+    # -- WCS Control --
+    - cycle_wcs:
+        cycle: { wcs_name: ["G54", "G55"] }
+
+    # -- WCS Zero Setting --
+    - zero_wcs_x:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: { wcs54_x_zero: pos_x } } }
+        - when: { condition: [==, wcs_name, "G55"], then: { set: { wcs55_x_zero: pos_x } } }
+    - zero_wcs_y:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: { wcs54_y_zero: pos_y } } }
+        - when: { condition: [==, wcs_name, "G55"], then: { set: { wcs55_y_zero: pos_y } } }
+    - zero_wcs_z:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: { wcs54_z_zero: pos_z } } }
+        - when: { condition: [==, wcs_name, "G55"], then: { set: { wcs55_z_zero: pos_z } } }
+
+    # -- Jogging Control --
+    - jog_x_plus:  { inc: { pos_x: jog_speed } }
+    - jog_x_minus: { dec: { pos_x: jog_speed } }
+    - jog_y_plus:  { inc: { pos_y: jog_speed } }
+    - jog_y_minus: { dec: { pos_y: jog_speed } }
+    - jog_z_plus:  { inc: { pos_z: jog_speed } }
+    - jog_z_minus: { dec: { pos_z: jog_speed } }
+
+    # -- Override Control --
+    - feed_override_up:   { set: { feed_override: [clamp, [add, feed_override, 0.1], 0, 2] } }
+    - feed_override_down: { set: { feed_override: [clamp, [sub, feed_override, 0.1], 0, 2] } }
+    - speed_override_up:   { set: { speed_override: [clamp, [add, speed_override, 0.1], 0, 2] } }
+    - speed_override_down: { set: { speed_override: [clamp, [sub, speed_override, 0.1], 0, 2] } }
+
+    # -- Probing: 3D Corners (Sets X, Y, Z of active WCS) --
+    - probe_corner_top_left_back:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_min_x, wcs54_y_zero: probe_stock_max_y, wcs54_z_zero: probe_stock_max_z}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_min_x, wcs55_y_zero: probe_stock_max_y, wcs55_z_zero: probe_stock_max_z}}}
+    - probe_corner_top_right_back:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_max_x, wcs54_y_zero: probe_stock_max_y, wcs54_z_zero: probe_stock_max_z}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_max_x, wcs55_y_zero: probe_stock_max_y, wcs55_z_zero: probe_stock_max_z}}}
+    - probe_corner_top_left_front:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_min_x, wcs54_y_zero: probe_stock_min_y, wcs54_z_zero: probe_stock_max_z}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_min_x, wcs55_y_zero: probe_stock_min_y, wcs55_z_zero: probe_stock_max_z}}}
+    - probe_corner_top_right_front:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_max_x, wcs54_y_zero: probe_stock_min_y, wcs54_z_zero: probe_stock_max_z}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_max_x, wcs55_y_zero: probe_stock_min_y, wcs55_z_zero: probe_stock_max_z}}}
+    - probe_corner_bot_left_back:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_min_x, wcs54_y_zero: probe_stock_max_y, wcs54_z_zero: probe_stock_min_z}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_min_x, wcs55_y_zero: probe_stock_max_y, wcs55_z_zero: probe_stock_min_z}}}
+    - probe_corner_bot_right_back:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_max_x, wcs54_y_zero: probe_stock_max_y, wcs54_z_zero: probe_stock_min_z}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_max_x, wcs55_y_zero: probe_stock_max_y, wcs55_z_zero: probe_stock_min_z}}}
+    - probe_corner_bot_left_front:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_min_x, wcs54_y_zero: probe_stock_min_y, wcs54_z_zero: probe_stock_min_z}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_min_x, wcs55_y_zero: probe_stock_min_y, wcs55_z_zero: probe_stock_min_z}}}
+    - probe_corner_bot_right_front:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_max_x, wcs54_y_zero: probe_stock_min_y, wcs54_z_zero: probe_stock_min_z}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_max_x, wcs55_y_zero: probe_stock_min_y, wcs55_z_zero: probe_stock_min_z}}}
+
+    # -- Probing: 2D Points on Top Surface (Sets X, Y of active WCS) --
+    - probe_point_top_center:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: [add, probe_stock_min_x, 67.5], wcs54_y_zero: [sub, probe_stock_max_y, 50]}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: [add, probe_stock_min_x, 67.5], wcs55_y_zero: [sub, probe_stock_max_y, 50]}}}
+    - probe_point_top_left:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_min_x, wcs54_y_zero: probe_stock_max_y}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_min_x, wcs55_y_zero: probe_stock_max_y}}}
+    - probe_point_top_right:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_max_x, wcs54_y_zero: probe_stock_max_y}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_max_x, wcs55_y_zero: probe_stock_max_y}}}
+    - probe_point_bot_left:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_min_x, wcs54_y_zero: probe_stock_min_y}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_min_x, wcs55_y_zero: probe_stock_min_y}}}
+    - probe_point_bot_right:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_max_x, wcs54_y_zero: probe_stock_min_y}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_max_x, wcs55_y_zero: probe_stock_min_y}}}
+
+    # -- Probing: 1D Surfaces (Sets one axis of active WCS) --
+    - probe_surface_top:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_z_zero: probe_stock_max_z}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_z_zero: probe_stock_max_z}}}
+    - probe_surface_left:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_min_x}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_min_x}}}
+    - probe_surface_right:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_x_zero: probe_stock_max_x}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_x_zero: probe_stock_max_x}}}
+    - probe_surface_front:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_y_zero: probe_stock_min_y}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_y_zero: probe_stock_min_y}}}
+    - probe_surface_back:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: {wcs54_y_zero: probe_stock_max_y}}}
+        - when: { condition: [==, wcs_name, "G55"], then: { set: {wcs55_y_zero: probe_stock_max_y}}}
+
+  updates:
+    - set:
+        spindle_rpm:
+          case:
+            - [spindle_on, [add, 8000, [mul, 200, [sin, [mul, time, 10]]]]]
+            - [true, 0]
+    - when:
+        condition: program_running
+        then:
+          - set: { pos_x: [add, 200, [mul, 50, [cos, [mul, time, 0.5]]]] }
+          - set: { pos_y: [add, 150, [mul, 50, [sin, [mul, time, 0.5]]]] }
+          - range: { pos_z: [10, 20, 0.2] }
+
+  schedule:
+    - { tick: 2, action: jog_x_minus }
+    - { tick: 3, action: jog_y_minus }
+    - { tick: 4, action: zero_wcs_x }
+    - { tick: 5, action: zero_wcs_y }
+    - { tick: 6, action: cycle_wcs }
+    - { tick: 7, action: jog_z_minus }
+    - { tick: 8, action: probe_surface_top }
+    - { tick: 9, action: program_run }
+    - { tick: 11, action: feed_override_down }
+    - { tick: 12, action: program_stop }

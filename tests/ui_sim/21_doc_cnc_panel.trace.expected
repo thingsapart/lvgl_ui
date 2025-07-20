@@ -1,0 +1,241 @@
+--- UI-Sim Trace Start ---
+STATE_SET: coolant_on = false (old: null)
+STATE_SET: delta_pos_x = 0.000 (old: null)
+STATE_SET: delta_pos_y = 0.000 (old: null)
+STATE_SET: delta_pos_z = 0.000 (old: null)
+STATE_SET: feed_override = 1.000 (old: null)
+STATE_SET: jog_speed = 10.000 (old: null)
+STATE_SET: pos_x = 10.000 (old: null)
+STATE_SET: pos_y = 15.000 (old: null)
+STATE_SET: pos_z = 50.000 (old: null)
+STATE_SET: probe_stock_max_x = 180.500 (old: null)
+STATE_SET: probe_stock_max_y = 30.250 (old: null)
+STATE_SET: probe_stock_max_z = 35.000 (old: null)
+STATE_SET: probe_stock_min_x = 45.500 (old: null)
+STATE_SET: probe_stock_min_y = -69.750 (old: null)
+STATE_SET: probe_stock_min_z = 0.000 (old: null)
+STATE_SET: program_running = false (old: null)
+STATE_SET: program_status = "IDLE" (old: null)
+STATE_SET: speed_override = 1.000 (old: null)
+STATE_SET: spindle_on = false (old: null)
+STATE_SET: spindle_rpm = 0.000 (old: null)
+STATE_SET: time = 0.000 (old: null)
+STATE_SET: wcs54_x_zero = 250.500 (old: null)
+STATE_SET: wcs54_y_zero = 175.200 (old: null)
+STATE_SET: wcs54_z_zero = 100.000 (old: null)
+STATE_SET: wcs55_x_zero = 450.000 (old: null)
+STATE_SET: wcs55_y_zero = 175.200 (old: null)
+STATE_SET: wcs55_z_zero = 120.500 (old: null)
+STATE_SET: wcs_name = "G54" (old: null)
+STATE_SET: wcs_pos_x = -240.500 (old: null)
+STATE_SET: wcs_pos_y = -160.200 (old: null)
+STATE_SET: wcs_pos_z = -50.000 (old: null)
+NOTIFY: coolant_on = false
+NOTIFY: delta_pos_x = 0.000
+NOTIFY: delta_pos_y = 0.000
+NOTIFY: delta_pos_z = 0.000
+NOTIFY: feed_override = 1.000
+NOTIFY: jog_speed = 10.000
+NOTIFY: pos_x = 10.000
+NOTIFY: pos_y = 15.000
+NOTIFY: pos_z = 50.000
+NOTIFY: probe_stock_max_x = 180.500
+NOTIFY: probe_stock_max_y = 30.250
+NOTIFY: probe_stock_max_z = 35.000
+NOTIFY: probe_stock_min_x = 45.500
+NOTIFY: probe_stock_min_y = -69.750
+NOTIFY: probe_stock_min_z = 0.000
+NOTIFY: program_running = false
+NOTIFY: program_status = "IDLE"
+NOTIFY: speed_override = 1.000
+NOTIFY: spindle_on = false
+NOTIFY: spindle_rpm = 0.000
+NOTIFY: time = 0.000
+NOTIFY: wcs54_x_zero = 250.500
+NOTIFY: wcs54_y_zero = 175.200
+NOTIFY: wcs54_z_zero = 100.000
+NOTIFY: wcs55_x_zero = 450.000
+NOTIFY: wcs55_y_zero = 175.200
+NOTIFY: wcs55_z_zero = 120.500
+NOTIFY: wcs_name = "G54"
+NOTIFY: wcs_pos_x = -240.500
+NOTIFY: wcs_pos_y = -160.200
+NOTIFY: wcs_pos_z = -50.000
+
+--- TICK 1 ---
+STATE_SET: time = 0.033 (old: 0.000)
+NOTIFY: time = 0.033
+
+--- TICK 2 ---
+ACTION: jog_x_minus value=null
+STATE_SET: pos_x = 0.000 (old: 10.000)
+STATE_SET: time = 0.066 (old: 0.033)
+STATE_SET: wcs_pos_x = -250.500 (old: -240.500)
+NOTIFY: pos_x = 0.000
+NOTIFY: time = 0.066
+NOTIFY: wcs_pos_x = -250.500
+
+--- TICK 3 ---
+ACTION: jog_y_minus value=null
+STATE_SET: pos_y = 5.000 (old: 15.000)
+STATE_SET: time = 0.099 (old: 0.066)
+STATE_SET: wcs_pos_y = -170.200 (old: -160.200)
+NOTIFY: pos_y = 5.000
+NOTIFY: time = 0.099
+NOTIFY: wcs_pos_y = -170.200
+
+--- TICK 4 ---
+ACTION: zero_wcs_x value=null
+STATE_SET: time = 0.132 (old: 0.099)
+STATE_SET: wcs54_x_zero = 0.000 (old: 250.500)
+STATE_SET: wcs_pos_x = 0.000 (old: -250.500)
+NOTIFY: time = 0.132
+NOTIFY: wcs54_x_zero = 0.000
+NOTIFY: wcs_pos_x = 0.000
+
+--- TICK 5 ---
+ACTION: zero_wcs_y value=null
+STATE_SET: time = 0.165 (old: 0.132)
+STATE_SET: wcs54_y_zero = 5.000 (old: 175.200)
+STATE_SET: wcs_pos_y = 0.000 (old: -170.200)
+NOTIFY: time = 0.165
+NOTIFY: wcs54_y_zero = 5.000
+NOTIFY: wcs_pos_y = 0.000
+
+--- TICK 6 ---
+ACTION: cycle_wcs value=null
+STATE_SET: time = 0.198 (old: 0.165)
+STATE_SET: wcs_name = "G55" (old: "G54")
+STATE_SET: wcs_pos_x = -450.000 (old: 0.000)
+STATE_SET: wcs_pos_y = -170.200 (old: 0.000)
+STATE_SET: wcs_pos_z = -70.500 (old: -50.000)
+NOTIFY: time = 0.198
+NOTIFY: wcs_name = "G55"
+NOTIFY: wcs_pos_x = -450.000
+NOTIFY: wcs_pos_y = -170.200
+NOTIFY: wcs_pos_z = -70.500
+
+--- TICK 7 ---
+ACTION: jog_z_minus value=null
+STATE_SET: pos_z = 40.000 (old: 50.000)
+STATE_SET: time = 0.231 (old: 0.198)
+STATE_SET: wcs_pos_z = -80.500 (old: -70.500)
+NOTIFY: pos_z = 40.000
+NOTIFY: time = 0.231
+NOTIFY: wcs_pos_z = -80.500
+
+--- TICK 8 ---
+ACTION: probe_surface_top value=null
+STATE_SET: time = 0.264 (old: 0.231)
+STATE_SET: wcs55_z_zero = 35.000 (old: 120.500)
+STATE_SET: wcs_pos_z = 5.000 (old: -80.500)
+NOTIFY: time = 0.264
+NOTIFY: wcs55_z_zero = 35.000
+NOTIFY: wcs_pos_z = 5.000
+
+--- TICK 9 ---
+ACTION: program_run value=null
+STATE_SET: coolant_on = true (old: false)
+STATE_SET: delta_pos_x = 0.922 (old: 0.000)
+STATE_SET: delta_pos_y = 0.852 (old: 0.000)
+STATE_SET: delta_pos_z = 0.971 (old: 0.000)
+STATE_SET: pos_x = 249.565 (old: 0.000)
+STATE_SET: pos_y = 156.581 (old: 5.000)
+STATE_SET: pos_z = 10.000 (old: 40.000)
+STATE_SET: program_running = true (old: false)
+STATE_SET: program_status = "RUNNING" (old: "IDLE")
+STATE_SET: spindle_on = true (old: false)
+STATE_SET: spindle_rpm = 8096.165 (old: 0.000)
+STATE_SET: time = 0.297 (old: 0.264)
+STATE_SET: wcs_pos_x = -200.435 (old: -450.000)
+STATE_SET: wcs_pos_y = -18.619 (old: -170.200)
+STATE_SET: wcs_pos_z = -25.000 (old: 5.000)
+NOTIFY: coolant_on = true
+NOTIFY: delta_pos_x = 0.922
+NOTIFY: delta_pos_y = 0.852
+NOTIFY: delta_pos_z = 0.971
+NOTIFY: pos_x = 249.565
+NOTIFY: pos_y = 156.581
+NOTIFY: pos_z = 10.000
+NOTIFY: program_running = true
+NOTIFY: program_status = "RUNNING"
+NOTIFY: spindle_on = true
+NOTIFY: spindle_rpm = 8096.165
+NOTIFY: time = 0.297
+NOTIFY: wcs_pos_x = -200.435
+NOTIFY: wcs_pos_y = -18.619
+NOTIFY: wcs_pos_z = -25.000
+
+--- TICK 10 ---
+STATE_SET: delta_pos_x = 0.851 (old: 0.922)
+STATE_SET: delta_pos_y = 0.753 (old: 0.852)
+STATE_SET: delta_pos_z = 0.928 (old: 0.971)
+STATE_SET: pos_x = 249.450 (old: 249.565)
+STATE_SET: pos_y = 157.398 (old: 156.581)
+STATE_SET: pos_z = 10.200 (old: 10.000)
+STATE_SET: spindle_rpm = 8034.150 (old: 8096.165)
+STATE_SET: time = 0.330 (old: 0.297)
+STATE_SET: wcs_pos_x = -200.550 (old: -200.435)
+STATE_SET: wcs_pos_y = -17.802 (old: -18.619)
+STATE_SET: wcs_pos_z = -24.800 (old: -25.000)
+NOTIFY: delta_pos_x = 0.851
+NOTIFY: delta_pos_y = 0.753
+NOTIFY: delta_pos_z = 0.928
+NOTIFY: pos_x = 249.450
+NOTIFY: pos_y = 157.398
+NOTIFY: pos_z = 10.200
+NOTIFY: spindle_rpm = 8034.150
+NOTIFY: time = 0.330
+NOTIFY: wcs_pos_x = -200.550
+NOTIFY: wcs_pos_y = -17.802
+NOTIFY: wcs_pos_z = -24.800
+
+--- TICK 11 ---
+ACTION: feed_override_down value=null
+STATE_SET: delta_pos_x = 0.762 (old: 0.851)
+STATE_SET: delta_pos_y = 0.640 (old: 0.753)
+STATE_SET: delta_pos_z = 0.867 (old: 0.928)
+STATE_SET: feed_override = 0.900 (old: 1.000)
+STATE_SET: pos_x = 249.321 (old: 249.450)
+STATE_SET: pos_y = 158.213 (old: 157.398)
+STATE_SET: pos_z = 10.400 (old: 10.200)
+STATE_SET: spindle_rpm = 7968.451 (old: 8034.150)
+STATE_SET: time = 0.363 (old: 0.330)
+STATE_SET: wcs_pos_x = -200.679 (old: -200.550)
+STATE_SET: wcs_pos_y = -16.987 (old: -17.802)
+STATE_SET: wcs_pos_z = -24.600 (old: -24.800)
+NOTIFY: delta_pos_x = 0.762
+NOTIFY: delta_pos_y = 0.640
+NOTIFY: delta_pos_z = 0.867
+NOTIFY: feed_override = 0.900
+NOTIFY: pos_x = 249.321
+NOTIFY: pos_y = 158.213
+NOTIFY: pos_z = 10.400
+NOTIFY: spindle_rpm = 7968.451
+NOTIFY: time = 0.363
+NOTIFY: wcs_pos_x = -200.679
+NOTIFY: wcs_pos_y = -16.987
+NOTIFY: wcs_pos_z = -24.600
+
+--- TICK 12 ---
+ACTION: program_stop value=null
+STATE_SET: coolant_on = false (old: true)
+STATE_SET: delta_pos_x = 0.000 (old: 0.762)
+STATE_SET: delta_pos_y = 0.000 (old: 0.640)
+STATE_SET: delta_pos_z = 0.000 (old: 0.867)
+STATE_SET: program_running = false (old: true)
+STATE_SET: program_status = "IDLE" (old: "RUNNING")
+STATE_SET: spindle_on = false (old: true)
+STATE_SET: spindle_rpm = 0.000 (old: 7968.451)
+STATE_SET: time = 0.396 (old: 0.363)
+NOTIFY: coolant_on = false
+NOTIFY: delta_pos_x = 0.000
+NOTIFY: delta_pos_y = 0.000
+NOTIFY: delta_pos_z = 0.000
+NOTIFY: program_running = false
+NOTIFY: program_status = "IDLE"
+NOTIFY: spindle_on = false
+NOTIFY: spindle_rpm = 0.000
+NOTIFY: time = 0.396
+
+--- UI-Sim Trace End ---
