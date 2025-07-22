@@ -81,7 +81,7 @@ fi
 # FINAL_MESSAGE="\nPlease print out whole files. Don\'t give me just the section that has changed, do not omit parts with comments.\n"
 
 FINAL_MESSAGE='
-Please print out whole files. Do not give me just the section that has changed, do not omit parts with comments.
+Please print out whole files, only those that you have changed. Do not give me just the section that has changed, do not omit parts with comments. Only print out the files that have been changed.
 
 NOTE:
 
@@ -151,7 +151,7 @@ else
     echo "Error: No clipboard command found. Please install pbcopy, wl-copy, or xclip." >&2
     exit 1
   fi
-  
+
   # Pipe the final text to the detected clipboard command.
   printf "%s" "$FINAL_TEXT" | $COPY_CMD
   echo "✅ Content copied to clipboard." >&2

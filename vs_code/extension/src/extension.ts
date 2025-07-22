@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 
-const LOGGING_ENABLED = true; // Set to true for verbose debug output
+const LOGGING_ENABLED = false; // Set to true for verbose debug output
 
 const RESOLUTIONS = [
     { name: 'Default (480x320)', width: 480, height: 320 },

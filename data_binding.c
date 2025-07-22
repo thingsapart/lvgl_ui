@@ -148,7 +148,7 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
                                              (new_value.type == BINDING_TYPE_FLOAT && new_value.as.f_val != 0.0f) ||
                                              (new_value.type == BINDING_TYPE_STRING && new_value.as.s_val && *new_value.as.s_val != '\0');
                             bool is_inverse = !(*(bool*)obs->config.config);
-                            target_state = is_inverse ? !is_truthy : is_truthy;
+                            target_state = is_inverse ? !is_truthy : is_inverse;
                         }
 
                         lv_obj_flag_t flag = 0;
@@ -298,7 +298,12 @@ void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_t
     if (!user_data) render_abort("Failed to allocate action user data");
 
     user_data->type = type;
-    user_data->action_name = action_name;
+    user_data->action_name = strdup(action_name);
+    if (!user_data->action_name) {
+        free(user_data);
+        render_abort("Failed to duplicate action name");
+        return;
+    }
 
     lv_event_cb_t cb = generic_action_event_cb;
     lv_event_code_t code = LV_EVENT_CLICKED;
@@ -307,6 +312,7 @@ void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_t
         code = LV_EVENT_VALUE_CHANGED;
     } else if (type == ACTION_TYPE_CYCLE) {
         if (!cycle_values || cycle_value_count == 0) {
+            free((void*)user_data->action_name);
             free(user_data);
             return;
         }
@@ -359,6 +365,7 @@ static void free_observer_config_cb(lv_event_t* e) {
 static void free_action_user_data_cb(lv_event_t* e) {
     ActionUserData* user_data = lv_event_get_user_data(e);
     if (user_data) {
+        free((void*)user_data->action_name);
         if (user_data->type == ACTION_TYPE_CYCLE && user_data->values) {
             for (uint32_t i = 0; i < user_data->value_count; i++) {
                 if (user_data->values[i].type == BINDING_TYPE_STRING && user_data->values[i].as.s_val) {

@@ -34,6 +34,7 @@ static void merge_json_objects(cJSON* dest, const cJSON* source);
 static int count_cjson_array(cJSON* array_json);
 static int count_function_args(const FunctionArg* head);
 static bool types_compatible(const char* expected, const char* actual);
+static cJSON* process_context_keys_recursive(const cJSON* source_json, const cJSON* context);
 
 
 // --- Main Entry Point ---
@@ -206,6 +207,56 @@ IRRoot* generate_ir_from_file(const char* ui_spec_path, const ApiSpec* api_spec)
     return ir_root;
 }
 
+// --- NEW ---
+/**
+ * @brief Recursively traverses a cJSON structure, creating a deep copy.
+ * During the copy, it inspects every object key. If a key starts with '$',
+ * it attempts to replace it with the corresponding string value from the context.
+ *
+ * @param source_json The cJSON structure to process.
+ * @param context The cJSON object containing context variables.
+ * @return A new, fully processed cJSON structure. The caller is responsible for deleting it.
+ */
+static cJSON* process_context_keys_recursive(const cJSON* source_json, const cJSON* context) {
+    if (!source_json) {
+        return NULL;
+    }
+
+    if (cJSON_IsObject(source_json)) {
+        cJSON* new_obj = cJSON_CreateObject();
+        cJSON* item = NULL;
+        cJSON_ArrayForEach(item, source_json) {
+            const char* original_key = item->string;
+            const char* final_key = original_key;
+
+            if (original_key && original_key[0] == '$') {
+                const char* var_name = original_key + 1;
+                cJSON* context_val_item = cJSON_GetObjectItem(context, var_name);
+                if (context_val_item && cJSON_IsString(context_val_item)) {
+                    final_key = context_val_item->valuestring;
+                }
+            }
+
+            cJSON* new_value = process_context_keys_recursive(item, context);
+            cJSON_AddItemToObject(new_obj, final_key, new_value);
+        }
+        return new_obj;
+    }
+
+    if (cJSON_IsArray(source_json)) {
+        cJSON* new_arr = cJSON_CreateArray();
+        cJSON* item = NULL;
+        cJSON_ArrayForEach(item, source_json) {
+            cJSON* new_item = process_context_keys_recursive(item, context);
+            cJSON_AddItemToArray(new_arr, new_item);
+        }
+        return new_arr;
+    }
+
+    // For non-container types (string, number, bool, null), just duplicate.
+    return cJSON_Duplicate(source_json, true);
+}
+
 
 // --- Core Object Parser ---
 
@@ -232,7 +283,18 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             return NULL;
         }
 
-        cJSON* merged_json = cJSON_Duplicate(component_content, true);
+        cJSON* new_context = cJSON_CreateObject();
+        if (ui_context) merge_json_objects(new_context, ui_context);
+        cJSON* local_context = cJSON_GetObjectItem(obj_json, "context");
+        if (local_context) merge_json_objects(new_context, local_context);
+
+        // NEW: Process the component template with the context to substitute keys
+        cJSON* processed_template = process_context_keys_recursive(component_content, new_context);
+
+        // The final JSON object we will parse. Start with the processed template.
+        cJSON* final_json = processed_template;
+
+        // Now, merge/override properties from the use-view block itself onto the processed template
         cJSON* prop_item = NULL;
         cJSON_ArrayForEach(prop_item, obj_json) {
             const char* key = prop_item->string;
@@ -240,15 +302,15 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
             if (strcmp(key, "children") == 0) {
                 if (cJSON_IsArray(prop_item)) {
-                    cJSON* merged_children = cJSON_GetObjectItem(merged_json, "children");
-                    if (!merged_children) {
-                        merged_children = cJSON_CreateArray();
-                        cJSON_AddItemToObject(merged_json, "children", merged_children);
+                    cJSON* final_children = cJSON_GetObjectItem(final_json, "children");
+                    if (!final_children) {
+                        final_children = cJSON_CreateArray();
+                        cJSON_AddItemToObject(final_json, "children", final_children);
                     }
-                    if (cJSON_IsArray(merged_children)) {
+                    if (cJSON_IsArray(final_children)) {
                         cJSON* child_to_add;
                         cJSON_ArrayForEach(child_to_add, prop_item) {
-                            cJSON_AddItemToArray(merged_children, cJSON_Duplicate(child_to_add, true));
+                            cJSON_AddItemToArray(final_children, cJSON_Duplicate(child_to_add, true));
                         }
                     }
                 }
@@ -257,22 +319,16 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
             if (strcmp(key, "type") == 0 || strcmp(key, "id") == 0 || strcmp(key, "context") == 0) continue;
 
-            if (cJSON_HasObjectItem(merged_json, key)) {
-                cJSON_ReplaceItemInObject(merged_json, key, cJSON_Duplicate(prop_item, true));
+            if (cJSON_HasObjectItem(final_json, key)) {
+                cJSON_ReplaceItemInObject(final_json, key, cJSON_Duplicate(prop_item, true));
             } else {
-                cJSON_AddItemToObject(merged_json, key, cJSON_Duplicate(prop_item, true));
+                cJSON_AddItemToObject(final_json, key, cJSON_Duplicate(prop_item, true));
             }
         }
 
-        cJSON* new_context = cJSON_CreateObject();
-        if (ui_context) merge_json_objects(new_context, ui_context);
+        IRObject* generated_obj = parse_object(ctx, final_json, parent_c_name, new_context);
 
-        cJSON* local_context = cJSON_GetObjectItem(obj_json, "context");
-        if (local_context) merge_json_objects(new_context, local_context);
-
-        IRObject* generated_obj = parse_object(ctx, merged_json, parent_c_name, new_context);
-
-        cJSON_Delete(merged_json);
+        cJSON_Delete(final_json);
         cJSON_Delete(new_context);
         return generated_obj;
     }

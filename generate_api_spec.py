@@ -182,8 +182,24 @@ class LVGLApiParser:
         for name in complex_consts:
             c_source_lines.append(f'    cJSON_AddItemToObject(root, "{name}", cJSON_CreateNumber({name}));')
 
+        user_consts = [
+                    ['LV_GRID_FR1', 'LV_GRID_FR(1)'],
+                    ['LV_GRID_FR2', 'LV_GRID_FR(2)'],
+                    ['LV_GRID_FR3', 'LV_GRID_FR(3)'],
+                    ['LV_GRID_FR4', 'LV_GRID_FR(4)'],
+                    ['LV_GRID_FR5', 'LV_GRID_FR(5)'],
+                    ['LV_GRID_FR6', 'LV_GRID_FR(6)'],
+                    ['LV_GRID_FR7', 'LV_GRID_FR(7)'],
+                    ['LV_GRID_FR8', 'LV_GRID_FR(8)'],
+                    ['LV_GRID_FR9', 'LV_GRID_FR(9)'],
+                    ['LV_GRID_FR10', 'LV_GRID_FR(10)']
+                ]
+        for name, exp in user_consts:
+            c_source_lines.append(f'    cJSON_AddItemToObject(root, "{name}", cJSON_CreateNumber({exp}));')
+
         c_source_lines.extend([
-            '    char* out = cJSON_PrintUnformatted(root);',
+            #'    char* out = cJSON_PrintUnformatted(root);',
+            '    char* out = cJSON_Print(root);',
             '    if (out) { printf("%s", out); free(out); }',
             '    cJSON_Delete(root);',
             '    return 0;',
@@ -207,9 +223,11 @@ class LVGLApiParser:
             resolved_json = json.loads(run_result.stdout)
 
             updated_count = 0
+            users_const_keys = [k for k, _ in user_consts]
             for name, value in resolved_json.items():
-                if name in constants:
+                if name in constants or name in users_const_keys:
                     constants[name] = str(value)
+                    # print(f"{name} => {value}", file=sys.stderr)
                     updated_count += 1
             print(f"Successfully evaluated and updated {updated_count} constants.", file=sys.stderr)
 

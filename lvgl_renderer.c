@@ -9,6 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// --- ADDED: Static registry to hold allocated data across reloads ---
+static Registry* g_renderer_registry = NULL;
+
 // --- Render Context ---
 // This struct is passed through the recursive render functions to manage state
 // and gracefully handle errors without crashing.
@@ -51,6 +54,12 @@ void lvgl_renderer_reload_ui_from_string(const char* ui_spec_string, ApiSpec* ap
     DEBUG_LOG(LOG_MODULE_RENDERER, "Reloading UI from string");
 
     // --- State Reset ---
+    // Clean up memory from the *previous* render cycle first.
+    if (g_renderer_registry) {
+        registry_free(g_renderer_registry);
+        g_renderer_registry = NULL;
+    }
+
     // Unconditionally clean the UI and reset global registries at the beginning of every reload.
     // This ensures that we always start from a known-good state, even if the previous render failed.
     lv_obj_clean(preview_panel);
@@ -85,10 +94,11 @@ void lvgl_renderer_reload_ui_from_string(const char* ui_spec_string, ApiSpec* ap
 
 
     // --- Render a valid IR ---
-    Registry* renderer_registry = registry_create();
-    if (renderer_registry) {
-        lvgl_render_backend(ir_root, api_spec, preview_panel, renderer_registry);
-        registry_free(renderer_registry);
+    // Create the new registry for this render cycle. It will be freed on the next reload.
+    g_renderer_registry = registry_create();
+    if (g_renderer_registry) {
+        lvgl_render_backend(ir_root, api_spec, preview_panel, g_renderer_registry);
+        // DO NOT free the registry here. Its data (grid arrays) must persist for LVGL.
     }
 
     if (inspector_panel) {

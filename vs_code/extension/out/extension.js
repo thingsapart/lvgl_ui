@@ -6,7 +6,7 @@ const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
 const child_process_1 = require("child_process");
-const LOGGING_ENABLED = true; // Set to true for verbose debug output
+const LOGGING_ENABLED = false; // Set to true for verbose debug output
 const RESOLUTIONS = [
     { name: 'Default (480x320)', width: 480, height: 320 },
     { name: 'Phone Portrait (320x480)', width: 320, height: 480 },
