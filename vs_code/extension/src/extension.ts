@@ -16,6 +16,7 @@ const RESOLUTIONS = [
     { name: 'WXGA (1280x720)', width: 1280, height: 720 },
 ];
 const STORAGE_KEY_RESOLUTION = 'lvglPreview.lastResolution';
+const STORAGE_KEY_TRACE_SIM = 'lvglPreview.traceSimEnabled';
 
 let previewPanel: vscode.WebviewPanel | undefined = undefined;
 let serverProcess: ChildProcessWithoutNullStreams | undefined = undefined;
@@ -26,6 +27,8 @@ let renderTimeout: NodeJS.Timeout;
 
 // This holds the active resolution for the current preview session.
 let currentResolution = { width: 480, height: 320 };
+// This holds the active trace setting for the current preview session.
+let traceSimEnabled = false;
 
 export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel("LVGL UI Preview");
@@ -34,6 +37,10 @@ export function activate(context: vscode.ExtensionContext) {
         logChannel.show(true); // Show the log channel on activation if enabled
         logChannel.appendLine('[EXTENSION] Starting...');
     }
+
+    // Load persisted settings
+    traceSimEnabled = context.workspaceState.get<boolean>(STORAGE_KEY_TRACE_SIM, false);
+
 
     const disposable = vscode.commands.registerCommand('lvgl-ui-generator.preview', async (uri: vscode.Uri | undefined) => {
 
@@ -136,6 +143,22 @@ function setupPreviewPanel(context: vscode.ExtensionContext) {
             return;
         }
 
+        if (message.command === 'setTrace') {
+            if (LOGGING_ENABLED) logChannel.appendLine(`[Extension] Trace setting changed to: ${message.enabled}`);
+            traceSimEnabled = message.enabled;
+            context.workspaceState.update(STORAGE_KEY_TRACE_SIM, traceSimEnabled);
+
+            // We need to restart the server for the change to take effect.
+            if (serverProcess) {
+                serverProcess.kill();
+                serverProcess = undefined; // Immediately mark as dead. The exit handler will also run but it's fine.
+            }
+            // A render is needed to restart the server. The INIT from the new server will trigger it.
+            startServerProcess(context);
+            return;
+        }
+
+
         // Forward other messages (like input) to the server if it's running
         if (!serverProcess) return;
         const command = { command: "input", ...message };
@@ -176,6 +199,9 @@ function startServerProcess(context: vscode.ExtensionContext) {
     if (LOGGING_ENABLED) {
         serverArgs.push('--log');
     }
+    if (traceSimEnabled) {
+        serverArgs.push('--trace-sim-no-time');
+    }
 
     if (LOGGING_ENABLED) logChannel.appendLine(`[Server] Spawning server process: ${serverPath} ${serverArgs.join(' ')}`);
     serverProcess = spawn(serverPath, serverArgs, { cwd });
@@ -213,7 +239,7 @@ function startServerProcess(context: vscode.ExtensionContext) {
                 if (buffer.length < 16) return;
 
                 const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
-                previewPanel?.webview.postMessage({ command: 'initialize', resolution: currentResolution, allResolutions: RESOLUTIONS });
+                previewPanel?.webview.postMessage({ command: 'initialize', resolution: currentResolution, allResolutions: RESOLUTIONS, traceSimEnabled: traceSimEnabled });
                 if (editor) {
                     triggerRender(editor, currentResolution.width, currentResolution.height, context);
                 }
@@ -266,6 +292,8 @@ function startServerProcess(context: vscode.ExtensionContext) {
             const match = cleanLine.match(/^\[(ERROR|WARNING|HINT)\]\s*(.*)/);
             if (match) {
                 previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: match[1].toLowerCase(), text: match[2].trim() });
+            } else if (cleanLine.startsWith("STATE_SET:") || cleanLine.startsWith("NOTIFY:") || cleanLine.startsWith("ACTION:")) {
+                previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: 'trace', text: cleanLine });
             }
         }
     });
@@ -322,7 +350,7 @@ function getWebviewContent(): string {
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; flex-direction: column; background-color: #252526; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; overflow: hidden; }
         .main-content { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; /* Flexbox fix for overflow */ }
-        .controls { padding: 8px; background-color: #333; width: 100%; box-sizing: border-box; text-align: center; border-bottom: 1px solid #444; flex-shrink: 0; }
+        .controls { padding: 8px; background-color: #333; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #444; flex-shrink: 0; gap: 16px; }
         #resolution-select { background: #3c3c3c; color: #f0f0f0; border: 1px solid #666; padding: 4px; border-radius: 4px; }
         .canvas-container { flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; overflow: auto; padding: 16px; box-sizing: border-box;}
         canvas { background-color: #fff; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; box-shadow: 0 4px 12px rgba(0,0,0,0.5); flex-shrink: 0; }
@@ -369,13 +397,19 @@ function getWebviewContent(): string {
         .console-msg.error { color: #f48771; }
         .console-msg.warning { color: #f1d75c; }
         .console-msg.hint { color: #6fbcf1; }
+        .console-msg.trace { color: #999; }
     </style>
 </head>
 <body>
     <div class="main-content">
         <div class="controls">
-            <label for="resolution-select" style="margin-right: 8px;">Resolution:</label>
-            <select id="resolution-select"></select>
+            <div>
+                <label for="resolution-select" style="margin-right: 8px;">Resolution:</label>
+                <select id="resolution-select"></select>
+            </div>
+            <div>
+                 <label><input type="checkbox" id="trace-sim-checkbox"> Trace UI simulation</label>
+            </div>
         </div>
         <div class="canvas-container">
             <canvas id="preview-canvas"></canvas>
@@ -395,6 +429,7 @@ function getWebviewContent(): string {
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const vscode = acquireVsCodeApi();
         const resolutionSelect = document.getElementById('resolution-select');
+        const traceSimCheckbox = document.getElementById('trace-sim-checkbox');
         const consoleContainer = document.getElementById('console');
         const consoleOutput = document.getElementById('console-output');
         const consoleCloseBtn = document.getElementById('console-close-btn');
@@ -430,9 +465,12 @@ function getWebviewContent(): string {
             const message = event.data;
             switch (message.command) {
                 case 'initialize': {
-                    const { resolution, allResolutions } = message;
+                    const { resolution, allResolutions, traceSimEnabled } = message;
 
                     setCanvasSize(resolution.width, resolution.height);
+
+                    // Set trace checkbox state
+                    traceSimCheckbox.checked = !!traceSimEnabled;
 
                     resolutionSelect.innerHTML = '';
                     allResolutions.forEach(res => {
@@ -462,18 +500,19 @@ function getWebviewContent(): string {
                 }
                 case 'showConsoleMessage': {
                     const { type, text } = message;
-                    const prefix = \`[\${type.toUpperCase()}]\`;
-
                     const msgElement = document.createElement('div');
                     msgElement.className = \`console-msg \${type}\`;
 
-                    const prefixSpan = document.createElement('span');
-                    prefixSpan.style.fontWeight = 'bold';
-                    prefixSpan.textContent = prefix.padEnd(10, ' ');
-
-                    msgElement.appendChild(prefixSpan);
-                    msgElement.appendChild(document.createTextNode(text));
-
+                    if (type === 'trace') {
+                        msgElement.textContent = text;
+                    } else {
+                        const prefix = \`[\${type.toUpperCase()}]\`;
+                        const prefixSpan = document.createElement('span');
+                        prefixSpan.style.fontWeight = 'bold';
+                        prefixSpan.textContent = prefix.padEnd(10, ' ');
+                        msgElement.appendChild(prefixSpan);
+                        msgElement.appendChild(document.createTextNode(text));
+                    }
                     consoleOutput.appendChild(msgElement);
 
                     // Show console if it's hidden and scroll to the new message
@@ -491,6 +530,13 @@ function getWebviewContent(): string {
             vscode.postMessage({
                 command: 'changeResolution',
                 resolution: { width, height }
+            });
+        });
+
+        traceSimCheckbox.addEventListener('change', e => {
+            vscode.postMessage({
+                command: 'setTrace',
+                enabled: e.target.checked
             });
         });
 

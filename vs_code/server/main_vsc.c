@@ -25,10 +25,10 @@
 bool g_strict_mode = false;
 bool g_strict_registry_mode = false;
 bool g_logging_enabled = false;
-// IMPORTANT: UI-Sim tracing MUST be disabled for the VSCode server, as its printf
-// statements to stdout would corrupt the binary data stream to the extension.
-// The simulation will still run, but its trace log is suppressed.
+// For the VSCode server, UI-Sim trace messages must be sent to stderr to avoid
+// corrupting the binary stdout stream. This can be enabled by the extension.
 bool g_ui_sim_trace_enabled = false;
+bool g_ui_sim_trace_no_time_enabled = false; // ADDED: To suppress time-only trace messages
 
 // Define the global function pointer that LVGL's assert handler will see.
 void (*g_lvgl_assert_abort_cb)(const char *msg) = NULL;
@@ -266,6 +266,9 @@ int main(int argc, char* argv[]) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--log") == 0) {
             g_logging_enabled = true;
+        } else if (strcmp(argv[i], "--trace-sim-no-time") == 0) {
+            g_ui_sim_trace_enabled = true;
+            g_ui_sim_trace_no_time_enabled = true;
         } else if (api_spec_path == NULL) {
             api_spec_path = argv[i];
         }

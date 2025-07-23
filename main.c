@@ -34,6 +34,7 @@
 bool g_strict_mode = false;
 bool g_strict_registry_mode = false;
 bool g_ui_sim_trace_enabled = false; // ADDED: For UI-Sim test tracing
+bool g_ui_sim_trace_no_time_enabled = false; // Not used in main, but defined to link ui_sim.c
 
 
 // --- Function Declarations ---
@@ -119,13 +120,13 @@ int run_sim_test_mode(const char* api_spec_path, const char* ui_spec_path, int n
     }
 
     // --- 3. Run Simulation ---
-    printf("--- UI-Sim Trace Start ---\n");
+    fprintf(stderr, "--- UI-Sim Trace Start ---\n");
     ui_sim_start();
     for(int i = 0; i < num_ticks; i++) {
-        printf("\n--- TICK %d ---\n", i + 1);
+        fprintf(stderr, "\n--- TICK %d ---\n", i + 1);
         ui_sim_tick(0.033f);
     }
-    printf("\n--- UI-Sim Trace End ---\n");
+    fprintf(stderr, "\n--- UI-Sim Trace End ---\n");
 
     // --- 4. Cleanup ---
     ui_sim_init();

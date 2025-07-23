@@ -11,6 +11,9 @@
 #define UI_SIM_MAX_SCHEDULED_ACTIONS 64
 #define UI_SIM_MAX_FUNC_ARGS 16
 
+// --- Global Configuration ---
+extern bool g_ui_sim_trace_no_time_enabled;
+
 // --- Data Structures ---
 
 typedef enum {

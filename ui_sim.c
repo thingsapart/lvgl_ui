@@ -7,7 +7,8 @@
 #include <stdarg.h>
 
 // --- Global Configuration for Testing ---
-extern bool g_ui_sim_trace_enabled; // This will be defined in main.c
+extern bool g_ui_sim_trace_enabled; // This will be defined in main.c or main_vsc.c
+extern bool g_ui_sim_trace_no_time_enabled;
 
 // --- Parsing Context for Better Error Reporting ---
 typedef struct {
@@ -158,9 +159,9 @@ void ui_sim_start(void) {
 
     if (g_ui_sim_trace_enabled) {
         for (uint32_t i = 0; i < g_sim.state_count; i++) {
-            printf("STATE_SET: %s = ", g_sim.states[i].name);
+            fprintf(stderr, "STATE_SET: %s = ", g_sim.states[i].name);
             trace_print_value(g_sim.states[i].value);
-            printf(" (old: null)\n");
+            fprintf(stderr, " (old: null)\n");
         }
     }
 
@@ -756,11 +757,14 @@ static SimStateVariable* find_state(const char* name) {
 static bool set_state_value(SimStateVariable* state, binding_value_t new_value) {
     if (!values_are_equal(state->value, new_value)) {
         if (g_ui_sim_trace_enabled) {
-            printf("STATE_SET: %s = ", state->name);
-            trace_print_value(new_value);
-            printf(" (old: ");
-            trace_print_value(state->value);
-            printf(")\n");
+            bool is_time_update = strcmp(state->name, "time") == 0;
+            if (!g_ui_sim_trace_no_time_enabled || !is_time_update) {
+                fprintf(stderr, "STATE_SET: %s = ", state->name);
+                trace_print_value(new_value);
+                fprintf(stderr, " (old: ");
+                trace_print_value(state->value);
+                fprintf(stderr, ")\n");
+            }
         }
         if(state->value.type == BINDING_TYPE_STRING) free((void*)state->value.as.s_val);
 
@@ -792,9 +796,12 @@ static void notify_changed_states(void) {
     for(uint32_t i = 0; i < g_sim.state_count; i++) {
         if (g_sim.states[i].is_dirty) {
             if (g_ui_sim_trace_enabled) {
-                printf("NOTIFY: %s = ", g_sim.states[i].name);
-                trace_print_value(g_sim.states[i].value);
-                printf("\n");
+                bool is_time_update = strcmp(g_sim.states[i].name, "time") == 0;
+                if (!g_ui_sim_trace_no_time_enabled || !is_time_update) {
+                    fprintf(stderr, "NOTIFY: %s = ", g_sim.states[i].name);
+                    trace_print_value(g_sim.states[i].value);
+                    fprintf(stderr, "\n");
+                }
             }
             data_binding_notify_state_changed(g_sim.states[i].name, g_sim.states[i].value);
             g_sim.states[i].is_dirty = false;
@@ -805,9 +812,9 @@ static void notify_changed_states(void) {
 static void sim_action_handler(const char* action_name, binding_value_t value, void* user_data) {
     (void)user_data;
     if (g_ui_sim_trace_enabled) {
-        printf("ACTION: %s value=", action_name);
+        fprintf(stderr, "ACTION: %s value=", action_name);
         trace_print_value(value);
-        printf("\n");
+        fprintf(stderr, "\n");
     }
     SimAction* action = find_action(action_name);
     if (action) {
@@ -1082,9 +1089,9 @@ static bool values_are_equal(binding_value_t v1, binding_value_t v2) {
 
 static void trace_print_value(binding_value_t v) {
     switch(v.type) {
-        case BINDING_TYPE_NULL: printf("null"); break;
-        case BINDING_TYPE_FLOAT: printf("%.3f", v.as.f_val); break;
-        case BINDING_TYPE_BOOL: printf("%s", v.as.b_val ? "true" : "false"); break;
-        case BINDING_TYPE_STRING: printf("\"%s\"", v.as.s_val ? v.as.s_val : ""); break;
+        case BINDING_TYPE_NULL: fprintf(stderr, "null"); break;
+        case BINDING_TYPE_FLOAT: fprintf(stderr, "%.3f", v.as.f_val); break;
+        case BINDING_TYPE_BOOL: fprintf(stderr, "%s", v.as.b_val ? "true" : "false"); break;
+        case BINDING_TYPE_STRING: fprintf(stderr, "\"%s\"", v.as.s_val ? v.as.s_val : ""); break;
     }
 }

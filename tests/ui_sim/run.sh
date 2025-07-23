@@ -55,8 +55,9 @@ for test_yaml in "$TEST_DIR"/*.yaml; do
 
     if [ "$UPDATE_MODE" -eq 1 ]; then
         echo "[UPDATING] UI-Sim Trace: ${test_name}.trace.expected (Ticks: $ticks)"
-        # When updating, we also normalize the output to ensure consistency
-        "$GENERATOR_EXE" --run-sim-test "$ticks" --api-spec "$API_SPEC_PATH" --ui-spec "$test_yaml" > "$raw_output_file"
+        # When updating, we also normalize the output to ensure consistency.
+        # Trace output is now on stderr.
+        "$GENERATOR_EXE" --run-sim-test "$ticks" --api-spec "$API_SPEC_PATH" --ui-spec "$test_yaml" 2> "$raw_output_file"
         "$NORMALIZER" "$raw_output_file" > "$expected_file"
         rm "$raw_output_file"
         continue
@@ -69,8 +70,8 @@ for test_yaml in "$TEST_DIR"/*.yaml; do
 
     printf "[RUNNING] UI-Sim: %-30s" "${test_name}"
 
-    # Generate raw output, then normalize it before comparing
-    "$GENERATOR_EXE" --run-sim-test "$ticks" --api-spec "$API_SPEC_PATH" --ui-spec "$test_yaml" > "$raw_output_file"
+    # Generate raw output from stderr, then normalize it before comparing
+    "$GENERATOR_EXE" --run-sim-test "$ticks" --api-spec "$API_SPEC_PATH" --ui-spec "$test_yaml" 2> "$raw_output_file"
     "$NORMALIZER" "$raw_output_file" > "$normalized_output_file"
 
 
