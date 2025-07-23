@@ -28,16 +28,35 @@ You define an action on a widget using the `action` key. The value is a map wher
 # A cycle action on a button. All numeric values are sent as floats.
 - type: button
   action: { feedrate|override: [50, 90, 100, 110, 150] }
+
+# A numeric input dialog action
+- type: button
+  action:
+    # 'jog|step' is the state that will be updated with the result.
+    jog|step:
+      numeric_input_dialog:
+        min: 0
+        max: 1000
+        initial: 100 # The starting value for the slider
+        text: "Set Jog Step (microns)"
+        format: "%g um"
 ```
 
-*   `program|run`, `spindle|toggle`, and `feedrate|override` are the **action names**. You can define any string; they are how you identify the action in your C code.
-*   The value (`"trigger"`, `"toggle"`, or an array `[...]`) defines the **action type**.
+*   `program|run`, `spindle|toggle`, etc., are the **action names**. You can define any string; they are how you identify the action in your C code.
+*   The value (`"trigger"`, `"toggle"`, an array `[...]`, or a map `{...}`) defines the **action type**.
 
 ### Action Types
 
 1.  **`trigger`**: A simple, stateless event. Ideal for buttons that perform a one-off task. The `binding_value_t` sent to the handler has type `BINDING_TYPE_NULL`.
 2.  **`toggle`**: Sends a boolean value representing the new state of a widget. Ideal for `switch` and `checkbox` widgets. The event is triggered on value change, and the value has type `BINDING_TYPE_BOOL`.
 3.  **`cycle` (`[...]`)**: An array of values attached to a widget. Each time the action is triggered, it sends the *next* value in the array to the handler, cycling back to the start. The value sent can be a float, bool, or string.
+4.  **`numeric_input_dialog`**: **This action is special.** It does not immediately call your action handler. Instead, it opens a modal dialog with a slider for the user to select a value. Only when the user clicks "OK" is your action handler called with the final numeric value.
+    *   The action name (e.g., `jog|step`) is the name of the state that will be updated.
+    *   Configuration options:
+        *   `min`, `max`: The minimum and maximum integer values for the slider.
+        *   `initial`: The starting value for the slider. Defaults to `min` if not provided.
+        *   `text`: The title text to display on the dialog.
+        *   `format`: A `printf`-style format string for the label that shows the slider's current value (e.g., `"%g%%"`).
 
 ### Implementing the Action Handler in C
 
@@ -89,6 +108,12 @@ The data binding system allows you to register a `void* user_data` pointer durin
             float feedrate = value.as.f_val;
             set_feedrate_override(app, feedrate);
         }
+        else if (strcmp(action_name, "jog|step") == 0) {
+            // This is the result from the numeric_input_dialog.
+            // The app handler is unaware of the dialog, it just gets a value.
+            float new_step = value.as.f_val;
+            set_jog_step(app, new_step);
+        }
     }
     ```
 
@@ -126,6 +151,10 @@ The `observes` key allows widgets to automatically update their appearance in re
 The `observes` key contains a map of `state_name` keys to one or more **bindings**. A single widget can observe multiple states, and a single state can trigger multiple bindings on a widget.
 
 ```yaml
+# Using the shorthand string syntax for a single binding
+- type: bar
+  observes: { spindle|load: value }
+
 - type: label
   id: '@status_label'
   observes:
@@ -161,6 +190,16 @@ The `observes` key contains a map of `state_name` keys to one or more **bindings
 *   **`text`**: Updates the widget's text (e.g., for a `label`). The value must be a `printf`-style format string.
     ```yaml
     observes: { position|x: { text: "X: %.2f" } }
+    ```
+*   **`value`**: Updates the integer value of widgets like `bar`, `slider`, or `arc`. The incoming state must be numeric.
+    ```yaml
+    # Simple syntax, uses default animation (LV_ANIM_ON)
+    observes: { spindle|speed: value }
+    
+    # Advanced syntax to control animation
+    observes:
+      spindle|speed:
+        value: [LV_ANIM_OFF] # Pass LVGL animation enum
     ```
 *   **`style`**: Applies a style to the widget based on the state's value. The configuration must be a map where keys are possible state values and values are `@style_id` references.
     *   The map keys can be strings (`'IDLE'`), numbers (`1.0`), or booleans (`true`).

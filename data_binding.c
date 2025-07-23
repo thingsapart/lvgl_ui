@@ -1,6 +1,7 @@
 #include "data_binding.h"
 #include "utils.h" // For print_warning
 #include "debug_log.h"
+#include "ui_sim.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -33,14 +34,38 @@ typedef struct {
 static StateObserverMapping state_observers[MAX_STATES];
 static uint32_t state_observer_count = 0;
 
+// --- Internal Structs for Dialog Action ---
+
+// Stores the parsed configuration for a numeric dialog
+typedef struct {
+    float min_val;
+    float max_val;
+    float initial_val;
+    char* format_str;
+    char* text;
+} NumericDialogConfig;
+
+// Carries necessary data to the dialog's own event handlers
+typedef struct {
+    lv_obj_t* msgbox;
+    lv_obj_t* slider;
+    lv_obj_t* value_label;
+    char* action_name;
+    const NumericDialogConfig* dialog_config;
+} DialogEventData;
+
+
 // --- Unified Action User Data Structure ---
 
 typedef struct {
     action_type_t type;
     const char* action_name;
+    // For ACTION_TYPE_CYCLE
     binding_value_t* values;
     uint32_t value_count;
     uint32_t current_index;
+    // For ACTION_TYPE_NUMERIC_DIALOG
+    void* config_data;
 } ActionUserData;
 
 
@@ -52,6 +77,7 @@ static void* app_user_data = NULL;
 static void generic_action_event_cb(lv_event_t* e);
 static void free_action_user_data_cb(lv_event_t* e);
 static void free_observer_config_cb(lv_event_t* e);
+static void create_and_show_numeric_dialog(ActionUserData* user_data);
 
 // --- Public API Implementation ---
 
@@ -119,8 +145,24 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
                         break;
                     }
                     case OBSERVER_TYPE_VALUE: {
-                        if (new_value.type == BINDING_TYPE_FLOAT) {
-                           lv_slider_set_value(obs->widget, (int32_t)new_value.as.f_val, LV_ANIM_ON);
+                        if (new_value.type != BINDING_TYPE_FLOAT) {
+                             print_warning("State '%s' sent non-numeric data to a 'value' binding.", state_name);
+                             continue;
+                        }
+
+                        int32_t val = (int32_t)round(new_value.as.f_val);
+                        lv_anim_enable_t anim = obs->config.config ? *(lv_anim_enable_t*)obs->config.config : LV_ANIM_ON;
+                        const lv_obj_class_t * cls = lv_obj_get_class(obs->widget);
+
+                        if (cls == &lv_bar_class) {
+                            lv_bar_set_value(obs->widget, val, anim);
+                        } else if (cls == &lv_slider_class) {
+                            lv_slider_set_value(obs->widget, val, anim);
+                        } else if (cls == &lv_arc_class) {
+                            // lv_arc_set_value doesn't have an anim parameter
+                            lv_arc_set_value(obs->widget, val);
+                        } else {
+                            print_warning("Widget of type <unknown class> does not support 'value' observation.");
                         }
                         break;
                     }
@@ -147,8 +189,8 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
                             bool is_truthy = (new_value.type == BINDING_TYPE_BOOL && new_value.as.b_val) ||
                                              (new_value.type == BINDING_TYPE_FLOAT && new_value.as.f_val != 0.0f) ||
                                              (new_value.type == BINDING_TYPE_STRING && new_value.as.s_val && *new_value.as.s_val != '\0');
-                            bool is_inverse = !(*(bool*)obs->config.config);
-                            target_state = is_inverse ? !is_truthy : is_inverse;
+                            bool is_inverse = (obs->config.config == NULL) || !(*(bool*)obs->config.config);
+                            target_state = is_inverse ? !is_truthy : is_truthy;
                         }
 
                         lv_obj_flag_t flag = 0;
@@ -249,7 +291,16 @@ void data_binding_add_observer(const char* state_name, lv_obj_t* widget,
     obs->config.last_applied_style = NULL;
 
     // Deep copy config data
-    if (config_len > 0) { // It's a map
+    if (update_type == OBSERVER_TYPE_VALUE) {
+        if (config) {
+            lv_anim_enable_t* anim = malloc(sizeof(lv_anim_enable_t));
+            if (!anim) render_abort("Failed to allocate observer anim config");
+            *anim = *(const lv_anim_enable_t*)config;
+            obs->config.config = anim;
+        } else {
+            obs->config.config = NULL; // Use default
+        }
+    } else if (config_len > 0) { // It's a map
         size_t map_size = config_len * sizeof(binding_map_entry_t);
         binding_map_entry_t* copied_map = malloc(map_size);
         if (!copied_map) render_abort("Failed to allocate observer map config");
@@ -261,7 +312,7 @@ void data_binding_add_observer(const char* state_name, lv_obj_t* widget,
         }
         obs->config.config = copied_map;
     } else { // It's a format string or a bool*
-        if (update_type == OBSERVER_TYPE_TEXT || update_type == OBSERVER_TYPE_VALUE) {
+        if (update_type == OBSERVER_TYPE_TEXT) {
             obs->config.config = config ? strdup((const char*)config) : NULL;
         } else if (config) {
             bool* b = malloc(sizeof(bool));
@@ -291,7 +342,7 @@ void data_binding_add_observer(const char* state_name, lv_obj_t* widget,
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Added observer for state '%s' to widget %p.", state_name, (void*)widget);
 }
 
-void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_type_t type, const binding_value_t* cycle_values, uint32_t cycle_value_count) {
+void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_type_t type, const binding_value_t* cycle_values, uint32_t cycle_value_count, const void* config_data) {
     if (!widget || !action_name) return;
 
     ActionUserData* user_data = calloc(1, sizeof(ActionUserData));
@@ -330,6 +381,18 @@ void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_t
 
         user_data->values = copied_values;
         user_data->value_count = cycle_value_count;
+    } else if (type == ACTION_TYPE_NUMERIC_DIALOG) {
+        if (config_data) {
+            NumericDialogConfig* new_config = calloc(1, sizeof(NumericDialogConfig));
+            if (!new_config) render_abort("Failed to allocate numeric dialog config.");
+            const NumericDialogConfig* src_config = (const NumericDialogConfig*)config_data;
+            new_config->min_val = src_config->min_val;
+            new_config->max_val = src_config->max_val;
+            new_config->initial_val = src_config->initial_val;
+            if (src_config->format_str) new_config->format_str = strdup(src_config->format_str);
+            if (src_config->text) new_config->text = strdup(src_config->text);
+            user_data->config_data = new_config;
+        }
     }
 
     lv_obj_add_event_cb(widget, cb, code, user_data);
@@ -346,7 +409,7 @@ void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_t
 static void free_observer_config_cb(lv_event_t* e) {
     ObserverConfig* config = lv_event_get_user_data(e);
     if (config) {
-        if (config->config_len > 0) { // It's a map
+        if (config->update_type != OBSERVER_TYPE_VALUE && config->config_len > 0) { // It's a map
             binding_map_entry_t* map = config->config;
             for (size_t i = 0; i < config->config_len; i++) {
                 if (map[i].key.type == BINDING_TYPE_STRING) {
@@ -373,18 +436,140 @@ static void free_action_user_data_cb(lv_event_t* e) {
                 }
             }
             free(user_data->values);
+        } else if (user_data->type == ACTION_TYPE_NUMERIC_DIALOG && user_data->config_data) {
+            NumericDialogConfig* cfg = (NumericDialogConfig*)user_data->config_data;
+            free(cfg->format_str);
+            free(cfg->text);
+            free(cfg);
         }
         DEBUG_LOG(LOG_MODULE_DATABINDING, "Freeing user_data for widget %p.", (void*)lv_event_get_target(e));
         free(user_data);
     }
 }
 
-static void generic_action_event_cb(lv_event_t* e) {
-    if (!app_action_handler) return;
+// --- Numeric Dialog Implementation ---
 
+static void update_slider_label(DialogEventData* data) {
+    int32_t value = lv_slider_get_value(data->slider);
+    const char* fmt = data->dialog_config->format_str ? data->dialog_config->format_str : "%d";
+    lv_label_set_text_fmt(data->value_label, fmt, value);
+}
+
+static void slider_value_changed_cb(lv_event_t* e) {
+    DialogEventData* data = lv_event_get_user_data(e);
+    update_slider_label(data);
+}
+
+static void mb_ok_event_cb(lv_event_t* e) {
+    DialogEventData* data = lv_event_get_user_data(e);
+
+    float value = (float)lv_slider_get_value(data->slider);
+    binding_value_t final_value = {.type = BINDING_TYPE_FLOAT, .as.f_val = value};
+
+    DEBUG_LOG(LOG_MODULE_DATABINDING, "Numeric dialog OK, dispatching action '%s' with value %f.", data->action_name, final_value.as.f_val);
+    if (app_action_handler) {
+        app_action_handler(data->action_name, final_value, app_user_data);
+    }
+
+    // This callback handles both OK and Cancel, so we always close.
+    lv_msgbox_close(data->msgbox);
+}
+
+static void dialog_event_cb(lv_event_t* e) {
+    lv_event_code_t code = lv_event_get_code(e);
+    DialogEventData* data = lv_event_get_user_data(e);
+
+    if (code == LV_EVENT_DELETE) {
+        // The msgbox is being deleted, free our associated data
+        free(data->action_name);
+        free(data);
+        DEBUG_LOG(LOG_MODULE_DATABINDING, "Numeric dialog cleaned up.");
+    }
+}
+
+static void mb_close_cb(lv_event_t *e) {
+  lv_obj_t *mbox = (lv_obj_t *) lv_event_get_user_data(e);
+  lv_msgbox_close(mbox);
+}
+
+static void create_and_show_numeric_dialog(ActionUserData* user_data) {
+    NumericDialogConfig* cfg = (NumericDialogConfig*)user_data->config_data;
+    if (!cfg) {
+        print_warning("Numeric dialog action for '%s' triggered without config.", user_data->action_name);
+        return;
+    }
+
+    // --- Create Dialog ---
+    lv_obj_t* mbox = lv_msgbox_create(NULL);
+    // No title: lv_msgbox_add_title(mbox, "Title");
+    // No header buttons: lv_msgbox_add_close_button(mbox);
+
+    // --- Add custom content ---
+    lv_obj_t* content = lv_msgbox_get_content(mbox);
+    lv_obj_set_size(content, lv_pct(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(content, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(content, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_gap(content, 10, 0);
+
+    lv_obj_t *cont = lv_obj_create(content);
+    lv_obj_set_size(cont, lv_pct(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_CENTER,  LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+
+    lv_obj_t* title_label = lv_label_create(cont);
+    lv_label_set_text(title_label, cfg->text ? cfg->text : "Enter value:");
+    lv_obj_t* value_label = lv_label_create(cont);
+    // lv_obj_set_style_text_font(value_label, &lv_font_montserrat_18, 0);
+
+    lv_obj_t* slider = lv_slider_create(cont);
+    lv_obj_set_width(slider, lv_pct(100));
+    lv_slider_set_orientation(slider, LV_SLIDER_ORIENTATION_HORIZONTAL);
+    lv_slider_set_range(slider, (int32_t)cfg->min_val, (int32_t)cfg->max_val);
+    lv_slider_set_value(slider, (int32_t)cfg->initial_val, LV_ANIM_OFF);
+
+    // --- Add footer buttons ---
+    lv_obj_t *ok_btn = lv_msgbox_add_footer_button(mbox, "OK");
+    lv_obj_set_flex_grow(ok_btn, 1);
+
+    lv_obj_t *cncl_btn = lv_msgbox_add_footer_button(mbox, "Cancel");
+    lv_obj_set_flex_grow(cncl_btn, 1);
+
+    // Center the message box
+    lv_obj_center(mbox);
+
+    // --- Create and link event data ---
+    DialogEventData* data = calloc(1, sizeof(DialogEventData));
+    if(!data) render_abort("Failed to alloc DialogEventData");
+
+    data->msgbox = mbox;
+    data->slider = slider;
+    data->value_label = value_label;
+    data->action_name = strdup(user_data->action_name);
+    data->dialog_config = cfg;
+
+    // Add event handlers
+    lv_obj_add_event_cb(slider, slider_value_changed_cb, LV_EVENT_VALUE_CHANGED, data);
+    lv_obj_add_event_cb(mbox, dialog_event_cb, LV_EVENT_ALL, data);
+    lv_obj_add_event_cb(ok_btn, mb_ok_event_cb, LV_EVENT_CLICKED, data);
+    lv_obj_add_event_cb(cncl_btn, mb_close_cb, LV_EVENT_CLICKED, mbox);
+
+    // Initial update for the label
+    update_slider_label(data);
+}
+
+
+static void generic_action_event_cb(lv_event_t* e) {
     ActionUserData* user_data = lv_event_get_user_data(e);
     binding_value_t val = {.type = BINDING_TYPE_NULL};
 
+    // --- INTERCEPTION for dialog action ---
+    if (user_data->type == ACTION_TYPE_NUMERIC_DIALOG) {
+        DEBUG_LOG(LOG_MODULE_DATABINDING, "Intercepting action '%s' to show numeric dialog.", user_data->action_name);
+        create_and_show_numeric_dialog(user_data);
+        return; // Stop processing, do not call app handler.
+    }
+
+    // --- NORMAL DISPATCH for other actions ---
     switch(user_data->type) {
         case ACTION_TYPE_TRIGGER:
             break;
@@ -397,6 +582,8 @@ static void generic_action_event_cb(lv_event_t* e) {
                 val = user_data->values[user_data->current_index];
                 user_data->current_index = (user_data->current_index + 1) % user_data->value_count;
             }
+            break;
+        case ACTION_TYPE_NUMERIC_DIALOG: // Should not be reached
             break;
     }
 

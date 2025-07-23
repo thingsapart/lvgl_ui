@@ -34,9 +34,10 @@ typedef struct {
  * @brief Enum defining the different types of actions a widget can perform.
  */
 typedef enum {
-    ACTION_TYPE_TRIGGER, // Simple, stateless event
-    ACTION_TYPE_TOGGLE,  // Toggles between bool true/false (0/1)
-    ACTION_TYPE_CYCLE,   // Cycles through a list of predefined values
+    ACTION_TYPE_TRIGGER,        // Simple, stateless event
+    ACTION_TYPE_TOGGLE,         // Toggles between bool true/false (0/1)
+    ACTION_TYPE_CYCLE,          // Cycles through a list of predefined values
+    ACTION_TYPE_NUMERIC_DIALOG, // Opens a modal dialog to input a number
 } action_type_t;
 
 /**
@@ -48,7 +49,7 @@ typedef enum {
     OBSERVER_TYPE_VISIBLE,
     OBSERVER_TYPE_CHECKED,
     OBSERVER_TYPE_DISABLED,
-    OBSERVER_TYPE_VALUE, // For sliders, etc.
+    OBSERVER_TYPE_VALUE, // For sliders, bars, arcs, etc.
 } observer_update_type_t;
 
 
@@ -109,10 +110,10 @@ typedef struct {
  * @param update_type How the widget should be updated (e.g., change text, change style).
  * @param config A pointer to the configuration data. The type of this data depends on `update_type`:
  *        - OBSERVER_TYPE_TEXT: `const char*` (format string)
- *        - OBSERVER_TYPE_VALUE: `const char*` (format string, for float-to-int conversion)
+ *        - OBSERVER_TYPE_VALUE: `const int32_t*` (animation flag)
  *        - OBSERVER_TYPE_VISIBLE/CHECKED/DISABLED (direct map): `const bool*` (true for direct, false for inverse)
  *        - OBSERVER_TYPE_STYLE/VISIBLE/CHECKED/DISABLED (map): `const binding_map_entry_t*` (array of map entries)
- * @param config_len For map-based observers, this is the number of entries in the map array.
+ * @param config_len For map-based observers, this is the number of entries in the map array. For value observers, it's sizeof(int32_t).
  * @param default_value A pointer to a default value for map-based observers.
  */
 void data_binding_add_observer(const char* state_name, lv_obj_t* widget,
@@ -124,11 +125,12 @@ void data_binding_add_observer(const char* state_name, lv_obj_t* widget,
  * This is called by the generated create_ui() function.
  * @param widget The LVGL widget that will trigger the action.
  * @param action_name The name of the action to be dispatched.
- * @param type The type of action (trigger, toggle, cycle).
+ * @param type The type of action (trigger, toggle, cycle, etc.).
  * @param cycle_values An array of values for ACTION_TYPE_CYCLE.
  * @param cycle_value_count The number of elements in cycle_values.
+ * @param config_data A pointer to arbitrary configuration data for complex actions like dialogs.
  */
-void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_type_t type, const binding_value_t* cycle_values, uint32_t cycle_value_count);
+void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_type_t type, const binding_value_t* cycle_values, uint32_t cycle_value_count, const void* config_data);
 
 
 #endif // DATA_BINDING_H

@@ -499,13 +499,19 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                 cJSON* state_item;
                 cJSON_ArrayForEach(state_item, item) {
                     const char* state_name = state_item->string;
-                    if (!cJSON_IsObject(state_item)) {
-                        print_warning("Value for observable '%s' must be an object.", state_name);
+                    // Observe value can be a string or an object. Let's handle both.
+                    cJSON *bindings_obj = state_item;
+                    if (cJSON_IsString(state_item)) {
+                        bindings_obj = cJSON_CreateObject();
+                        cJSON_AddItemToObject(bindings_obj, state_item->valuestring, cJSON_CreateNull());
+                    } else if (!cJSON_IsObject(state_item)) {
+                        print_warning("Value for observable '%s' must be an object or a string.", state_name);
                         continue;
                     }
 
+
                     cJSON* binding_item;
-                    cJSON_ArrayForEach(binding_item, state_item) {
+                    cJSON_ArrayForEach(binding_item, bindings_obj) {
                         const char* binding_key = binding_item->string;
                         observer_update_type_t update_type;
 
@@ -514,6 +520,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                         else if (strcmp(binding_key, "visible") == 0) update_type = OBSERVER_TYPE_VISIBLE;
                         else if (strcmp(binding_key, "checked") == 0) update_type = OBSERVER_TYPE_CHECKED;
                         else if (strcmp(binding_key, "disabled") == 0) update_type = OBSERVER_TYPE_DISABLED;
+                        else if (strcmp(binding_key, "value") == 0) update_type = OBSERVER_TYPE_VALUE;
                         else {
                             print_warning("Unknown binding type '%s' for observable '%s'.", binding_key, state_name);
                             continue;
@@ -522,6 +529,10 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                         IRExpr* config_expr = unmarshal_value(ctx, binding_item, new_scope_context, "unknown", parent_c_name, ir_obj->c_name, ir_obj);
                         ir_operation_list_add(&ir_obj->operations, (IRNode*)ir_new_observer(state_name, update_type, config_expr));
                     }
+
+                    if (cJSON_IsString(state_item)) {
+                        cJSON_Delete(bindings_obj);
+                    }
                 }
             }
         } else if (strcmp(key, "action") == 0) {
@@ -529,7 +540,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                 cJSON* act_item;
                 cJSON_ArrayForEach(act_item, item) {
                     const char* action_name = act_item->string;
-                    action_type_t action_type;
+                    action_type_t action_type = ACTION_TYPE_TRIGGER; // Default
                     IRExpr* data_expr = NULL;
 
                     if (cJSON_IsString(act_item)) {
@@ -542,6 +553,15 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                     } else if (cJSON_IsArray(act_item)) {
                         action_type = ACTION_TYPE_CYCLE;
                         data_expr = unmarshal_value(ctx, act_item, new_scope_context, "binding_value_t*", parent_c_name, ir_obj->c_name, ir_obj);
+                    } else if (cJSON_IsObject(act_item)) {
+                        cJSON* dialog_config = cJSON_GetObjectItemCaseSensitive(act_item, "numeric_input_dialog");
+                        if (dialog_config) {
+                            action_type = ACTION_TYPE_NUMERIC_DIALOG;
+                            data_expr = unmarshal_value(ctx, dialog_config, new_scope_context, "void*", parent_c_name, ir_obj->c_name, ir_obj);
+                        } else {
+                            print_warning("Unsupported object-based action config for action '%s'.", action_name);
+                            continue;
+                        }
                     } else {
                          print_warning("Unsupported action config for action '%s'.", action_name);
                          continue;

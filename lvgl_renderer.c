@@ -186,17 +186,34 @@ static void render_single_object(RenderContext* ctx, IRObject* current_obj) {
                 print_hint("%s", ((IRWarning*)node)->message);
             } else if (node->type == IR_NODE_OBSERVER) {
                 IRObserver* obs = (IRObserver*)node;
-                const void* config_ptr = NULL;
+                void* config_ptr = NULL;
                 size_t config_len = 0;
-                const void* default_ptr = NULL;
+                void* default_ptr = NULL;
 
                 RenderValue val;
                 evaluate_expression(ctx, obs->config_expr, &val);
                 if (ctx->error_occurred) continue;
 
-                if (obs->config_expr->base.type == IR_EXPR_LITERAL) {
+                if (obs->update_type == OBSERVER_TYPE_VALUE) {
+                    lv_anim_enable_t anim_flag = LV_ANIM_ON;
+                    if (obs->config_expr->base.type == IR_EXPR_ARRAY) {
+                        IRExprArray* arr = (IRExprArray*)obs->config_expr;
+                        if (arr->elements) {
+                            RenderValue anim_val;
+                            evaluate_expression(ctx, arr->elements->expr, &anim_val);
+                            if (!ctx->error_occurred && anim_val.type == RENDER_VAL_TYPE_INT) {
+                                anim_flag = (lv_anim_enable_t)anim_val.as.i_val;
+                            }
+                        }
+                    } else if (obs->config_expr->base.type == IR_EXPR_LITERAL) {
+                        // Support for observes: { state: "value" } -> value: [LV_ANIM_ON]
+                        // Do nothing, anim_flag is already LV_ANIM_ON
+                    }
+                    config_ptr = &anim_flag;
+                    config_len = sizeof(lv_anim_enable_t);
+                } else if (obs->config_expr->base.type == IR_EXPR_LITERAL) {
                     if (((IRExprLiteral*)obs->config_expr)->is_string) {
-                        config_ptr = val.as.s_val; // Format string
+                        config_ptr = (void*)val.as.s_val; // Format string
                     } else {
                         config_ptr = &val.as.b_val; // bool for direct mapping
                     }
@@ -237,19 +254,49 @@ static void render_single_object(RenderContext* ctx, IRObject* current_obj) {
                     config_len = final_count;
                 }
                 data_binding_add_observer(obs->state_name, c_obj, obs->update_type, config_ptr, config_len, default_ptr);
-                if (config_len > 0) free((void*)config_ptr);
+                // Free map if it was allocated
+                if (obs->update_type != OBSERVER_TYPE_VALUE && obs->config_expr->base.type == IR_EXPR_ARRAY) {
+                    free(config_ptr);
+                }
             } else if (node->type == IR_NODE_ACTION) {
                 IRAction* act = (IRAction*)node;
                 binding_value_t* cycle_values = NULL;
                 uint32_t cycle_count = 0;
+                void* config_data = NULL;
+
                 if (act->action_type == ACTION_TYPE_CYCLE && act->data_expr && act->data_expr->base.type == IR_EXPR_ARRAY) {
                     cycle_values = evaluate_binding_array_expr(ctx, (IRExprArray*)act->data_expr, &cycle_count);
+                } else if (act->action_type == ACTION_TYPE_NUMERIC_DIALOG && act->data_expr && act->data_expr->base.type == IR_EXPR_ARRAY) {
+                    // This is a temporary struct passed on the stack. data_binding_add_action will copy it.
+                    struct { float min_val, max_val, initial_val; const char* format_str, *text; } dialog_cfg = {
+                        .min_val = 0, .max_val = 100, .initial_val = 0, .format_str = "%g", .text = "Input value:"
+                    };
+                    IRExprArray* map_arr = (IRExprArray*)act->data_expr;
+                    for (IRExprNode* n = map_arr->elements; n; n = n->next) {
+                        IRExprArray* pair = (IRExprArray*)n->expr;
+                        RenderValue key, value;
+                        evaluate_expression(ctx, pair->elements->expr, &key);
+                        if(ctx->error_occurred) break;
+                        evaluate_expression(ctx, pair->elements->next->expr, &value);
+                        if(ctx->error_occurred) break;
+
+                        if (key.type == RENDER_VAL_TYPE_STRING) {
+                            if (strcmp(key.as.s_val, "min") == 0 && value.type == RENDER_VAL_TYPE_INT) dialog_cfg.min_val = (float)value.as.i_val;
+                            else if (strcmp(key.as.s_val, "max") == 0 && value.type == RENDER_VAL_TYPE_INT) dialog_cfg.max_val = (float)value.as.i_val;
+                            else if (strcmp(key.as.s_val, "initial") == 0 && value.type == RENDER_VAL_TYPE_INT) dialog_cfg.initial_val = (float)value.as.i_val;
+                            else if (strcmp(key.as.s_val, "format") == 0 && value.type == RENDER_VAL_TYPE_STRING) dialog_cfg.format_str = value.as.s_val;
+                            else if (strcmp(key.as.s_val, "text") == 0 && value.type == RENDER_VAL_TYPE_STRING) dialog_cfg.text = value.as.s_val;
+                        }
+                    }
+                    if (ctx->error_occurred) continue;
+                    config_data = &dialog_cfg;
                 }
+
                 if (ctx->error_occurred) {
                     free(cycle_values);
                     continue;
                 }
-                data_binding_add_action(c_obj, act->action_name, act->action_type, cycle_values, cycle_count);
+                data_binding_add_action(c_obj, act->action_name, act->action_type, cycle_values, cycle_count, config_data);
                 if (cycle_values) free(cycle_values);
             } else {
                 RenderValue ignored;

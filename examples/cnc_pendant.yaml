@@ -133,7 +133,10 @@
     - zero_wcs_z:
         - when: { condition: [==, wcs_name, "G54"], then: { set: { wcs54_z_zero: pos_z } } }
         - when: { condition: [==, wcs_name, "G55"], then: { set: { wcs55_z_zero: pos_z } } }
-
+    - set_feed_override:
+      set: { feed_override: [div, value.float, 100.0] }
+    - set_speed_override:
+      set: { speed_override: [div, value.float, 100.0] }
   updates:
     # -- Homing Sequence --
     - when:
@@ -183,6 +186,12 @@
               spindle_rpm:
                 case:
                   - [spindle_on, [add, 8000, [mul, 200, [sin, [mul, time, 10]]]]]
+                  - [true, 0]
+          # 3. Simulate feed speed
+          - set:
+              feed:
+                case:
+                  - [spindle_on, [add, 2000, [mul, 500, [sin, [mul, time, 10]]]]]
                   - [true, 0]
     # -- Program Completion --
     - when:
@@ -494,8 +503,11 @@
               letter: F
               ovr: Feed Ovr
               pad_bottom: 12
-              rate_value: speed
-              override_value: speed_override_pct
+              rate_value: feed
+              range_min: 0
+              range_max: 5000
+              override_value: feed_override_pct
+              override_state: set_feed_override
           - type: use-view
             id: '@feed_rate_scale'
             context:
@@ -504,8 +516,11 @@
               letter: S
               ovr: Speed Ovr
               pad_bottom: 12
-              rate_value: feed
-              override_value: feed_override_pct
+              range_min: 0
+              range_max: 10000
+              rate_value: spindle_rpm
+              override_value: speed_override_pct
+              override_state: set_speed_override
           - type: use-view
             id: '@jog_feed'
             context:
@@ -564,8 +579,20 @@
           delta_pos_state: delta_pos_z
 
 
-      - type: label
-        observes: { machine_mode: { text: "MODE: %s" } }
+      - layout: LV_LAYOUT_FLEX
+        flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START]
+        add_style: [@container_transp, 0]
+        size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+        pad_right: 5
+        children:
+          - type: button
+            children: 
+              - type: label
+                text: 'RUN'
+                width: LV_SIZE_CONTENT
+                action: { program_run: trigger }
+          - type: label
+            observes: { machine_mode: { text: "MODE: %s" } }
 
 
 - type: component
@@ -631,9 +658,11 @@
                 add_style: ['@bar_indicator', LV_PART_MAIN]
                 add_style: ['@bar_indicator', LV_PART_INDICATOR]
                 value: [65, 0]
+                range: [$range_min, $range_max]
                 bg_color: '#5dd555'
                 bg_opa: 255
-                observes: { $rate_value: {} }
+                #observes: { $rate_value: { value: [LV_ANIM_OFF] } }
+                observes: { $rate_value: 'value'}
               - type: scale
                 width: 100%
                 height: 18
@@ -654,6 +683,8 @@
         height: LV_SIZE_CONTENT
         pad_right: 0
         flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER]
+        add_flag: LV_OBJ_FLAG_CLICKABLE
+        action: { $override_state: { numeric_input_dialog: { min: 0, max: 200, initial: 100, format: "%d %% ", text: 'Override:' } } }
         children:
           - type: label
             text: $unit
