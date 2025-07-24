@@ -1,4 +1,5 @@
 docs/overview.md
+docs/ui_spec.md
 data/api_spec_sample.json
 data/lv_def_sample.json
 *.c

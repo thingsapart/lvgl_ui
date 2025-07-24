@@ -28,6 +28,10 @@
     - pos_y: 15.0
     - pos_z: 50.0
 
+    - delta_pos_x: 0.0
+    - delta_pos_y: 0.0
+    - delta_pos_z: 0.0
+
     # -- Work Coordinate Systems (WCS) --
     - wcs_name: [string, "G54"] # Active WCS
     - wcs54_x_zero: 250.5
@@ -75,12 +79,17 @@
           [clamp, [mul, [div, program_elapsed_time, program_total_time], 100], 0, 100]
 
     # -- Display Positions (Show 9999.99 if not homed) --
-    - display_pos_x: { derived_expr: { case: [[x_is_homed, pos_x], [true, 9999.99]] } }
-    - display_pos_y: { derived_expr: { case: [[y_is_homed, pos_y], [true, 9999.99]] } }
-    - display_pos_z: { derived_expr: { case: [[z_is_homed, pos_z], [true, 9999.99]] } }
-    - display_wcs_pos_x: { derived_expr: { case: [[x_is_homed, [sub, pos_x, [case, [[[==, wcs_name, "G54"], wcs54_x_zero], [true, wcs55_x_zero]]]]], [true, 9999.99]] } }
-    - display_wcs_pos_y: { derived_expr: { case: [[y_is_homed, [sub, pos_y, [case, [[[==, wcs_name, "G54"], wcs54_y_zero], [true, wcs55_y_zero]]]]], [true, 9999.99]] } }
-    - display_wcs_pos_z: { derived_expr: { case: [[z_is_homed, [sub, pos_z, [case, [[[==, wcs_name, "G54"], wcs54_z_zero], [true, wcs55_z_zero]]]]], [true, 9999.99]] } }
+    - display_pos_x: { derived_expr: { case: [[[or, x_is_homed, homing_axis_x], pos_x], [true, 9999.99]] } }
+    - display_pos_y: { derived_expr: { case: [[[or, y_is_homed, homing_axis_y], pos_y], [true, 9999.99]] } }
+    - display_pos_z: { derived_expr: { case: [[[or, z_is_homed, homing_axis_z], pos_z], [true, 9999.99]] } }
+
+    - display_wcs_pos_x_: { derived_expr: { case: [[x_is_homed, [sub, pos_x, [case, [[[==, wcs_name, "G54"], wcs54_x_zero], [true, wcs55_x_zero]]]]], [true, 9999.99]] } }
+    - display_wcs_pos_y_: { derived_expr: { case: [[y_is_homed, [sub, pos_y, [case, [[[==, wcs_name, "G54"], wcs54_y_zero], [true, wcs55_y_zero]]]]], [true, 9999.99]] } }
+    - display_wcs_pos_z_: { derived_expr: { case: [[z_is_homed, [sub, pos_z, [case, [[[==, wcs_name, "G54"], wcs54_z_zero], [true, wcs55_z_zero]]]]], [true, 9999.99]] } }
+
+    - display_wcs_pos_x_: { derived_expr: [sub, pos_x, [case, [[[==, wcs_name, "G54"], wcs54_x_zero], [true, wcs55_x_zero]]]] }
+    - display_wcs_pos_y_: { derived_expr: [sub, pos_y, [case, [[[==, wcs_name, "G54"], wcs54_y_zero], [true, wcs55_y_zero]]]] }
+    - display_wcs_pos_z_: { derived_expr: [sub, pos_z, [case, [[[==, wcs_name, "G54"], wcs54_z_zero], [true, wcs55_z_zero]]]] }
 
     # -- Derived Delta Position / Distance To Go (Simulated) --
     - delta_pos_x:
@@ -102,13 +111,13 @@
   actions:
     # -- Machine Control --
     - home_machine:
-        set: { machine_mode: "HOMING", homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, x_is_homed: false, y_is_homed: false, z_is_homed: false }
+        set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, x_is_homed: false, y_is_homed: false, z_is_homed: false }
     - home_machine_x:
-        set: { machine_mode: "HOMING", homing_axis_x: true, x_is_homed: false }
+        set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, x_is_homed: false }
     - home_machine_y:
-        set: { machine_mode: "HOMING", homing_axis_y: true, y_is_homed: false }
+        set: { machine_mode: "HOMING", program_running: false, homing_axis_y: true, y_is_homed: false }
     - home_machine_z:
-        set: { machine_mode: "HOMING", homing_axis_z: true, z_is_homed: false }
+        set: { machine_mode: "HOMING", program_running: false, homing_axis_z: true, z_is_homed: false }
     - feed_hold:
         toggle: program_paused
     - program_run:
@@ -187,12 +196,16 @@
                 case:
                   - [spindle_on, [add, 8000, [mul, 200, [sin, [mul, time, 10]]]]]
                   - [true, 0]
-          # 3. Simulate feed speed
+          # 4. Simulate feed speed
           - set:
               feed:
                 case:
                   - [spindle_on, [add, 2000, [mul, 500, [sin, [mul, time, 10]]]]]
                   - [true, 0]
+          -  set: { delta_pos_x: [add, 1, [mul, 0.5, [sin, [mul, time, 10]]]] }
+          -  set: { delta_pos_y: [add, 1, [mul, 0.5, [sin, [mul, time, 10]]]] }
+          -  set: { delta_pos_z: [add, 1, [mul, 0.5, [sin, [mul, time, 10]]]] }
+
     # -- Program Completion --
     - when:
         condition: [>=, program_progress, 100]
@@ -380,6 +393,10 @@
 - init: { lv_screen_active: [] }
   add_style: [@container, 0]
 
+####################
+## Axis Pos Disp  ##
+####################
+
 - type: component
   id: '@axis_pos_display2'
   content:
@@ -418,10 +435,10 @@
           - type: 'label'
             # text_font: '@font_kode_30'
             text: $wcs_pos
-            observes: { $wcs_state: { text: '%4.2f' } }
             flex_grow: 1
             add_style: ['@indicator_green', 0]
             text_align: LV_TEXT_ALIGN_RIGHT
+            observes: { $wcs_state: { text: '%4.2f' } }
       -
         add_style: ['@flex_x', 0]
         add_style: ['@container_transp', 0]
@@ -430,31 +447,30 @@
           - type: 'label'
             # text_font: '@font_kode_14'
             text: $abs_pos
-            observes: { $pos_state: { text: '%4.2f' } }
-            flex_grow: 1
             flex_grow: 1
             text_align: LV_TEXT_ALIGN_RIGHT
             add_style: ['@indicator_yellow', 0]
+            observes: { $pos_state: { text: '%4.2f' } }
           - type: 'label'
             # text_font: '@font_montserrat_14'
             text: "\uF124"
             width: 14
           - type: 'label'
             # text_font: '@font_kode_14'
-
-
             text: $delta_pos
-            observes: { $delta_pos_state: { text: '%4.2f' } }
-            flex_grow: 1
             text_align: LV_TEXT_ALIGN_RIGHT
             add_style: ['@indicator_yellow', 0]
             flex_grow: 1
+            observes: { $delta_pos_state: { text: '%4.2f' } }
           - type: 'label'
             # text_font: '@font_montserrat_14'
             text: "\uF051"
             width: 14
 
-# Jog View
+####################
+##    JOG VIEW    ##
+####################
+
 - type: component
   id: '@jog_view'
   content:
@@ -548,8 +564,8 @@
           delta_pos: "000.000   "
           homed_state: x_is_homed
           home_action: home_machine
-          wcs_state: wcs_pos_x
-          pos_state: pos_x
+          wcs_state: display_wcs_pos_x
+          pos_state: display_pos_x
           delta_pos_state: delta_pos_x
 
       - type: use-view
@@ -561,8 +577,8 @@
           delta_pos: "000.000   "
           homed_state: y_is_homed
           home_action: home_machine
-          wcs_state: wcs_pos_y
-          pos_state: pos_y
+          wcs_state: display_wcs_pos_y
+          pos_state: display_pos_y
           delta_pos_state: delta_pos_y
 
       - type: use-view
@@ -574,8 +590,8 @@
           delta_pos: "000.000   "
           homed_state: z_is_homed
           home_action: home_machine
-          wcs_state: wcs_pos_z
-          pos_state: pos_z
+          wcs_state: display_wcs_pos_z
+          pos_state: display_pos_z
           delta_pos_state: delta_pos_z
 
 
@@ -636,14 +652,12 @@
                 height: LV_SIZE_CONTENT
                 pad_left: 10
               - type: label
-                bg_opa: 100
-                bg_color: '#ff0000'
                 grid_cell: [LV_GRID_ALIGN_END, 1, 1, LV_GRID_ALIGN_END, 0, 1]
                 # text_font: '@font_kode_30'
                 height: LV_SIZE_CONTENT
                 text: '1000'
                 pad_right: 10
-                observes: { $rate_value: { text: "%g" } }
+                observes: { $rate_value: { text: "%.0f" } }
           - layout: LV_LAYOUT_FLEX
             flex_flow: LV_FLEX_FLOW_COLUMN
             add_style: ['@container_transp', 0]
@@ -782,10 +796,15 @@
           - type: label
             text: $ovr
           - type: label
-            text: 100%%
+            text: '100% '
 
 ####################
-## Main UI Layout ##
+## Main UI Layut ##
+####################
+
+
+####################
+## Main UI Layut ##
 ####################
 
 - type: tileview
@@ -794,8 +813,10 @@
   pad_row: 0
   pad_column: 0
   children:
+    - init: { lv_tileview_add_tile: [1, 0, LV_DIR_LEFT] }
+      add_style: ['@container', 0]
+        children:
     - init: { lv_tileview_add_tile: [0, 0, LV_DIR_RIGHT] }
-    - init: { lv_tileview_add_tile: [0, 0, LV_DIR_LEFT] }
       add_style: ['@container', 0]
       children:
         - type: use-view
