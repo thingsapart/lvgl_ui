@@ -34,12 +34,12 @@
 
     # -- Work Coordinate Systems (WCS) --
     - wcs_name: [string, "G54"] # Active WCS
-    - wcs54_x_zero: 250.5
-    - wcs54_y_zero: 175.2
-    - wcs54_z_zero: 100.0
-    - wcs55_x_zero: 450.0
-    - wcs55_y_zero: 175.2
-    - wcs55_z_zero: 120.5
+    - wcs54_x_zero: 20.5
+    - wcs54_y_zero: 17.2
+    - wcs54_z_zero: 10.0
+    - wcs55_x_zero: 40.0
+    - wcs55_y_zero: 75.2
+    - wcs55_z_zero: 10.5
 
     # -- Probing Geometry (Defines the imaginary part to probe) --
     - probe_stock_min_x: 45.5
@@ -57,6 +57,11 @@
     - speed_override: 1.0
     - spindle_rpm: 0.0
     - spindle_rpm_max: 10000.0
+
+    # -- Tool --
+    - tool_n_flutes: 1
+    - tool_dia: 6.0
+    - tool_material: 'AL'
 
     # -------------------
     # -- DERIVED STATE --
@@ -87,9 +92,9 @@
     - display_wcs_pos_y_: { derived_expr: { case: [[y_is_homed, [sub, pos_y, [case, [[[==, wcs_name, "G54"], wcs54_y_zero], [true, wcs55_y_zero]]]]], [true, 9999.99]] } }
     - display_wcs_pos_z_: { derived_expr: { case: [[z_is_homed, [sub, pos_z, [case, [[[==, wcs_name, "G54"], wcs54_z_zero], [true, wcs55_z_zero]]]]], [true, 9999.99]] } }
 
-    - display_wcs_pos_x_: { derived_expr: [sub, pos_x, [case, [[[==, wcs_name, "G54"], wcs54_x_zero], [true, wcs55_x_zero]]]] }
-    - display_wcs_pos_y_: { derived_expr: [sub, pos_y, [case, [[[==, wcs_name, "G54"], wcs54_y_zero], [true, wcs55_y_zero]]]] }
-    - display_wcs_pos_z_: { derived_expr: [sub, pos_z, [case, [[[==, wcs_name, "G54"], wcs54_z_zero], [true, wcs55_z_zero]]]] }
+    - display_wcs_pos_x: { derived_expr: [case, [[==, wcs_name, "G54"], [sub, pos_x, wcs54_x_zero], [true, [sub, pos_x, wcs55_x_zero]]]] }
+    - display_wcs_pos_y: { derived_expr: [case, [[==, wcs_name, "G54"], [sub, pos_y, wcs54_y_zero], [true, [sub, pos_y, wcs55_y_zero]]]] }
+    - display_wcs_pos_z: { derived_expr: [case, [[==, wcs_name, "G54"], [sub, pos_z, wcs54_z_zero], [true, [sub, pos_z, wcs55_z_zero]]]] }
 
     # -- Derived Delta Position / Distance To Go (Simulated) --
     - delta_pos_x:
@@ -108,6 +113,15 @@
             - [program_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 6.5]]]]]
             - [true, 0.0]
 
+    # Chipload
+    - chipload_min: { derived_expr: [mul, 0.01, tool_dia] }
+    - chipload_max: { derived_expr: [mul, 0.02, tool_dia] }
+    - chipload: { derived_expr: [div, feed, [mul, spindle_rpm, tool_n_flutes]] }
+    - chipload_disp:
+        derived_expr:
+          case:
+            - [program_running, [add, 25, [mul, [div, [sub, chipload, chipload_min], [sub, chipload_max, chipload_min]], 50]]]
+            - [true, 0]
   actions:
     # -- Machine Control --
     - home_machine:
@@ -252,15 +266,56 @@
           - set:
               spindle_rpm:
                 case:
-                  - [spindle_on, [add, 8000, [mul, 200, [sin, [mul, time, 10]]]]]
+                  - [spindle_on, [add, 22000, [mul, 200, [sin, [mul, time, 10]]]]]
                   - [true, 0]
     # -- Program Completion --
     - when:
         condition: [>=, program_progress, 100]
         then:
           - set: { program_running: false, spindle_on: false, coolant_on: false }
+    # - when:
+    #  condition: [and, program_running, !program_paused]
+    #  then:
+    #    - set:
+    #        chipload_disp: 
+    #            [add, 25, [mul, [div, [-, chipload, chipload_min], [-, chipload_max, chipload_min]], 50]]
+##########
+# Fonts #
+##########
+- type: font
+  id: '@font_kode_40'
+  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 40
 
-# Styles
+- type: font
+  id: '@font_kode_34'
+  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 34
+
+- type: font
+  id: '@font_kode_30'
+  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 30
+
+- type: font
+  id: '@font_kode_24'
+  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 24
+
+- type: font
+  id: '@font_kode_20'
+  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 20
+
+- type: font
+  id: '@font_kode_14'
+  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 14
+
+##########
+# Styles #
+##########
+
 - type: style
   id: '@debug'
   outline_width: 1
@@ -326,6 +381,11 @@
 - type: style
   id: '@indicator_yellow'
   text_color: '#ffff55'
+
+- type: style
+  id: '@text_actionable'
+  text_color: '#ffff55'
+  text_font: @font_kode_14
 
 - type: style
   id: '@jog_btn'
@@ -416,10 +476,12 @@
         add_style: ['@flex_x', 0]
         add_style: ['@container_transp', 0]
         size: [100%, LV_SIZE_CONTENT]
+        flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+        pad_column: 0
         children:
           - type: button
-            # text_font: '@font_kode_30'
-            width: LV_SIZE_CONTENT
+            text_font: '@font_kode_40'
+            width: 35
             add_style: ['@indicator_light', 0]
             add_style: ['@btn_clicked', LV_STATE_PRESSED]
             observes: { $homed_state: { style: { true: '@indicator_light_green', false: '@indicator_light_red' } } }
@@ -427,13 +489,16 @@
             radius: 0
             bg_opa: 0
             shadow_opa: 0
+            pad_right: 0
+            pad_bottom: 0
+            pad_top: 0
             children:
               - type: label
                 text: $axis
                 center: []
 
           - type: 'label'
-            # text_font: '@font_kode_30'
+            text_font: '@font_kode_34'
             text: $wcs_pos
             flex_grow: 1
             add_style: ['@indicator_green', 0]
@@ -445,7 +510,7 @@
         size: [100%, LV_SIZE_CONTENT]
         children:
           - type: 'label'
-            # text_font: '@font_kode_14'
+            text_font: '@font_kode_14'
             text: $abs_pos
             flex_grow: 1
             text_align: LV_TEXT_ALIGN_RIGHT
@@ -456,7 +521,7 @@
             text: "\uF124"
             width: 14
           - type: 'label'
-            # text_font: '@font_kode_14'
+            text_font: '@font_kode_14'
             text: $delta_pos
             text_align: LV_TEXT_ALIGN_RIGHT
             add_style: ['@indicator_yellow', 0]
@@ -471,80 +536,6 @@
 ##    JOG VIEW    ##
 ####################
 
-- type: component
-  id: '@jog_view'
-  content:
-    layout: LV_LAYOUT_FLEX
-    flex_flow: LV_FLEX_FLOW_ROW
-    flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
-    add_style: ['@container', 0]
-    size: [99%, 100%]
-    border_width: 0
-    pad_all: 0
-    margin_all: 0
-    outline_width: 0
-    name: main
-    children:
-      - layout: LV_LAYOUT_FLEX
-        flex_flow: LV_FLEX_FLOW_COLUMN
-        add_style: ['@container', 0]
-        height: 100%
-        flex_grow: 4
-        border_side: LV_BORDER_SIDE_RIGHT
-        border_width: 1
-        radius: 0
-        border_color: '#333333'
-        border_opa: 255
-        #bg_opa: 0
-        children:
-          - type: use-view
-            id: '@xyz_axis_pos_display'
-
-      # Right main column (Feeds & Speeds)
-      - layout: LV_LAYOUT_FLEX
-        flex_flow: LV_FLEX_FLOW_COLUMN
-        add_style: ['@container', 0]
-        add_style: [@bg_gradient, 0]
-        height: 100%
-        flex_grow: 4
-        pad_top: 5
-        margin_left: 2
-        margin_right: 2
-        children:
-          - type: use-view
-            id: '@feed_rate_scale'
-            context:
-              unit: MM/MIN
-              label: FEED
-              letter: F
-              ovr: Feed Ovr
-              pad_bottom: 12
-              rate_value: feed
-              range_min: 0
-              range_max: 5000
-              override_value: feed_override_pct
-              override_state: set_feed_override
-          - type: use-view
-            id: '@feed_rate_scale'
-            context:
-              unit: /MIN
-              label: SPEED
-              letter: S
-              ovr: Speed Ovr
-              pad_bottom: 12
-              range_min: 0
-              range_max: 10000
-              rate_value: spindle_rpm
-              override_value: speed_override_pct
-              override_state: set_speed_override
-          - type: use-view
-            id: '@jog_feed'
-            context:
-              unit: MM
-              label: JOG
-              ovr: Jog Ovr
-              pad_bottom: 0
-
 # XYZ position display
 - type: component
   id: '@xyz_axis_pos_display'
@@ -554,14 +545,16 @@
     add_style: [@flex_y, 0]
     add_style: [@bg_gradient, 0]
     bg_opa: 255
+    pad_column: 0
+    pad_row: 0
     children:
       - type: use-view
         id: @axis_pos_display2
         context:
           axis: X
-          abs_pos: "000.000"
-          wcs_pos: "000.000 G54"
-          delta_pos: "000.000   "
+          abs_pos: "000.00"
+          wcs_pos: "000.00 G54"
+          delta_pos: "000.00   "
           homed_state: x_is_homed
           home_action: home_machine
           wcs_state: display_wcs_pos_x
@@ -572,9 +565,9 @@
         id: @axis_pos_display2
         context:
           axis: Y
-          abs_pos: "000.000"
-          wcs_pos: "000.000 G54"
-          delta_pos: "000.000   "
+          abs_pos: "000.00"
+          wcs_pos: "000.00 G54"
+          delta_pos: "000.00   "
           homed_state: y_is_homed
           home_action: home_machine
           wcs_state: display_wcs_pos_y
@@ -585,9 +578,9 @@
         id: @axis_pos_display2
         context:
           axis: Z
-          abs_pos: "000.000"
-          wcs_pos: "000.000 G54"
-          delta_pos: "000.000   "
+          abs_pos: "000.00"
+          wcs_pos: "000.00 G54"
+          delta_pos: "000.00   "
           homed_state: z_is_homed
           home_action: home_machine
           wcs_state: display_wcs_pos_z
@@ -610,6 +603,79 @@
           - type: label
             observes: { machine_mode: { text: "MODE: %s" } }
 
+- type: component
+  id: @labeled_scale
+  content:
+    layout: LV_LAYOUT_FLEX
+    add_style: ['@container_transp', 0]
+    flex_flow: LV_FLEX_FLOW_COLUMN
+    width: 100%
+    height: LV_SIZE_CONTENT
+    flex_grow: 1
+    children:
+      - type: obj # grid
+        #layout: LV_LAYOUT_GRID
+        grid_dsc_array: [[LV_GRID_CONTENT, LV_GRID_FR1, LV_GRID_TEMPLATE_LAST], [LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST]]
+        add_style: ['@container_transp', 0]
+        width: 100%
+        height: LV_SIZE_CONTENT
+        children:
+          - layout: LV_LAYOUT_FLEX
+            height: LV_SIZE_CONTENT
+            width: 120
+            add_style: [@container_transp, 0]
+            grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1]
+            remove_flag: LV_OBJ_FLAG_SCROLLABLE
+            pad_column: 0
+            children:
+              - type: label
+                text: $letter
+                text_font: '@font_kode_40'
+                height: LV_SIZE_CONTENT
+                pad_left: 5
+              - type: label
+                text: $label
+                pad_left: 0
+                height: LV_SIZE_CONTENT
+                width: 100%
+                text_font: '@font_kode_14'
+                add_style: ['@border_top_btn', 0]
+          - type: label
+            grid_cell: [LV_GRID_ALIGN_END, 1, 1, LV_GRID_ALIGN_END, 0, 1]
+            text_font: '@font_kode_30'
+            height: LV_SIZE_CONTENT
+            text: '1000'
+            pad_right: 5
+            observes: { $rate_value: { text: "%.0f" } }
+      - layout: LV_LAYOUT_FLEX
+        flex_flow: LV_FLEX_FLOW_COLUMN
+        add_style: ['@container_transp', 0]
+        width: 100%
+        height: LV_SIZE_CONTENT
+        children:
+          - type: bar
+            width: 100%
+            height: 15
+            margin_left: 15
+            margin_right: 15
+            add_style: ['@bar_indicator', LV_PART_MAIN]
+            add_style: ['@bar_indicator', LV_PART_INDICATOR]
+            value: [65, 0]
+            range: [$range_min, $range_max]
+            bg_color: '#5dd555'
+            bg_opa: 255
+            #observes: { $rate_value: { value: [LV_ANIM_OFF] } }
+            observes: { $rate_value: 'value'}
+          - type: scale
+            width: 100%
+            height: 18
+            margin_left: 15
+            margin_right: 15
+            margin_bottom: 2
+            add_style: [@tick_color, LV_PART_ITEMS]
+            add_style: [@tick_color, LV_PART_MAIN]
+            add_style: [@tick_color, LV_PART_INDICATOR]
+            # text_font: '@font_montserrat_12'
 
 - type: component
   id: '@feed_rate_scale'
@@ -621,9 +687,40 @@
     flex_flow: LV_FLEX_FLOW_ROW
     height: LV_SIZE_CONTENT
     pad_column: 0
-    pad_bottom: $pad_bottom
-    pad_top: $pad_bottom
+    pad_bottom: $pad
+    pad_top: $pad
     children:
+      - type: use-view
+        id: @labeled_scale
+        # context: is all inherited.
+
+      # Right column
+      - layout: LV_LAYOUT_FLEX
+        add_style: ['@container_transp', 0]
+        flex_flow: LV_FLEX_FLOW_COLUMN
+        width: LV_SIZE_CONTENT
+        min_width: 50
+        height: LV_SIZE_CONTENT
+        pad_right: 0
+        flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER]
+        add_flag: LV_OBJ_FLAG_CLICKABLE
+        action: { $override_state: { numeric_input_dialog: { min: 0, max: 200, initial: 100, format: "%d %% ", text: 'Override:' } } }
+        children:
+          - type: label
+            text: $unit
+            text_font: '@font_kode_14'
+            add_style: ['@border_top_btn', 0]
+          - type: label
+            text: $ovr
+          - type: label
+            text: 65%%
+            text_font: '@font_kode_14'
+            add_style: [@indicator_yellow, 0]
+            observes: { $override_value: { text: "%g%%" } }
+
+- type: component
+  id: @old_scale_part
+  content:
       # Left Column
       - layout: LV_LAYOUT_FLEX
         add_style: ['@container_transp', 0]
@@ -632,12 +729,6 @@
         height: LV_SIZE_CONTENT
         flex_grow: 1
         children:
-          - type: label
-            text: $label
-            height: LV_SIZE_CONTENT
-            width: 100%
-            # text_font: '@font_kode_20'
-            add_style: ['@border_top_btn', 0]
           - type: obj # grid
             #layout: LV_LAYOUT_GRID
             grid_dsc_array: [[LV_GRID_CONTENT, LV_GRID_FR1, LV_GRID_TEMPLATE_LAST], [LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST]]
@@ -645,18 +736,32 @@
             width: 100%
             height: LV_SIZE_CONTENT
             children:
-              - type: label
-                text: $letter
-                # text_font: '@font_kode_30'
-                grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1]
+              - layout: LV_LAYOUT_FLEX
                 height: LV_SIZE_CONTENT
-                pad_left: 10
+                width: 120
+                add_style: [@container_transp, 0]
+                grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1]
+                remove_flag: LV_OBJ_FLAG_SCROLLABLE
+                pad_column: 0
+                children:
+                  - type: label
+                    text: $letter
+                    text_font: '@font_kode_40'
+                    height: LV_SIZE_CONTENT
+                    pad_left: 5
+                  - type: label
+                    text: $label
+                    pad_left: 0
+                    height: LV_SIZE_CONTENT
+                    width: 100%
+                    text_font: '@font_kode_14'
+                    add_style: ['@border_top_btn', 0]
               - type: label
                 grid_cell: [LV_GRID_ALIGN_END, 1, 1, LV_GRID_ALIGN_END, 0, 1]
-                # text_font: '@font_kode_30'
+                text_font: '@font_kode_30'
                 height: LV_SIZE_CONTENT
                 text: '1000'
-                pad_right: 10
+                pad_right: 5
                 observes: { $rate_value: { text: "%.0f" } }
           - layout: LV_LAYOUT_FLEX
             flex_flow: LV_FLEX_FLOW_COLUMN
@@ -688,27 +793,51 @@
                 add_style: [@tick_color, LV_PART_INDICATOR]
                 # text_font: '@font_montserrat_12'
 
-      # Right column
+- type: component
+  id: '@chipload_scale'
+  content:
+    size: [100%, 100%]
+    add_style: ['@container_transp', 0]
+    add_style: ['@bg_group', 0]
+    layout: LV_LAYOUT_FLEX
+    flex_flow: LV_FLEX_FLOW_ROW
+    height: LV_SIZE_CONTENT
+    pad_column: 0
+    pad_bottom: $pad
+    pad_top: $pad
+    children:
+      # Left Column: scale
+      - type: use-view
+        id: @labeled_scale
+
+      # Right Column: units, override
       - layout: LV_LAYOUT_FLEX
         add_style: ['@container_transp', 0]
         flex_flow: LV_FLEX_FLOW_COLUMN
         width: LV_SIZE_CONTENT
-        min_width: 70
+        min_width: 50
         height: LV_SIZE_CONTENT
         pad_right: 0
         flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER]
         add_flag: LV_OBJ_FLAG_CLICKABLE
-        action: { $override_state: { numeric_input_dialog: { min: 0, max: 200, initial: 100, format: "%d %% ", text: 'Override:' } } }
         children:
           - type: label
-            text: $unit
-            # text_font: '@font_kode_20'
-            add_style: ['@border_top_btn', 0]
+            text_font: '@font_kode_14'
+            add_style: [@indicator_yellow, 0]
+            observes: { tool_material: { text: "%s" } }
           - type: label
-            text: $ovr
+            add_style: [@indicator_yellow, 0]
+            observes: { tool_dia: { text: "%g mm" } }
           - type: label
-            text: 65%%
-            observes: { $override_value: { text: "%g%%" } }
+            text_font: '@font_kode_14'
+            add_style: [@indicator_yellow, 0]
+            observes: { tool_n_flutes: { text: "%g-FL" } }
+          - type: label
+            text_font: '@font_kode_14'
+            observes: { chipload_min: { text: "> %g" } }
+          - type: label
+            text_font: '@font_kode_14'
+            observes: { chipload_max: { text: "< %g" } }
 
 - type: component
   id: '@jog_feed'
@@ -720,8 +849,8 @@
     flex_flow: LV_FLEX_FLOW_ROW
     height: LV_SIZE_CONTENT
     pad_column: 0
-    pad_bottom: $pad_bottom
-    pad_top: $pad_bottom
+    pad_bottom: $pad
+    pad_top: $pad
     children:
       # Left Column
       - layout: LV_LAYOUT_FLEX
@@ -735,44 +864,44 @@
             text: $label
             height: LV_SIZE_CONTENT
             width: 100%
-            # text_font: '@font_kode_20'
+            text_font: '@font_kode_20'
             add_style: ['@border_top_btn', 0]
           - type: obj # grid
             layout: LV_LAYOUT_GRID
-            grid_dsc_array: [[35, 45, 20 , 40, LV_GRID_TEMPLATE_LAST], [LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST]]
+            grid_dsc_array: [[22, 50, 12 , 50, LV_GRID_TEMPLATE_LAST], [LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST]]
             add_style: ['@container_transp', 0]
             width: 100%
             height: LV_SIZE_CONTENT
-            pad_left: 10
+            pad_left: 2
             children:
               - type: label
                 text: 'XY'
-                # text_font: '@font_kode_24'
+                text_font: '@font_kode_20'
                 grid_cell: [LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1]
                 height: LV_SIZE_CONTENT
                 add_flag: LV_OBJ_FLAG_CLICKABLE
                 action: { cycle_step_xy: trigger }
               - type: label
-                grid_cell: [LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 0, 1]
-                # text_font: '@font_kode_24'
+                grid_cell: [LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_END, 0, 1]
+                text_font: '@font_kode_20'
                 height: LV_SIZE_CONTENT
                 text: '10'
                 pad_right: 10
-                add_style: ['@border_right', 0]
+                #add_style: ['@border_right', 0]
                 add_style: ['@indicator_yellow', 0]
                 add_flag: LV_OBJ_FLAG_CLICKABLE
                 action: { cycle_step_xy: trigger }
                 observes: { jog_step_xy: { text: '%g' } }
               - type: label
                 text: Z
-                # text_font: '@font_kode_24'
+                text_font: '@font_kode_20'
                 grid_cell: [LV_GRID_ALIGN_START, 2, 1, LV_GRID_ALIGN_START, 0, 1]
                 height: LV_SIZE_CONTENT
                 add_flag: LV_OBJ_FLAG_CLICKABLE
                 action: { cycle_step_z: trigger }
               - type: label
-                grid_cell: [LV_GRID_ALIGN_START, 3, 1, LV_GRID_ALIGN_START, 0, 1]
-                # text_font: '@font_kode_24'
+                grid_cell: [LV_GRID_ALIGN_START, 3, 1, LV_GRID_ALIGN_END, 0, 1]
+                text_font: '@font_kode_20'
                 height: LV_SIZE_CONTENT
                 text: ' 5'
                 add_style: ['@indicator_yellow', 0]
@@ -785,23 +914,272 @@
         add_style: ['@container_transp', 0]
         flex_flow: LV_FLEX_FLOW_COLUMN
         width: LV_SIZE_CONTENT
-        min_width: 70
+        min_width: 50
         height: LV_SIZE_CONTENT
         pad_right: 0
         children:
           - type: label
             text: $unit
-            # text_font: '@font_kode_20'
+            text_font: '@font_kode_14'
             add_style: ['@border_top_btn', 0]
           - type: label
             text: $ovr
           - type: label
+            text_font: '@font_kode_14'
+            add_style: [@indicator_yellow, 0]
             text: '100% '
 
-####################
-## Main UI Layut ##
-####################
 
+- type: component
+  id: '@jog_view'
+  content:
+    layout: LV_LAYOUT_FLEX
+    flex_flow: LV_FLEX_FLOW_ROW
+    flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+    add_style: ['@container', 0]
+    size: [100%, 100%]
+    remove_flag: LV_OBJ_FLAG_SCROLLABLE
+    border_width: 0
+    pad_all: 0
+    margin_all: 0
+    outline_width: 0
+    name: main
+    children:
+      - layout: LV_LAYOUT_FLEX
+        flex_flow: LV_FLEX_FLOW_COLUMN
+        add_style: ['@container', 0]
+        height: 100%
+        flex_grow: 4
+        border_side: LV_BORDER_SIDE_RIGHT
+        border_width: 1
+        radius: 0
+        border_color: '#333333'
+        border_opa: 255
+        #bg_opa: 0
+        children:
+          - type: use-view
+            id: '@xyz_axis_pos_display'
+
+      # Right main column (Feeds & Speeds)
+      - layout: LV_LAYOUT_FLEX
+        flex_flow: LV_FLEX_FLOW_COLUMN
+        add_style: ['@container', 0]
+        add_style: [@bg_gradient, 0]
+        height: 100%
+        flex_grow: 4
+        pad_top: 2
+        pad_right: 2  
+        margin_left: 2
+        margin_right: 2
+        children:
+          - type: use-view
+            id: '@feed_rate_scale'
+            context:
+              unit: MM/MIN
+              label: FEED
+              letter: F
+              ovr: F Ovr
+              pad: 4
+              rate_value: feed
+              range_min: 0
+              range_max: 5000
+              override_value: feed_override_pct
+              override_state: set_feed_override
+          - type: use-view
+            id: '@feed_rate_scale'
+            context:
+              unit: /MIN
+              label: SPEED
+              letter: S
+              ovr: S Ovr
+              pad: 4
+              range_min: 0
+              range_max: 24000
+              rate_value: spindle_rpm
+              override_value: speed_override_pct
+              override_state: set_speed_override
+          - type: use-view
+            id: '@jog_feed'
+            observes: { program_running: { visible: { true: false, false: true } } }
+            context:
+              unit: MM
+              label: JOG
+              ovr: Jog Ovr
+              pad: 21
+          - type: use-view
+            id: '@chipload_scale'
+            observes: { program_running: { visible: { true: true, false: false } } }
+            context:
+              unit: /MIN
+              label: Chipload
+              letter: C
+              pad: 4
+              range_min: 0
+              range_max: 100
+              rate_value: chipload_disp
+
+##############
+## Probe UI ##
+##############
+
+- type: component
+  id: '@probe_btn'
+  content:
+    add_style: [@container_transp, 0]
+    grid_cell: [LV_GRID_ALIGN_CENTER, $col, 1, LV_GRID_ALIGN_CENTER, $row, 1]
+    size: [80, 80]
+    children:
+      - type: button
+        size: [100%, 100%]
+        add_style: [@container_transp, 0]
+        border_width: 0
+        outline_width: 0
+        shadow_width: 5
+        shadow_opa: 100
+        shadow_spread: 3
+        pad_all: 5
+        children:
+          - type: image
+            src: $path
+
+- type: component
+  id: @label_text_actionable
+  content:
+    add_style: [@container_transp, 0]
+    add_style: [@flex_x, 0]
+    add_style: [@bg_group, 0]
+    size: [100%, LV_SIZE_CONTENT]
+    pad_all: 3
+    children:
+      - type: label
+        flex_grow: 5
+        text: $label
+      - type: label
+        add_style: [@text_actionable, 0]
+        flex_grow: 2
+        text: $text
+        observes: { $observable: { text: $fmt } }
+        action: { $action: { numeric_input_dialog: { min: $min, max: $max, initial: $initial, format: $fmt, text: $label} } }
+
+- type: component
+  id: @probe_view
+  content:
+    add_style: [@container_transp, 0]
+    add_style: [@flex_x, 0]
+    size: [100%, 100%]
+    children:
+      - add_style: [@container_transp, 0]
+        add_style: [@bg_gradient, 0]
+        size: [LV_SIZE_CONTENT, 100%]
+        children:
+          - add_style: [@container_transp, 0]
+            add_style: [@bg_gradient, 0]
+            size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+            children:
+              - type: obj
+                layout: LV_LAYOUT_GRID
+                size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+                add_style: [@container_transp, 0]
+                add_style: [@bg_group, 0]
+                pad_all: 10
+                grid_dsc_array: [[80, 80, 80, LV_GRID_TEMPLATE_LAST], [80, 80, 80, LV_GRID_TEMPLATE_LAST]]
+                children:
+                  - type: use-view
+                    id: @probe_btn
+                    context: { row: 0, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_0.png' }
+                  - type: use-view
+                    id: @probe_btn
+                    context: { row: 0, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_1.png' }
+                  - type: use-view
+                    id: @probe_btn
+                    context: { row: 0, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_2.png' }
+                  - type: use-view
+                    id: @probe_btn
+                    context: { row: 1, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_3.png' }
+                  - type: use-view
+                    id: @probe_btn
+                    context: { row: 1, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_4.png' }
+                  - type: use-view
+                    id: @probe_btn
+                    context: { row: 1, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_5.png' }
+                  - type: use-view
+                    id: @probe_btn
+                    context: { row: 2, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_6.png' }
+                  - type: use-view
+                    id: @probe_btn
+                    context: { row: 2, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_7.png' }
+                  - type: use-view
+                    id: @probe_btn
+                    context: { row: 2, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_8.png' }
+      - add_style: [@container_transp, 0]
+        add_style: [@bg_gradient, 0]
+        add_style: [@flex_y, 0]
+        size: [100%, LV_SIZE_CONTENT]
+        pad_row: 8
+        pad_all: 10
+        flex_grow: 1
+        children:
+          - type: use-view
+            id: @label_text_actionable
+            context:
+              label: 'Width / Radius:'
+              text: '100 mm'
+              observable: probe_width
+              fmt: '%g mm'
+              action: set_probe_width
+              min: 1
+              max: 500
+              initial: 100
+          - type: use-view
+            id: @label_text_actionable
+            context:
+              label: 'Height:'
+              text: '100 mm'
+              observable: probe_width
+              fmt: '%g mm'
+              action: set_probe_width
+              min: 1
+              max: 500
+              initial: 100
+          - type: use-view
+            id: @label_text_actionable
+            context:
+              label: 'Clearance:'
+              text: '5 mm'
+              observable: probe_width
+              fmt: '%g mm'
+              action: set_probe_width
+              min: 1.0
+              max: 20.0
+              initial: 5.0
+          - type: use-view
+            id: @label_text_actionable
+            context:
+              label: 'Overtravel:'
+              text: '2 mm'
+              observable: probe_width
+              fmt: '%g mm'
+              action: set_probe_width
+              min: 0.1
+              max: 10.0
+              initial: 2.0
+          - type: obj 
+            add_style: [@container_transp, 0]
+            add_style: [@flex_x, 0]
+            add_style: [@bg_group, 0]
+            size: [100%, LV_SIZE_CONTENT]
+            flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+            pad_all: 3 
+            children:
+              - type: label
+                text: Quick Mode:
+                flex_grow: 5
+              - type: switch
+                height: 20
+                width: 40
+                margin_right: 10
+                action: { set_probe_quick: toggle }
+                observes: { probe_quick: value }
 
 ####################
 ## Main UI Layut ##
@@ -813,11 +1191,13 @@
   pad_row: 0
   pad_column: 0
   children:
-    - init: { lv_tileview_add_tile: [1, 0, LV_DIR_LEFT] }
-      add_style: ['@container', 0]
-        children:
     - init: { lv_tileview_add_tile: [0, 0, LV_DIR_RIGHT] }
       add_style: ['@container', 0]
       children:
         - type: use-view
           id: '@jog_view'
+    - init: { lv_tileview_add_tile: [1, 0, LV_DIR_LEFT] }
+      add_style: ['@container', 0]
+        children:
+          - type: use-view
+            id: '@probe_view'

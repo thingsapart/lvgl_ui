@@ -65,4 +65,14 @@ void print_hint(const char* format, ...);
 // the caller must free the returned string.
 char* get_array_base_type(const char* array_c_type);
 
+// Extracts the directory part of a file path.
+// The returned string is heap-allocated and must be freed by the caller.
+// Returns "." if there is no directory part.
+char* get_dirname(const char* path);
+
+// Joins two path components, handling path separators correctly.
+// The returned string is heap-allocated and must be freed by the caller.
+// If `relative` is an absolute path, it is returned directly (as a new string).
+char* join_path(const char* base, const char* relative);
+
 #endif // UTILS_H

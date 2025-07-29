@@ -6,10 +6,10 @@
 #include "cJSON.h"
 #include "data_binding.h"
 
-#define UI_SIM_MAX_STATES 64
-#define UI_SIM_MAX_ACTIONS 128
+#define UI_SIM_MAX_STATES 128
+#define UI_SIM_MAX_ACTIONS 256
 #define UI_SIM_MAX_SCHEDULED_ACTIONS 64
-#define UI_SIM_MAX_FUNC_ARGS 16
+#define UI_SIM_MAX_FUNC_ARGS 64
 
 // --- Global Configuration ---
 extern bool g_ui_sim_trace_no_time_enabled;

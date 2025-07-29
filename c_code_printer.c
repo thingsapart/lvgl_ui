@@ -28,6 +28,7 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_ma
 static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* id_map, MapNode* array_map);
 static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* id_map, MapNode* array_map);
 static void find_and_map_arrays(IRObject* head, MapNode** array_map_head, int* counter);
+static void id_map_dump(IdMapNode* map_head);
 
 // --- Map Helpers: ID Map ---
 static void id_map_add(IdMapNode** map_head, const char* id, const char* c_name, const char* c_type) {
@@ -61,6 +62,17 @@ static void id_map_free(IdMapNode* map_head) {
         free(current);
         current = next;
     }
+}
+
+static void id_map_dump(IdMapNode* map_head) {
+    fprintf(stderr, "\n--- C Code Printer ID Map Dump ---\n");
+    if (!map_head) {
+        fprintf(stderr, "  (empty)\n");
+    }
+    for (IdMapNode* current = map_head; current; current = current->next) {
+        fprintf(stderr, "  ID: %-25s -> C Name: %-20s (C Type: %s)\n", current->id, current->c_name, current->c_type);
+    }
+    fprintf(stderr, "--- END ID Map Dump ---\n\n");
 }
 
 
@@ -187,6 +199,8 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_ma
                     c_type_of_ref = node->c_type;
                 } else {
                     printf("/* unresolved_ref: %s */ NULL", name);
+                    fprintf(stderr, "[C Code Printer] " ANSI_BOLD_RED "Error:" ANSI_RESET " Unresolved reference '%s'.\n", name);
+                    id_map_dump(id_map);
                     return;
                 }
             }
@@ -432,7 +446,16 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
 
         print_indent(content_indent);
         bool is_pointer = (current->c_type && strchr(current->c_type, '*') != NULL);
-        if (is_pointer) {
+
+        if (strcmp(current->c_type, "const char*") == 0) {
+            printf("%s %s = ", current->c_type, current->c_name);
+            if (current->constructor_expr) {
+                print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
+            } else {
+                printf("NULL");
+            }
+            printf(";\n");
+        } else if (is_pointer) {
             printf("%s %s = ", current->c_type, current->c_name);
             if (current->constructor_expr) {
                 print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);

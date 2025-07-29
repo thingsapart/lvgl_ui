@@ -25,7 +25,7 @@ typedef struct {
 } GenContext;
 
 // --- Forward Declarations ---
-static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* parent_c_name, const cJSON* ui_context);
+static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* parent_c_name, const cJSON* ui_context, const char* current_base_path);
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type, const char* parent_c_name, const char* target_c_name, IRObject* ir_obj_for_warnings);
 static char* generate_unique_var_name(GenContext* ctx, const char* base_type);
 static char* sanitize_c_identifier(const char* input_name);
@@ -35,6 +35,8 @@ static int count_cjson_array(cJSON* array_json);
 static int count_function_args(const FunctionArg* head);
 static bool types_compatible(const char* expected, const char* actual);
 static cJSON* process_context_keys_recursive(const cJSON* source_json, const cJSON* context);
+static IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string, const char* base_path, const ApiSpec* api_spec);
+static void process_ui_spec_array(GenContext* ctx, cJSON* array_json, const char* current_base_path, IRObject** object_list_head, IROperationNode** operation_list_head, const char* parent_c_name, const cJSON* ui_context);
 
 
 // --- Main Entry Point ---
@@ -97,35 +99,8 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
     registry_add_generated_var(ctx.registry, root_parent_name, root_parent_name, "lv_obj_t*");
 
 
-    cJSON* obj_json = NULL;
-    cJSON_ArrayForEach(obj_json, ui_spec_root) {
-        if (ctx.error_occurred) break; // Stop processing if an error was found in a previous iteration
+    process_ui_spec_array(&ctx, (cJSON*)ui_spec_root, ".", &ir_root->root_objects, NULL, root_parent_name, NULL);
 
-        if (cJSON_IsObject(obj_json)) {
-            cJSON* type_item = cJSON_GetObjectItemCaseSensitive(obj_json, "type");
-            if (type_item && cJSON_IsString(type_item)) {
-                // --- Handle special top-level block types ---
-                if (strcmp(type_item->valuestring, "component") == 0) {
-                    continue; // Skip component definitions in the main rendering pass
-                }
-                if (strcmp(type_item->valuestring, "data-binding") == 0) {
-                    if (!ui_sim_process_node(obj_json)) {
-                        // Error already reported by ui_sim
-                        ctx.error_occurred = true;
-                    }
-                    continue; // This block is consumed by UI-Sim, not rendered as a widget
-                }
-            }
-
-            IRObject* new_obj = parse_object(&ctx, obj_json, root_parent_name, NULL);
-            if (ctx.error_occurred) {
-                // parse_object already cleaned up after itself and reported the error.
-                // We just need to stop and clean up the root.
-                break;
-            }
-            if (new_obj) ir_object_list_add(&ir_root->root_objects, new_obj);
-        }
-    }
 
     registry_free(ctx.registry);
 
@@ -137,16 +112,14 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
     return ir_root;
 }
 
-IRRoot* generate_ir_from_string(const char* ui_spec_string, const ApiSpec* api_spec) {
+static IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string, const char* base_path, const ApiSpec* api_spec) {
     if (!ui_spec_string || strlen(ui_spec_string) == 0) {
-        // Not an error, just an empty UI.
         return ir_new_root();
     }
 
     cJSON* ui_spec_json = NULL;
     char* error_msg = NULL;
 
-    // Heuristic to detect if it's YAML or JSON. JSON usually starts with { or [.
     const char* p = ui_spec_string;
     while (*p && isspace((unsigned char)*p)) p++;
 
@@ -155,11 +128,9 @@ IRRoot* generate_ir_from_string(const char* ui_spec_string, const ApiSpec* api_s
         tried_json = true;
         ui_spec_json = cJSON_Parse(ui_spec_string);
         if (!ui_spec_json) {
-            // It might be YAML that happens to start with { or [, so try YAML parser as a fallback.
             ui_spec_json = yaml_to_cjson(ui_spec_string, &error_msg);
         }
     } else {
-        // Doesn't look like JSON, assume YAML.
         ui_spec_json = yaml_to_cjson(ui_spec_string, &error_msg);
     }
 
@@ -171,19 +142,54 @@ IRRoot* generate_ir_from_string(const char* ui_spec_string, const ApiSpec* api_s
     }
 
     if (!ui_spec_json) {
-        if (tried_json) {
-            render_abort(cJSON_GetErrorPtr());
-        } else {
-            render_abort("Failed to parse UI specification. Content is not valid YAML or JSON.");
-        }
+        if (tried_json) render_abort(cJSON_GetErrorPtr());
+        else render_abort("Failed to parse UI specification. Content is not valid YAML or JSON.");
         return NULL;
     }
 
-    IRRoot* ir_root = generate_ir_from_ui_spec(ui_spec_json, api_spec);
+    if (!cJSON_IsArray(ui_spec_json)) {
+        render_abort("UI spec root must be a valid JSON/YAML array.");
+        cJSON_Delete(ui_spec_json);
+        return NULL;
+    }
 
+    IRRoot* ir_root = ir_new_root();
+    GenContext ctx = { .api_spec = api_spec, .registry = registry_create(), .var_counter = 0, .error_occurred = false };
+
+    // Pre-pass for components...
+    cJSON* item_json = NULL;
+    cJSON_ArrayForEach(item_json, ui_spec_json) {
+        if (cJSON_IsObject(item_json)) {
+            cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item_json, "type");
+            if (type_item && cJSON_IsString(type_item) && strcmp(type_item->valuestring, "component") == 0) {
+                cJSON* id_item = cJSON_GetObjectItemCaseSensitive(item_json, "id");
+                cJSON* content_item = cJSON_GetObjectItemCaseSensitive(item_json, "root");
+                if (!content_item) content_item = cJSON_GetObjectItemCaseSensitive(item_json, "content");
+                if (id_item && cJSON_IsString(id_item) && content_item && cJSON_IsObject(content_item)) {
+                    registry_add_component(ctx.registry, id_item->valuestring, content_item);
+                }
+            }
+        }
+    }
+
+    const char* root_parent_name = "parent";
+    registry_add_generated_var(ctx.registry, root_parent_name, root_parent_name, "lv_obj_t*");
+    process_ui_spec_array(&ctx, ui_spec_json, base_path, &ir_root->root_objects, NULL, root_parent_name, NULL);
+
+    registry_free(ctx.registry);
     cJSON_Delete(ui_spec_json);
 
+    if (ctx.error_occurred) {
+        ir_free((IRNode*)ir_root);
+        return NULL;
+    }
+
     return ir_root;
+}
+
+
+IRRoot* generate_ir_from_string(const char* ui_spec_string, const ApiSpec* api_spec) {
+    return generate_ir_from_string_with_base_path(ui_spec_string, ".", api_spec);
 }
 
 IRRoot* generate_ir_from_file(const char* ui_spec_path, const ApiSpec* api_spec) {
@@ -195,12 +201,12 @@ IRRoot* generate_ir_from_file(const char* ui_spec_path, const ApiSpec* api_spec)
         return NULL;
     }
 
-    IRRoot* ir_root = generate_ir_from_string(ui_spec_content, api_spec);
-
+    char* base_path = get_dirname(ui_spec_path);
+    IRRoot* ir_root = generate_ir_from_string_with_base_path(ui_spec_content, base_path, api_spec);
+    free(base_path);
     free(ui_spec_content);
 
     if (!ir_root) {
-        // Error was already reported by generate_ir_from_string.
         DEBUG_LOG(LOG_MODULE_GENERATOR, "Failed to generate IR from the UI spec file '%s'.", ui_spec_path);
     }
 
@@ -260,7 +266,7 @@ static cJSON* process_context_keys_recursive(const cJSON* source_json, const cJS
 
 // --- Core Object Parser ---
 
-static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* parent_c_name, const cJSON* ui_context) {
+static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* parent_c_name, const cJSON* ui_context, const char* current_base_path) {
     if (ctx->error_occurred) return NULL;
     if (!cJSON_IsObject(obj_json)) return NULL;
 
@@ -268,6 +274,51 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
     cJSON* type_item = cJSON_GetObjectItem(obj_json, "type");
     if (type_item && cJSON_IsString(type_item)) {
         original_json_type_str = type_item->valuestring;
+    }
+
+    /*
+    // --- Handle special asset types ---
+    if (strcmp(original_json_type_str, "image") == 0) {
+        cJSON* id_item = cJSON_GetObjectItem(obj_json, "id");
+        cJSON* path_item = cJSON_GetObjectItem(obj_json, "path");
+        if (!id_item || !cJSON_IsString(id_item) || !path_item || !cJSON_IsString(path_item)) {
+            print_warning("'image' type requires a string 'id' and 'path'.");
+            return NULL;
+        }
+        const char* registered_id_from_json = id_item->valuestring;
+        char* c_name = generate_unique_var_name(ctx, registered_id_from_json);
+        const char* clean_id = (registered_id_from_json[0] == '@') ? registered_id_from_json + 1 : registered_id_from_json;
+        IRObject* ir_obj = ir_new_object(c_name, "image", "const char*", clean_id);
+        ir_obj->constructor_expr = ir_new_expr_literal_string(path_item->valuestring, strlen(path_item->valuestring));
+        registry_add_generated_var(ctx->registry, registered_id_from_json, ir_obj->c_name, ir_obj->c_type);
+        free(c_name);
+        return ir_obj;
+    }
+    */
+
+    if (strcmp(original_json_type_str, "font") == 0) {
+        cJSON* id_item = cJSON_GetObjectItem(obj_json, "id");
+        cJSON* path_item = cJSON_GetObjectItem(obj_json, "path");
+        cJSON* size_item = cJSON_GetObjectItem(obj_json, "size");
+        if (!id_item || !cJSON_IsString(id_item) || !path_item || !cJSON_IsString(path_item) || !size_item || !cJSON_IsNumber(size_item)) {
+            print_warning("'font' type requires a string 'id', a string 'path', and a numeric 'size'.");
+            return NULL;
+        }
+        const char* registered_id_from_json = id_item->valuestring;
+        char* c_name = generate_unique_var_name(ctx, registered_id_from_json);
+        const char* clean_id = (registered_id_from_json[0] == '@') ? registered_id_from_json + 1 : registered_id_from_json;
+        IRObject* ir_obj = ir_new_object(c_name, "font", "lv_font_t*", clean_id);
+
+        IRExprNode* args = NULL;
+        ir_expr_list_add(&args, ir_new_expr_literal_string(path_item->valuestring, strlen(path_item->valuestring)));
+        char size_buf[16];
+        snprintf(size_buf, sizeof(size_buf), "%d", (int)size_item->valuedouble);
+        ir_expr_list_add(&args, ir_new_expr_literal(size_buf, "lv_font_size_t"));
+
+        ir_obj->constructor_expr = ir_new_expr_func_call("lv_tiny_ttf_create_file", args, "lv_font_t*");
+        registry_add_generated_var(ctx->registry, registered_id_from_json, ir_obj->c_name, ir_obj->c_type);
+        free(c_name);
+        return ir_obj;
     }
 
     // --- Handle `use-view` directive first, as it's not a real widget type ---
@@ -326,7 +377,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
             }
         }
 
-        IRObject* generated_obj = parse_object(ctx, final_json, parent_c_name, new_context);
+        IRObject* generated_obj = parse_object(ctx, final_json, parent_c_name, new_context, current_base_path);
 
         cJSON_Delete(final_json);
         cJSON_Delete(new_context);
@@ -486,13 +537,8 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
         if (strcmp(key, "children") == 0) {
             if (cJSON_IsArray(item)) {
-                cJSON* child_json = NULL;
-                cJSON_ArrayForEach(child_json, item) {
-                    if (ctx->error_occurred) break;
-                    IRObject* child_obj = parse_object(ctx, child_json, ir_obj->c_name, new_scope_context);
-                    if(ctx->error_occurred) break;
-                    if(child_obj) ir_operation_list_add(&ir_obj->operations, (IRNode*)child_obj);
-                }
+                process_ui_spec_array(ctx, item, current_base_path, NULL, &ir_obj->operations, ir_obj->c_name, new_scope_context);
+                if (ctx->error_occurred) break;
             }
         } else if (strcmp(key, "observes") == 0) {
             if (cJSON_IsObject(item)) {
@@ -1007,4 +1053,68 @@ static char* generate_unique_var_name(GenContext* ctx, const char* base_name) {
     }
     snprintf(final_name, strlen(sanitized_base) + 16, "%s_%d", sanitized_base, ctx->var_counter++);
     return final_name;
+}
+
+static void process_ui_spec_array(GenContext* ctx, cJSON* array_json, const char* current_base_path, IRObject** object_list_head, IROperationNode** operation_list_head, const char* parent_c_name, const cJSON* ui_context) {
+    cJSON* item_json;
+    cJSON_ArrayForEach(item_json, array_json) {
+        if (ctx->error_occurred) break;
+
+        cJSON* include_item = cJSON_GetObjectItem(item_json, "include");
+        if (include_item && cJSON_IsString(include_item)) {
+            char* full_path = join_path(current_base_path, include_item->valuestring);
+            char* included_content = read_file(full_path);
+            if (!included_content) {
+                print_warning("Could not read include file: %s", full_path);
+                free(full_path);
+                continue;
+            }
+
+            char* error_msg = NULL;
+            cJSON* included_json = yaml_to_cjson(included_content, &error_msg);
+            free(included_content);
+
+            if (error_msg) {
+                char err_buf[1024];
+                snprintf(err_buf, sizeof(err_buf), "Error in included file '%s': %s", full_path, error_msg);
+                render_abort(err_buf);
+                free(error_msg);
+                free(full_path);
+                ctx->error_occurred = true;
+                break;
+            }
+
+            if (included_json && cJSON_IsArray(included_json)) {
+                char* new_base_path = get_dirname(full_path);
+                process_ui_spec_array(ctx, included_json, new_base_path, object_list_head, operation_list_head, parent_c_name, ui_context);
+                free(new_base_path);
+            } else {
+                print_warning("Included file '%s' does not contain a valid YAML/JSON list.", full_path);
+            }
+
+            free(full_path);
+            cJSON_Delete(included_json);
+        } else if (cJSON_IsObject(item_json)) {
+             cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item_json, "type");
+            if (type_item && cJSON_IsString(type_item)) {
+                if (strcmp(type_item->valuestring, "component") == 0) continue;
+                if (strcmp(type_item->valuestring, "data-binding") == 0) {
+                    if (!ui_sim_process_node(item_json)) ctx->error_occurred = true;
+                    continue;
+                }
+            }
+
+            IRObject* new_obj = parse_object(ctx, item_json, parent_c_name, ui_context, current_base_path);
+            if (ctx->error_occurred) break;
+
+            if (new_obj) {
+                if (object_list_head) {
+                    ir_object_list_add(object_list_head, new_obj);
+                }
+                if (operation_list_head) {
+                    ir_operation_list_add(operation_list_head, (IRNode*)new_obj);
+                }
+            }
+        }
+    }
 }

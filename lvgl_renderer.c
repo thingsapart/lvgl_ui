@@ -388,14 +388,24 @@ static void evaluate_expression(RenderContext* ctx, IRExpr* expr, RenderValue* o
             const char* name = ((IRExprRegistryRef*)expr)->name;
             out_val->type = RENDER_VAL_TYPE_POINTER;
             out_val->as.p_val = registry_get_pointer(ctx->registry, name, NULL);
+
             if (!out_val->as.p_val) {
-                #if RENDERER_ABORT_ON_UNRESOLVED_REFERENCE == 1
-                    print_warning("Reference Error: Object with ID '%s' not found in the registry. Aborting...", name);
-                    // The generator should have already provided hints.
-                    ctx->error_occurred = true;
-                #else
-                    DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: Registry reference '%s' resolved to NULL.", name);
-                #endif
+                const char* key = (name[0] == '@') ? name + 1 : name;
+                if (strcmp(key, "NULL") != 0) { // It's okay to not find "NULL", it means we want a null pointer.
+                    char error_buf[256];
+                    snprintf(error_buf, sizeof(error_buf), "Reference Error: Object with ID '%s' not found in the registry.", name);
+
+                    #if RENDERER_ABORT_ON_UNRESOLVED_REFERENCE == 1
+                        print_warning("%s Aborting...", error_buf);
+                        registry_dump(ctx->registry);
+                        registry_dump_suggestions(ctx->registry, key);
+                        ctx->error_occurred = true;
+                    #else
+                        DEBUG_LOG(LOG_MODULE_RENDERER, "Warning: %s", error_buf);
+                        registry_dump(ctx->registry);
+                        registry_dump_suggestions(ctx->registry, key);
+                    #endif
+                }
             }
             return;
         }

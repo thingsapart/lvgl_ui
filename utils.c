@@ -326,3 +326,50 @@ char* get_array_base_type(const char* array_c_type) {
     free(type_copy);
     return result;
 }
+
+char* get_dirname(const char* path) {
+    if (!path) return NULL;
+
+    const char* last_slash = strrchr(path, '/');
+    const char* last_bslash = strrchr(path, '\\');
+    const char* last_sep = (last_slash > last_bslash) ? last_slash : last_bslash;
+
+    if (!last_sep) {
+        return strdup(".");
+    }
+
+    size_t len = last_sep - path;
+    if (len == 0) { // e.g. "/file.txt"
+        return strdup("/");
+    }
+
+    char* dirname = malloc(len + 1);
+    if (!dirname) return NULL;
+
+    memcpy(dirname, path, len);
+    dirname[len] = '\0';
+    return dirname;
+}
+
+char* join_path(const char* base, const char* relative) {
+    if (!base || !relative) return NULL;
+
+    // Check if relative path is absolute
+    if (relative[0] == '/' || relative[0] == '\\' || (isalpha((unsigned char)relative[0]) && relative[1] == ':')) {
+        return strdup(relative);
+    }
+
+    size_t base_len = strlen(base);
+    size_t rel_len = strlen(relative);
+    char* result = malloc(base_len + rel_len + 2); // +2 for separator and null
+    if (!result) return NULL;
+
+    strcpy(result, base);
+    if (base_len > 0 && result[base_len - 1] != '/' && result[base_len - 1] != '\\') {
+        result[base_len] = '/'; // Use consistent separator
+        result[base_len + 1] = '\0';
+    }
+
+    strcat(result, relative);
+    return result;
+}

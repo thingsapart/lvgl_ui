@@ -73,6 +73,10 @@ const char *registry_add_str(Registry* reg, const char *value);
 // --- Static Array Registry ---
 void registry_add_static_array(Registry* reg, void* ptr);
 
+// --- Debugging ---
+void registry_dump(const Registry* reg);
+void registry_dump_suggestions(const Registry* reg, const char* misspelled_key);
+
 
 // --- Registry struct ---
 // This is the full definition of the Registry.

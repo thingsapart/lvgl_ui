@@ -22,10 +22,6 @@ static int compare_suggestions(const void *a, const void *b) {
     return sug_a->distance - sug_b->distance;
 }
 
-// --- Forward Declarations ---
-static void registry_dump_suggestions(const Registry* reg, const char* misspelled_key);
-
-
 // --- Implementation ---
 
 Registry* registry_create() {
@@ -91,7 +87,7 @@ void registry_free(Registry* reg) {
     free(reg);
 }
 
-static void registry_dump_suggestions(const Registry* reg, const char* misspelled_key) {
+void registry_dump_suggestions(const Registry* reg, const char* misspelled_key) {
     if (!reg || !misspelled_key) return;
 
     // Count the number of keys to allocate memory for suggestions
@@ -176,16 +172,6 @@ void* registry_get_pointer(const Registry* reg, const char* id, const char* type
                 return node->ptr;
             }
         }
-    }
-
-    char error_buf[256];
-    snprintf(error_buf, sizeof(error_buf), "Reference Error: Object with ID '%s' not found in the registry.", id);
-
-    if (g_strict_mode || g_strict_registry_mode) {
-        render_abort(error_buf);
-    } else {
-        print_warning("%s", error_buf);
-        registry_dump_suggestions(reg, key);
     }
 
     return NULL;
@@ -293,4 +279,29 @@ void registry_add_static_array(Registry* reg, void* ptr) {
     new_node->ptr = ptr;
     new_node->next = reg->static_arrays;
     reg->static_arrays = new_node;
+}
+
+void registry_dump(const Registry* reg) {
+    if (!reg) {
+        fprintf(stderr, "\n--- Registry Dump: Registry is NULL ---\n\n");
+        return;
+    }
+    fprintf(stderr, "\n--- REGISTRY DUMP ---\n");
+
+    fprintf(stderr, "--- Generated Vars (Generator Context) ---\n");
+    if (!reg->generated_vars) {
+        fprintf(stderr, "  (empty)\n");
+    }
+    for (VarRegistryNode* node = reg->generated_vars; node; node = node->next) {
+        fprintf(stderr, "  ID: %-25s -> C Var: %-20s (Type: %s)\n", node->name, node->c_var_name, node->c_type ? node->c_type : "null");
+    }
+
+    fprintf(stderr, "--- Pointers (Live Renderer Context) ---\n");
+    if (!reg->pointers) {
+        fprintf(stderr, "  (empty)\n");
+    }
+    for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
+        fprintf(stderr, "  ID: @%-24s -> Ptr: %-18p (JSON Type: %s, C Type: %s)\n", node->id, node->ptr, node->json_type, node->c_type);
+    }
+    fprintf(stderr, "--- END REGISTRY DUMP ---\n\n");
 }

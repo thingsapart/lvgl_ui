@@ -6151,6 +6151,10 @@
         "lv_fs_whence_t"
       ]
     },
+    "lv_fs_stdio_init": {
+      "return_type": "void",
+      "args": []
+    },
     "lv_fs_tell": {
       "return_type": "lv_fs_res_t",
       "args": [
@@ -7667,6 +7671,14 @@
     },
     "lv_lock_isr": {
       "return_type": "lv_result_t",
+      "args": []
+    },
+    "lv_lodepng_deinit": {
+      "return_type": "void",
+      "args": []
+    },
+    "lv_lodepng_init": {
+      "return_type": "void",
       "args": []
     },
     "lv_malloc": {
@@ -14603,6 +14615,53 @@
       "args": [
         "lv_timer_t*",
         "void*"
+      ]
+    },
+    "lv_tiny_ttf_create_data": {
+      "return_type": "lv_font_t*",
+      "args": [
+        "void*",
+        "size_t",
+        "int32_t"
+      ]
+    },
+    "lv_tiny_ttf_create_data_ex": {
+      "return_type": "lv_font_t*",
+      "args": [
+        "void*",
+        "size_t",
+        "int32_t",
+        "lv_font_kerning_t",
+        "size_t"
+      ]
+    },
+    "lv_tiny_ttf_create_file": {
+      "return_type": "lv_font_t*",
+      "args": [
+        "char*",
+        "int32_t"
+      ]
+    },
+    "lv_tiny_ttf_create_file_ex": {
+      "return_type": "lv_font_t*",
+      "args": [
+        "char*",
+        "int32_t",
+        "lv_font_kerning_t",
+        "size_t"
+      ]
+    },
+    "lv_tiny_ttf_destroy": {
+      "return_type": "void",
+      "args": [
+        "lv_font_t*"
+      ]
+    },
+    "lv_tiny_ttf_set_size": {
+      "return_type": "void",
+      "args": [
+        "lv_font_t*",
+        "int32_t"
       ]
     },
     "lv_tree_node_create": {
@@ -27190,6 +27249,12 @@
       "c_type": "lv_fs_drv_t",
       "init": "lv_fs_drv_init"
     },
+    "fs_stdio": {
+      "properties": {},
+      "methods": {},
+      "c_type": "lv_fs_stdio_t",
+      "init": "lv_fs_stdio_init"
+    },
     "grad_horizontal": {
       "properties": {},
       "methods": {},
@@ -27374,6 +27439,21 @@
       },
       "c_type": "lv_ll_t",
       "init": "lv_ll_init"
+    },
+    "lodepng": {
+      "properties": {},
+      "methods": {
+        "lv_lodepng_deinit": {
+          "return_type": "void",
+          "args": []
+        },
+        "lv_lodepng_init": {
+          "return_type": "void",
+          "args": []
+        }
+      },
+      "c_type": "lv_lodepng_t",
+      "init": "lv_lodepng_init"
     },
     "mutex": {
       "properties": {},
