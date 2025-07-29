@@ -309,7 +309,7 @@ static void* resolve_symbol_or_obj(struct IRNode* node) {
             f.write("\n// --- Archetype Dispatcher Implementations ---\n")
             for i, (key, func_list) in enumerate(self.archetypes.items()):
                 dispatcher_name = self.archetype_map[key]
-                
+
                 # Deconstruct the archetype key, which now includes hints
                 num_non_hint_items = 2 + (len(key) - 2) // 2
                 ret_type, target_c_type, *rest = key
@@ -413,7 +413,7 @@ RenderValue dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct
 
 // --- Simple Object Registry Implementation ---
 #ifndef DYNAMIC_LVGL_MAX_OBJECTS
-#define DYNAMIC_LVGL_MAX_OBJECTS 256
+#define DYNAMIC_LVGL_MAX_OBJECTS 1024
 #endif
 
 typedef struct {

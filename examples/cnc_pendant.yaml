@@ -63,6 +63,13 @@
     - tool_dia: 6.0
     - tool_material: 'AL'
 
+    # -- Probe --
+    - probe_quick: false
+    - probe_w: 100
+    - probe_h: 100
+    - probe_ov: 2
+    - probe_cl: 5
+
     # -------------------
     # -- DERIVED STATE --
     # -------------------
@@ -120,7 +127,7 @@
     - chipload_disp:
         derived_expr:
           case:
-            - [program_running, [add, 25, [mul, [div, [sub, chipload, chipload_min], [sub, chipload_max, chipload_min]], 50]]]
+            - [program_running, [add, 0, [mul, [div, [sub, chipload, chipload_min], [sub, chipload_max, chipload_min]], 100]]]
             - [true, 0]
   actions:
     # -- Machine Control --
@@ -160,6 +167,16 @@
       set: { feed_override: [div, value.float, 100.0] }
     - set_speed_override:
       set: { speed_override: [div, value.float, 100.0] }
+    - set_probe_quick:
+      set: { probe_quick: value.bool }
+    - set_probe_width:
+      set: { probe_w: value.float }
+    - set_probe_height:
+      set: { probe_h: value.float }
+    - set_probe_ov:
+      set: { probe_ov: value.float }
+    - set_probe_cl:
+      set: { probe_cl: value.float }
   updates:
     # -- Homing Sequence --
     - when:
@@ -1014,8 +1031,8 @@
               label: Chipload
               letter: C
               pad: 4
-              range_min: 0
-              range_max: 100
+              range_min: -50
+              range_max: 150
               rate_value: chipload_disp
 
 ##############
@@ -1059,8 +1076,7 @@
         flex_grow: 2
         text: $text
         observes: { $observable: { text: $fmt } }
-        action: { $action: { numeric_input_dialog: { min: $min, max: $max, initial: $initial, format: $fmt, text: $label} } }
-
+        action: { $action: { numeric_input_dialog: { format: "%d mm", min: $min, max: $max, initial: $initial, text: $label} } }
 - type: component
   id: @probe_view
   content:
@@ -1068,49 +1084,106 @@
     add_style: [@flex_x, 0]
     size: [100%, 100%]
     children:
-      - add_style: [@container_transp, 0]
+      - type: tabview
+        tab_bar_position: LV_DIR_BOTTOM
+        tab_bar_size: 40
+        size: [270, 100%]
+        add_style: [@container_transp, 0]
         add_style: [@bg_gradient, 0]
-        size: [LV_SIZE_CONTENT, 100%]
         children:
-          - add_style: [@container_transp, 0]
+          - init: { lv_tabview_get_tab_bar: [] }
+            add_style: [@container_transp, 0]
             add_style: [@bg_gradient, 0]
+          - init: { lv_tabview_get_content: [] }
+            remove_flag: LV_OBJ_FLAG_SCROLLABLE
+          - init: { lv_tabview_add_tab: ['Inside'] }
+            add_style: [@container_transp, 0]
+            size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+            remove_flag: LV_OBJ_FLAG_SCROLLABLE
+            children:
+                  - add_style: [@container_transp, 0]
+                    add_style: [@bg_gradient, 0]
+                    size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+                    children:
+                      - type: obj
+                        layout: LV_LAYOUT_GRID
+                        size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+                        add_style: [@container_transp, 0]
+                        add_style: [@bg_group, 0]
+                        pad_all: 10
+                        grid_dsc_array: [[80, 80, 80, LV_GRID_TEMPLATE_LAST], [80, 80, 80, LV_GRID_TEMPLATE_LAST]]
+                        children:
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 0, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_0.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 0, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_1.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 0, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_2.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 1, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_3.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 1, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_4.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 1, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_5.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 2, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_6.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 2, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_7.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 2, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_8.png' }
+          - init: { lv_tabview_add_tab: ['Outside'] }
+            add_style: [@container_transp, 0]
             size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
             children:
-              - type: obj
-                layout: LV_LAYOUT_GRID
-                size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
-                add_style: [@container_transp, 0]
-                add_style: [@bg_group, 0]
-                pad_all: 10
-                grid_dsc_array: [[80, 80, 80, LV_GRID_TEMPLATE_LAST], [80, 80, 80, LV_GRID_TEMPLATE_LAST]]
-                children:
-                  - type: use-view
-                    id: @probe_btn
-                    context: { row: 0, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_0.png' }
-                  - type: use-view
-                    id: @probe_btn
-                    context: { row: 0, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_1.png' }
-                  - type: use-view
-                    id: @probe_btn
-                    context: { row: 0, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_2.png' }
-                  - type: use-view
-                    id: @probe_btn
-                    context: { row: 1, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_3.png' }
-                  - type: use-view
-                    id: @probe_btn
-                    context: { row: 1, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_4.png' }
-                  - type: use-view
-                    id: @probe_btn
-                    context: { row: 1, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_5.png' }
-                  - type: use-view
-                    id: @probe_btn
-                    context: { row: 2, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_6.png' }
-                  - type: use-view
-                    id: @probe_btn
-                    context: { row: 2, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_7.png' }
-                  - type: use-view
-                    id: @probe_btn
-                    context: { row: 2, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_8.png' }
+                  - add_style: [@container_transp, 0]
+                    add_style: [@bg_gradient, 0]
+                    size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+                    children:
+                      - type: obj
+                        layout: LV_LAYOUT_GRID
+                        size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+                        add_style: [@container_transp, 0]
+                        add_style: [@bg_group, 0]
+                        pad_all: 10
+                        grid_dsc_array: [[80, 80, 80, LV_GRID_TEMPLATE_LAST], [80, 80, 80, LV_GRID_TEMPLATE_LAST]]
+                        children:
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 0, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_0.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 0, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_1.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 0, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_2.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 1, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_3.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 1, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_4.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 1, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_5.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 2, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_6.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 2, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_7.png' }
+                          - type: use-view
+                            id: @probe_btn
+                            context: { row: 2, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_8.png' }
+          - init: { lv_tabview_add_tab: ['Misc'] }
       - add_style: [@container_transp, 0]
         add_style: [@bg_gradient, 0]
         add_style: [@flex_y, 0]
@@ -1124,7 +1197,7 @@
             context:
               label: 'Width / Radius:'
               text: '100 mm'
-              observable: probe_width
+              observable: probe_w
               fmt: '%g mm'
               action: set_probe_width
               min: 1
@@ -1135,9 +1208,9 @@
             context:
               label: 'Height:'
               text: '100 mm'
-              observable: probe_width
+              observable: probe_h
               fmt: '%g mm'
-              action: set_probe_width
+              action: set_probe_height
               min: 1
               max: 500
               initial: 100
@@ -1146,9 +1219,9 @@
             context:
               label: 'Clearance:'
               text: '5 mm'
-              observable: probe_width
+              observable: probe_cl
               fmt: '%g mm'
-              action: set_probe_width
+              action: set_probe_cl
               min: 1.0
               max: 20.0
               initial: 5.0
@@ -1157,9 +1230,9 @@
             context:
               label: 'Overtravel:'
               text: '2 mm'
-              observable: probe_width
+              observable: probe_ov
               fmt: '%g mm'
-              action: set_probe_width
+              action: set_probe_ov
               min: 0.1
               max: 10.0
               initial: 2.0
@@ -1179,7 +1252,7 @@
                 width: 40
                 margin_right: 10
                 action: { set_probe_quick: toggle }
-                observes: { probe_quick: value }
+                observes: { probe_quick: { checked: value.bool } }
 
 ####################
 ## Main UI Layut ##
@@ -1190,6 +1263,7 @@
   size: [100%, 100%]
   pad_row: 0
   pad_column: 0
+  scrollbar_mode: LV_SCROLLBAR_MODE_ACTIVE
   children:
     - init: { lv_tileview_add_tile: [0, 0, LV_DIR_RIGHT] }
       add_style: ['@container', 0]

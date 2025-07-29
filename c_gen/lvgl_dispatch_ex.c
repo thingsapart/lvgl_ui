@@ -12660,7 +12660,7 @@ RenderValue dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct
 
 // --- Simple Object Registry Implementation ---
 #ifndef DYNAMIC_LVGL_MAX_OBJECTS
-#define DYNAMIC_LVGL_MAX_OBJECTS 256
+#define DYNAMIC_LVGL_MAX_OBJECTS 1024
 #endif
 
 typedef struct {
