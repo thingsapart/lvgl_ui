@@ -50,6 +50,8 @@ typedef struct {
     lv_obj_t* msgbox;
     lv_obj_t* slider;
     lv_obj_t* value_label;
+    lv_obj_t* scale_min_label;
+    lv_obj_t* scale_max_label;
     char* action_name;
     const NumericDialogConfig* dialog_config;
 } DialogEventData;
@@ -190,7 +192,7 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
                                              (new_value.type == BINDING_TYPE_FLOAT && new_value.as.f_val != 0.0f) ||
                                              (new_value.type == BINDING_TYPE_STRING && new_value.as.s_val && *new_value.as.s_val != '\0');
                             bool is_inverse = (obs->config.config == NULL) || !(*(bool*)obs->config.config);
-                            target_state = is_inverse ? !is_truthy : is_truthy;
+                            target_state = is_inverse ? !is_truthy : is_inverse;
                         }
 
                         lv_obj_flag_t flag = 0;
@@ -449,6 +451,39 @@ static void free_action_user_data_cb(lv_event_t* e) {
 
 // --- Numeric Dialog Implementation ---
 
+static void update_scale_labels(DialogEventData* data) {
+    int32_t min_val = lv_slider_get_min_value(data->slider);
+    int32_t max_val = lv_slider_get_max_value(data->slider);
+    lv_label_set_text_fmt(data->scale_min_label, "%" LV_PRId32, min_val);
+    lv_label_set_text_fmt(data->scale_max_label, "%" LV_PRId32, max_val);
+}
+
+static void slider_released_cb(lv_event_t* e) {
+    DialogEventData* data = lv_event_get_user_data(e);
+    lv_obj_t* slider = data->slider;
+
+    int32_t current_val = lv_slider_get_value(slider);
+    int32_t min_val = lv_slider_get_min_value(slider);
+    int32_t max_val = lv_slider_get_max_value(slider);
+
+    if (current_val == max_val) {
+        int32_t new_max = max_val == 0 ? 100 : max_val * 2;
+        lv_slider_set_range(slider, min_val, new_max);
+        lv_slider_set_value(slider, current_val, LV_ANIM_OFF); // Restore value
+        update_scale_labels(data);
+    } else if (current_val == min_val) {
+        int32_t range = max_val - min_val;
+        if (range > 1) { // Only shrink if there's room to do so
+            int32_t new_max = min_val + (range / 2);
+            if (new_max > min_val) {
+                 lv_slider_set_range(slider, min_val, new_max);
+                 lv_slider_set_value(slider, current_val, LV_ANIM_OFF); // Restore value
+                 update_scale_labels(data);
+            }
+        }
+    }
+}
+
 static void update_slider_label(DialogEventData* data) {
     int32_t value = lv_slider_get_value(data->slider);
     const char* fmt = data->dialog_config->format_str ? data->dialog_config->format_str : "%d";
@@ -501,8 +536,6 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
 
     // --- Create Dialog ---
     lv_obj_t* mbox = lv_msgbox_create(NULL);
-    // No title: lv_msgbox_add_title(mbox, "Title");
-    // No header buttons: lv_msgbox_add_close_button(mbox);
 
     // --- Add custom content ---
     lv_obj_t* content = lv_msgbox_get_content(mbox);
@@ -515,11 +548,11 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
     lv_obj_set_size(cont, lv_pct(100), LV_SIZE_CONTENT);
     lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_CENTER,  LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_all(cont, 5, 0);
 
     lv_obj_t* title_label = lv_label_create(cont);
     lv_label_set_text(title_label, cfg->text ? cfg->text : "Enter value:");
     lv_obj_t* value_label = lv_label_create(cont);
-    // lv_obj_set_style_text_font(value_label, &lv_font_montserrat_18, 0);
 
     lv_obj_t* slider = lv_slider_create(cont);
     lv_obj_set_width(slider, lv_pct(100));
@@ -527,14 +560,27 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
     lv_slider_set_range(slider, (int32_t)cfg->min_val, (int32_t)cfg->max_val);
     lv_slider_set_value(slider, (int32_t)cfg->initial_val, LV_ANIM_OFF);
 
+    // --- Add Scale Labels ---
+    lv_obj_t* scale_cont = lv_obj_create(cont);
+    lv_obj_set_width(scale_cont, lv_pct(100));
+    lv_obj_set_height(scale_cont, LV_SIZE_CONTENT);
+    lv_obj_remove_style(scale_cont, NULL, LV_PART_SCROLLBAR | LV_STATE_ANY);
+    lv_obj_set_style_bg_opa(scale_cont, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(scale_cont, 0, 0);
+    lv_obj_set_style_pad_all(scale_cont, 0, 0);
+    lv_obj_set_flex_flow(scale_cont, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(scale_cont, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    lv_obj_t* min_label = lv_label_create(scale_cont);
+    lv_obj_t* max_label = lv_label_create(scale_cont);
+    lv_obj_set_style_text_color(min_label, lv_color_hex(0x808080), 0);
+    lv_obj_set_style_text_color(max_label, lv_color_hex(0x808080), 0);
+
     // --- Add footer buttons ---
     lv_obj_t *ok_btn = lv_msgbox_add_footer_button(mbox, "OK");
     lv_obj_set_flex_grow(ok_btn, 1);
-
     lv_obj_t *cncl_btn = lv_msgbox_add_footer_button(mbox, "Cancel");
     lv_obj_set_flex_grow(cncl_btn, 1);
-
-    // Center the message box
     lv_obj_center(mbox);
 
     // --- Create and link event data ---
@@ -544,17 +590,21 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
     data->msgbox = mbox;
     data->slider = slider;
     data->value_label = value_label;
+    data->scale_min_label = min_label;
+    data->scale_max_label = max_label;
     data->action_name = strdup(user_data->action_name);
     data->dialog_config = cfg;
 
     // Add event handlers
     lv_obj_add_event_cb(slider, slider_value_changed_cb, LV_EVENT_VALUE_CHANGED, data);
+    lv_obj_add_event_cb(slider, slider_released_cb, LV_EVENT_RELEASED, data);
     lv_obj_add_event_cb(mbox, dialog_event_cb, LV_EVENT_ALL, data);
     lv_obj_add_event_cb(ok_btn, mb_ok_event_cb, LV_EVENT_CLICKED, data);
     lv_obj_add_event_cb(cncl_btn, mb_close_cb, LV_EVENT_CLICKED, mbox);
 
-    // Initial update for the label
+    // Initial updates
     update_slider_label(data);
+    update_scale_labels(data);
 }
 
 
