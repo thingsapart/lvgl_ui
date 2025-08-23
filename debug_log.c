@@ -5,10 +5,14 @@
 #include <ctype.h>   // For isspace
 #include <strings.h> // For strcasecmp
 
-// Array to keep track of enabled modules. Initialized to false.
-
+// Array to keep track of enabled modules.
 static bool enabled_modules[LOG_MODULE_COUNT] = {
-#ifdef __DEV_MODE__
+#if defined(LVGL_UI_RUNTIME)
+  // For runtime library, disable all logging by default.
+  // The user can enable it with build flags or by calling debug_log_parse_modules_str.
+  false
+#elif defined(__DEV_MODE__)
+  // Default settings for development/preview mode
   true,        // LOG_MODULE_NONE
   false,       // LOG_MODULE_MAIN
   false,       // LOG_MODULE_API_SPEC
@@ -20,11 +24,13 @@ static bool enabled_modules[LOG_MODULE_COUNT] = {
   true,        // LOG_MODULE_DISPATCH
   true,        // LOG_MODULE_UTILS
   true,        // LOG_MODULE_SDL_VIEWER
-  false,        // LOG_MODULE_DATABINDING
+  false,       // LOG_MODULE_DATABINDING
 #else
+  // Default for non-dev, non-runtime builds (e.g., release command-line tool)
   false
 #endif
 };
+
 
 // String names for modules, corresponding to the DebugLogModule enum
 static const char* module_names[LOG_MODULE_COUNT] = {

@@ -6,6 +6,7 @@
 #include "generator.h"
 #include "viewer/view_inspector.h"
 #include "ui_sim.h" // ADDED: For UI-Sim lifecycle management
+#include "obj_registry.h"
 #include <stdlib.h>
 #include <string.h>
 

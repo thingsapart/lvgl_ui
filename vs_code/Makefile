@@ -21,7 +21,7 @@ SDL_CFLAGS = `pkg-config sdl2 -cflags`
 # Find all .c files in the parent directory and its subdirectories
 # Exclude the original main.c and the sdl_viewer.c as they are for a different target.
 SRCS_BASE := $(wildcard ../*.c)
-SRCS_BASE := $(filter-out ../main.c, $(SRCS_BASE))
+SRCS_BASE := $(filter-out ../main.c ../obj_registry.c, $(SRCS_BASE))
 SRCS_VIEWER := $(wildcard ../viewer/*.c)
 SRCS_VIEWER := $(filter-out ../viewer/sdl_viewer.c ../viewer/lvgl_assert_handler.c, $(SRCS_VIEWER))
 SRCS_CJSON := ../cJSON/cJSON.c

@@ -85,14 +85,17 @@ Please print out whole files, only those that you have changed. Do not give me j
 
 NOTE:
 
+Do not add comments like "FIX: ..." that describe what was fixed in _this step_/session, they will be obsolete soon enough and just clutter the file. Only add comments describing long-term pre-conditions, explaining the code as-written and so on.
+
 Format every file output the following way: start with a "!>>> {filename}" followed by a markdown code block and end with "!<<< end".
+
+*Make Minimal Changes* whenever possible, do not refactor unless asked!
 
 EG:
 
 "
->> tests/test_20_something_to_test.yaml
+>> MakeFile
 ```
-# Test something here
 ...
 ```
 << end
@@ -123,10 +126,10 @@ FULL_OUTPUT=$(
       # Check if it's a regular file (and not a directory)
       if [ -f "$file" ]; then
         # Append the formatted block for the current file to our output
-        printf "\n%s\n" "$file"
+        printf "\n%s\n" "!>>> $file"
         printf '```\n'
         cat "$file"
-        printf '\n```\n'
+        printf '\n```\n!<<< end\n\n'
       fi
     done
   done

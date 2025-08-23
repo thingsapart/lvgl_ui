@@ -373,3 +373,14 @@ char* join_path(const char* base, const char* relative) {
     strcat(result, relative);
     return result;
 }
+
+#ifdef LVGL_UI_RUNTIME
+// Provide an implementation for render_abort for the runtime library.
+// In an embedded context, this should likely halt or log to a crash handler.
+void render_abort(const char *msg) {
+    fprintf(stderr, "FATAL RUNTIME ERROR: %s\n", msg);
+    // In a real embedded system, you might trigger a watchdog,
+    // log to flash, or enter an infinite loop.
+    abort();
+}
+#endif // LVGL_UI_RUNTIME

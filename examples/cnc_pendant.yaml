@@ -99,9 +99,9 @@
     - display_wcs_pos_y_: { derived_expr: { case: [[y_is_homed, [sub, pos_y, [case, [[[==, wcs_name, "G54"], wcs54_y_zero], [true, wcs55_y_zero]]]]], [true, 9999.99]] } }
     - display_wcs_pos_z_: { derived_expr: { case: [[z_is_homed, [sub, pos_z, [case, [[[==, wcs_name, "G54"], wcs54_z_zero], [true, wcs55_z_zero]]]]], [true, 9999.99]] } }
 
-    - display_wcs_pos_x: { derived_expr: [case, [[==, wcs_name, "G54"], [sub, pos_x, wcs54_x_zero], [true, [sub, pos_x, wcs55_x_zero]]]] }
-    - display_wcs_pos_y: { derived_expr: [case, [[==, wcs_name, "G54"], [sub, pos_y, wcs54_y_zero], [true, [sub, pos_y, wcs55_y_zero]]]] }
-    - display_wcs_pos_z: { derived_expr: [case, [[==, wcs_name, "G54"], [sub, pos_z, wcs54_z_zero], [true, [sub, pos_z, wcs55_z_zero]]]] }
+    - display_wcs_pos_x: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_x, wcs54_x_zero]], [true, [sub, pos_x, wcs55_x_zero]]] }  }
+    - display_wcs_pos_y: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_y, wcs54_y_zero]], [true, [sub, pos_y, wcs55_y_zero]]] } }
+    - display_wcs_pos_z: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_z, wcs54_z_zero]], [true, [sub, pos_z, wcs55_z_zero]]] } }
 
     # -- Derived Delta Position / Distance To Go (Simulated) --
     - delta_pos_x:
@@ -475,9 +475,9 @@
 ####################
 
 - type: component
-  id: '@axis_pos_display2'
+  id: '@axis_pos_display'
   content:
-    add_style: ['@flex_y', 0]
+    add_style: ['@flex_x', 0]
     add_style: ['@container_transp', 0]
     add_style: ['@bg_group', 0]
     size: [100%, LV_SIZE_CONTENT]
@@ -489,65 +489,68 @@
     margin_all: 2
     name: $name
     children:
-      -
-        add_style: ['@flex_x', 0]
-        add_style: ['@container_transp', 0]
-        size: [100%, LV_SIZE_CONTENT]
-        flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
-        pad_column: 0
+      # Axis label / latter with homing indicator
+      - type: button
+        text_font: '@font_kode_40'
+        width: 35
+        add_style: ['@indicator_light', 0]
+        add_style: ['@btn_clicked', LV_STATE_PRESSED]
+        observes: { $homed_state: { style: { true: '@indicator_light_green', false: '@indicator_light_red' } } }
+        action: { $home_action: trigger }
+        radius: 0
+        bg_opa: 0
+        shadow_opa: 0
+        pad_right: 0
+        pad_bottom: 0
+        pad_top: 0
         children:
-          - type: button
-            text_font: '@font_kode_40'
-            width: 35
-            add_style: ['@indicator_light', 0]
-            add_style: ['@btn_clicked', LV_STATE_PRESSED]
-            observes: { $homed_state: { style: { true: '@indicator_light_green', false: '@indicator_light_red' } } }
-            action: { $home_action: trigger }
-            radius: 0
-            bg_opa: 0
-            shadow_opa: 0
-            pad_right: 0
-            pad_bottom: 0
-            pad_top: 0
+          - type: label
+            text: $axis
+            center: []
+      # Right side including WCS pos (large) and abs-pos and dist-to-go (small).
+      - add_style: ['@flex_y', 0]
+        add_style: ['@container_transp', 0]
+        flex_grow: 1
+        height: LV_SIZE_CONTENT
+        children:
+          # WCS position.
+          - add_style: ['@flex_x', 0]
+            add_style: ['@container_transp', 0]
+            size: [100%, LV_SIZE_CONTENT]
             children:
-              - type: label
-                text: $axis
-                center: []
-
-          - type: 'label'
-            text_font: '@font_kode_34'
-            text: $wcs_pos
-            flex_grow: 1
-            add_style: ['@indicator_green', 0]
-            text_align: LV_TEXT_ALIGN_RIGHT
-            observes: { $wcs_state: { text: '%4.2f' } }
-      -
-        add_style: ['@flex_x', 0]
-        add_style: ['@container_transp', 0]
-        size: [100%, LV_SIZE_CONTENT]
-        children:
-          - type: 'label'
-            text_font: '@font_kode_14'
-            text: $abs_pos
-            flex_grow: 1
-            text_align: LV_TEXT_ALIGN_RIGHT
-            add_style: ['@indicator_yellow', 0]
-            observes: { $pos_state: { text: '%4.2f' } }
-          - type: 'label'
-            # text_font: '@font_montserrat_14'
-            text: "\uF124"
-            width: 14
-          - type: 'label'
-            text_font: '@font_kode_14'
-            text: $delta_pos
-            text_align: LV_TEXT_ALIGN_RIGHT
-            add_style: ['@indicator_yellow', 0]
-            flex_grow: 1
-            observes: { $delta_pos_state: { text: '%4.2f' } }
-          - type: 'label'
-            # text_font: '@font_montserrat_14'
-            text: "\uF051"
-            width: 14
+              - type: 'label'
+                text_font: '@font_kode_34'
+                text: $wcs_pos
+                flex_grow: 1
+                add_style: ['@indicator_green', 0]
+                text_align: LV_TEXT_ALIGN_RIGHT
+                observes: { $wcs_state: { text: '%4.2f' } }
+          - add_style: ['@flex_x', 0]
+            add_style: ['@container_transp', 0]
+            size: [100%, LV_SIZE_CONTENT]
+            children:
+              - type: 'label'
+                text_font: '@font_kode_14'
+                text: $abs_pos
+                flex_grow: 1
+                text_align: LV_TEXT_ALIGN_RIGHT
+                add_style: ['@indicator_yellow', 0]
+                observes: { $pos_state: { text: '%4.2f' } }
+              - type: 'label'
+                # text_font: '@font_montserrat_14'
+                text: "\uF124"
+                width: 14
+              - type: 'label'
+                text_font: '@font_kode_14'
+                text: $delta_pos
+                text_align: LV_TEXT_ALIGN_RIGHT
+                add_style: ['@indicator_yellow', 0]
+                flex_grow: 1
+                observes: { $delta_pos_state: { text: '%4.2f' } }
+              - type: 'label'
+                # text_font: '@font_montserrat_14'
+                text: "\uF051"
+                width: 14
 
 ####################
 ##    JOG VIEW    ##
@@ -564,9 +567,10 @@
     bg_opa: 255
     pad_column: 0
     pad_row: 0
+    remove_flag: LV_OBJ_FLAG_SCROLLABLE
     children:
       - type: use-view
-        id: @axis_pos_display2
+        id: @axis_pos_display
         context:
           axis: X
           abs_pos: "000.00"
@@ -579,11 +583,11 @@
           delta_pos_state: delta_pos_x
 
       - type: use-view
-        id: @axis_pos_display2
+        id: @axis_pos_display
         context:
           axis: Y
           abs_pos: "000.00"
-          wcs_pos: "000.00 G54"
+          wcs_pos: "000.00"
           delta_pos: "000.00   "
           homed_state: y_is_homed
           home_action: home_machine
@@ -592,11 +596,11 @@
           delta_pos_state: delta_pos_y
 
       - type: use-view
-        id: @axis_pos_display2
+        id: @axis_pos_display
         context:
           axis: Z
           abs_pos: "000.00"
-          wcs_pos: "000.00 G54"
+          wcs_pos: "000.00"
           delta_pos: "000.00   "
           homed_state: z_is_homed
           home_action: home_machine
@@ -612,13 +616,25 @@
         pad_right: 5
         children:
           - type: button
+            observes: {program_running: visible }
             children: 
               - type: label
-                text: 'RUN'
+                text: LV_SYMBOL_PLAY
                 width: LV_SIZE_CONTENT
                 action: { program_run: trigger }
+          - type: button
+            observes: { program_running: { visible: { true: true, false: false } } }
+            children: 
+              - type: label
+                text: LV_SYMBOL_STOP
+                width: LV_SIZE_CONTENT
+                action: { program_stop: trigger }
           - type: label
             observes: { machine_mode: { text: "MODE: %s" } }
+          - type: label
+            add_style: [@indicator_yellow, 0]
+            observes: { wcs_name: { text: "- %s" } }
+            action: { cycle_wcs: trigger }
 
 - type: component
   id: @labeled_scale
@@ -631,19 +647,19 @@
     flex_grow: 1
     children:
       - type: obj # grid
-        #layout: LV_LAYOUT_GRID
+        layout: LV_LAYOUT_GRID
         grid_dsc_array: [[LV_GRID_CONTENT, LV_GRID_FR1, LV_GRID_TEMPLATE_LAST], [LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST]]
         add_style: ['@container_transp', 0]
         width: 100%
         height: LV_SIZE_CONTENT
         children:
           - layout: LV_LAYOUT_FLEX
-            height: LV_SIZE_CONTENT
-            width: 120
+            size: [100, LV_SIZE_CONTENT]
             add_style: [@container_transp, 0]
             grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1]
             remove_flag: LV_OBJ_FLAG_SCROLLABLE
             pad_column: 0
+            pad_bottom: -8
             children:
               - type: label
                 text: $letter
@@ -654,7 +670,6 @@
                 text: $label
                 pad_left: 0
                 height: LV_SIZE_CONTENT
-                width: 100%
                 text_font: '@font_kode_14'
                 add_style: ['@border_top_btn', 0]
           - type: label
@@ -715,12 +730,12 @@
       - layout: LV_LAYOUT_FLEX
         add_style: ['@container_transp', 0]
         flex_flow: LV_FLEX_FLOW_COLUMN
-        width: LV_SIZE_CONTENT
+        size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
         min_width: 50
-        height: LV_SIZE_CONTENT
         pad_right: 0
         flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER]
         add_flag: LV_OBJ_FLAG_CLICKABLE
+        pad_top: 18
         action: { $override_state: { numeric_input_dialog: { min: 0, max: 200, initial: 100, format: "%d %% ", text: 'Override:' } } }
         children:
           - type: label
@@ -835,6 +850,7 @@
         min_width: 50
         height: LV_SIZE_CONTENT
         pad_right: 0
+        pad_row: 0
         flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER]
         add_flag: LV_OBJ_FLAG_CLICKABLE
         children:
@@ -849,12 +865,17 @@
             text_font: '@font_kode_14'
             add_style: [@indicator_yellow, 0]
             observes: { tool_n_flutes: { text: "%g-FL" } }
-          - type: label
-            text_font: '@font_kode_14'
-            observes: { chipload_min: { text: "> %g" } }
-          - type: label
-            text_font: '@font_kode_14'
-            observes: { chipload_max: { text: "< %g" } }
+          - add_style: [@flex_y, 0]
+            add_style: [@container_transp, 0]
+            size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+            pad_row: 0
+            children:
+              - type: label
+                text_font: '@font_kode_14'
+                observes: { chipload_min: { text: "%0.2f" } }
+              - type: label
+                text_font: '@font_kode_14'
+                observes: { chipload_max: { text: "%0.2f" } }
 
 - type: component
   id: '@jog_feed'
@@ -1022,7 +1043,7 @@
               unit: MM
               label: JOG
               ovr: Jog Ovr
-              pad: 21
+              pad: 18
           - type: use-view
             id: '@chipload_scale'
             observes: { program_running: { visible: { true: true, false: false } } }
