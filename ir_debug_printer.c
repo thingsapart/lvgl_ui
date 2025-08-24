@@ -31,6 +31,7 @@ static const char* get_ir_node_type_str(int type) {
         case IR_EXPR_CONTEXT_VAR: return "IR_EXPR_CONTEXT_VAR";
         case IR_EXPR_STATIC_STRING: return "IR_EXPR_STATIC_STRING";
         case IR_EXPR_RUNTIME_REG_ADD: return "IR_EXPR_RUNTIME_REG_ADD";
+        case IR_EXPR_IF_BACKEND: return "IR_EXPR_IF_BACKEND";
         default: return "UNKNOWN_NODE_TYPE";
     }
 }
@@ -95,6 +96,17 @@ static void debug_print_node(IRNode* node, int indent_level) {
             debug_print_indent(indent_level + 1);
             printf("[OBJECT_EXPR]\n");
             debug_print_expr(reg->object_expr, indent_level + 2);
+            break;
+        }
+        case IR_EXPR_IF_BACKEND: {
+            IRIfBackend* if_node = (IRIfBackend*)node;
+            printf("\n");
+            debug_print_indent(indent_level + 1);
+            printf("[STATIC_EXPR]\n");
+            debug_print_expr(if_node->static_expr, indent_level + 2);
+            debug_print_indent(indent_level + 1);
+            printf("[DYNAMIC_EXPR]\n");
+            debug_print_expr(if_node->dynamic_expr, indent_level + 2);
             break;
         }
         case IR_NODE_OBJECT: {

@@ -77,6 +77,15 @@ static void print_expr(IRExpr* expr) {
             printf(")");
             break;
         }
+        case IR_EXPR_IF_BACKEND: {
+            IRIfBackend* if_node = (IRIfBackend*)expr;
+            printf("if_backend(static=");
+            print_expr(if_node->static_expr);
+            printf(", dynamic=");
+            print_expr(if_node->dynamic_expr);
+            printf(")");
+            break;
+        }
         default:
             printf("UNKNOWN_EXPR");
             break;

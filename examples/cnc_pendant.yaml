@@ -1136,31 +1136,31 @@
                         children:
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_0.png' }
+                            context: { row: 0, col: 0, path: '?|img_probe_grid_0|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_0.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_1.png' }
+                            context: { row: 0, col: 1, path: '?|img_probe_grid_1|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_1.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_2.png' }
+                            context: { row: 0, col: 2, path: '?|img_probe_grid_2|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_2.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_3.png' }
+                            context: { row: 1, col: 0, path: '?|img_probe_grid_3|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_3.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_4.png' }
+                            context: { row: 1, col: 1, path: '?|img_probe_grid_4|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_4.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_5.png' }
+                            context: { row: 1, col: 2, path: '?|img_probe_grid_5|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_5.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_6.png' }
+                            context: { row: 2, col: 0, path: '?|img_probe_grid_6|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_6.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_7.png' }
+                            context: { row: 2, col: 1, path: '?|img_probe_grid_7|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_7.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_8.png' }
+                            context: { row: 2, col: 2, path: '?|img_probe_grid_8|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_8.png' }
           - init: { lv_tabview_add_tab: ['Outside'] }
             add_style: [@container_transp, 0]
             size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
@@ -1179,31 +1179,31 @@
                         children:
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_0.png' }
+                            context: { row: 0, col: 0, path: '?|img_probe_out_0|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_0.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_1.png' }
+                            context: { row: 0, col: 1, path: '?|img_probe_out_1|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_1.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_2.png' }
+                            context: { row: 0, col: 2, path: '?|img_probe_out_2|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_2.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_3.png' }
+                            context: { row: 1, col: 0, path: '?|img_probe_out_3|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_3.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_4.png' }
+                            context: { row: 1, col: 1, path: '?|img_probe_out_4|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_4.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_5.png' }
+                            context: { row: 1, col: 2, path: '?|img_probe_out_5|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_5.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_6.png' }
+                            context: { row: 2, col: 0, path: '?|img_probe_out_6|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_6.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_7.png' }
+                            context: { row: 2, col: 1, path: '?|img_probe_out_7|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_7.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_8.png' }
+                            context: { row: 2, col: 2, path: '?|img_probe_out_8|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_8.png' }
           - init: { lv_tabview_add_tab: ['Misc'] }
       - add_style: [@container_transp, 0]
         add_style: [@bg_gradient, 0]

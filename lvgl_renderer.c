@@ -356,6 +356,11 @@ static void evaluate_expression(RenderContext* ctx, IRExpr* expr, RenderValue* o
     }
 
     switch (expr->base.type) {
+        case IR_EXPR_IF_BACKEND: {
+            IRIfBackend* if_node = (IRIfBackend*)expr;
+            evaluate_expression(ctx, if_node->dynamic_expr, out_val);
+            return;
+        }
         case IR_EXPR_LITERAL: {
             IRExprLiteral* lit = (IRExprLiteral*)expr;
             if (lit->is_string) {

@@ -751,6 +751,33 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
                 result_expr = ir_new_expr_registry_ref(target_c_name, target_type ? target_type : "lv_obj_t*");
             }
         }
+        else if (strncmp(s, "?|", 2) == 0) {
+            const char* part1_start = s + 2;
+            const char* separator = strchr(part1_start, '|');
+            if (separator) {
+                size_t part1_len = separator - part1_start;
+                char* part1_str = strndup(part1_start, part1_len);
+                const char* part2_str = separator + 1;
+
+                cJSON* part1_json = cJSON_CreateString(part1_str);
+                cJSON* part2_json = cJSON_CreateString(part2_str);
+
+                IRExpr* static_expr = unmarshal_value(ctx, part1_json, ui_context, expected_c_type, parent_c_name, target_c_name, ir_obj_for_warnings);
+                IRExpr* dynamic_expr = unmarshal_value(ctx, part2_json, ui_context, expected_c_type, parent_c_name, target_c_name, ir_obj_for_warnings);
+
+                free(part1_str);
+                cJSON_Delete(part1_json);
+                cJSON_Delete(part2_json);
+
+                result_expr = ir_new_if_backend(static_expr, dynamic_expr);
+            } else {
+                if (ir_obj_for_warnings) {
+                    char warning_msg[128];
+                    snprintf(warning_msg, sizeof(warning_msg), "Invalid conditional string format. Expected '?|static|dynamic', got '%s'.", s);
+                    ir_operation_list_add(&ir_obj_for_warnings->operations, (IRNode*)ir_new_warning(warning_msg));
+                }
+            }
+        }
         else if (s[0] == '$') {
             const char* var_name = s + 1;
             const cJSON* context_val_json = NULL;

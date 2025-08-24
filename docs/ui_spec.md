@@ -139,6 +139,7 @@ Value ::=
 | `!`    | `!string`      | **Static String:** A heap-allocated, persistent string. | `options: !'A\nB\nC'`      |
 | `#`    | `#RRGGBB`      | **Color:** A hex color, resolved to `lv_color_hex()`.| `bg_color: #ff0000`       |
 | `%`    | `N%` (suffix)  | **Percentage:** A percentage, resolved to `lv_pct(N)`. | `width: 50%`              |
+| `?|`   | `?|static|dyn` | **Conditional:** `static` for C-code, `dyn` for live preview. | `src: '?|@img_name|S:~/img.png'` |
 
 **Value Unescaping**
 To use the special characters (`$`, `!`, `@`, `%`, `#`) literally in a string, they must be escaped by doubling them.

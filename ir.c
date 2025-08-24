@@ -116,6 +116,18 @@ IRExpr* ir_new_expr_raw_pointer(void* ptr, const char* c_type) {
     return (IRExpr*)raw_ptr;
 }
 
+IRExpr* ir_new_if_backend(IRExpr* static_expr, IRExpr* dynamic_expr) {
+    IRIfBackend* if_node = calloc(1, sizeof(IRIfBackend));
+    if_node->base.base.type = IR_EXPR_IF_BACKEND;
+    if_node->static_expr = static_expr;
+    if_node->dynamic_expr = dynamic_expr;
+    // The c_type of this node is contextual; it will be the type of whichever
+    // branch is taken by the backend. We can leave it NULL here.
+    if_node->base.c_type = NULL;
+    return (IRExpr*)if_node;
+}
+
+
 // --- Factory functions for High-Level Constructs ---
 
 IRRoot* ir_new_root() {
@@ -266,6 +278,12 @@ static void free_expr(IRExpr* expr) {
             free_expr(reg->object_expr);
             break;
         }
+        case IR_EXPR_IF_BACKEND: {
+            IRIfBackend* if_node = (IRIfBackend*)expr;
+            free_expr(if_node->static_expr);
+            free_expr(if_node->dynamic_expr);
+            break;
+        }
         default: break;
     }
     free(expr);
@@ -396,6 +414,7 @@ void ir_free(IRNode* node) {
         case IR_EXPR_ARRAY:
         case IR_EXPR_RUNTIME_REG_ADD:
         case IR_EXPR_RAW_POINTER:
+        case IR_EXPR_IF_BACKEND:
             free_expr((IRExpr*)node);
             return; // free_expr already frees the node itself.
         default: break;

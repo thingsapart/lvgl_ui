@@ -40,7 +40,8 @@ typedef struct IRNode {
         IR_EXPR_CONTEXT_VAR,  // $name
         IR_EXPR_STATIC_STRING, // !string
         IR_EXPR_RUNTIME_REG_ADD,
-        IR_EXPR_RAW_POINTER   // NEW: For renderer's internal use
+        IR_EXPR_RAW_POINTER,   // NEW: For renderer's internal use
+        IR_EXPR_IF_BACKEND     // NEW: For conditional static/dynamic values
     } type;
 } IRNode;
 
@@ -122,6 +123,13 @@ typedef struct {
     IRExpr base;
     void* ptr;
 } IRExprRawPointer;
+
+// NEW: Represents a conditional expression based on the backend.
+typedef struct {
+    IRExpr base;
+    IRExpr* static_expr;
+    IRExpr* dynamic_expr;
+} IRIfBackend;
 
 
 // --- High-Level UI Constructs ---
@@ -217,6 +225,7 @@ IRExpr* ir_new_expr_registry_ref(const char* name, const char* c_type);
 IRExpr* ir_new_expr_context_var(const char* name, const char* c_type);
 IRExpr* ir_new_expr_runtime_reg_add(const char* id, IRExpr* object_expr);
 IRExpr* ir_new_expr_raw_pointer(void* ptr, const char* c_type);
+IRExpr* ir_new_if_backend(IRExpr* static_expr, IRExpr* dynamic_expr);
 
 // --- Factory functions for High-Level Constructs ---
 IRRoot* ir_new_root();

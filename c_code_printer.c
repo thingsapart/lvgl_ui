@@ -164,6 +164,11 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_ma
     if (!expr) { printf("NULL"); return; }
 
     switch (expr->base.type) {
+        case IR_EXPR_IF_BACKEND: {
+            IRIfBackend* if_node = (IRIfBackend*)expr;
+            print_expr(if_node->static_expr, parent_c_name, id_map, array_map, pass_by_ref_for_struct);
+            break;
+        }
         case IR_EXPR_LITERAL: {
             IRExprLiteral* lit = (IRExprLiteral*)expr;
             if (lit->is_string) {
@@ -413,6 +418,10 @@ static void find_and_map_in_expr(IRExpr* expr, MapNode** array_map, int* counter
         for (IRExprNode* arg = ((IRExprFunctionCall*)expr)->args; arg; arg = arg->next) {
             find_and_map_in_expr(arg->expr, array_map, counter);
         }
+    } else if (expr->base.type == IR_EXPR_IF_BACKEND) {
+        IRIfBackend* if_node = (IRIfBackend*)expr;
+        find_and_map_in_expr(if_node->static_expr, array_map, counter);
+        find_and_map_in_expr(if_node->dynamic_expr, array_map, counter);
     }
 }
 
