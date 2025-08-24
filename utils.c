@@ -5,6 +5,12 @@
 #include <limits.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
+
+#ifdef ESP32_HW
+#include "esp_log.h"
+#include "esp_system.h"
+#endif
 
 char* trim_whitespace(char *str) {
     char *end;
@@ -19,7 +25,11 @@ char* trim_whitespace(char *str) {
 char* read_file(const char* filename) {
     FILE* f = fopen(filename, "rb");
     if (!f) {
+#ifdef ESP32_HW
+        ESP_LOGE("UTILS", "fopen failed for %s: %s", filename, strerror(errno));
+#else
         perror("fopen");
+#endif
         return NULL;
     }
     fseek(f, 0, SEEK_END);
@@ -224,27 +234,39 @@ long ir_node_get_enum_value(struct IRNode* node, const char* expected_enum_c_typ
 void print_warning(const char *format, ...) {
     va_list args;
     va_start(args, format);
+#ifdef ESP32_HW
+    char buffer[256];
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    ESP_LOGW("LVGL_UI_RUNTIME", "%s", buffer);
+#else
 #ifdef WARN_PLAIN_TEXT
     fprintf(stderr, "[WARNING] ");
 #else
     fprintf(stderr, ANSI_BOLD_RED "[WARNING] " ANSI_RESET);
 #endif
     vfprintf(stderr, format, args);
-    va_end(args);
     fprintf(stderr, "\n");
+#endif
+    va_end(args);
 }
 
 void print_hint(const char* format, ...) {
     va_list args;
     va_start(args, format);
+#ifdef ESP32_HW
+    char buffer[256];
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    ESP_LOGI("LVGL_UI_RUNTIME", "%s", buffer);
+#else
 #ifdef WARN_PLAIN_TEXT
     fprintf(stderr, "[HINT] ");
 #else
     fprintf(stderr, ANSI_YELLOW "[HINT] " ANSI_RESET);
 #endif
     vfprintf(stderr, format, args);
-    va_end(args);
     fprintf(stderr, "\n");
+#endif
+    va_end(args);
 }
 
 static int min3(int a, int b, int c) {
@@ -378,9 +400,14 @@ char* join_path(const char* base, const char* relative) {
 // Provide an implementation for render_abort for the runtime library.
 // In an embedded context, this should likely halt or log to a crash handler.
 void render_abort(const char *msg) {
+#ifdef ESP32_HW
+    ESP_LOGE("LVGL_UI_RUNTIME", "FATAL RUNTIME ERROR: %s", msg);
+    esp_system_abort("LVGL UI Runtime Abort");
+#else
     fprintf(stderr, "FATAL RUNTIME ERROR: %s\n", msg);
     // In a real embedded system, you might trigger a watchdog,
     // log to flash, or enter an infinite loop.
     abort();
+#endif
 }
 #endif // LVGL_UI_RUNTIME
