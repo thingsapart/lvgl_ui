@@ -759,17 +759,18 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
                 char* part1_str = strndup(part1_start, part1_len);
                 const char* part2_str = separator + 1;
 
-                cJSON* part1_json = cJSON_CreateString(part1_str);
-                cJSON* part2_json = cJSON_CreateString(part2_str);
+                // Recursively unmarshal both parts of the expression.
+                cJSON* static_val_json = cJSON_CreateString(part1_str);
+                IRExpr* static_expr = unmarshal_value(ctx, static_val_json, ui_context, expected_c_type, parent_c_name, target_c_name, ir_obj_for_warnings);
+                cJSON_Delete(static_val_json);
 
-                IRExpr* static_expr = unmarshal_value(ctx, part1_json, ui_context, expected_c_type, parent_c_name, target_c_name, ir_obj_for_warnings);
-                IRExpr* dynamic_expr = unmarshal_value(ctx, part2_json, ui_context, expected_c_type, parent_c_name, target_c_name, ir_obj_for_warnings);
+                cJSON* dynamic_val_json = cJSON_CreateString(part2_str);
+                IRExpr* dynamic_expr = unmarshal_value(ctx, dynamic_val_json, ui_context, expected_c_type, parent_c_name, target_c_name, ir_obj_for_warnings);
+                cJSON_Delete(dynamic_val_json);
 
                 free(part1_str);
-                cJSON_Delete(part1_json);
-                cJSON_Delete(part2_json);
-
                 result_expr = ir_new_if_backend(static_expr, dynamic_expr);
+
             } else {
                 if (ir_obj_for_warnings) {
                     char warning_msg[128];
@@ -850,7 +851,13 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             size_t len = strlen(s);
 
             if (s[0] == '@') {
-                result_expr = ir_new_expr_registry_ref(s, registry_get_c_type_for_id(ctx->registry, s));
+                // A name like "@$my_var" is a special reference to a C identifier.
+                // The c_code_printer will output it directly without lookup.
+                if (s[1] == '$') {
+                    result_expr = ir_new_expr_registry_ref(s, "c_identifier");
+                } else {
+                    result_expr = ir_new_expr_registry_ref(s, registry_get_c_type_for_id(ctx->registry, s));
+                }
             }
             else if (s[0] == '!') {
                 size_t unescaped_len = 0;

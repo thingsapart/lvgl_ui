@@ -188,6 +188,13 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_ma
             break;
         case IR_EXPR_REGISTRY_REF: {
             const char* name = ((IRExprRegistryRef*)expr)->name;
+
+            // Check for special "@$" prefix for direct C identifier output.
+            if (name[0] == '@' && name[1] == '$') {
+                printf("%s", name + 2); // Print the identifier part, skipping "@$".
+                break;
+            }
+
             const char* c_name_to_print = NULL;
             const char* c_type_of_ref = NULL;
 
@@ -453,7 +460,7 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             print_indent(content_indent);
             printf("#ifdef LOAD_FONTS_TTF\n");
             print_indent(content_indent);
-            printf("%s %s = ", current->c_type, current->c_name);
+            printf("const %s %s = ", current->c_type, current->c_name);
             if (current->constructor_expr) {
                 print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
             } else {
@@ -467,10 +474,10 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             if (current->registered_id) {
                 printf("extern const lv_font_t %s;\n", current->registered_id);
                 print_indent(content_indent);
-                printf("%s %s = &%s;\n",
+                printf("const %s %s = &%s;\n",
                        current->c_type, current->c_name, current->registered_id);
             } else {
-                printf("%s %s = NULL; /* ERROR: Font for static build must have an 'id' */\n",
+                printf("const %s %s = NULL; /* ERROR: Font for static build must have an 'id' */\n",
                        current->c_type, current->c_name);
             }
 
