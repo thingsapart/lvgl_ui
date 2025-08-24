@@ -134,12 +134,13 @@ Value ::=
 
 | Prefix | Format         | Description                                        | Example                   |
 |--------|----------------|----------------------------------------------------|---------------------------|
-| `@`    | `@name`        | **Registry Reference:** A pointer from the C registry. | `text_font: @my_font`     |
+| `@`    | `@name`        | **Registry Reference:** A pointer to an object defined *within* the UI spec. | `text_font: @my_font`     |
+| `@$`   | `@$name`       | **External C Identifier:** A direct reference to an external C variable (e.g., an image struct). | `src: @$my_image_data`    |
 | `$`    | `$name`        | **Context Variable:** A value from the current context. | `text: $title`            |
 | `!`    | `!string`      | **Static String:** A heap-allocated, persistent string. | `options: !'A\nB\nC'`      |
 | `#`    | `#RRGGBB`      | **Color:** A hex color, resolved to `lv_color_hex()`.| `bg_color: #ff0000`       |
 | `%`    | `N%` (suffix)  | **Percentage:** A percentage, resolved to `lv_pct(N)`. | `width: 50%`              |
-| `?|`   | `?|static|dyn` | **Conditional:** `static` for C-code, `dyn` for live preview. | `src: '?|@img_name|S:~/img.png'` |
+| `?|`   | `?|static|dyn` | **Conditional:** `static` for C-code, `dyn` for live preview. | `src: '?|@$img_name|S:~/img.png'` |
 
 **Value Unescaping**
 To use the special characters (`$`, `!`, `@`, `%`, `#`) literally in a string, they must be escaped by doubling them.

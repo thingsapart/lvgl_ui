@@ -349,7 +349,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         const char* registered_id_from_json = id_item->valuestring;
         char* c_name = generate_unique_var_name(ctx, registered_id_from_json);
         const char* clean_id = (registered_id_from_json[0] == '@') ? registered_id_from_json + 1 : registered_id_from_json;
-        IRObject* ir_obj = ir_new_object(c_name, "font", "lv_font_t*", clean_id);
+        IRObject* ir_obj = ir_new_object(c_name, "font", "const lv_font_t*", clean_id);
 
         const char* original_path = path_item->valuestring;
         char* interpolated_path = interpolate_home_path(original_path);
@@ -363,7 +363,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
         ir_obj->constructor_expr = ir_new_expr_func_call("lv_tiny_ttf_create_file", args, "lv_font_t*");
         registry_add_generated_var(ctx->registry, registered_id_from_json, ir_obj->c_name, ir_obj->c_type);
-        
+
         if (interpolated_path) free(interpolated_path);
         free(c_name);
         return ir_obj;

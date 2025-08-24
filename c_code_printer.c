@@ -2,6 +2,7 @@
 #include "ir.h"
 #include "api_spec.h"
 #include "utils.h" // For render_abort
+#include "data_binding.h" // For NumericDialogConfig
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -188,15 +189,14 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_ma
             break;
         case IR_EXPR_REGISTRY_REF: {
             const char* name = ((IRExprRegistryRef*)expr)->name;
-
-            // Check for special "@$" prefix for direct C identifier output.
-            if (name[0] == '@' && name[1] == '$') {
-                printf("%s", name + 2); // Print the identifier part, skipping "@$".
-                break;
-            }
-
             const char* c_name_to_print = NULL;
             const char* c_type_of_ref = NULL;
+
+            // Handle special @$ C identifier reference
+            if (strncmp(name, "@$", 2) == 0) {
+                printf("%s", name + 2);
+                return;
+            }
 
             if (strcmp(name, "parent") == 0) {
                 c_name_to_print = parent_c_name;
@@ -359,19 +359,38 @@ static void print_node(IRNode* node, int indent_level, const char* parent_c_name
         case IR_NODE_ACTION: {
             IRAction* act = (IRAction*)node;
             print_indent(indent_level);
-            printf("data_binding_add_action(%s, \"%s\", %d, ", target_c_name, act->action_name, act->action_type);
-            if (act->data_expr) {
-                print_expr(act->data_expr, parent_c_name, id_map, array_map, false);
 
-                int count = 0;
-                if (act->data_expr->base.type == IR_EXPR_ARRAY) {
-                    for (IRExprNode* n = ((IRExprArray*)act->data_expr)->elements; n; n = n->next) count++;
+            if (act->action_type == ACTION_TYPE_NUMERIC_DIALOG) {
+                printf("data_binding_add_action(%s, \"%s\", %d, NULL, 0, ", target_c_name, act->action_name, act->action_type);
+                printf("&(const NumericDialogConfig){ ");
+                if (act->data_expr && act->data_expr->base.type == IR_EXPR_ARRAY) {
+                    IRExprArray* map_arr = (IRExprArray*)act->data_expr;
+                    bool first = true;
+                    for (IRExprNode* n = map_arr->elements; n; n = n->next) {
+                         IRExprArray* pair = (IRExprArray*)n->expr;
+                         IRExprLiteral* key_lit = (IRExprLiteral*)pair->elements->expr;
+                         if (!first) printf(", ");
+                         printf(".%s = ", key_lit->value);
+                         print_expr(pair->elements->next->expr, parent_c_name, id_map, array_map, false);
+                         first = false;
+                    }
                 }
-                printf(", %d, NULL", count);
-            } else {
-                printf("NULL, 0, NULL");
+                printf(" });\n");
+            } else if (act->action_type == ACTION_TYPE_CYCLE) {
+                printf("data_binding_add_action(%s, \"%s\", %d, ", target_c_name, act->action_name, act->action_type);
+                if (act->data_expr) {
+                    print_expr(act->data_expr, parent_c_name, id_map, array_map, false);
+                    int count = 0;
+                    if (act->data_expr->base.type == IR_EXPR_ARRAY) {
+                       for (IRExprNode* n = ((IRExprArray*)act->data_expr)->elements; n; n = n->next) count++;
+                    }
+                    printf(", %d, NULL);\n", count);
+                } else {
+                     printf("NULL, 0, NULL);\n");
+                }
+            } else { // TRIGGER, TOGGLE
+                printf("data_binding_add_action(%s, \"%s\", %d, NULL, 0, NULL);\n", target_c_name, act->action_name, act->action_type);
             }
-            printf(");\n");
             break;
         }
         default:
@@ -460,7 +479,7 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             print_indent(content_indent);
             printf("#ifdef LOAD_FONTS_TTF\n");
             print_indent(content_indent);
-            printf("const %s %s = ", current->c_type, current->c_name);
+            printf("%s %s = ", current->c_type, current->c_name);
             if (current->constructor_expr) {
                 print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
             } else {
@@ -474,10 +493,10 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             if (current->registered_id) {
                 printf("extern const lv_font_t %s;\n", current->registered_id);
                 print_indent(content_indent);
-                printf("const %s %s = &%s;\n",
+                printf("%s %s = &%s;\n",
                        current->c_type, current->c_name, current->registered_id);
             } else {
-                printf("const %s %s = NULL; /* ERROR: Font for static build must have an 'id' */\n",
+                printf("%s %s = NULL; /* ERROR: Font for static build must have an 'id' */\n",
                        current->c_type, current->c_name);
             }
 

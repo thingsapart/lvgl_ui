@@ -7,6 +7,17 @@
 
 // --- Public Data Types ---
 
+// --- Structs for Dialog Action ---
+
+// Stores the parsed configuration for a numeric dialog
+typedef struct {
+    float min_val;
+    float max_val;
+    float initial_val;
+    char* format_str;
+    char* text;
+} NumericDialogConfig;
+
 /**
  * @brief Enum for the types of values that can be passed through the binding system.
  * All numeric types are consolidated into BINDING_TYPE_FLOAT.

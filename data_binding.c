@@ -34,16 +34,7 @@ typedef struct {
 static StateObserverMapping state_observers[MAX_STATES];
 static uint32_t state_observer_count = 0;
 
-// --- Internal Structs for Dialog Action ---
-
-// Stores the parsed configuration for a numeric dialog
-typedef struct {
-    float min_val;
-    float max_val;
-    float initial_val;
-    char* format_str;
-    char* text;
-} NumericDialogConfig;
+// --- Structs for Dialog Action ---
 
 // Carries necessary data to the dialog's own event handlers
 typedef struct {
