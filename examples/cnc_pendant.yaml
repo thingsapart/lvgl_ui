@@ -294,7 +294,7 @@
     #  condition: [and, program_running, !program_paused]
     #  then:
     #    - set:
-    #        chipload_disp: 
+    #        chipload_disp:
     #            [add, 25, [mul, [div, [-, chipload, chipload_min], [-, chipload_max, chipload_min]], 50]]
 ##########
 # Fonts #
@@ -417,7 +417,7 @@
   border_width: 1
   border_color: '#ffffff'
   border_opa: 50
-  border_side: LV_BORDER_SIDE_TOP_BOTTOM
+  border_side: LV_BORDER_SIDE_TOP | LV_BORDER_SIDE_BOTTOM
 
 - type: style
   id: '@border_right'
@@ -617,14 +617,14 @@
         children:
           - type: button
             observes: {program_running: visible }
-            children: 
+            children:
               - type: label
                 text: LV_SYMBOL_PLAY
                 width: LV_SIZE_CONTENT
                 action: { program_run: trigger }
           - type: button
             observes: { program_running: { visible: { true: true, false: false } } }
-            children: 
+            children:
               - type: label
                 text: LV_SYMBOL_STOP
                 width: LV_SIZE_CONTENT
@@ -1006,7 +1006,7 @@
         height: 100%
         flex_grow: 4
         pad_top: 2
-        pad_right: 2  
+        pad_right: 2
         margin_left: 2
         margin_right: 2
         children:
@@ -1257,13 +1257,13 @@
               min: 0.1
               max: 10.0
               initial: 2.0
-          - type: obj 
+          - type: obj
             add_style: [@container_transp, 0]
             add_style: [@flex_x, 0]
             add_style: [@bg_group, 0]
             size: [100%, LV_SIZE_CONTENT]
             flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
-            pad_all: 3 
+            pad_all: 3
             children:
               - type: label
                 text: Quick Mode:
