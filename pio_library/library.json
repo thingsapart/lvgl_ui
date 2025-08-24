@@ -6,18 +6,29 @@
   "license": "MIT",
   "frameworks": "*",
   "platforms": "*",
+  "dependencies": {
+    "lvgl/lvgl": "https://github.com/lvgl/lvgl",
+    "DaveGamble/cJSON": "*"
+  },
   "build": {
     "flags": [
       "-I..",
       "-D LVGL_UI_RUNTIME"
     ],
     "srcFilter": [
+      "+<../api_spec.c>",
+      "+<../api_spec.h>",
       "+<../data_binding.c>",
+      "+<../data_binding.h>",
       "+<../utils.c>",
+      "+<../utils.h>",
       "+<../obj_registry.c>",
+      "+<../obj_registry.h>",
       "+<../debug_log.c>",
-      "+<../lvgl_ui.c>"
+      "+<../lvgl_ui.c>",
+      "+<../lvgl_ui.h>"
     ],
     "libArchive": true
   }
 }
+

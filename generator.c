@@ -39,6 +39,48 @@ static IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string
 static void process_ui_spec_array(GenContext* ctx, cJSON* array_json, const char* current_base_path, IRObject** object_list_head, IROperationNode** operation_list_head, const char* parent_c_name, const cJSON* ui_context);
 
 
+// --- Refactored Path Interpolation Helper ---
+/**
+ * @brief Checks if a path string starts with "S:~/" and expands it to "S:<HOME_DIR>/...".
+ * @param path The input path string.
+ * @return A new, heap-allocated string with the expanded path, or NULL if no expansion was needed.
+ *         The caller is responsible for freeing the returned string.
+ */
+static char* interpolate_home_path(const char* path) {
+    if (!path) return NULL;
+    if (strncmp(path, "S:~/", 4) == 0) {
+        const char* home_dir = NULL;
+#ifdef _WIN32
+        home_dir = getenv("USERPROFILE");
+#else
+        home_dir = getenv("HOME");
+#endif
+
+        if (home_dir) {
+            const char* rest_of_path = path + 3; // The part starting with "/" after "~"
+            size_t home_len = strlen(home_dir);
+            size_t rest_len = strlen(rest_of_path);
+
+            // Allocate buffer for "S:" + home_dir + rest_of_path + '\0'
+            size_t new_path_len = 2 + home_len + rest_len;
+            char* new_path = malloc(new_path_len + 1);
+            if (!new_path) return NULL; // OOM
+
+            snprintf(new_path, new_path_len + 1, "S:%s%s", home_dir, rest_of_path);
+
+            // Normalize path separators to forward slashes for consistency
+            for (char* p = new_path; *p; p++) {
+                if (*p == '\\') {
+                    *p = '/';
+                }
+            }
+            return new_path;
+        }
+    }
+    return NULL;
+}
+
+
 // --- Main Entry Point ---
 
 IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_spec) {
@@ -309,14 +351,20 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         const char* clean_id = (registered_id_from_json[0] == '@') ? registered_id_from_json + 1 : registered_id_from_json;
         IRObject* ir_obj = ir_new_object(c_name, "font", "lv_font_t*", clean_id);
 
+        const char* original_path = path_item->valuestring;
+        char* interpolated_path = interpolate_home_path(original_path);
+        const char* final_path = interpolated_path ? interpolated_path : original_path;
+
         IRExprNode* args = NULL;
-        ir_expr_list_add(&args, ir_new_expr_literal_string(path_item->valuestring, strlen(path_item->valuestring)));
+        ir_expr_list_add(&args, ir_new_expr_literal_string(final_path, strlen(final_path)));
         char size_buf[16];
         snprintf(size_buf, sizeof(size_buf), "%d", (int)size_item->valuedouble);
         ir_expr_list_add(&args, ir_new_expr_literal(size_buf, "lv_font_size_t"));
 
         ir_obj->constructor_expr = ir_new_expr_func_call("lv_tiny_ttf_create_file", args, "lv_font_t*");
         registry_add_generated_var(ctx->registry, registered_id_from_json, ir_obj->c_name, ir_obj->c_type);
+        
+        if (interpolated_path) free(interpolated_path);
         free(c_name);
         return ir_obj;
     }
@@ -683,23 +731,27 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
     if (!value || cJSON_IsNull(value)) return ir_new_expr_literal("NULL", "void*");
 
     if (cJSON_IsString(value)) {
-        const char* s = value->valuestring;
+        const char* s_original = value->valuestring;
+        char* s_interpolated = interpolate_home_path(s_original);
+        const char* s = s_interpolated ? s_interpolated : s_original;
+        IRExpr* result_expr = NULL;
+
 
         // @_target refers to the parent object passed to the constructor.
         if (strcmp(s, "@_target") == 0) {
             if (parent_c_name) {
                 const char* parent_type = registry_get_c_type_for_id(ctx->registry, parent_c_name);
-                return ir_new_expr_registry_ref(parent_c_name, parent_type ? parent_type : "lv_obj_t*");
+                result_expr = ir_new_expr_registry_ref(parent_c_name, parent_type ? parent_type : "lv_obj_t*");
             }
         }
         // @_parent or @self refers to the object currently being defined.
-        if (strcmp(s, "@_parent") == 0 || strcmp(s, "@self") == 0) {
+        else if (strcmp(s, "@_parent") == 0 || strcmp(s, "@self") == 0) {
             if (target_c_name) {
                 const char* target_type = registry_get_c_type_for_id(ctx->registry, target_c_name);
-                return ir_new_expr_registry_ref(target_c_name, target_type ? target_type : "lv_obj_t*");
+                result_expr = ir_new_expr_registry_ref(target_c_name, target_type ? target_type : "lv_obj_t*");
             }
         }
-        if (s[0] == '$') {
+        else if (s[0] == '$') {
             const char* var_name = s + 1;
             const cJSON* context_val_json = NULL;
 
@@ -708,16 +760,17 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             }
 
             if (context_val_json) {
-                return unmarshal_value(ctx, (cJSON*)context_val_json, ui_context, expected_c_type, parent_c_name, target_c_name, ir_obj_for_warnings);
+                result_expr = unmarshal_value(ctx, (cJSON*)context_val_json, ui_context, expected_c_type, parent_c_name, target_c_name, ir_obj_for_warnings);
+            } else {
+                if (ir_obj_for_warnings) {
+                    char warning_msg[128];
+                    snprintf(warning_msg, sizeof(warning_msg), "Context variable '%s' not found.", s);
+                    ir_operation_list_add(&ir_obj_for_warnings->operations, (IRNode*)ir_new_warning(warning_msg));
+                }
+                // Fall through to treat as a literal string if not found
             }
-            if (ir_obj_for_warnings) {
-                char warning_msg[128];
-                snprintf(warning_msg, sizeof(warning_msg), "Context variable '%s' not found.", s);
-                ir_operation_list_add(&ir_obj_for_warnings->operations, (IRNode*)ir_new_warning(warning_msg));
-            }
-            // Fall through to treat as a literal string if not found
         }
-        if (strchr(s, '|')) {
+        if (result_expr == NULL && strchr(s, '|')) {
             long final_val = 0;
             char* temp_str = strdup(s);
             if (!temp_str) { render_abort("Failed to duplicate string for OR-parsing"); ctx->error_occurred = true; return NULL; }
@@ -742,83 +795,98 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             if (!error) {
                 char buf[32];
                 snprintf(buf, sizeof(buf), "%ld", final_val);
-                return ir_new_expr_literal(buf, (expected_c_type && strcmp(expected_c_type, "unknown") != 0) ? expected_c_type : "float");
+                result_expr = ir_new_expr_literal(buf, (expected_c_type && strcmp(expected_c_type, "unknown") != 0) ? expected_c_type : "float");
             }
         }
-        char* const_str_val = api_spec_find_constant_string(ctx->api_spec, s);
-        if (const_str_val) {
-            size_t unescaped_len = 0;
-            char* unescaped_val = unescape_c_string(const_str_val, &unescaped_len);
-            IRExpr* expr = ir_new_expr_static_string(unescaped_val, unescaped_len);
-            free(const_str_val);
-            free(unescaped_val);
-            return expr;
+        if (result_expr == NULL) {
+            char* const_str_val = api_spec_find_constant_string(ctx->api_spec, s);
+            if (const_str_val) {
+                size_t unescaped_len = 0;
+                char* unescaped_val = unescape_c_string(const_str_val, &unescaped_len);
+                result_expr = ir_new_expr_static_string(unescaped_val, unescaped_len);
+                free(const_str_val);
+                free(unescaped_val);
+            }
         }
 
-        long const_val;
-        if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
-            char buf[32];
-            snprintf(buf, sizeof(buf), "%ld", const_val);
-            return ir_new_expr_literal(buf, "float");
+        if (result_expr == NULL) {
+            long const_val;
+            if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
+                char buf[32];
+                snprintf(buf, sizeof(buf), "%ld", const_val);
+                result_expr = ir_new_expr_literal(buf, "float");
+            }
         }
 
-        size_t len = strlen(s);
 
-        if (s[0] == '@') {
-            return ir_new_expr_registry_ref(s, registry_get_c_type_for_id(ctx->registry, s));
-        }
-        if (s[0] == '!') {
-            size_t unescaped_len = 0;
-            char* unescaped_val = unescape_c_string(s + 1, &unescaped_len);
-            IRExpr* expr = ir_new_expr_static_string(unescaped_val, unescaped_len);
-            free(unescaped_val);
-            return expr;
-        }
-        if (s[0] == '#') {
-            long hex_val = strtol(s + 1, NULL, 16);
-            char hex_str_arg[32];
-            snprintf(hex_str_arg, sizeof(hex_str_arg), "0x%06lX", hex_val);
-            IRExprNode* args = NULL;
-            ir_expr_list_add(&args, ir_new_expr_literal(hex_str_arg, "uint32_t"));
-            return ir_new_expr_func_call("lv_color_hex", args, "lv_color_t");
-        }
-        if (len > 0 && s[len - 1] == '%') {
-            char* temp_s = strdup(s);
-            if (!temp_s) return NULL;
-            temp_s[len - 1] = '\0'; // remove the '%'
+        if (result_expr == NULL) {
+            size_t len = strlen(s);
 
-            char* trimmed_num_part = trim_whitespace(temp_s);
-            char* endptr;
-            strtol(trimmed_num_part, &endptr, 10); // Try to parse it as an integer
-
-            if (*endptr == '\0' && endptr != trimmed_num_part) {
+            if (s[0] == '@') {
+                result_expr = ir_new_expr_registry_ref(s, registry_get_c_type_for_id(ctx->registry, s));
+            }
+            else if (s[0] == '!') {
+                size_t unescaped_len = 0;
+                char* unescaped_val = unescape_c_string(s + 1, &unescaped_len);
+                result_expr = ir_new_expr_static_string(unescaped_val, unescaped_len);
+                free(unescaped_val);
+            }
+            else if (s[0] == '#') {
+                long hex_val = strtol(s + 1, NULL, 16);
+                char hex_str_arg[32];
+                snprintf(hex_str_arg, sizeof(hex_str_arg), "0x%06lX", hex_val);
                 IRExprNode* args = NULL;
-                ir_expr_list_add(&args, ir_new_expr_literal(trimmed_num_part, "int32_t"));
-                free(temp_s);
-                return ir_new_expr_func_call("lv_pct", args, "lv_coord_t");
+                ir_expr_list_add(&args, ir_new_expr_literal(hex_str_arg, "uint32_t"));
+                result_expr = ir_new_expr_func_call("lv_color_hex", args, "lv_color_t");
             }
-            free(temp_s);
+            else if (len > 0 && s[len - 1] == '%') {
+                char* temp_s = strdup(s);
+                if (!temp_s) return NULL;
+                temp_s[len - 1] = '\0'; // remove the '%'
+
+                char* trimmed_num_part = trim_whitespace(temp_s);
+                char* endptr;
+                strtol(trimmed_num_part, &endptr, 10); // Try to parse it as an integer
+
+                if (*endptr == '\0' && endptr != trimmed_num_part) {
+                    IRExprNode* args = NULL;
+                    ir_expr_list_add(&args, ir_new_expr_literal(trimmed_num_part, "int32_t"));
+                    free(temp_s);
+                    result_expr = ir_new_expr_func_call("lv_pct", args, "lv_coord_t");
+                } else {
+                    free(temp_s);
+                }
+            }
         }
 
-        if (expected_c_type && api_spec_is_enum_member(ctx->api_spec, expected_c_type, s)) {
-            long enum_val;
-            api_spec_find_enum_value(ctx->api_spec, expected_c_type, s, &enum_val);
-            return ir_new_expr_enum(s, enum_val, (char*)expected_c_type);
+        if (result_expr == NULL) {
+            if (expected_c_type && api_spec_is_enum_member(ctx->api_spec, expected_c_type, s)) {
+                long enum_val;
+                api_spec_find_enum_value(ctx->api_spec, expected_c_type, s, &enum_val);
+                result_expr = ir_new_expr_enum(s, enum_val, (char*)expected_c_type);
+            }
         }
 
-        const char* inferred_enum_type = api_spec_find_global_enum_type(ctx->api_spec, s);
-        if (inferred_enum_type) {
-             long enum_val;
-            api_spec_find_enum_value(ctx->api_spec, inferred_enum_type, s, &enum_val);
-            return ir_new_expr_enum(s, enum_val, (char*)inferred_enum_type);
+        if (result_expr == NULL) {
+            const char* inferred_enum_type = api_spec_find_global_enum_type(ctx->api_spec, s);
+            if (inferred_enum_type) {
+                 long enum_val;
+                api_spec_find_enum_value(ctx->api_spec, inferred_enum_type, s, &enum_val);
+                result_expr = ir_new_expr_enum(s, enum_val, (char*)inferred_enum_type);
+            }
         }
 
-        size_t unescaped_len = 0;
-        char* unescaped_val = unescape_c_string(s, &unescaped_len);
-        IRExpr* expr = ir_new_expr_literal_string(unescaped_val, unescaped_len);
-        free(unescaped_val);
-        return expr;
+        if (result_expr == NULL) {
+            size_t unescaped_len = 0;
+            char* unescaped_val = unescape_c_string(s, &unescaped_len);
+            result_expr = ir_new_expr_literal_string(unescaped_val, unescaped_len);
+            free(unescaped_val);
+        }
 
+        if (s_interpolated) {
+            free(s_interpolated);
+        }
+        return result_expr;
     }
     if (cJSON_IsNumber(value)) {
         char buf[32]; snprintf(buf, sizeof(buf), "%g", value->valuedouble);

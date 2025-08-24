@@ -50,7 +50,7 @@ MyPioProject/
 
 ### Step 2: Configure `platformio.ini`
 
-You need to tell PlatformIO about the LVGL dependency and where to find the `lvgl_ui` runtime library.
+You need to tell PlatformIO about the LVGL dependency and where to find the `lvgl_ui` runtime library's headers and sources.
 
 ```ini
 [env:your_board]
@@ -69,14 +69,20 @@ lib_deps =
     https://github.com/lvgl/lvgl
 
 build_flags =
-    # Define the size of your LVGL display buffer
+    # 3. Add the lvgl_ui root directory to the main project's include path.
+    #    This allows files in your `src` folder (like create_ui.c and main.c)
+    #    to find headers like "lvgl_ui.h".
+    -I lvgl_ui
+
+    # Other project-specific build flags
     -D LV_HOR_RES_MAX=480
     -D LV_VER_RES_MAX=320
 ```
 When you build, PlatformIO will:
 1.  Download LVGL into `.pio/libdeps/your_board/lvgl`.
-2.  Find `lvgl_ui/pio_library/library.json`, compile the source files listed within it (`data_binding.c`, `utils.c`, etc.) into a static library (`liblvgl_ui_runtime.a`).
-3.  Automatically link both LVGL and the runtime library with your final application.
+2.  Find `lvgl_ui/pio_library/library.json`, compile the source files listed within it into a static library (`liblvgl_ui_runtime.a`).
+3.  Add `lvgl_ui/` to the include path for your main application source files.
+4.  Automatically link both LVGL and the runtime library with your final application.
 
 ### Step 3: Create Your UI Specification
 

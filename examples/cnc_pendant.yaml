@@ -301,32 +301,32 @@
 ##########
 - type: font
   id: '@font_kode_40'
-  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
   size: 40
 
 - type: font
   id: '@font_kode_34'
-  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
   size: 34
 
 - type: font
   id: '@font_kode_30'
-  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
   size: 30
 
 - type: font
   id: '@font_kode_24'
-  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
   size: 24
 
 - type: font
   id: '@font_kode_20'
-  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
   size: 20
 
 - type: font
   id: '@font_kode_14'
-  path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
   size: 14
 
 ##########
@@ -1136,31 +1136,31 @@
                         children:
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_0.png' }
+                            context: { row: 0, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_0.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_1.png' }
+                            context: { row: 0, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_1.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_2.png' }
+                            context: { row: 0, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_2.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_3.png' }
+                            context: { row: 1, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_3.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_4.png' }
+                            context: { row: 1, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_4.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_5.png' }
+                            context: { row: 1, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_5.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_6.png' }
+                            context: { row: 2, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_6.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_7.png' }
+                            context: { row: 2, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_7.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_8.png' }
+                            context: { row: 2, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_8.png' }
           - init: { lv_tabview_add_tab: ['Outside'] }
             add_style: [@container_transp, 0]
             size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
@@ -1179,31 +1179,31 @@
                         children:
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_0.png' }
+                            context: { row: 0, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_0.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_1.png' }
+                            context: { row: 0, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_1.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 0, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_2.png' }
+                            context: { row: 0, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_2.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_3.png' }
+                            context: { row: 1, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_3.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_4.png' }
+                            context: { row: 1, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_4.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 1, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_5.png' }
+                            context: { row: 1, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_5.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 0, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_6.png' }
+                            context: { row: 2, col: 0, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_6.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 1, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_7.png' }
+                            context: { row: 2, col: 1, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_7.png' }
                           - type: use-view
                             id: @probe_btn
-                            context: { row: 2, col: 2, path: 'S:/Users/loranttoth/Development/SW/CNC/lvgl_ui/examples/img/probe_out_8.png' }
+                            context: { row: 2, col: 2, path: 'S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_out_8.png' }
           - init: { lv_tabview_add_tab: ['Misc'] }
       - add_style: [@container_transp, 0]
         add_style: [@bg_gradient, 0]
