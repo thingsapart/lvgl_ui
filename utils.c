@@ -26,7 +26,11 @@ char* read_file(const char* filename) {
     FILE* f = fopen(filename, "rb");
     if (!f) {
 #ifdef ESP32_HW
+      #ifdef LOGE
+        LOGE("UTILS", "fopen failed for %s: %s", filename, strerror(errno));
+      #else
         ESP_LOGE("UTILS", "fopen failed for %s: %s", filename, strerror(errno));
+      #endif
 #else
         perror("fopen");
 #endif
@@ -237,7 +241,11 @@ void print_warning(const char *format, ...) {
 #ifdef ESP32_HW
     char buffer[256];
     vsnprintf(buffer, sizeof(buffer), format, args);
+  #ifdef LOGW
+    LOGW("LVGL_UI_RUNTIME", "%s", buffer);
+  #else
     ESP_LOGW("LVGL_UI_RUNTIME", "%s", buffer);
+  #endif
 #else
 #ifdef WARN_PLAIN_TEXT
     fprintf(stderr, "[WARNING] ");
@@ -256,7 +264,11 @@ void print_hint(const char* format, ...) {
 #ifdef ESP32_HW
     char buffer[256];
     vsnprintf(buffer, sizeof(buffer), format, args);
+  #ifdef LOGI
+    LOGI("LVGL_UI_RUNTIME", "%s", buffer);
+  #else
     ESP_LOGI("LVGL_UI_RUNTIME", "%s", buffer);
+  #endif
 #else
 #ifdef WARN_PLAIN_TEXT
     fprintf(stderr, "[HINT] ");
@@ -401,7 +413,11 @@ char* join_path(const char* base, const char* relative) {
 // In an embedded context, this should likely halt or log to a crash handler.
 void render_abort(const char *msg) {
 #ifdef ESP32_HW
+  #ifdef LOGE
+    LOGE("LVGL_UI_RUNTIME", "FATAL RUNTIME ERROR: %s", msg);
+  #else
     ESP_LOGE("LVGL_UI_RUNTIME", "FATAL RUNTIME ERROR: %s", msg);
+  #endif
     esp_system_abort("LVGL UI Runtime Abort");
 #else
     fprintf(stderr, "FATAL RUNTIME ERROR: %s\n", msg);
