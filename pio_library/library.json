@@ -8,7 +8,7 @@
   "platforms": "*",
   "dependencies": {
     "lvgl/lvgl": "https://github.com/lvgl/lvgl",
-    "DaveGamble/cJSON": "*"
+    "DaveGamble/cJSON": "https://github.com/DaveGamble/cJSON.git"
   },
   "build": {
     "flags": [

@@ -70,6 +70,10 @@
     - probe_ov: 2
     - probe_cl: 5
 
+    - x_is_active: true
+    - y_is_active: false
+    - z_is_active: false
+
     # -------------------
     # -- DERIVED STATE --
     # -------------------
@@ -131,6 +135,15 @@
             - [true, 0]
   actions:
     # -- Machine Control --
+    - set_active_x:
+      - when: { condition: [==, x_is_homed, true], then: { set: { x_is_active: !x_is_active, y_is_active: false, z_is_active: false  } } }
+      - when: { condition: [==, x_is_homed, false], then: { set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, x_is_homed: false, y_is_homed: false, z_is_homed: false } } }
+    - set_active_y:
+      - when: { condition: [==, y_is_homed, true], then: { set: { x_is_active: false, y_is_active: !y_is_active, z_is_active: false  } } }
+      - when: { condition: [==, y_is_homed, false], then: { set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, x_is_homed: false, y_is_homed: false, z_is_homed: false } } }
+    - set_active_z:
+      - when: { condition: [==, z_is_homed, true], then: { set: { x_is_active: false, y_is_active: false, z_is_active: !z_is_active  } } }
+      - when: { condition: [==, z_is_homed, false], then: { set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, x_is_homed: false, y_is_homed: false, z_is_homed: false } } }
     - home_machine:
         set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, x_is_homed: false, y_is_homed: false, z_is_homed: false }
     - home_machine_x:
@@ -290,12 +303,7 @@
         condition: [>=, program_progress, 100]
         then:
           - set: { program_running: false, spindle_on: false, coolant_on: false }
-    # - when:
-    #  condition: [and, program_running, !program_paused]
-    #  then:
-    #    - set:
-    #        chipload_disp:
-    #            [add, 25, [mul, [div, [-, chipload, chipload_min], [-, chipload_max, chipload_min]], 50]]
+
 ##########
 # Fonts #
 ##########
@@ -373,13 +381,13 @@
 - type: style
   id: '@bg_gradient'
   bg_opa: 255
-  bg_color: '#222222'
-  bg_grad_color: '#444444'
+  bg_color: '#353535'
+  #bg_grad_color: '#444444'
   #bg_main_stop: 20
   #bg_grad_stop: 235
   #bg_grad_opa: 255
   #bg_main_opa: 255
-  bg_grad_dir: LV_GRAD_DIR_HOR
+  #bg_grad_dir: LV_GRAD_DIR_HOR
 
 - type: style
   id: '@flex_x'
@@ -467,6 +475,15 @@
   id: @tick_color
   line_color: '#777777'
 
+- type: style
+  id: @background_purple
+  text_color: '#ff00ff'
+
+- type: style
+  id: @background_none
+  shadow_opa: 0
+  bg_opa: 0
+
 - init: { lv_screen_active: [] }
   add_style: [@container, 0]
 
@@ -495,14 +512,16 @@
         width: 35
         add_style: ['@indicator_light', 0]
         add_style: ['@btn_clicked', LV_STATE_PRESSED]
-        observes: { $homed_state: { style: { true: '@indicator_light_green', false: '@indicator_light_red' } } }
-        action: { $home_action: trigger }
         radius: 0
         bg_opa: 0
         shadow_opa: 0
         pad_right: 0
         pad_bottom: 0
         pad_top: 0
+        lv_obj_set_ext_click_area: 30
+        observes: { $homed_state: { style: { true: '@indicator_light_green', false: '@indicator_light_red' } } }
+        observes: { $selected_state: { style: { true: '@background_purple', false: '@background_none' } } }
+        action: { $home_action: trigger }
         children:
           - type: label
             text: $axis
@@ -577,7 +596,8 @@
           wcs_pos: "000.00 G54"
           delta_pos: "000.00   "
           homed_state: x_is_homed
-          home_action: home_machine
+          selected_state: x_is_active
+          home_action: set_active_x
           wcs_state: display_wcs_pos_x
           pos_state: display_pos_x
           delta_pos_state: delta_pos_x
@@ -590,7 +610,8 @@
           wcs_pos: "000.00"
           delta_pos: "000.00   "
           homed_state: y_is_homed
-          home_action: home_machine
+          selected_state: y_is_active
+          home_action: set_active_y
           wcs_state: display_wcs_pos_y
           pos_state: display_pos_y
           delta_pos_state: delta_pos_y
@@ -603,7 +624,8 @@
           wcs_pos: "000.00"
           delta_pos: "000.00   "
           homed_state: z_is_homed
-          home_action: home_machine
+          selected_state: z_is_active
+          home_action: set_active_z
           wcs_state: display_wcs_pos_z
           pos_state: display_pos_z
           delta_pos_state: delta_pos_z
@@ -1065,7 +1087,8 @@
   content:
     add_style: [@container_transp, 0]
     grid_cell: [LV_GRID_ALIGN_CENTER, $col, 1, LV_GRID_ALIGN_CENTER, $row, 1]
-    size: [80, 80]
+    #size: [150, 150]
+    size: [76, 76]
     children:
       - type: button
         size: [100%, 100%]
@@ -1075,10 +1098,59 @@
         shadow_width: 5
         shadow_opa: 100
         shadow_spread: 3
-        pad_all: 5
+        pad_all: 1
         children:
           - type: image
             src: $path
+
+- type: component
+  id: @probe_modes_tab
+  content:
+    - init: { lv_tabview_add_tab: ['Modes'] }
+      add_style: [@container_transp, 0]
+      size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+      remove_flag: LV_OBJ_FLAG_SCROLLABLE
+      children:
+            - add_style: [@container_transp, 0]
+              add_style: [@bg_gradient, 0]
+              size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+              children:
+                - type: obj
+                  layout: LV_LAYOUT_GRID
+                  size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+                  add_style: [@container_transp, 0]
+                  add_style: [@bg_group, 0]
+                  pad_all: 10
+                  grid_dsc_array: [[80, 80, 80, LV_GRID_TEMPLATE_LAST], [80, 80, 80, LV_GRID_TEMPLATE_LAST]]
+                  # grid_dsc_array: [[160, 160, 160, LV_GRID_TEMPLATE_LAST], [160, 160, 160, LV_GRID_TEMPLATE_LAST]]
+                  children:
+                    - type: use-view
+                      id: @probe_btn
+                      context: { row: 0, col: 0, path: '?|@$&img_probe_icon_0|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_0.png' }
+                    - type: use-view
+                      id: @probe_btn
+                      context: { row: 0, col: 1, path: '?|@$&img_probe_icon_1|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_1.png' }
+                    - type: use-view
+                      id: @probe_btn
+                      context: { row: 0, col: 2, path: '?|@$&img_probe_icon_2|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_2.png' }
+                    - type: use-view
+                      id: @probe_btn
+                      context: { row: 1, col: 0, path: '?|@$&img_probe_icon_3|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_3.png' }
+                    - type: use-view
+                      id: @probe_btn
+                      context: { row: 1, col: 1, path: '?|@$&img_probe_icon_4|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_4.png' }
+                    - type: use-view
+                      id: @probe_btn
+                      context: { row: 1, col: 2, path: '?|@$&img_probe_icon_5|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_5.png' }
+                    - type: use-view
+                      id: @probe_btn
+                      context: { row: 2, col: 0, path: '?|@$&img_probe_icon_6|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_6.png' }
+                    # - type: use-view
+                    #   id: @probe_btn
+                    #   context: { row: 2, col: 1, path: '?|@$&img_probe_icon_7|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_7.png' }
+                    # - type: use-view
+                    #   id: @probe_btn
+                    #   context: { row: 2, col: 2, path: '?|@$&img_probe_icon_8|S:~/Development/SW/CNC/lvgl_ui/examples/img/probe_grid_8.png' }
 
 - type: component
   id: @label_text_actionable
@@ -1098,6 +1170,7 @@
         text: $text
         observes: { $observable: { text: $fmt } }
         action: { $action: { numeric_input_dialog: { format: "%d mm", min: $min, max: $max, initial: $initial, text: $label} } }
+
 - type: component
   id: @probe_view
   content:
@@ -1108,7 +1181,8 @@
       - type: tabview
         tab_bar_position: LV_DIR_BOTTOM
         tab_bar_size: 40
-        size: [270, 100%]
+        size: [245, 100%]
+        # size: [500, 100%]
         add_style: [@container_transp, 0]
         add_style: [@bg_gradient, 0]
         children:
@@ -1131,8 +1205,11 @@
                         size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
                         add_style: [@container_transp, 0]
                         add_style: [@bg_group, 0]
-                        pad_all: 10
-                        grid_dsc_array: [[80, 80, 80, LV_GRID_TEMPLATE_LAST], [80, 80, 80, LV_GRID_TEMPLATE_LAST]]
+                        pad_all: 5
+                        pad_row: 5
+                        pad_column: 5
+                        grid_dsc_array: [[75, 75, 75, LV_GRID_TEMPLATE_LAST], [75, 75, 75, LV_GRID_TEMPLATE_LAST]]
+                        # grid_dsc_array: [[160, 160, 160, LV_GRID_TEMPLATE_LAST], [160, 160, 160, LV_GRID_TEMPLATE_LAST]]
                         children:
                           - type: use-view
                             id: @probe_btn
@@ -1174,8 +1251,11 @@
                         size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
                         add_style: [@container_transp, 0]
                         add_style: [@bg_group, 0]
-                        pad_all: 10
-                        grid_dsc_array: [[80, 80, 80, LV_GRID_TEMPLATE_LAST], [80, 80, 80, LV_GRID_TEMPLATE_LAST]]
+                        pad_all: 5
+                        pad_row: 5
+                        pad_column: 5
+                        grid_dsc_array: [[75, 75, 75, LV_GRID_TEMPLATE_LAST], [75, 75, 75, LV_GRID_TEMPLATE_LAST]]
+                        # grid_dsc_array: [[160, 160, 160, LV_GRID_TEMPLATE_LAST], [160, 160, 160, LV_GRID_TEMPLATE_LAST]]
                         children:
                           - type: use-view
                             id: @probe_btn
