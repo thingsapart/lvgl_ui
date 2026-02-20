@@ -446,13 +446,36 @@ static void handle_completions_command(cJSON* payload, ApiSpec* api_spec) {
                         name = it->valuestring;
                     }
                     if (!name) continue;
-                    // Prepare line: either "  name: doc\n" or "  name:\n"
-                    const char* value_part = doc ? doc : "";
-                    size_t need = strlen(buf) + strlen("  :\n") + strlen(name) + strlen(value_part) + 4;
-                    if (need > buf_sz) { buf_sz = need + 256; buf = realloc(buf, buf_sz); }
-                    strcat(buf, "  "); strcat(buf, name); strcat(buf, ":");
-                    if (doc) { strcat(buf, " "); strcat(buf, doc); }
-                    strcat(buf, "\n");
+                    // Prepare line: either "  name: "doc"\n" or "  name:\n"
+                    // If doc is present, escape backslashes and double-quotes and emit a quoted YAML string.
+                    if (doc && doc[0]) {
+                        // estimate needed size and grow buffer
+                        size_t esc_len = 0;
+                        const char* p = doc;
+                        while (*p) { if (*p == '"' || *p == '\\') esc_len += 2; else esc_len += 1; p++; }
+                        size_t need = strlen(buf) + 4 + strlen(name) + 3 + esc_len + 2; // padding
+                        if (need > buf_sz) { buf_sz = need + 256; buf = realloc(buf, buf_sz); }
+                        strcat(buf, "  ");
+                        strcat(buf, name);
+                        strcat(buf, ": \"");
+                        // append escaped doc
+                        p = doc;
+                        while (*p) {
+                            if (*p == '"' || *p == '\\') {
+                                size_t l = strlen(buf);
+                                buf[l] = '\\'; buf[l+1] = *p; buf[l+2] = '\0';
+                            } else {
+                                size_t l = strlen(buf);
+                                buf[l] = *p; buf[l+1] = '\0';
+                            }
+                            p++;
+                        }
+                        strcat(buf, "\"\n");
+                    } else {
+                        size_t need = strlen(buf) + strlen("  :\n") + strlen(name) + 4;
+                        if (need > buf_sz) { buf_sz = need + 256; buf = realloc(buf, buf_sz); }
+                        strcat(buf, "  "); strcat(buf, name); strcat(buf, ":\n");
+                    }
                 }
                 cJSON_AddStringToObject(comp_obj, "context_snippet", buf);
                 free(buf);

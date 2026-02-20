@@ -1161,6 +1161,7 @@
 
 - type: component
   id: @label_text_actionable
+  info: "Text-label indicating that clicking can perform an action"
   content:
     add_style: [@container_transp, 0]
     add_style: [@flex_x, 0]
@@ -1170,13 +1171,13 @@
     children:
       - type: label
         flex_grow: 5
-        text: $label
+        text: $label/Label text
       - type: label
         add_style: [@text_actionable, 0]
         flex_grow: 2
         text: $text
-        observes: { $observable: { text: $fmt } }
-        action: { $action: { numeric_input_dialog: { format: "%d mm", min: $min, max: $max, initial: $initial, text: $label} } }
+        observes: { $observable: { text: "$fmt/format string for observable" } }
+        action: { $action: { numeric_input_dialog: { format: "%d mm", min: "$min/min numeric input", max: "$max/max numeric input", initial: "$initial/initial numeric input", text: "$label/input label"} } }
 
 - type: component
   id: @probe_view

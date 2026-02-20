@@ -271,8 +271,11 @@ export function activate(context: vscode.ExtensionContext) {
                 const start = wordRange ? wordRange.start : position;
                 const end = wordRange ? wordRange.end : position;
                 vars.forEach(v => {
-                    const display = '$' + v.name + (v.doc ? ' — ' + shorten(v.doc, 60) : '');
-                    const it = new vscode.CompletionItem(display, vscode.CompletionItemKind.Variable);
+                    const displayId = '$' + v.name;
+                    const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Variable);
+                    // show the doc as a description (appears to the right) but keep label simple for filtering
+                    if (v.doc) it.label = { label: displayId, description: shorten(v.doc, 60) } as any;
+                    it.filterText = displayId;
                     // ensure insertion is only the $name plus doc if present
                     it.insertText = v.doc ? ('$' + v.name + '/' + v.doc) : ('$' + v.name);
                     it.textEdit = vscode.TextEdit.replace(new vscode.Range(start, end), it.insertText as string);
@@ -286,10 +289,11 @@ export function activate(context: vscode.ExtensionContext) {
             // 1) add_style completions: suggest all style ids (defined ids)
             if (/add_style\s*:\s*\[?[^\]]*$/.test(linePrefix) || /add_style\s*:/.test(line)) {
                 // Only suggest ids that are declared as styles (type: style)
-                defined.filter(n => n.type && n.type.toLowerCase() === 'style').forEach(node => {
+                    defined.filter(n => n.type && n.type.toLowerCase() === 'style').forEach(node => {
                     const displayId = node.id.startsWith('@') ? node.id : '@' + node.id;
-                    const label = displayId + (node.info ? ' — ' + shorten(node.info, 60) : '');
-                    const it = new vscode.CompletionItem(label, vscode.CompletionItemKind.Value);
+                    const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Value);
+                    if (node.info) it.label = { label: displayId, description: shorten(node.info, 60) } as any;
+                    it.filterText = displayId;
                     // replace token under cursor (avoid double @)
                     const wordRange = document.getWordRangeAtPosition(position, /@?[A-Za-z0-9_\-]+/);
                     const start = wordRange ? wordRange.start : position;
@@ -374,8 +378,9 @@ export function activate(context: vscode.ExtensionContext) {
                             defined.filter(n => n.type && n.type.toLowerCase() === 'component')
                                 .forEach(node => {
                                     const displayId = node.id.startsWith('@') ? node.id : '@' + node.id;
-                                    const label = displayId + (node.info ? ' — ' + shorten(node.info, 60) : '');
-                                    const it = new vscode.CompletionItem(label, vscode.CompletionItemKind.Reference);
+                                    const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Reference);
+                                    if (node.info) it.label = { label: displayId, description: shorten(node.info, 60) } as any;
+                                    it.filterText = displayId;
                                     const wordRange = document.getWordRangeAtPosition(position, /@?[A-Za-z0-9_\-]+/);
                                     const start = wordRange ? wordRange.start : position;
                                     const end = wordRange ? wordRange.end : position;
@@ -751,8 +756,9 @@ function startServerProcess(context: vscode.ExtensionContext, allowWithoutPrevie
                             const items: vscode.CompletionItem[] = [];
                             json.components.forEach((c: any) => {
                                 const displayId = c.id && c.id.startsWith('@') ? c.id : ('@' + c.id);
-                                const label = displayId + (c.info ? ' — ' + shorten(c.info, 60) : '');
-                                const it = new vscode.CompletionItem(label, vscode.CompletionItemKind.Reference);
+                                const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Reference);
+                                if (c.info) it.label = { label: displayId, description: shorten(c.info, 60) } as any;
+                                it.filterText = displayId;
                                 it.insertText = displayId;
                                 it.detail = c.info || 'component';
                                 if (c.info) it.documentation = new vscode.MarkdownString(c.info);
