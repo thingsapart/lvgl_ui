@@ -6,7 +6,7 @@ const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
 const child_process_1 = require("child_process");
-const LOGGING_ENABLED = false; // Set to true for verbose debug output
+const LOGGING_ENABLED = true; // Set to true for verbose debug output
 const RESOLUTIONS = [
     { name: 'Default (480x320)', width: 480, height: 320 },
     { name: 'Phone Portrait (320x480)', width: 320, height: 480 },
@@ -25,6 +25,8 @@ let outputChannel;
 let logChannel;
 let previewedDocumentUri = undefined;
 let renderTimeout;
+// pending completions map (requestId -> resolver + context)
+let pendingCompletions = new Map();
 // This holds the active resolution for the current preview session.
 let currentResolution = { width: 480, height: 320 };
 // This holds the active trace setting for the current preview session.
@@ -101,6 +103,49 @@ function activate(context) {
         // ignore parse errors
         apiSpec = null;
     }
+    // Ensure server runs in background when any YAML file is open, but stop when none are open.
+    const hasOpenYaml = () => {
+        // consider visible editors and workspace text documents
+        const vis = vscode.window.visibleTextEditors.some(e => e.document && e.document.languageId === 'yaml');
+        if (vis)
+            return true;
+        const docs = vscode.workspace.textDocuments.some(d => d.languageId === 'yaml');
+        return docs;
+    };
+    const ensureServerRunningIfNeeded = () => {
+        try {
+            const need = hasOpenYaml();
+            if (need) {
+                if (!serverProcess) {
+                    if (LOGGING_ENABLED)
+                        logChannel.appendLine('[Server] Starting background server because YAML files are open.');
+                    startServerProcess(context, true);
+                }
+            }
+            else {
+                // no yaml open, stop background server unless preview is visible
+                if (serverProcess && !previewPanel) {
+                    if (LOGGING_ENABLED)
+                        logChannel.appendLine('[Server] No YAML open; stopping background server to conserve resources.');
+                    try {
+                        serverProcess.kill();
+                    }
+                    catch (e) { }
+                    serverProcess = undefined;
+                    pendingCompletions = new Map();
+                }
+            }
+        }
+        catch (e) {
+            // ignore
+        }
+    };
+    // Start/stop server based on open YAML documents
+    context.subscriptions.push(vscode.window.onDidChangeVisibleTextEditors(ensureServerRunningIfNeeded));
+    context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(ensureServerRunningIfNeeded));
+    context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(ensureServerRunningIfNeeded));
+    // initial check
+    ensureServerRunningIfNeeded();
     vscode.workspace.onDidChangeTextDocument(event => {
         if (previewPanel && event.document.uri.toString() === previewedDocumentUri?.toString()) {
             const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
@@ -181,11 +226,14 @@ function activate(context) {
         provideCompletionItems(document, position) {
             const line = document.lineAt(position).text;
             const linePrefix = line.substr(0, position.character);
+            if (LOGGING_ENABLED)
+                logChannel.appendLine(`[COMP] provideCompletionItems pos=${position.line}:${position.character} prefix="${linePrefix.replace(/\n/g, '')}"`);
             const items = [];
             const defined = parseDefinedNodes(document);
             // 1) add_style completions: suggest all style ids (defined ids)
             if (/add_style\s*:\s*\[?[^\]]*$/.test(linePrefix) || /add_style\s*:/.test(line)) {
-                defined.forEach(node => {
+                // Only suggest ids that are declared as styles (type: style)
+                defined.filter(n => n.type && n.type.toLowerCase() === 'style').forEach(node => {
                     const displayId = node.id.startsWith('@') ? node.id : '@' + node.id;
                     const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Value);
                     // replace token under cursor (avoid double @)
@@ -202,15 +250,18 @@ function activate(context) {
             }
             // 1b) type: completions using api_spec (widget/object types)
             if (/\btype\s*:\s*[A-Za-z0-9_\-]*$/.test(linePrefix) && apiSpec) {
-                // collect candidate types from apiSpec: keys that look like object definitions
-                const types = Object.keys(apiSpec).filter(k => {
+                // Include a short list of special framework types plus types from api_spec.json
+                const specialTypes = ['component', 'style', 'use-view', 'screen', 'obj', 'font', 'data-binding', 'template', 'page', 'view'];
+                const apiTypes = Object.keys(apiSpec).filter(k => {
                     const v = apiSpec[k];
                     return v && typeof v === 'object' && (v.properties || v.create || v.methods || v.inherits);
-                }).sort();
-                types.forEach(t => {
-                    const it = new vscode.CompletionItem(t, vscode.CompletionItemKind.Class);
+                });
+                const all = Array.from(new Set([...specialTypes, ...apiTypes])).sort();
+                all.forEach(t => {
+                    const kind = specialTypes.includes(t) ? vscode.CompletionItemKind.Keyword : vscode.CompletionItemKind.Class;
+                    const it = new vscode.CompletionItem(t, kind);
                     it.insertText = t;
-                    it.detail = 'LVGL API type';
+                    it.detail = specialTypes.includes(t) ? 'UI framework type' : 'LVGL API type';
                     items.push(it);
                 });
                 return items;
@@ -233,16 +284,44 @@ function activate(context) {
                         break;
                 }
                 if (insideUseView) {
-                    // only include defined nodes that are not use-view (i.e., real components)
-                    // and prefer those whose `type` exists in the loaded apiSpec (if available)
-                    defined.filter(n => !(n.type && n.type.toLowerCase() === 'use-view'))
-                        .filter(n => {
-                        if (!apiSpec)
-                            return true; // no spec, allow all
-                        if (!n.type)
-                            return true; // unknown type, allow
-                        return !!apiSpec[n.type];
-                    })
+                    // Prefer server-backed completions when available. Return a promise that resolves
+                    // when the server replies with component info.
+                    if (serverProcess) {
+                        return new Promise((resolve) => {
+                            const requestId = 'r' + Date.now() + Math.floor(Math.random() * 1000000).toString(36);
+                            pendingCompletions.set(requestId, { resolve: (items) => {
+                                    resolve(new vscode.CompletionList(items, false));
+                                }, docUri: document.uri, line: position.line });
+                            if (LOGGING_ENABLED)
+                                logChannel.appendLine(`[COMP] Sent completions request ${requestId}`);
+                            const command = { command: 'completions', requestId: requestId, source: document.getText() };
+                            try {
+                                if (serverProcess && serverProcess.stdin) {
+                                    serverProcess.stdin.write(JSON.stringify(command) + '\n');
+                                }
+                                else {
+                                    pendingCompletions.delete(requestId);
+                                    resolve(new vscode.CompletionList([], false));
+                                }
+                            }
+                            catch (e) {
+                                pendingCompletions.delete(requestId);
+                                resolve(new vscode.CompletionList([], false));
+                            }
+                            // Timeout fallback
+                            setTimeout(() => {
+                                if (pendingCompletions.has(requestId)) {
+                                    if (LOGGING_ENABLED)
+                                        logChannel.appendLine(`[COMP] Timeout waiting for completions ${requestId}`);
+                                    pendingCompletions.delete(requestId);
+                                    resolve(new vscode.CompletionList([], false));
+                                }
+                            }, 800);
+                        });
+                    }
+                    // Fallback to local heuristics if server not available
+                    // Fallback: only suggest nodes explicitly declared as components
+                    defined.filter(n => n.type && n.type.toLowerCase() === 'component')
                         .forEach(node => {
                         const displayId = node.id.startsWith('@') ? node.id : '@' + node.id;
                         const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Reference);
@@ -253,7 +332,6 @@ function activate(context) {
                         it.detail = node.info ? (node.info.length > 80 ? node.info.substr(0, 77) + '...' : node.info) : 'Component id';
                         if (node.info)
                             it.documentation = new vscode.MarkdownString(node.info);
-                        // instead of additionalTextEdits (which apply before the main edit), invoke a command AFTER completion
                         it.command = {
                             command: 'lvgl-ui.insertUseViewContext',
                             title: 'Insert use-view context',
@@ -303,6 +381,114 @@ function activate(context) {
             return undefined;
         }
     });
+    const definitionProvider = vscode.languages.registerDefinitionProvider('yaml', {
+        async provideDefinition(document, position) {
+            const wordRange = document.getWordRangeAtPosition(position, /@?[A-Za-z0-9_\-]+/);
+            if (!wordRange)
+                return null;
+            const word = document.getText(wordRange);
+            const idToFind = word.startsWith('@') ? word.substring(1) : word;
+            const findInDoc = (doc) => {
+                const defs = parseDefinedNodes(doc);
+                const found = defs.find(n => (n.id.replace(/^@/, '') === idToFind) || (n.id === idToFind) || (n.id === ('@' + idToFind)));
+                if (!found)
+                    return null;
+                const lineText = doc.lineAt(found.line).text;
+                const m = lineText.match(/id\s*:\s*["']?(@?[A-Za-z0-9_\-]+)["']?/);
+                let ch = 0;
+                if (m) {
+                    const idx = lineText.indexOf(m[0]);
+                    if (idx >= 0)
+                        ch = idx + m[0].indexOf(m[1]);
+                }
+                return new vscode.Location(doc.uri, new vscode.Position(found.line, ch));
+            };
+            const resolveIncludePaths = (doc) => {
+                const includes = [];
+                for (let i = 0; i < doc.lineCount; i++) {
+                    const line = doc.lineAt(i).text;
+                    const m = line.match(/^\s*include\s*:\s*["']?(.*?)?["']?\s*$/);
+                    if (m && m[1]) {
+                        includes.push(m[1]);
+                        continue;
+                    }
+                    // block list style
+                    const incKey = line.match(/^\s*include\s*:\s*$/);
+                    if (incKey) {
+                        const baseIndent = (line.match(/^(\s*)/) || ['', ''])[1].length;
+                        // scan following lines for list '- item'
+                        for (let j = i + 1; j < doc.lineCount; j++) {
+                            const l = doc.lineAt(j).text;
+                            const indent = (l.match(/^(\s*)/) || ['', ''])[1].length;
+                            if (l.trim() === '')
+                                continue;
+                            if (indent <= baseIndent)
+                                break;
+                            const m2 = l.match(/^-\s*["']?(.*?)["']?\s*$/);
+                            if (m2 && m2[1])
+                                includes.push(m2[1]);
+                        }
+                    }
+                }
+                return includes;
+            };
+            const findInIncludesRecursive = async (startDoc, visited) => {
+                const docUriStr = startDoc.uri.toString();
+                if (visited.has(docUriStr))
+                    return null;
+                visited.add(docUriStr);
+                const includes = resolveIncludePaths(startDoc);
+                for (const inc of includes) {
+                    try {
+                        // resolve relative to startDoc
+                        const base = vscode.Uri.file(path.dirname(startDoc.uri.fsPath));
+                        const target = vscode.Uri.joinPath(base, inc);
+                        const doc = await vscode.workspace.openTextDocument(target);
+                        const r = findInDoc(doc);
+                        if (r)
+                            return r;
+                        const deeper = await findInIncludesRecursive(doc, visited);
+                        if (deeper)
+                            return deeper;
+                    }
+                    catch (e) {
+                        // ignore missing include files
+                    }
+                }
+                return null;
+            };
+            // 1) try current document
+            const cur = findInDoc(document);
+            if (cur)
+                return cur;
+            // 1b) try includes referenced from current document (recursive)
+            const incRes = await findInIncludesRecursive(document, new Set());
+            if (incRes)
+                return incRes;
+            // 2) try open workspace text documents
+            for (const d of vscode.workspace.textDocuments) {
+                if (d.uri.toString() === document.uri.toString())
+                    continue;
+                const res = findInDoc(d);
+                if (res)
+                    return res;
+            }
+            // 3) search workspace YAML files (async)
+            const files = await vscode.workspace.findFiles('**/*.{yml,yaml}', '**/node_modules/**', 200);
+            for (const f of files) {
+                try {
+                    const doc = await vscode.workspace.openTextDocument(f);
+                    const r = findInDoc(doc);
+                    if (r)
+                        return r;
+                }
+                catch (e) {
+                    continue;
+                }
+            }
+            return null;
+        }
+    });
     // register a command that inserts the context block AFTER the id was completed
     const insertContextCommand = vscode.commands.registerCommand('lvgl-ui.insertUseViewContext', async (uri, idLine, indent) => {
         try {
@@ -329,7 +515,37 @@ function activate(context) {
             // ignore errors silently
         }
     });
-    context.subscriptions.push(disposable, outputChannel, completionProvider, hoverProvider, insertContextCommand);
+    const insertContextSnippetCommand = vscode.commands.registerCommand('lvgl-ui.insertUseViewContextSnippet', async (uri, idLine, _displayId, contextSnippet) => {
+        try {
+            const doc = await vscode.workspace.openTextDocument(uri);
+            // compute indent from idLine
+            const idLineText = doc.lineAt(idLine).text;
+            const indentMatch = idLineText.match(/^(\s*)/);
+            const indent = indentMatch ? indentMatch[1] : '';
+            // check whether a `context:` already exists within the next 16 lines after the id line
+            const maxLook = Math.min(doc.lineCount - 1, idLine + 16);
+            for (let i = idLine + 1; i <= maxLook; i++) {
+                const l = doc.lineAt(i).text;
+                if (/^\s*context\s*:/.test(l))
+                    return; // already present
+                const lIndent = (l.match(/^(\s*)/) || ['', ''])[1];
+                if (lIndent.length < indent.length)
+                    break;
+            }
+            const editor = await vscode.window.showTextDocument(doc, { preview: false });
+            // indent the snippet
+            const lines = contextSnippet.split('\n');
+            const indented = lines.map(line => indent + line).join('\n');
+            const insertPos = new vscode.Position(idLine + 1, 0);
+            await editor.edit(editBuilder => {
+                editBuilder.insert(insertPos, '\n' + indented + '\n');
+            });
+        }
+        catch (e) {
+            // ignore
+        }
+    });
+    context.subscriptions.push(disposable, outputChannel, completionProvider, hoverProvider, definitionProvider, insertContextCommand, insertContextSnippetCommand);
 }
 function setupPreviewPanel(context) {
     if (!previewPanel)
@@ -380,13 +596,13 @@ function setupPreviewPanel(context) {
         serverProcess.stdin.write(commandString);
     });
 }
-function startServerProcess(context) {
+function startServerProcess(context, allowWithoutPreview = false) {
     if (serverProcess) {
         if (LOGGING_ENABLED)
             logChannel.appendLine('[Server] Attempted to start server, but one is already running.');
         return;
     }
-    if (!previewPanel) {
+    if (!previewPanel && !allowWithoutPreview) {
         if (LOGGING_ENABLED)
             logChannel.appendLine('[Server] Attempted to start server, but preview panel is closed.');
         return;
@@ -404,8 +620,15 @@ function startServerProcess(context) {
     const workspaceFolder = previewedDocumentUri ? vscode.workspace.getWorkspaceFolder(previewedDocumentUri) : undefined;
     const cwd = workspaceFolder ? workspaceFolder.uri.fsPath : undefined;
     const serverArgs = [apiSpecPath];
-    if (LOGGING_ENABLED) {
-        serverArgs.push('--log');
+    // For background starts, avoid verbose logging and reduce timers
+    if (allowWithoutPreview) {
+        serverArgs.push('--background');
+        serverArgs.push('--no-timers');
+    }
+    else {
+        if (LOGGING_ENABLED) {
+            serverArgs.push('--log');
+        }
     }
     if (traceSimEnabled) {
         serverArgs.push('--trace-sim-no-time');
@@ -428,7 +651,8 @@ function startServerProcess(context) {
     let buffer = Buffer.alloc(0);
     const MAGIC_HEADER = Buffer.from("DATA:");
     const FRAME_COMMAND = Buffer.from("|FRAME|");
-    const INIT_COMMAND = Buffer.from("|INIT |");
+    // reset pending completions map on server start
+    pendingCompletions = new Map();
     serverProcess.stdout.on('data', (data) => {
         buffer = Buffer.concat([buffer, data]);
         if (LOGGING_ENABLED)
@@ -441,8 +665,13 @@ function startServerProcess(context) {
                 buffer = buffer.subarray(magicIndex);
             if (buffer.length < 12)
                 return;
-            const commandSlice = buffer.subarray(5, 12);
-            if (commandSlice.equals(INIT_COMMAND)) {
+            // Be flexible when detecting the command token. Some server builds
+            // emit `DATA:|CMPLT ` (no trailing '|') while older code expected
+            // `DATA:|CMPLT |`. Read the ASCII header region and detect by
+            // substring rather than strict buffer equality.
+            // Read a tight ASCII slice for the command token (avoid trailing NULs).
+            const cmdStr = buffer.toString('ascii', 5, Math.min(11, buffer.length));
+            if (cmdStr.indexOf('INIT') !== -1) {
                 if (buffer.length < 16)
                     return;
                 const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
@@ -453,7 +682,67 @@ function startServerProcess(context) {
                 buffer = buffer.subarray(16);
                 continue;
             }
-            else if (commandSlice.equals(FRAME_COMMAND)) {
+            else if (cmdStr.indexOf('CMPLT') !== -1) {
+                // Completions reply: header region followed by 4-byte big-endian size
+                if (buffer.length < 16)
+                    return;
+                const payloadSize = buffer.readUInt32BE(12);
+                if (buffer.length < 16 + payloadSize)
+                    return;
+                const payload = buffer.subarray(16, 16 + payloadSize);
+                try {
+                    if (LOGGING_ENABLED)
+                        logChannel.appendLine(`[Parser] CMPLT payload arrived (${payloadSize} bytes)`);
+                    const json = JSON.parse(payload.toString());
+                    if (json && json.requestId && Array.isArray(json.components)) {
+                        if (LOGGING_ENABLED)
+                            logChannel.appendLine(`[Parser] CMPLT reply requestId=${json.requestId} components=${json.components.length}`);
+                        const resolverObj = pendingCompletions.get(json.requestId);
+                        if (resolverObj) {
+                            const items = [];
+                            json.components.forEach((c) => {
+                                const displayId = c.id && c.id.startsWith('@') ? c.id : ('@' + c.id);
+                                const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Reference);
+                                it.detail = c.info || 'component';
+                                if (c.info)
+                                    it.documentation = new vscode.MarkdownString(c.info);
+                                // attach context snippet in documentation for now
+                                if (c.context_snippet) {
+                                    const md = new vscode.MarkdownString();
+                                    if (c.info)
+                                        md.appendMarkdown(c.info + '\n\n');
+                                    md.appendMarkdown('Context:\n```yaml\n' + c.context_snippet + '```');
+                                    it.documentation = md;
+                                }
+                                // attach command to insert snippet with correct doc context
+                                if (c.context_snippet) {
+                                    it.command = {
+                                        command: 'lvgl-ui.insertUseViewContextSnippet',
+                                        title: 'Insert use-view context snippet',
+                                        arguments: [resolverObj.docUri, resolverObj.line, displayId, c.context_snippet]
+                                    };
+                                }
+                                items.push(it);
+                            });
+                            resolverObj.resolve(items);
+                            if (LOGGING_ENABLED)
+                                logChannel.appendLine(`[Parser] Resolved completions ${json.requestId} -> ${items.length} items`);
+                            pendingCompletions.delete(json.requestId);
+                        }
+                        else {
+                            if (LOGGING_ENABLED)
+                                logChannel.appendLine(`[Parser] No pending resolver for completions requestId=${json.requestId}`);
+                        }
+                    }
+                }
+                catch (e) {
+                    if (LOGGING_ENABLED)
+                        logChannel.appendLine('[Parser] Failed to parse CMPLT payload');
+                }
+                buffer = buffer.subarray(16 + payloadSize);
+                continue;
+            }
+            else if (cmdStr.indexOf('FRAME') !== -1 || buffer.subarray(5, 12).equals(FRAME_COMMAND)) {
                 if (buffer.length < 28)
                     return;
                 const payloadSize = buffer.readUInt32BE(24);
@@ -478,8 +767,22 @@ function startServerProcess(context) {
                 continue;
             }
             else {
-                if (LOGGING_ENABLED)
-                    logChannel.appendLine(`[Parser] Anomaly: Unknown command. Discarding byte and retrying.`);
+                if (LOGGING_ENABLED) {
+                    logChannel.appendLine(`[Parser] Anomaly: Unknown command. Dumping buffer head:`);
+                    // show a short hex+ascii preview of the buffer for debugging
+                    const head = buffer.subarray(0, Math.min(128, buffer.length));
+                    let hex = '';
+                    for (let i = 0; i < head.length; i++) {
+                        hex += ('0' + head[i].toString(16)).slice(-2) + ' ';
+                    }
+                    let ascii = '';
+                    for (let i = 0; i < head.length; i++) {
+                        const ch = head[i];
+                        ascii += (ch >= 32 && ch < 127) ? String.fromCharCode(ch) : '.';
+                    }
+                    logChannel.appendLine('[Parser] HEX: ' + hex);
+                    logChannel.appendLine('[Parser] ASCII: ' + ascii);
+                }
                 buffer = buffer.subarray(1);
                 continue;
             }

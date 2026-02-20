@@ -7,6 +7,7 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <netinet/in.h> // For htons, htonl
+#include <ctype.h>
 #include "lvgl.h"
 #include "api_spec.h"
 #include "generator.h"
@@ -14,6 +15,7 @@
 #include "registry.h"
 #include "utils.h"
 #include "cJSON.h"
+#include "yaml_parser.h"
 #include "lvgl_assert_handler.h"
 #include "ui_sim.h" // ADDED: For UI-Sim
 
@@ -241,6 +243,196 @@ static void handle_input_command(cJSON* payload) {
     }
 }
 
+static void send_cjson_reply(const cJSON* reply_json) {
+    if (!reply_json) return;
+    char* payload = cJSON_PrintUnformatted((cJSON*)reply_json);
+    if (!payload) return;
+
+    // Header: "DATA:|CMPLT |" (12 bytes) + payload_size (4 bytes)
+    char header[16];
+    memcpy(header, "DATA:|CMPLT |", 12);
+    uint32_t net_size = htonl((uint32_t)strlen(payload));
+    memcpy(header + 12, &net_size, 4);
+
+    fwrite(header, 1, sizeof(header), stdout);
+    fwrite(payload, 1, strlen(payload), stdout);
+    fflush(stdout);
+
+    free(payload);
+}
+
+// Collect context variable names recursively for a component, following use-view subcomponents.
+static void collect_context_vars_recursive(const cJSON* node, const cJSON* root_array, cJSON* collector, cJSON* visited) {
+    if (!node) return;
+    if (cJSON_IsObject(node)) {
+        cJSON* item = NULL;
+        cJSON_ArrayForEach(item, (cJSON*)node) {
+            // If key starts with '$', add var name
+            if (item->string && item->string[0] == '$') {
+                const char* var = item->string + 1;
+                // Add only unique
+                bool found = false;
+                cJSON* it = NULL;
+                cJSON_ArrayForEach(it, collector) {
+                    if (cJSON_IsString(it) && strcmp(it->valuestring, var) == 0) { found = true; break; }
+                }
+                if (!found) cJSON_AddItemToArray(collector, cJSON_CreateString(var));
+            }
+            // If this is a use-view, resolve subcomponent and recurse
+            if (item->string && strcmp(item->string, "type") == 0 && cJSON_IsString(item) && strcmp(item->valuestring, "use-view") == 0) {
+                // find sibling id
+                cJSON* id_item = cJSON_GetObjectItemCaseSensitive(node, "id");
+                if (id_item && cJSON_IsString(id_item)) {
+                    const char* cid = id_item->valuestring;
+                    // search root array for component with matching id
+                    cJSON* top = NULL;
+                    cJSON_ArrayForEach(top, (cJSON*)root_array) {
+                        cJSON* t_type = cJSON_GetObjectItemCaseSensitive(top, "type");
+                        cJSON* t_id = cJSON_GetObjectItemCaseSensitive(top, "id");
+                        if (t_type && cJSON_IsString(t_type) && strcmp(t_type->valuestring, "component") == 0 && t_id && cJSON_IsString(t_id)) {
+                            if (strcmp(t_id->valuestring, cid) == 0) {
+                                // avoid infinite recursion: check visited list
+                                bool already = false;
+                                if (visited) {
+                                    cJSON* vit = NULL;
+                                    cJSON_ArrayForEach(vit, visited) {
+                                        if (cJSON_IsString(vit) && strcmp(vit->valuestring, t_id->valuestring) == 0) { already = true; break; }
+                                    }
+                                }
+                                if (!already) {
+                                    if (visited) cJSON_AddItemToArray(visited, cJSON_CreateString(t_id->valuestring));
+                                // found component content: try 'root' or 'content'
+                                cJSON* content = cJSON_GetObjectItemCaseSensitive(top, "root");
+                                if (!content) content = cJSON_GetObjectItemCaseSensitive(top, "content");
+                                if (content) collect_context_vars_recursive(content, root_array, collector, visited);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Recurse into value
+            collect_context_vars_recursive(item, root_array, collector, visited);
+        }
+        return;
+    }
+    if (cJSON_IsArray(node)) {
+        cJSON* it = NULL;
+        cJSON_ArrayForEach(it, (cJSON*)node) {
+            collect_context_vars_recursive(it, root_array, collector, visited);
+        }
+        return;
+    }
+    // strings/numbers: optionally scan for '$var' in strings
+    if (cJSON_IsString(node)) {
+        const char* s = node->valuestring;
+        const char* p = s;
+        while ((p = strchr(p, '$')) != NULL) {
+            p++;
+            // read identifier
+            char buf[128]; int bi = 0;
+            while (*p && (isalnum((unsigned char)*p) || *p == '_' || *p == '-')) {
+                if (bi < (int)sizeof(buf)-1) buf[bi++] = *p;
+                p++;
+            }
+            if (bi > 0) {
+                buf[bi] = '\0';
+                // add unique
+                bool found = false;
+                cJSON* it = NULL;
+                cJSON_ArrayForEach(it, collector) {
+                    if (cJSON_IsString(it) && strcmp(it->valuestring, buf) == 0) { found = true; break; }
+                }
+                if (!found) cJSON_AddItemToArray(collector, cJSON_CreateString(buf));
+            }
+        }
+    }
+}
+
+static void handle_completions_command(cJSON* payload, ApiSpec* api_spec) {
+    cJSON* source_item = cJSON_GetObjectItem(payload, "source");
+    if (!source_item || !cJSON_IsString(source_item)) return;
+
+    char* err = NULL;
+    cJSON* ui_json = yaml_to_cjson(source_item->valuestring, &err);
+    if (!ui_json) {
+        if (err) {
+            fprintf(stderr, "[ERROR] YAML parse failed: %s\n", err);
+            free(err);
+        } else {
+            fprintf(stderr, "[ERROR] YAML parse failed (unknown)\n");
+        }
+        return;
+    }
+
+    // Build response: components array with id, info, context_vars
+    cJSON* response = cJSON_CreateObject();
+    cJSON* comps = cJSON_CreateArray();
+    cJSON_AddItemToObject(response, "components", comps);
+
+    cJSON* item = NULL;
+    cJSON_ArrayForEach(item, ui_json) {
+        if (!cJSON_IsObject(item)) continue;
+        cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item, "type");
+        cJSON* id_item = cJSON_GetObjectItemCaseSensitive(item, "id");
+        if (!type_item || !cJSON_IsString(type_item) || !id_item || !cJSON_IsString(id_item)) continue;
+        if (strcmp(type_item->valuestring, "component") != 0) continue;
+
+        cJSON* comp_obj = cJSON_CreateObject();
+        cJSON_AddStringToObject(comp_obj, "id", id_item->valuestring);
+        cJSON* info_item = cJSON_GetObjectItemCaseSensitive(item, "info");
+        if (info_item && cJSON_IsString(info_item)) cJSON_AddStringToObject(comp_obj, "info", info_item->valuestring);
+
+        // find content (root or content)
+        cJSON* content = cJSON_GetObjectItemCaseSensitive(item, "root");
+        if (!content) content = cJSON_GetObjectItemCaseSensitive(item, "content");
+        cJSON* vars = cJSON_CreateArray();
+        if (content) {
+            cJSON* visited = cJSON_CreateArray();
+            // mark this component id as visited to avoid self-recursion
+            if (id_item && cJSON_IsString(id_item)) cJSON_AddItemToArray(visited, cJSON_CreateString(id_item->valuestring));
+            collect_context_vars_recursive(content, ui_json, vars, visited);
+            cJSON_Delete(visited);
+        }
+        cJSON_AddItemToObject(comp_obj, "context_vars", vars);
+
+        // build context snippet
+        if (cJSON_GetArraySize(vars) > 0) {
+            // build simple YAML snippet (no indent)
+            size_t buf_sz = 1024;
+            char* buf = malloc(buf_sz);
+            if (buf) {
+                buf[0] = '\0';
+                strcat(buf, "context:\n");
+                cJSON* it = NULL;
+                cJSON_ArrayForEach(it, vars) {
+                    if (cJSON_IsString(it)) {
+                        size_t need = strlen(buf) + strlen("  :\n") + strlen(it->valuestring) + 2;
+                        if (need > buf_sz) { buf_sz = need + 256; buf = realloc(buf, buf_sz); }
+                        strcat(buf, "  "); strcat(buf, it->valuestring); strcat(buf, ":\n");
+                    }
+                }
+                cJSON_AddStringToObject(comp_obj, "context_snippet", buf);
+                free(buf);
+            }
+        }
+
+        cJSON_AddItemToArray(comps, comp_obj);
+    }
+
+    // include requestId if present so the client can correlate
+    cJSON* reqId = cJSON_GetObjectItemCaseSensitive(payload, "requestId");
+    if (reqId && cJSON_IsString(reqId)) {
+        cJSON_AddStringToObject(response, "requestId", reqId->valuestring);
+    }
+    // send reply and cleanup
+    send_cjson_reply(response);
+    cJSON_Delete(response);
+    cJSON_Delete(ui_json);
+}
+
 static void process_command_line(char* line, ApiSpec* api_spec) {
     cJSON *json = cJSON_Parse(line);
     if (!json) {
@@ -256,6 +448,8 @@ static void process_command_line(char* line, ApiSpec* api_spec) {
             handle_render_command(json, api_spec);
         } else if (strcmp(command_item->valuestring, "input") == 0) {
             handle_input_command(json);
+        } else if (strcmp(command_item->valuestring, "completions") == 0) {
+            handle_completions_command(json, api_spec);
         }
     }
     cJSON_Delete(json);
@@ -263,9 +457,15 @@ static void process_command_line(char* line, ApiSpec* api_spec) {
 
 int main(int argc, char* argv[]) {
     const char* api_spec_path = NULL;
+    bool background_mode = false;
+    bool no_timers_mode = false;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--log") == 0) {
             g_logging_enabled = true;
+        } else if (strcmp(argv[i], "--background") == 0) {
+            background_mode = true;
+        } else if (strcmp(argv[i], "--no-timers") == 0) {
+            no_timers_mode = true;
         } else if (strcmp(argv[i], "--trace-sim-no-time") == 0) {
             g_ui_sim_trace_enabled = true;
             g_ui_sim_trace_no_time_enabled = true;
@@ -340,6 +540,9 @@ int main(int argc, char* argv[]) {
 
     if (g_logging_enabled) {
         fprintf(stderr, "SERVER_LOG: LVGL VSCode Server started successfully.\n");
+    } else if (background_mode) {
+        // Minimal startup message for background mode
+        fprintf(stderr, "SERVER_LOG: LVGL VSCode Server started in background mode.\n");
     }
 
     struct timeval last_tick_tv;
@@ -350,8 +553,13 @@ int main(int argc, char* argv[]) {
         // This might run continuously, better to cap FPS as below.
         //uint32_t wait_ms = lv_timer_get_idle();
 
-        // Cap FPS.
-        uint32_t wait_ms = (1000 / RENDER_FPS);
+        // Cap FPS. In no-timers/background mode use a long idle to save CPU.
+        uint32_t wait_ms;
+        if (no_timers_mode) {
+            wait_ms = 5000; // 5s
+        } else {
+            wait_ms = (1000 / RENDER_FPS);
+        }
         if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Loop start. Waiting for input or timeout (idle: %u ms)...\n", wait_ms);
 
         fd_set readfds;
@@ -384,9 +592,12 @@ int main(int argc, char* argv[]) {
                           (now_tv.tv_usec - last_tick_tv.tv_usec) / 1000;
         if (elapsed_ms > 0) {
             if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Elapsed time: %ld ms. Advancing ticks.\n", elapsed_ms);
+            // Always advance LVGL ticks even in no-timers mode so timers don't stall
             lv_tick_inc(elapsed_ms);
-            // ADDED: Drive the UI simulator forward
-            ui_sim_tick((float)elapsed_ms / 1000.0f);
+            if (!no_timers_mode) {
+                // Drive the UI simulator forward when timers are active
+                ui_sim_tick((float)elapsed_ms / 1000.0f);
+            }
         }
         last_tick_tv = now_tv;
 
@@ -439,9 +650,13 @@ int main(int argc, char* argv[]) {
         }
 
         // --- 4. Drive LVGL's internal state forward ---
-        if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Loop end. Calling lv_timer_handler().\n");
-        // This will call flush_cb if a redraw is needed.
-        lv_timer_handler();
+        if (!no_timers_mode) {
+            if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Loop end. Calling lv_timer_handler().\n");
+            // This will call flush_cb if a redraw is needed.
+            lv_timer_handler();
+        } else {
+            if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Loop end. Skipping lv_timer_handler() because no-timers mode is active.\n");
+        }
     }
 
     // Cleanup
