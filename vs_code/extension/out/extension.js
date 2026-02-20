@@ -29,6 +29,7 @@ let renderTimeout;
 let currentResolution = { width: 480, height: 320 };
 // This holds the active trace setting for the current preview session.
 let traceSimEnabled = false;
+let apiSpec = null;
 function activate(context) {
     outputChannel = vscode.window.createOutputChannel("LVGL UI Preview");
     logChannel = vscode.window.createOutputChannel("LVGL UI Preview LOG");
@@ -86,6 +87,20 @@ function activate(context) {
             setupPreviewPanel(context); // This will call startServerProcess internally
         }
     });
+    // Load bundled api_spec.json for semantic completions (best-effort)
+    try {
+        const bundled = path.join(context.extensionPath, 'bin', 'api_spec.json');
+        if (fs.existsSync(bundled)) {
+            const raw = fs.readFileSync(bundled, 'utf8');
+            apiSpec = JSON.parse(raw);
+            if (LOGGING_ENABLED)
+                logChannel.appendLine('[EXT] Loaded api_spec.json for completions.');
+        }
+    }
+    catch (e) {
+        // ignore parse errors
+        apiSpec = null;
+    }
     vscode.workspace.onDidChangeTextDocument(event => {
         if (previewPanel && event.document.uri.toString() === previewedDocumentUri?.toString()) {
             const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === previewedDocumentUri?.toString());
@@ -95,7 +110,226 @@ function activate(context) {
             }
         }
     });
-    context.subscriptions.push(disposable, outputChannel);
+    const parseDefinedNodes = (doc) => {
+        const res = [];
+        const lineCount = doc.lineCount;
+        for (let i = 0; i < lineCount; i++) {
+            const line = doc.lineAt(i).text;
+            const idMatch = line.match(/id\s*:\s*["']?(@?[A-Za-z0-9_\-]+)["']?/);
+            if (idMatch) {
+                const id = idMatch[1];
+                const indentMatch = line.match(/^(\s*)/);
+                const indent = indentMatch ? indentMatch[1] : '';
+                // look backward up to 6 lines for a `type:` declaration
+                let type;
+                for (let b = 1; b <= 6; b++) {
+                    const ln = i - b;
+                    if (ln < 0)
+                        break;
+                    const l = doc.lineAt(ln).text;
+                    const t = l.match(/type\s*:\s*([A-Za-z0-9_\-]+)/);
+                    if (t) {
+                        type = t[1];
+                        break;
+                    }
+                }
+                // look forward up to 6 lines for an `info:` sibling at equal or greater indent
+                let info;
+                for (let f = 1; f <= 6; f++) {
+                    const ln = i + f;
+                    if (ln >= lineCount)
+                        break;
+                    const l = doc.lineAt(ln).text;
+                    const infoMatch = l.match(/info\s*:\s*["']?(.*?)["']?\s*$/);
+                    if (infoMatch) {
+                        info = infoMatch[1];
+                        break;
+                    }
+                    // stop scanning forward if we hit a line that dedents beyond the node
+                    const lIndentMatch = l.match(/^(\s*)/);
+                    const lIndent = lIndentMatch ? lIndentMatch[1] : '';
+                    if (lIndent.length < indent.length)
+                        break;
+                }
+                res.push({ id, type, info, line: i, indent });
+            }
+        }
+        // dedupe by id keeping first occurrence
+        const seen = new Set();
+        return res.filter(n => {
+            if (seen.has(n.id))
+                return false;
+            seen.add(n.id);
+            return true;
+        });
+    };
+    const makeContextBlock = (indent) => {
+        const ind = indent + '  ';
+        return '\n' + indent + 'context:\n' +
+            ind + 'axis: X\n' +
+            ind + 'abs_pos:\n' +
+            ind + 'wcs_pos:\n' +
+            ind + 'delta_pos:\n' +
+            ind + 'homed_state:\n' +
+            ind + 'selected_state:\n' +
+            ind + 'home_action:\n' +
+            ind + 'wcs_state:\n' +
+            ind + 'pos_state:\n' +
+            ind + 'delta_pos_state:\n';
+    };
+    const completionProvider = vscode.languages.registerCompletionItemProvider('yaml', {
+        provideCompletionItems(document, position) {
+            const line = document.lineAt(position).text;
+            const linePrefix = line.substr(0, position.character);
+            const items = [];
+            const defined = parseDefinedNodes(document);
+            // 1) add_style completions: suggest all style ids (defined ids)
+            if (/add_style\s*:\s*\[?[^\]]*$/.test(linePrefix) || /add_style\s*:/.test(line)) {
+                defined.forEach(node => {
+                    const displayId = node.id.startsWith('@') ? node.id : '@' + node.id;
+                    const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Value);
+                    // replace token under cursor (avoid double @)
+                    const wordRange = document.getWordRangeAtPosition(position, /@?[A-Za-z0-9_\-]+/);
+                    const start = wordRange ? wordRange.start : position;
+                    const end = wordRange ? wordRange.end : position;
+                    it.textEdit = vscode.TextEdit.replace(new vscode.Range(start, end), displayId);
+                    it.detail = node.info ? (node.info.length > 80 ? node.info.substr(0, 77) + '...' : node.info) : 'Defined style id';
+                    if (node.info)
+                        it.documentation = new vscode.MarkdownString(node.info);
+                    items.push(it);
+                });
+                return items;
+            }
+            // 1b) type: completions using api_spec (widget/object types)
+            if (/\btype\s*:\s*[A-Za-z0-9_\-]*$/.test(linePrefix) && apiSpec) {
+                // collect candidate types from apiSpec: keys that look like object definitions
+                const types = Object.keys(apiSpec).filter(k => {
+                    const v = apiSpec[k];
+                    return v && typeof v === 'object' && (v.properties || v.create || v.methods || v.inherits);
+                }).sort();
+                types.forEach(t => {
+                    const it = new vscode.CompletionItem(t, vscode.CompletionItemKind.Class);
+                    it.insertText = t;
+                    it.detail = 'LVGL API type';
+                    items.push(it);
+                });
+                return items;
+            }
+            // 2) Completing id for use-view: only show component ids (exclude use-view) and insert context AFTER completion
+            if (/\b(id)\s*:\s*@?[A-Za-z0-9_\-]*$/.test(linePrefix)) {
+                // scan backwards a few lines to ensure we are inside a `type: use-view` node
+                let insideUseView = false;
+                for (let b = 0; b < 8; b++) {
+                    const ln = position.line - b;
+                    if (ln < 0)
+                        break;
+                    const l = document.lineAt(ln).text;
+                    if (/type\s*:\s*use-view/.test(l)) {
+                        insideUseView = true;
+                        break;
+                    }
+                    // stop if we hit another top-level entry
+                    if (/^\s*[-]?\s*type\s*:\s*/.test(l) && !/use-view/.test(l))
+                        break;
+                }
+                if (insideUseView) {
+                    // only include defined nodes that are not use-view (i.e., real components)
+                    // and prefer those whose `type` exists in the loaded apiSpec (if available)
+                    defined.filter(n => !(n.type && n.type.toLowerCase() === 'use-view'))
+                        .filter(n => {
+                        if (!apiSpec)
+                            return true; // no spec, allow all
+                        if (!n.type)
+                            return true; // unknown type, allow
+                        return !!apiSpec[n.type];
+                    })
+                        .forEach(node => {
+                        const displayId = node.id.startsWith('@') ? node.id : '@' + node.id;
+                        const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Reference);
+                        const wordRange = document.getWordRangeAtPosition(position, /@?[A-Za-z0-9_\-]+/);
+                        const start = wordRange ? wordRange.start : position;
+                        const end = wordRange ? wordRange.end : position;
+                        it.textEdit = vscode.TextEdit.replace(new vscode.Range(start, end), displayId);
+                        it.detail = node.info ? (node.info.length > 80 ? node.info.substr(0, 77) + '...' : node.info) : 'Component id';
+                        if (node.info)
+                            it.documentation = new vscode.MarkdownString(node.info);
+                        // instead of additionalTextEdits (which apply before the main edit), invoke a command AFTER completion
+                        it.command = {
+                            command: 'lvgl-ui.insertUseViewContext',
+                            title: 'Insert use-view context',
+                            arguments: [document.uri, position.line, node.indent]
+                        };
+                        items.push(it);
+                    });
+                    return items;
+                }
+            }
+            // 3) Hints/snippets for observes: and action:
+            if (/\bobserves\s*:\s*$/.test(linePrefix)) {
+                const snippet = new vscode.CompletionItem('observes: example', vscode.CompletionItemKind.Snippet);
+                snippet.insertText = new vscode.SnippetString('observes:\n  subject|prop: {\n    true: value,\n    default: null\n  }');
+                snippet.detail = 'Example observes syntax';
+                items.push(snippet);
+                return items;
+            }
+            if (/\baction\s*:\s*$/.test(linePrefix) || /\bactions?\s*:\s*$/.test(linePrefix)) {
+                const snippet = new vscode.CompletionItem('action: example', vscode.CompletionItemKind.Snippet);
+                snippet.insertText = new vscode.SnippetString('action: { service|method: trigger }');
+                snippet.detail = 'Example action syntax';
+                items.push(snippet);
+                return items;
+            }
+            return undefined;
+        }
+    }, '@', ':', ' ');
+    const hoverProvider = vscode.languages.registerHoverProvider('yaml', {
+        provideHover(document, position) {
+            const wordRange = document.getWordRangeAtPosition(position, /[A-Za-z_\-]+/);
+            if (!wordRange)
+                return undefined;
+            const word = document.getText(wordRange);
+            if (word === 'observes' || word === 'observes:') {
+                const md = new vscode.MarkdownString();
+                md.appendMarkdown('`observes:` — declarative binding that maps observable states to UI changes.\n\nExample:\n');
+                md.appendCodeblock('observes:\n  program|status: { disabled: { RUNNING: true, default: false } }', 'yaml');
+                return new vscode.Hover(md);
+            }
+            if (word === 'action' || word === 'actions' || word === 'action:') {
+                const md = new vscode.MarkdownString();
+                md.appendMarkdown('`action:` — triggers a service or command from the UI.\n\nExample:\n');
+                md.appendCodeblock('action: { jog|move|x_plus: trigger }', 'yaml');
+                return new vscode.Hover(md);
+            }
+            return undefined;
+        }
+    });
+    // register a command that inserts the context block AFTER the id was completed
+    const insertContextCommand = vscode.commands.registerCommand('lvgl-ui.insertUseViewContext', async (uri, idLine, indent) => {
+        try {
+            const doc = await vscode.workspace.openTextDocument(uri);
+            // check whether a `context:` already exists within the next 16 lines after the id line
+            const maxLook = Math.min(doc.lineCount - 1, idLine + 16);
+            for (let i = idLine + 1; i <= maxLook; i++) {
+                const l = doc.lineAt(i).text;
+                if (/^\s*context\s*:/.test(l))
+                    return; // already present
+                // if we hit a line that dedents below the id's indent, stop searching
+                const lIndent = (l.match(/^(\s*)/) || ['', ''])[1];
+                if (lIndent.length < indent.length)
+                    break;
+            }
+            const editor = await vscode.window.showTextDocument(doc, { preview: false });
+            const insertPos = new vscode.Position(idLine + 1, 0);
+            const text = makeContextBlock(indent);
+            await editor.edit(editBuilder => {
+                editBuilder.insert(insertPos, text);
+            });
+        }
+        catch (e) {
+            // ignore errors silently
+        }
+    });
+    context.subscriptions.push(disposable, outputChannel, completionProvider, hoverProvider, insertContextCommand);
 }
 function setupPreviewPanel(context) {
     if (!previewPanel)
