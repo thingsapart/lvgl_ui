@@ -89,7 +89,7 @@ class CCodeGenerator:
             if not t:
                 return 'void'
             # If this node is a wrapper with a 'type' child, unwrap
-            if isinstance(t, dict) and 'type' in t and isinstance(t['type'], dict) and t.get('json_type') not in ('lvgl_type', 'primitive_type'):
+            if isinstance(t, dict) and 'type' in t and isinstance(t['type'], dict) and t.get('json_type') not in ('lvgl_type', 'primitive_type', 'stdlib_type'):
                 return _type_to_c(t['type'])
             if isinstance(t, dict):
                 jt = t.get('json_type')
@@ -101,7 +101,7 @@ class CCodeGenerator:
                 if jt == 'array':
                     inner = _type_to_c(t.get('type'))
                     return inner + '*'
-                if jt in ('primitive_type', 'lvgl_type', 'ret_type'):
+                if jt in ('primitive_type', 'lvgl_type', 'ret_type', 'stdlib_type'):
                     name = t.get('name') or t.get('type', {}).get('name') if isinstance(t.get('type'), dict) else t.get('name')
                     quals = t.get('quals') or []
                     prefix = ' '.join(q for q in quals if q in ('const', 'volatile'))
