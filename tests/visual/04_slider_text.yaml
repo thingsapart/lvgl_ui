@@ -1,0 +1,10 @@
+- type: slider
+  id: '@slider'
+  width: 200
+  style_outline_width: [2, 0]
+  style_outline_color: ['#ff0000', 0]
+  style_outline_opa: [138, 0]
+  center: []
+- type: label
+  text: '1'
+  align_to: ['@slider', LV_ALIGN_OUT_TOP_MID, 0, -25]
