@@ -32,6 +32,8 @@ let currentResolution = { width: 480, height: 320 };
 // This holds the active trace setting for the current preview session.
 let traceSimEnabled = false;
 let apiSpec = null;
+const shorten = (s, n = 80) => { if (!s)
+    return ''; return s.length > n ? s.substr(0, n - 3) + '...' : s; };
 function activate(context) {
     outputChannel = vscode.window.createOutputChannel("LVGL UI Preview");
     logChannel = vscode.window.createOutputChannel("LVGL UI Preview LOG");
@@ -208,6 +210,29 @@ function activate(context) {
             return true;
         });
     };
+    // Parse any context-style variables in the document. We accept occurrences of
+    // `$name` or `$name/description text...` (doc runs until end of line). The
+    // first seen doc for a name is kept.
+    const parseContextVariables = (doc) => {
+        const map = new Map();
+        for (let i = 0; i < doc.lineCount; i++) {
+            const line = doc.lineAt(i).text;
+            // find all $vars in the line
+            const re = /(\$[A-Za-z0-9_]+)(?:\/(.*))?/g;
+            let m;
+            while ((m = re.exec(line)) !== null) {
+                const raw = m[1];
+                const name = raw.substring(1);
+                const docstr = m[2] ? m[2].trim() : undefined;
+                if (!map.has(name))
+                    map.set(name, docstr);
+            }
+        }
+        const out = [];
+        for (const [k, v] of map)
+            out.push({ name: k, doc: v });
+        return out;
+    };
     const makeContextBlock = (indent) => {
         const ind = indent + '  ';
         return '\n' + indent + 'context:\n' +
@@ -230,18 +255,42 @@ function activate(context) {
                 logChannel.appendLine(`[COMP] provideCompletionItems pos=${position.line}:${position.character} prefix="${linePrefix.replace(/\n/g, '')}"`);
             const items = [];
             const defined = parseDefinedNodes(document);
+            // 0) Context variable completions when typing a `$` token
+            if (/\$[A-Za-z0-9_]*$/.test(linePrefix)) {
+                const vars = parseContextVariables(document);
+                if (vars.length === 0)
+                    return undefined;
+                const wordRange = document.getWordRangeAtPosition(position, /\$[A-Za-z0-9_]*/);
+                const start = wordRange ? wordRange.start : position;
+                const end = wordRange ? wordRange.end : position;
+                vars.forEach(v => {
+                    const display = '$' + v.name + (v.doc ? ' — ' + shorten(v.doc, 60) : '');
+                    const it = new vscode.CompletionItem(display, vscode.CompletionItemKind.Variable);
+                    // ensure insertion is only the $name plus doc if present
+                    it.insertText = v.doc ? ('$' + v.name + '/' + v.doc) : ('$' + v.name);
+                    it.textEdit = vscode.TextEdit.replace(new vscode.Range(start, end), it.insertText);
+                    if (v.doc)
+                        it.detail = shorten(v.doc, 120);
+                    if (v.doc)
+                        it.documentation = new vscode.MarkdownString(v.doc);
+                    items.push(it);
+                });
+                return items;
+            }
             // 1) add_style completions: suggest all style ids (defined ids)
             if (/add_style\s*:\s*\[?[^\]]*$/.test(linePrefix) || /add_style\s*:/.test(line)) {
                 // Only suggest ids that are declared as styles (type: style)
                 defined.filter(n => n.type && n.type.toLowerCase() === 'style').forEach(node => {
                     const displayId = node.id.startsWith('@') ? node.id : '@' + node.id;
-                    const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Value);
+                    const label = displayId + (node.info ? ' — ' + shorten(node.info, 60) : '');
+                    const it = new vscode.CompletionItem(label, vscode.CompletionItemKind.Value);
                     // replace token under cursor (avoid double @)
                     const wordRange = document.getWordRangeAtPosition(position, /@?[A-Za-z0-9_\-]+/);
                     const start = wordRange ? wordRange.start : position;
                     const end = wordRange ? wordRange.end : position;
                     it.textEdit = vscode.TextEdit.replace(new vscode.Range(start, end), displayId);
-                    it.detail = node.info ? (node.info.length > 80 ? node.info.substr(0, 77) + '...' : node.info) : 'Defined style id';
+                    it.insertText = displayId;
+                    it.detail = node.info ? shorten(node.info, 120) : 'Defined style id';
                     if (node.info)
                         it.documentation = new vscode.MarkdownString(node.info);
                     items.push(it);
@@ -324,12 +373,14 @@ function activate(context) {
                     defined.filter(n => n.type && n.type.toLowerCase() === 'component')
                         .forEach(node => {
                         const displayId = node.id.startsWith('@') ? node.id : '@' + node.id;
-                        const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Reference);
+                        const label = displayId + (node.info ? ' — ' + shorten(node.info, 60) : '');
+                        const it = new vscode.CompletionItem(label, vscode.CompletionItemKind.Reference);
                         const wordRange = document.getWordRangeAtPosition(position, /@?[A-Za-z0-9_\-]+/);
                         const start = wordRange ? wordRange.start : position;
                         const end = wordRange ? wordRange.end : position;
                         it.textEdit = vscode.TextEdit.replace(new vscode.Range(start, end), displayId);
-                        it.detail = node.info ? (node.info.length > 80 ? node.info.substr(0, 77) + '...' : node.info) : 'Component id';
+                        it.insertText = displayId;
+                        it.detail = node.info ? shorten(node.info, 120) : 'Component id';
                         if (node.info)
                             it.documentation = new vscode.MarkdownString(node.info);
                         it.command = {
@@ -359,7 +410,7 @@ function activate(context) {
             }
             return undefined;
         }
-    }, '@', ':', ' ');
+    }, '@', ':', ' ', '$');
     const hoverProvider = vscode.languages.registerHoverProvider('yaml', {
         provideHover(document, position) {
             const wordRange = document.getWordRangeAtPosition(position, /[A-Za-z_\-]+/);
@@ -702,7 +753,9 @@ function startServerProcess(context, allowWithoutPreview = false) {
                             const items = [];
                             json.components.forEach((c) => {
                                 const displayId = c.id && c.id.startsWith('@') ? c.id : ('@' + c.id);
-                                const it = new vscode.CompletionItem(displayId, vscode.CompletionItemKind.Reference);
+                                const label = displayId + (c.info ? ' — ' + shorten(c.info, 60) : '');
+                                const it = new vscode.CompletionItem(label, vscode.CompletionItemKind.Reference);
+                                it.insertText = displayId;
                                 it.detail = c.info || 'component';
                                 if (c.info)
                                     it.documentation = new vscode.MarkdownString(c.info);

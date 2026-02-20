@@ -285,8 +285,18 @@ static cJSON* process_context_keys_recursive(const cJSON* source_json, const cJS
             const char* final_key = original_key;
 
             if (original_key && original_key[0] == '$') {
-                const char* var_name = original_key + 1;
-                cJSON* context_val_item = cJSON_GetObjectItem(context, var_name);
+                // Support new syntax `$name/doc-info` where a slash introduces
+                // an inline doc string. For lookup we strip the slash and the
+                // trailing doc so that `$foo/description` maps to context key
+                // `foo`.
+                const char* raw = original_key + 1;
+                const char* slash = strchr(raw, '/');
+                size_t varlen = slash ? (size_t)(slash - raw) : strlen(raw);
+                char varbuf[256];
+                if (varlen >= sizeof(varbuf)) varlen = sizeof(varbuf) - 1;
+                memcpy(varbuf, raw, varlen);
+                varbuf[varlen] = '\0';
+                cJSON* context_val_item = cJSON_GetObjectItem(context, varbuf);
                 if (context_val_item && cJSON_IsString(context_val_item)) {
                     final_key = context_val_item->valuestring;
                 }
@@ -931,11 +941,20 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             }
         }
         else if (s[0] == '$') {
-            const char* var_name = s + 1;
+            // Support $name and $name/doc-info. When a '/' is present we
+            // only use the prefix before the slash for lookup in the ui
+            // context. The trailing doc-info is ignored by the generator.
+            const char* raw = s + 1;
+            const char* slash = strchr(raw, '/');
+            size_t varlen = slash ? (size_t)(slash - raw) : strlen(raw);
+            char varbuf[256];
+            if (varlen >= sizeof(varbuf)) varlen = sizeof(varbuf) - 1;
+            memcpy(varbuf, raw, varlen);
+            varbuf[varlen] = '\0';
             const cJSON* context_val_json = NULL;
 
             if (ui_context && cJSON_IsObject(ui_context)) {
-                 context_val_json = cJSON_GetObjectItem(ui_context, var_name);
+                 context_val_json = cJSON_GetObjectItem(ui_context, varbuf);
             }
 
             if (context_val_json) {
@@ -943,7 +962,7 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             } else {
                 if (ir_obj_for_warnings) {
                     char warning_msg[128];
-                    snprintf(warning_msg, sizeof(warning_msg), "Context variable '%s' not found.", s);
+                    snprintf(warning_msg, sizeof(warning_msg), "Context variable '%s' not found.", varbuf);
                     ir_operation_list_add(&ir_obj_for_warnings->operations, (IRNode*)ir_new_warning(warning_msg));
                 }
                 // Fall through to treat as a literal string if not found

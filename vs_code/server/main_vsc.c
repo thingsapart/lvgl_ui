@@ -267,16 +267,30 @@ static void collect_context_vars_recursive(const cJSON* node, const cJSON* root_
     if (cJSON_IsObject(node)) {
         cJSON* item = NULL;
         cJSON_ArrayForEach(item, (cJSON*)node) {
-            // If key starts with '$', add var name
+            // If key starts with '$', add var name and optional doc (after first '/')
             if (item->string && item->string[0] == '$') {
-                const char* var = item->string + 1;
-                // Add only unique
+                const char* raw = item->string + 1;
+                const char* slash = strchr(raw, '/');
+                size_t namelen = slash ? (size_t)(slash - raw) : strlen(raw);
+                char namebuf[256]; if (namelen >= sizeof(namebuf)) namelen = sizeof(namebuf)-1;
+                memcpy(namebuf, raw, namelen); namebuf[namelen] = '\0';
+                const char* docstr = (slash && slash[1]) ? slash + 1 : NULL;
+
+                // Add only unique by name
                 bool found = false;
                 cJSON* it = NULL;
                 cJSON_ArrayForEach(it, collector) {
-                    if (cJSON_IsString(it) && strcmp(it->valuestring, var) == 0) { found = true; break; }
+                    if (cJSON_IsObject(it)) {
+                        cJSON* nm = cJSON_GetObjectItemCaseSensitive(it, "name");
+                        if (nm && cJSON_IsString(nm) && strcmp(nm->valuestring, namebuf) == 0) { found = true; break; }
+                    } else if (cJSON_IsString(it) && strcmp(it->valuestring, namebuf) == 0) { found = true; break; }
                 }
-                if (!found) cJSON_AddItemToArray(collector, cJSON_CreateString(var));
+                if (!found) {
+                    cJSON* obj = cJSON_CreateObject();
+                    cJSON_AddStringToObject(obj, "name", namebuf);
+                    if (docstr) cJSON_AddStringToObject(obj, "doc", docstr);
+                    cJSON_AddItemToArray(collector, obj);
+                }
             }
             // If this is a use-view, resolve subcomponent and recurse
             if (item->string && strcmp(item->string, "type") == 0 && cJSON_IsString(item) && strcmp(item->valuestring, "use-view") == 0) {
@@ -339,13 +353,26 @@ static void collect_context_vars_recursive(const cJSON* node, const cJSON* root_
             }
             if (bi > 0) {
                 buf[bi] = '\0';
-                // add unique
+                const char* doc = NULL;
+                // if next char is '/', the rest of the string is the doc-info
+                if (*p == '/') {
+                    doc = p + 1; // rest of string
+                }
+                // add unique (by name)
                 bool found = false;
                 cJSON* it = NULL;
                 cJSON_ArrayForEach(it, collector) {
-                    if (cJSON_IsString(it) && strcmp(it->valuestring, buf) == 0) { found = true; break; }
+                    if (cJSON_IsObject(it)) {
+                        cJSON* nm = cJSON_GetObjectItemCaseSensitive(it, "name");
+                        if (nm && cJSON_IsString(nm) && strcmp(nm->valuestring, buf) == 0) { found = true; break; }
+                    } else if (cJSON_IsString(it) && strcmp(it->valuestring, buf) == 0) { found = true; break; }
                 }
-                if (!found) cJSON_AddItemToArray(collector, cJSON_CreateString(buf));
+                if (!found) {
+                    cJSON* obj = cJSON_CreateObject();
+                    cJSON_AddStringToObject(obj, "name", buf);
+                    if (doc && *doc) cJSON_AddStringToObject(obj, "doc", doc);
+                    cJSON_AddItemToArray(collector, obj);
+                }
             }
         }
     }
@@ -400,7 +427,7 @@ static void handle_completions_command(cJSON* payload, ApiSpec* api_spec) {
 
         // build context snippet
         if (cJSON_GetArraySize(vars) > 0) {
-            // build simple YAML snippet (no indent)
+            // build simple YAML snippet (no indent) and prefill values with doc if present
             size_t buf_sz = 1024;
             char* buf = malloc(buf_sz);
             if (buf) {
@@ -408,11 +435,24 @@ static void handle_completions_command(cJSON* payload, ApiSpec* api_spec) {
                 strcat(buf, "context:\n");
                 cJSON* it = NULL;
                 cJSON_ArrayForEach(it, vars) {
-                    if (cJSON_IsString(it)) {
-                        size_t need = strlen(buf) + strlen("  :\n") + strlen(it->valuestring) + 2;
-                        if (need > buf_sz) { buf_sz = need + 256; buf = realloc(buf, buf_sz); }
-                        strcat(buf, "  "); strcat(buf, it->valuestring); strcat(buf, ":\n");
+                    const char* name = NULL;
+                    const char* doc = NULL;
+                    if (cJSON_IsObject(it)) {
+                        cJSON* nm = cJSON_GetObjectItemCaseSensitive(it, "name");
+                        cJSON* dc = cJSON_GetObjectItemCaseSensitive(it, "doc");
+                        if (nm && cJSON_IsString(nm)) name = nm->valuestring;
+                        if (dc && cJSON_IsString(dc)) doc = dc->valuestring;
+                    } else if (cJSON_IsString(it)) {
+                        name = it->valuestring;
                     }
+                    if (!name) continue;
+                    // Prepare line: either "  name: doc\n" or "  name:\n"
+                    const char* value_part = doc ? doc : "";
+                    size_t need = strlen(buf) + strlen("  :\n") + strlen(name) + strlen(value_part) + 4;
+                    if (need > buf_sz) { buf_sz = need + 256; buf = realloc(buf, buf_sz); }
+                    strcat(buf, "  "); strcat(buf, name); strcat(buf, ":");
+                    if (doc) { strcat(buf, " "); strcat(buf, doc); }
+                    strcat(buf, "\n");
                 }
                 cJSON_AddStringToObject(comp_obj, "context_snippet", buf);
                 free(buf);
