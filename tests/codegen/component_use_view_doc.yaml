@@ -1,0 +1,14 @@
+- type: component
+  id: "@my_comp_doc"
+  content:
+    type: obj
+    children:
+      - type: label
+        text: "$label/Default label text for docs"
+- type: obj
+  id: main_view_doc
+  children:
+    - type: use-view
+      id: "@my_comp_doc"
+      context:
+        label: "Replaced by context"

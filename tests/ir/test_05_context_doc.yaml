@@ -1,0 +1,7 @@
+- type: obj
+  id: '@my_obj'
+  context:
+    w: 100
+    h: 100
+  size: ["$w/this is a doc for s", "$h/height"]
+
