@@ -173,7 +173,16 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_ma
         case IR_EXPR_LITERAL: {
             IRExprLiteral* lit = (IRExprLiteral*)expr;
             if (lit->is_string) {
-                print_c_string_literal(lit->value, lit->len);
+                /* Special-case: treat the exact string "NULL" as the C NULL
+                 * sentinel when emitting generated C code so callers can
+                 * pass a null pointer using the literal 'NULL' (quoted in
+                 * YAML) without forcing the generator to coerce all numeric
+                 * strings. */
+                if (lit->value && strcmp(lit->value, "NULL") == 0) {
+                    printf("NULL");
+                } else {
+                    print_c_string_literal(lit->value, lit->len);
+                }
             } else {
                 printf("%s", lit->value);
             }

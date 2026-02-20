@@ -3,21 +3,23 @@
   state:
     # -- Machine State --
     - time: 0.0
-    - machine_mode: [string, "IDLE"] # IDLE, AUTO, JOG, MDI, HOMING, ALARM
-    - program_running: false
-    - program_paused: false
-    - spindle_on: false
+    - machine.status_text: [string, "IDLE"] # IDLE, AUTO, JOG, MDI, HOMING, ALARM
+    - machine.program_is_running: false
+    - machine.program_is_paused: false
+    - spindle.is_on: false
     - coolant_on: false
     - homing_axis_x: false # True if X axis homing is in progress
     - homing_axis_y: false # True if Y axis homing is in progress
     - homing_axis_z: false # True if Z axis homing is in progress
-    - x_is_homed: false
-    - y_is_homed: false
-    - z_is_homed: false
+    - motion.homed.x: false
+    - motion.homed.y: false
+    - motion.homed.z: false
 
     # -- Step --
-    - jog_step_xy: [float, 1.0]
-    - jog_step_z: [float, 1.0]
+    - motion.jog.step_xy: [float, 1.0]
+    - motion.jog.step_z: [float, 1.0]
+
+    - motion.jog.axis_selected_str: [string, "Off"]
 
     # -- Program Execution --
     - program_elapsed_time: 0.0
@@ -32,8 +34,11 @@
     - delta_pos_y: 0.0
     - delta_pos_z: 0.0
 
+    # -- UI --
+    - ui.active_tile_index: 0 # 0=Main, 1=Probe-View, 2=Probe-Wiz
+
     # -- Work Coordinate Systems (WCS) --
-    - wcs_name: [string, "G54"] # Active WCS
+    - motion.wcs.active_name: [string, "G54"] # Active WCS
     - wcs54_x_zero: 20.5
     - wcs54_y_zero: 17.2
     - wcs54_z_zero: 10.0
@@ -51,11 +56,11 @@
 
     # -- Overrides --
     - jog_speed: 10.0
-    - feed_override: 1.0
+    - overrides.feed_pct: 1.0
     - feed_max: 5000.0
-    - feed: 0.0
+    - motion.feedrate_current: 0.0
     - speed_override: 1.0
-    - spindle_rpm: 0.0
+    - spindle.speed_rpm: 0.0
     - spindle_rpm_max: 10000.0
 
     # -- Tool --
@@ -70,14 +75,14 @@
     - probe_ov: 2
     - probe_cl: 5
 
-    - x_is_active: true
-    - y_is_active: false
-    - z_is_active: false
+    - motion.jog.axis_is_x: true
+    - motion.jog.axis_is_y: false
+    - motion.jog.axis_is_z: false
 
     # -------------------
     # -- DERIVED STATE --
     # -------------------
-    - feed_override_pct:
+    - overrides.feed_pct:
       derived_expr: [mul, 100.0, feed_override]
     - speed_override_pct:
       derived_expr: [mul, 100.0, speed_override]
@@ -85,9 +90,9 @@
         derived_expr:
           case:
             - [[==, machine_mode, "HOMING"], "HOMING..."]
-            - [program_paused, "PAUSED"]
-            - [program_running, "RUNNING"]
-            - [spindle_on, "SPINDLE ON"]
+            - [machine.program_is_paused, "PAUSED"]
+            - [machine.program_is_running, "RUNNING"]
+            - [spindle.is_on, "SPINDLE ON"]
             - [true, "IDLE"]
 
     - program_progress:
@@ -95,33 +100,33 @@
           [clamp, [mul, [div, program_elapsed_time, program_total_time], 100], 0, 100]
 
     # -- Display Positions (Show 9999.99 if not homed) --
-    - display_pos_x: { derived_expr: { case: [[[or, x_is_homed, homing_axis_x], pos_x], [true, 9999.99]] } }
-    - display_pos_y: { derived_expr: { case: [[[or, y_is_homed, homing_axis_y], pos_y], [true, 9999.99]] } }
-    - display_pos_z: { derived_expr: { case: [[[or, z_is_homed, homing_axis_z], pos_z], [true, 9999.99]] } }
+    - motion.position.machine_x: { derived_expr: { case: [[[or, motion.homed.x, homing_axis_x], pos_x], [true, 9999.99]] } }
+    - motion.position.machine_y: { derived_expr: { case: [[[or, motion.homed.y, homing_axis_y], pos_y], [true, 9999.99]] } }
+    - motion.position.machine_z: { derived_expr: { case: [[[or, motion.homed.z, homing_axis_z], pos_z], [true, 9999.99]] } }
 
-    - display_wcs_pos_x_: { derived_expr: { case: [[x_is_homed, [sub, pos_x, [case, [[[==, wcs_name, "G54"], wcs54_x_zero], [true, wcs55_x_zero]]]]], [true, 9999.99]] } }
-    - display_wcs_pos_y_: { derived_expr: { case: [[y_is_homed, [sub, pos_y, [case, [[[==, wcs_name, "G54"], wcs54_y_zero], [true, wcs55_y_zero]]]]], [true, 9999.99]] } }
-    - display_wcs_pos_z_: { derived_expr: { case: [[z_is_homed, [sub, pos_z, [case, [[[==, wcs_name, "G54"], wcs54_z_zero], [true, wcs55_z_zero]]]]], [true, 9999.99]] } }
+    - motion.position.work_x_: { derived_expr: { case: [[motion.homed.x, [sub, pos_x, [case, [[[==, wcs_name, "G54"], wcs54_x_zero], [true, wcs55_x_zero]]]]], [true, 9999.99]] } }
+    - motion.position.work_y_: { derived_expr: { case: [[motion.homed.y, [sub, pos_y, [case, [[[==, wcs_name, "G54"], wcs54_y_zero], [true, wcs55_y_zero]]]]], [true, 9999.99]] } }
+    - motion.position.work_z_: { derived_expr: { case: [[motion.homed.z, [sub, pos_z, [case, [[[==, wcs_name, "G54"], wcs54_z_zero], [true, wcs55_z_zero]]]]], [true, 9999.99]] } }
 
-    - display_wcs_pos_x: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_x, wcs54_x_zero]], [true, [sub, pos_x, wcs55_x_zero]]] }  }
-    - display_wcs_pos_y: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_y, wcs54_y_zero]], [true, [sub, pos_y, wcs55_y_zero]]] } }
-    - display_wcs_pos_z: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_z, wcs54_z_zero]], [true, [sub, pos_z, wcs55_z_zero]]] } }
+    - motion.position.work_x: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_x, wcs54_x_zero]], [true, [sub, pos_x, wcs55_x_zero]]] }  }
+    - motion.position.work_y: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_y, wcs54_y_zero]], [true, [sub, pos_y, wcs55_y_zero]]] } }
+    - motion.position.work_z: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_z, wcs54_z_zero]], [true, [sub, pos_z, wcs55_z_zero]]] } }
 
     # -- Derived Delta Position / Distance To Go (Simulated) --
     - delta_pos_x:
         derived_expr:
           case:
-            - [program_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 7.3]]]]]
+            - [machine.program_is_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 7.3]]]]]
             - [true, 0.0]
     - delta_pos_y:
         derived_expr:
           case:
-            - [program_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 8.1]]]]]
+            - [machine.program_is_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 8.1]]]]]
             - [true, 0.0]
     - delta_pos_z:
         derived_expr:
           case:
-            - [program_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 6.5]]]]]
+            - [machine.program_is_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 6.5]]]]]
             - [true, 0.0]
 
     # Chipload
@@ -131,42 +136,42 @@
     - chipload_disp:
         derived_expr:
           case:
-            - [program_running, [add, 0, [mul, [div, [sub, chipload, chipload_min], [sub, chipload_max, chipload_min]], 100]]]
+            - [machine.program_is_running, [add, 0, [mul, [div, [sub, chipload, chipload_min], [sub, chipload_max, chipload_min]], 100]]]
             - [true, 0]
   actions:
     # -- Machine Control --
-    - set_active_x:
-      - when: { condition: [==, x_is_homed, true], then: { set: { x_is_active: !x_is_active, y_is_active: false, z_is_active: false  } } }
-      - when: { condition: [==, x_is_homed, false], then: { set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, x_is_homed: false, y_is_homed: false, z_is_homed: false } } }
-    - set_active_y:
-      - when: { condition: [==, y_is_homed, true], then: { set: { x_is_active: false, y_is_active: !y_is_active, z_is_active: false  } } }
-      - when: { condition: [==, y_is_homed, false], then: { set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, x_is_homed: false, y_is_homed: false, z_is_homed: false } } }
-    - set_active_z:
-      - when: { condition: [==, z_is_homed, true], then: { set: { x_is_active: false, y_is_active: false, z_is_active: !z_is_active  } } }
-      - when: { condition: [==, z_is_homed, false], then: { set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, x_is_homed: false, y_is_homed: false, z_is_homed: false } } }
+    - action.motion.jog.axis_select_x:
+      - when: { condition: [==, motion.homed.x, true], then: { set: { motion.jog.axis_is_x: !motion.jog.axis_is_x, motion.jog.axis_is_y: false, motion.jog.axis_is_z: false  } } }
+      - when: { condition: [==, motion.homed.x, false], then: { set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, motion.homed.x: false, motion.homed.y: false, motion.homed.z: false } } }
+    - action.motion.jog.axis_select_y:
+      - when: { condition: [==, motion.homed.y, true], then: { set: { motion.jog.axis_is_x: false, motion.jog.axis_is_y: !motion.jog.axis_is_y, motion.jog.axis_is_z: false  } } }
+      - when: { condition: [==, motion.homed.y, false], then: { set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, motion.homed.x: false, motion.homed.y: false, motion.homed.z: false } } }
+    - action.motion.jog.axis_select_z:
+      - when: { condition: [==, motion.homed.z, true], then: { set: { motion.jog.axis_is_x: false, motion.jog.axis_is_y: false, motion.jog.axis_is_z: !motion.jog.axis_is_z  } } }
+      - when: { condition: [==, motion.homed.z, false], then: { set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, motion.homed.x: false, motion.homed.y: false, motion.homed.z: false } } }
     - home_machine:
-        set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, x_is_homed: false, y_is_homed: false, z_is_homed: false }
+        set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, motion.homed.x: false, motion.homed.y: false, motion.homed.z: false }
     - home_machine_x:
-        set: { machine_mode: "HOMING", program_running: false, homing_axis_x: true, x_is_homed: false }
+        set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_x: true, motion.homed.x: false }
     - home_machine_y:
-        set: { machine_mode: "HOMING", program_running: false, homing_axis_y: true, y_is_homed: false }
+        set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_y: true, motion.homed.y: false }
     - home_machine_z:
-        set: { machine_mode: "HOMING", program_running: false, homing_axis_z: true, z_is_homed: false }
+        set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_z: true, motion.homed.z: false }
     - feed_hold:
-        toggle: program_paused
-    - program_run:
+        toggle: machine.program_is_paused
+    - action.program.run:
         when:
-          condition: [and, x_is_homed, y_is_homed, z_is_homed]
+          condition: [and, motion.homed.x, motion.homed.y, motion.homed.z]
           then:
-            - set: { machine_mode: "AUTO", program_running: true, spindle_on: true, coolant_on: true, program_elapsed_time: 0.0, program_paused: false }
-    - program_stop:
-        set: { machine_mode: "IDLE", program_running: false, spindle_on: false, coolant_on: false, program_paused: false }
-    - cycle_wcs:
-        cycle: { wcs_name: ["G54", "G55"] }
-    - cycle_step_xy:
-        cycle: { jog_step_xy: [0.01, 0.1, 1.0, 5.0, 10.0] }
-    - cycle_step_z:
-        cycle: { jog_step_z: [0.01, 0.1, 1.0, 5.0] }
+            - set: { machine.status_text: "AUTO", machine.program_is_running: true, spindle.is_on: true, coolant_on: true, program_elapsed_time: 0.0, machine.program_is_paused: false }
+    - action.program.stop:
+        set: { machine.status_text: "IDLE", machine.program_is_running: false, spindle.is_on: false, coolant_on: false, machine.program_is_paused: false }
+    - action.motion.wcs.cycle:
+        cycle: { motion.wcs.active_name: ["G54", "G55"] }
+    - action.jog.cycle_step_xy:
+        cycle: { motion.jog.step_xy: [0.01, 0.1, 1.0, 5.0, 10.0] }
+    - action.jog.cycle_step_z:
+        cycle: { motion.jog.step_z: [0.01, 0.1, 1.0, 5.0] }
     - zero_wcs_x:
         - when: { condition: [==, wcs_name, "G54"], then: { set: { wcs54_x_zero: pos_x } } }
         - when: { condition: [==, wcs_name, "G55"], then: { set: { wcs55_x_zero: pos_x } } }
@@ -176,9 +181,9 @@
     - zero_wcs_z:
         - when: { condition: [==, wcs_name, "G54"], then: { set: { wcs54_z_zero: pos_z } } }
         - when: { condition: [==, wcs_name, "G55"], then: { set: { wcs55_z_zero: pos_z } } }
-    - set_feed_override:
-      set: { feed_override: [div, value.float, 100.0] }
-    - set_speed_override:
+    - set_overrides.feed_pct:
+      set: { overrides.feed_pct: [div, value.float, 100.0] }
+    - action.overrides.spindle.set_pct:
       set: { speed_override: [div, value.float, 100.0] }
     - set_probe_quick:
       set: { probe_quick: value.bool }
@@ -190,6 +195,8 @@
       set: { probe_ov: value.float }
     - set_probe_cl:
       set: { probe_cl: value.float }
+    - action.motion.jog.axis_cycle:
+        cycle: { motion.jog.axis_selected_str: ["X", "Y", "Z", "Off"] }
   updates:
     # -- Homing Sequence --
     - when:
@@ -197,36 +204,36 @@
         then:
           # Step 1: Home Z axis if requested and not already done
           - when:
-              condition: [and, homing_axis_z, !z_is_homed]
+              condition: [and, homing_axis_z, !motion.homed.z]
               then:
                 - dec: { pos_z: 2.5 } # Move towards zero
                 - when:
                     condition: [<=, pos_z, 0]
                     then:
-                      - set: { pos_z: 0, z_is_homed: true }
+                      - set: { pos_z: 0, motion.homed.z: true }
           # Step 2: Home X and Y axes if requested, but only after Z is done
           - when:
-              condition: [and, [or, homing_axis_x, homing_axis_y], z_is_homed]
+              condition: [and, [or, homing_axis_x, homing_axis_y], motion.homed.z]
               then:
                 - when:
-                    condition: [and, homing_axis_x, !x_is_homed]
+                    condition: [and, homing_axis_x, !motion.homed.x]
                     then:
                       - dec: { pos_x: 2.5 }
-                      - when: { condition: [<=, pos_x, 0], then: { set: { pos_x: 0, x_is_homed: true } } }
+                      - when: { condition: [<=, pos_x, 0], then: { set: { pos_x: 0, motion.homed.x: true } } }
                 - when:
-                    condition: [and, homing_axis_y, !y_is_homed]
+                    condition: [and, homing_axis_y, !motion.homed.y]
                     then:
                       - dec: { pos_y: 2.5 }
-                      - when: { condition: [<=, pos_y, 0], then: {set: { pos_y: 0, y_is_homed: true }} }
+                      - when: { condition: [<=, pos_y, 0], then: {set: { pos_y: 0, motion.homed.y: true }} }
           # Step 3: Finish Homing Cycle when all requested axes are done
           - when:
-              condition: [and, [==, homing_axis_x, x_is_homed], [==, homing_axis_y, y_is_homed], [==, homing_axis_z, z_is_homed]]
+              condition: [and, [==, homing_axis_x, motion.homed.x], [==, homing_axis_y, motion.homed.y], [==, homing_axis_z, motion.homed.z]]
               then:
-                - set: { machine_mode: "IDLE", homing_axis_x: false, homing_axis_y: false, homing_axis_z: false }
+                - set: { machine.status_text: "IDLE", homing_axis_x: false, homing_axis_y: false, homing_axis_z: false }
 
     # -- Program Execution and Movement --
     - when:
-        condition: [and, program_running, !program_paused]
+        condition: [and, machine.program_is_running, !machine.program_is_paused]
         then:
           # 1. Update program time
           - inc: { program_elapsed_time: 0.033 }
@@ -236,15 +243,15 @@
           - range: { pos_z: [10, 20, 0.2] }
           # 3. Simulate spindle RPM
           - set:
-              spindle_rpm:
+              spindle.speed_rpm:
                 case:
-                  - [spindle_on, [add, 8000, [mul, 200, [sin, [mul, time, 10]]]]]
+                  - [spindle.is_on, [add, 8000, [mul, 200, [sin, [mul, time, 10]]]]]
                   - [true, 0]
           # 4. Simulate feed speed
           - set:
-              feed:
+              motion.feedrate_current:
                 case:
-                  - [spindle_on, [add, 2000, [mul, 500, [sin, [mul, time, 10]]]]]
+                  - [spindle.is_on, [add, 2000, [mul, 500, [sin, [mul, time, 10]]]]]
                   - [true, 0]
           -  set: { delta_pos_x: [add, 1, [mul, 0.5, [sin, [mul, time, 10]]]] }
           -  set: { delta_pos_y: [add, 1, [mul, 0.5, [sin, [mul, time, 10]]]] }
@@ -254,7 +261,7 @@
     - when:
         condition: [>=, program_progress, 100]
         then:
-          - set: { machine_mode: "IDLE", program_running: false, spindle_on: false, coolant_on: false }
+          - set: { machine.status_text: "IDLE", machine.program_is_running: false, spindle.is_on: false, coolant_on: false }
 
     # -- Homing Sequence --
     - when:
@@ -267,7 +274,7 @@
                 - when:
                     condition: [<=, pos_z, 0]
                     then:
-                      - set: { pos_z: 0, z_is_homed: true, homing_step: 2 }
+                      - set: { pos_z: 0, motion.homed.z: true, homing_step: 2 }
           - when: # Step 2: Home X and Y axes
               condition: [==, homing_step, 2]
               then:
@@ -276,15 +283,15 @@
                 - when:
                     condition: [and, [<=, pos_x, 0], [<=, pos_y, 0]]
                     then:
-                      - set: { pos_x: 0, pos_y: 0, x_is_homed: true, y_is_homed: true, homing_step: 3 }
+                      - set: { pos_x: 0, pos_y: 0, motion.homed.x: true, motion.homed.y: true, homing_step: 3 }
           - when: # Step 3: Finish Homing
               condition: [==, homing_step, 3]
               then:
-                - set: { machine_mode: "IDLE", homing_step: 0 }
+                - set: { machine.status_text: "IDLE", homing_step: 0 }
 
     # -- Program Execution and Movement --
     - when:
-        condition: [and, program_running, !program_paused]
+        condition: [and, machine.program_is_running, !machine.program_is_paused]
         then:
           # 1. Update program time
           - inc: { program_elapsed_time: 0.033 }
@@ -294,15 +301,15 @@
           - range: { pos_z: [10, 20, 0.2] }
           # 3. Simulate spindle RPM
           - set:
-              spindle_rpm:
+              spindle.speed_rpm:
                 case:
-                  - [spindle_on, [add, 22000, [mul, 200, [sin, [mul, time, 10]]]]]
+                  - [spindle.is_on, [add, 22000, [mul, 200, [sin, [mul, time, 10]]]]]
                   - [true, 0]
     # -- Program Completion --
     - when:
         condition: [>=, program_progress, 100]
         then:
-          - set: { program_running: false, spindle_on: false, coolant_on: false }
+          - set: { machine.program_is_running: false, spindle.is_on: false, coolant_on: false }
 
 ##########
 # Fonts #
@@ -595,11 +602,11 @@
           abs_pos: "000.00"
           wcs_pos: "000.00 G54"
           delta_pos: "000.00   "
-          homed_state: x_is_homed
-          selected_state: x_is_active
-          home_action: set_active_x
-          wcs_state: display_wcs_pos_x
-          pos_state: display_pos_x
+          homed_state: motion.homed.x
+          selected_state: motion.jog.axis_is_x
+          home_action: action.motion.jog.axis_select_x
+          wcs_state: motion.position.work_x
+          pos_state: motion.position.machine_x
           delta_pos_state: delta_pos_x
 
       - type: use-view
@@ -609,11 +616,11 @@
           abs_pos: "000.00"
           wcs_pos: "000.00"
           delta_pos: "000.00   "
-          homed_state: y_is_homed
-          selected_state: y_is_active
-          home_action: set_active_y
-          wcs_state: display_wcs_pos_y
-          pos_state: display_pos_y
+          homed_state: motion.homed.y
+          selected_state: motion.jog.axis_is_y
+          home_action: action.motion.jog.axis_select_y
+          wcs_state: motion.position.work_y
+          pos_state: motion.position.machine_y
           delta_pos_state: delta_pos_y
 
       - type: use-view
@@ -623,11 +630,11 @@
           abs_pos: "000.00"
           wcs_pos: "000.00"
           delta_pos: "000.00   "
-          homed_state: z_is_homed
-          selected_state: z_is_active
-          home_action: set_active_z
-          wcs_state: display_wcs_pos_z
-          pos_state: display_pos_z
+          homed_state: motion.homed.z
+          selected_state: motion.jog.axis_is_z
+          home_action: action.motion.jog.axis_select_x
+          wcs_state: motion.position.work_z
+          pos_state: motion.position.machine_z
           delta_pos_state: delta_pos_z
 
 
@@ -638,25 +645,25 @@
         pad_right: 5
         children:
           - type: button
-            observes: {program_running: visible }
+            observes: {machine.program_is_running: visible }
             children:
               - type: label
                 text: LV_SYMBOL_PLAY
                 width: LV_SIZE_CONTENT
-                action: { program_run: trigger }
+                action: { action.program.run: trigger }
           - type: button
-            observes: { program_running: { visible: { true: true, false: false } } }
+            observes: { machine.program_is_running: { visible: { true: true, false: false } } }
             children:
               - type: label
                 text: LV_SYMBOL_STOP
                 width: LV_SIZE_CONTENT
-                action: { program_stop: trigger }
+                action: { action.program.stop: trigger }
           - type: label
-            observes: { machine_mode: { text: "MODE: %s" } }
+            observes: { machine.status_text: { text: "MODE: %s" } }
           - type: label
             add_style: [@indicator_yellow, 0]
-            observes: { wcs_name: { text: "- %s" } }
-            action: { cycle_wcs: trigger }
+            observes: { motion.wcs.active_name: { text: "- %s" } }
+            action: { action.motion.wcs.cycle: trigger }
 
 - type: component
   id: @labeled_scale
@@ -940,7 +947,7 @@
                 grid_cell: [LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1]
                 height: LV_SIZE_CONTENT
                 add_flag: LV_OBJ_FLAG_CLICKABLE
-                action: { cycle_step_xy: trigger }
+                action: { action.jog.cycle_step_xy: trigger }
               - type: label
                 grid_cell: [LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_END, 0, 1]
                 text_font: '@font_kode_20'
@@ -950,15 +957,15 @@
                 #add_style: ['@border_right', 0]
                 add_style: ['@indicator_yellow', 0]
                 add_flag: LV_OBJ_FLAG_CLICKABLE
-                action: { cycle_step_xy: trigger }
-                observes: { jog_step_xy: { text: '%g' } }
+                action: { action.jog.cycle_step_xy: trigger }
+                observes: { motion.jog.step_xy: { text: '%g' } }
               - type: label
                 text: Z
                 text_font: '@font_kode_20'
                 grid_cell: [LV_GRID_ALIGN_START, 2, 1, LV_GRID_ALIGN_START, 0, 1]
                 height: LV_SIZE_CONTENT
                 add_flag: LV_OBJ_FLAG_CLICKABLE
-                action: { cycle_step_z: trigger }
+                action: { action.jog.cycle_step_z: trigger }
               - type: label
                 grid_cell: [LV_GRID_ALIGN_START, 3, 1, LV_GRID_ALIGN_END, 0, 1]
                 text_font: '@font_kode_20'
@@ -966,8 +973,8 @@
                 text: ' 5'
                 add_style: ['@indicator_yellow', 0]
                 add_flag: LV_OBJ_FLAG_CLICKABLE
-                action: { cycle_step_z: trigger }
-                observes: { jog_step_z: { text: '%g' } }
+                action: { action.jog.cycle_step_z: trigger }
+                observes: { motion.jog.step_z: { text: '%g' } }
 
       # Right column
       - layout: LV_LAYOUT_FLEX
@@ -1040,10 +1047,10 @@
               letter: F
               ovr: F Ovr
               pad: 4
-              rate_value: feed
+              rate_value: motion.feedrate_current
               range_min: 0
               range_max: 5000
-              override_value: feed_override_pct
+              override_value: overrides.feed_pct
               override_state: set_feed_override
           - type: use-view
             id: '@feed_rate_scale'
@@ -1055,12 +1062,12 @@
               pad: 4
               range_min: 0
               range_max: 24000
-              rate_value: spindle_rpm
+              rate_value: spindle.speed_rpm
               override_value: speed_override_pct
               override_state: set_speed_override
           - type: use-view
             id: '@jog_feed'
-            observes: { program_running: { visible: { true: false, false: true } } }
+            observes: { machine.program_is_running: { visible: { true: false, false: true } } }
             context:
               unit: MM
               label: JOG
@@ -1068,7 +1075,7 @@
               pad: 18
           - type: use-view
             id: '@chipload_scale'
-            observes: { program_running: { visible: { true: true, false: false } } }
+            observes: { machine.program_is_running: { visible: { true: true, false: false } } }
             context:
               unit: /MIN
               label: Chipload
@@ -1371,8 +1378,52 @@
       children:
         - type: use-view
           id: '@jog_view'
-    - init: { lv_tileview_add_tile: [1, 0, LV_DIR_LEFT] }
+    - init: { lv_tileview_add_tile: [1, 0, LV_DIR_LEFT | LV_DIR_RIGHT] }
       add_style: ['@container', 0]
         children:
           - type: use-view
             id: '@probe_view'
+    - init: { lv_tileview_add_tile: [2, 0, LV_DIR_LEFT] }
+      add_style: ['@container', 0]
+        children:
+          - type: probing_wizard
+            id: '@probing_wizard'
+            lv_probing_wizard_set_mode: [LV_PROBING_WIZARD_MODE_RECTANGLE, false]
+
+
+# This overlay will appear when the machine is disconnected.
+# It covers the whole screen and prevents interaction with other controls.
+- type: obj
+  id: '@disconnected_overlay'
+  size: [100%, 100%]
+  bg_color: '#000000'
+  bg_opa: LV_OPA_70
+  add_flag: LV_OBJ_FLAG_CLICKABLE
+  add_flag: LV_OBJ_FLAG_HIDDEN
+  observes:
+    machine.connection_status:
+      visible: { true: false, false: true, default: true } # Show when not connected
+  children:
+    - type: label
+      text: "Connecting..."
+      text_font: '@font_kode_34'
+      center: []
+
+- type: button
+  id: '@jog_axis_selector'
+  size: [55, 55]
+  radius: LV_RADIUS_CIRCLE
+  # lv_obj_align: [LV_ALIGN_BOTTOM_RIGHT, -15, -15]
+  lv_obj_align: [LV_ALIGN_TOP_LEFT, 15, 15]
+  shadow_width: 10
+  shadow_opa: 150
+  shadow_offset_y: 4
+  action: { action.motion.jog.axis_cycle: trigger }
+  observes: { ui.active_tile_index: { visible: { 0: false, 1: true, 2: true } } }
+  children:
+    - type: label
+      text_font: '@font_kode_24'
+      center: []
+      observes:
+        motion.jog.axis_selected_str:
+          text: "%s"

@@ -80,7 +80,18 @@ typedef struct {
 typedef struct {
     IRExpr base;
     char* symbol;
+    /* The original C identifier for the enum/define (e.g. LV_ALIGN_CENTER).
+     * `symbol` continues to be used by existing codepaths for emitting C identifiers.
+     */
+    char* identifier;
+
+    /* Whether a numeric value is available for this constant. If true,
+     * `value` contains the numeric value and `value_repr` may hold an
+     * alternate textual representation (e.g. hex or composite macro).
+     */
+    bool has_value;
     intptr_t value;
+    char* value_repr;
 } IRExprEnum;
 
 // Function call expression
@@ -219,6 +230,12 @@ IRExpr* ir_new_expr_literal(const char* value, const char* c_type);
 IRExpr* ir_new_expr_literal_string(const char* value, size_t len);
 IRExpr* ir_new_expr_static_string(const char* value, size_t len);
 IRExpr* ir_new_expr_enum(const char* symbol, intptr_t val, const char* enum_c_type);
+
+/* Validate that all enum/define expressions in `root` that are required for
+ * dynamic dispatch have numeric values. Returns true if validation passed,
+ * false otherwise (and prints errors to stderr).
+ */
+bool ir_validate_for_dynamic_dispatch(IRRoot* root);
 IRExpr* ir_new_expr_func_call(const char* func_name, IRExprNode* args, const char* return_c_type);
 IRExpr* ir_new_expr_array(IRExprNode* elements, const char* array_c_type);
 IRExpr* ir_new_expr_registry_ref(const char* name, const char* c_type);

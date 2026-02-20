@@ -15,8 +15,8 @@
             [ELEMENTS]
               [IR_EXPR_LITERAL] type: <float> value=60 is_string=false
               [IR_EXPR_LITERAL] type: <float> value=60 is_string=false
-              [IR_EXPR_LITERAL] type: <float> value=536870911 is_string=false
+              [IR_EXPR_ENUM] type: <constant> symbol=LV_GRID_TEMPLATE_LAST
           [IR_EXPR_ARRAY] type: <int32_t*> ptr=0xcafe
             [ELEMENTS]
               [IR_EXPR_LITERAL] type: <float> value=50 is_string=false
-              [IR_EXPR_LITERAL] type: <float> value=536870911 is_string=false
+              [IR_EXPR_ENUM] type: <constant> symbol=LV_GRID_TEMPLATE_LAST

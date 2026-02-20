@@ -26,7 +26,7 @@ So currently, the .expected file is C-Code that corresponds to what the codegen 
 
 ## Running all tests
 
-`make; cd ./tests; sh run_tests.sh`
+`make; cd ./tests; sh run_tests.sh; sh run_all_tests.sh`
 
 ## Running a single test
 

@@ -61,7 +61,13 @@ IRExpr* ir_new_expr_enum(const char* symbol, intptr_t val, const char* enum_c_ty
     en->base.base.type = IR_EXPR_ENUM;
     en->base.c_type = safe_strdup(enum_c_type);
     en->symbol = safe_strdup(symbol);
+    en->identifier = safe_strdup(symbol);
+    /* If the enum C type is "unknown" the caller did not provide a real
+     * enum mapping/value; treat that as 'no numeric value available'.
+     */
+    en->has_value = (enum_c_type && strcmp(enum_c_type, "unknown") != 0);
     en->value = val;
+    en->value_repr = NULL;
     return (IRExpr*)en;
 }
 
@@ -255,7 +261,13 @@ static void free_expr(IRExpr* expr) {
     switch (expr->base.type) {
         case IR_EXPR_LITERAL: free(((IRExprLiteral*)expr)->value); break;
         case IR_EXPR_STATIC_STRING: free(((IRExprStaticString*)expr)->value); break;
-        case IR_EXPR_ENUM: free(((IRExprEnum*)expr)->symbol); break;
+        case IR_EXPR_ENUM: {
+            IRExprEnum* e = (IRExprEnum*)expr;
+            free(e->symbol);
+            free(e->identifier);
+            free(e->value_repr);
+            break;
+        }
         case IR_EXPR_REGISTRY_REF: free(((IRExprRegistryRef*)expr)->name); break;
         case IR_EXPR_CONTEXT_VAR: free(((IRExprContextVar*)expr)->name); break;
         case IR_EXPR_RAW_POINTER: /* ptr is not owned, do nothing */ break;
@@ -431,6 +443,13 @@ const char* ir_node_get_string(IRNode* node) {
             return ((IRExprLiteral*)node)->is_string ? ((IRExprLiteral*)node)->value : NULL;
         case IR_EXPR_STATIC_STRING:
             return ((IRExprStaticString*)node)->value;
+        case IR_EXPR_ENUM: {
+            IRExprEnum* en = (IRExprEnum*)node;
+            if (en->identifier && en->identifier[0]) return en->identifier;
+            if (en->symbol && en->symbol[0]) return en->symbol;
+            if (en->has_value && en->value_repr) return en->value_repr;
+            return NULL;
+        }
         case IR_EXPR_REGISTRY_REF:
             return ((IRExprRegistryRef*)node)->name;
         default:
@@ -466,3 +485,131 @@ bool ir_node_get_bool(IRNode* node) {
     fprintf(stderr, "Warning: ir_node_get_bool called on incompatible node type %d\n", node->type);
     return false;
 }
+
+// --- Validation for dynamic dispatch ---
+
+static void validate_expr_rec(IRExpr* expr, bool* ok);
+
+static void validate_node_rec(IRNode* node, bool* ok) {
+    if (!node || !ok) return;
+    switch (node->type) {
+        case IR_NODE_ROOT: {
+            IRRoot* root = (IRRoot*)node;
+            IRComponent* comp = root->components;
+            while (comp) {
+                validate_node_rec((IRNode*)comp, ok);
+                comp = comp->next;
+            }
+            IRObject* obj = root->root_objects;
+            while (obj) {
+                validate_node_rec((IRNode*)obj, ok);
+                obj = obj->next;
+            }
+            break;
+        }
+        case IR_NODE_COMPONENT_DEF: {
+            IRComponent* comp = (IRComponent*)node;
+            validate_node_rec((IRNode*)comp->root_widget, ok);
+            break;
+        }
+        case IR_NODE_OBJECT: {
+            IRObject* obj = (IRObject*)node;
+            if (obj->constructor_expr) validate_expr_rec(obj->constructor_expr, ok);
+            IROperationNode* op = obj->operations;
+            while (op) {
+                if (op->op_node) validate_node_rec(op->op_node, ok);
+                op = op->next;
+            }
+            IRProperty* p = obj->use_view_context;
+            while (p) {
+                if (p->value) validate_expr_rec(p->value, ok);
+                p = p->next;
+            }
+            IRWithBlock* wb = obj->with_blocks;
+            while (wb) {
+                if (wb->target_expr) validate_expr_rec(wb->target_expr, ok);
+                IRExprNode* sc = wb->setup_calls;
+                while (sc) { validate_expr_rec(sc->expr, ok); sc = sc->next; }
+                validate_node_rec((IRNode*)wb->children_root, ok);
+                wb = wb->next;
+            }
+            break;
+        }
+        case IR_NODE_PROPERTY: {
+            IRProperty* prop = (IRProperty*)node;
+            if (prop->value) validate_expr_rec(prop->value, ok);
+            break;
+        }
+        case IR_NODE_OBSERVER: {
+            IRObserver* obs = (IRObserver*)node;
+            if (obs->config_expr) validate_expr_rec(obs->config_expr, ok);
+            break;
+        }
+        case IR_NODE_ACTION: {
+            IRAction* act = (IRAction*)node;
+            if (act->data_expr) validate_expr_rec(act->data_expr, ok);
+            break;
+        }
+        case IR_NODE_WARNING:
+            /* nothing to validate */
+            break;
+        default:
+            /* Expression types are handled elsewhere */
+            break;
+    }
+}
+
+static void validate_expr_rec(IRExpr* expr, bool* ok) {
+    if (!expr || !ok) return;
+    switch (expr->base.type) {
+        case IR_EXPR_ENUM: {
+            IRExprEnum* e = (IRExprEnum*)expr;
+            if (!e->has_value) {
+                const char* name = e->symbol ? e->symbol : (e->identifier ? e->identifier : "<unknown>");
+                fprintf(stderr, "Error: enum/define '%s' has no numeric value available for dynamic dispatch\n", name);
+                *ok = false;
+            }
+            break;
+        }
+        case IR_EXPR_FUNCTION_CALL: {
+            IRExprFunctionCall* fc = (IRExprFunctionCall*)expr;
+            IRExprNode* a = fc->args;
+            while (a) { validate_expr_rec(a->expr, ok); a = a->next; }
+            break;
+        }
+        case IR_EXPR_ARRAY: {
+            IRExprArray* arr = (IRExprArray*)expr;
+            IRExprNode* n = arr->elements;
+            while (n) { validate_expr_rec(n->expr, ok); n = n->next; }
+            break;
+        }
+        case IR_EXPR_RUNTIME_REG_ADD: {
+            IRExprRuntimeRegAdd* r = (IRExprRuntimeRegAdd*)expr;
+            if (r->object_expr) validate_expr_rec(r->object_expr, ok);
+            break;
+        }
+        case IR_EXPR_IF_BACKEND: {
+            IRIfBackend* ib = (IRIfBackend*)expr;
+            if (ib->static_expr) validate_expr_rec(ib->static_expr, ok);
+            if (ib->dynamic_expr) validate_expr_rec(ib->dynamic_expr, ok);
+            break;
+        }
+        case IR_EXPR_LITERAL:
+        case IR_EXPR_STATIC_STRING:
+        case IR_EXPR_REGISTRY_REF:
+        case IR_EXPR_CONTEXT_VAR:
+        case IR_EXPR_RAW_POINTER:
+            /* Nothing to validate for these types */
+            break;
+        default:
+            break;
+    }
+}
+
+bool ir_validate_for_dynamic_dispatch(IRRoot* root) {
+    if (!root) return true;
+    bool ok = true;
+    validate_node_rec((IRNode*)root, &ok);
+    return ok;
+}
+

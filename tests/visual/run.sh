@@ -46,7 +46,7 @@ for test_yaml in "$TEST_DIR"/*.yaml; do
     test_name=$(basename "${test_yaml}" .yaml)
     expected_file="${TEST_DIR}/${test_name}.png.expected"
     actual_file="/tmp/${test_name}.png.actual"
-    diff_file="/tmp/${test_name}.png.diff"
+    diff_file="/tmp/${test_name}.diff.png"
 
     if [ "$UPDATE_MODE" -eq 1 ]; then
         echo "[UPDATING] Visual: ${test_name}.png.expected"
@@ -57,12 +57,12 @@ for test_yaml in "$TEST_DIR"/*.yaml; do
         echo -e "[${YELLOW}SKIP${NC}] Visual: ${test_name} (No .png.expected file. Run with --update to create.)"
         continue
     fi
-    
+
     printf "[RUNNING] Visual: %-30s" "${test_name}"
 
     # Generate the screenshot
     "$GENERATOR_EXE" "$API_SPEC_PATH" "$test_yaml" --codegen lvgl_render --screenshot-and-exit "$actual_file" > /dev/null 2>&1
-    
+
     # Compare the images
     if compare -metric AE -fuzz 1% "$expected_file" "$actual_file" "$diff_file" > /dev/null 2>&1; then
         # AE (Absolute Error) is 0, meaning images are identical

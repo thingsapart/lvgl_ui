@@ -147,7 +147,34 @@ class LVGLApiParser:
 "_lv_display_refr_timer", "_lv_disp_refr_timer", "_lv_disp_get_refr_timer", "LV_STYLE_CONST_PROPS_END"
         ]
 
-        complex_consts = {k: v for k, v in constants.items() if (not k in excludes) and self._is_complex_constant(v)}
+        # Exclude known non-constant aliases and callback/type names which
+        # will break the temporary C resolver (they are typedefs or function
+        # aliases rather than numeric macros).
+        def _is_excluded_name(name):
+            if name.endswith('_cb') or name.endswith('_cb_t'):
+                return True
+            if name.startswith('lv_glfw_'):
+                return True
+            # Exclude LV cache-related flags and symbols which are not numeric
+            # constants but rather bitflags/typedefs that break the resolver.
+            if name.startswith('LV_CACHE_'):
+                return True
+            return False
+
+        # Build a set of known function names to avoid treating them as numeric constants
+        function_names = {f.get('name') for f in self.spec.get('functions', []) if f.get('name')}
+
+        complex_consts = {}
+        for k, v in constants.items():
+            if k in excludes: continue
+            if _is_excluded_name(k): continue
+            if k in function_names: continue
+            # If the initializer is a bare identifier (alias to another symbol), skip it
+            processed_val = re.sub(r'/\*.*?\*/', '', v).strip() if isinstance(v, str) else ''
+            if re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', processed_val):
+                continue
+            if self._is_complex_constant(v):
+                complex_consts[k] = v
         if not complex_consts:
             print("No complex constants found to evaluate.", file=sys.stderr)
             return
@@ -164,9 +191,20 @@ class LVGLApiParser:
         ]
 
         # Handle lv_conf.h inclusion
-        include_paths = ["-I.", "-I./cJSON", "-I./lvgl"]
+        # Use absolute include paths so gcc can find headers when invoked from temp dirs
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        include_paths = [f"-I{script_dir}", f"-I{os.path.join(script_dir, 'cJSON')}", f"-I{os.path.join(script_dir, 'lvgl')}" ]
+        # Prefer user-provided lv_conf.h, otherwise fall back to viewer/lv_conf.h
+        conf_path = None
         if self.args.lvgl_conf:
             conf_path = os.path.abspath(self.args.lvgl_conf)
+        else:
+            # default to viewer/lv_conf.h next to the script
+            default_conf = os.path.join(script_dir, 'viewer', 'lv_conf.h')
+            if os.path.exists(default_conf):
+                conf_path = default_conf
+
+        if conf_path:
             conf_dir = os.path.dirname(conf_path)
             conf_name = os.path.basename(conf_path)
             include_paths.append(f"-I{conf_dir}")
@@ -210,9 +248,15 @@ class LVGLApiParser:
             with open(c_file_path, 'w', encoding='utf-8') as f:
                 f.write('\n'.join(c_source_lines))
 
-            cjson_c_path = os.path.join("cJSON", "cJSON.c")
-            lv_assert_c_path = os.path.join("viewer", "lvgl_assert_handler.c")
-            compile_command = ["gcc", "-o", exe_file_path, c_file_path, cjson_c_path, lv_assert_c_path] + include_paths + ["-lm", "-L./lvgl/build/lib", "-llvgl"]
+            # Use absolute paths for helper source files so compilation works
+            # regardless of the current working directory or temporary dirs.
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            cjson_c_path = os.path.join(script_dir, "cJSON", "cJSON.c")
+            lv_assert_c_path = os.path.join(script_dir, "viewer", "lvgl_assert_handler.c")
+            compile_command = [
+                "gcc", "-o", exe_file_path, c_file_path,
+                cjson_c_path, lv_assert_c_path
+            ] + include_paths + ["-lm", "-L" + os.path.join(script_dir, "lvgl", "build", "lib"), "-llvgl"]
 
             print("Compiling temporary C program to resolve constants...", file=sys.stderr)
             print(', '.join(compile_command), file=sys.stderr)

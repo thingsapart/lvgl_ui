@@ -93,6 +93,17 @@ void lvgl_renderer_reload_ui_from_string(const char* ui_spec_string, ApiSpec* ap
         fflush(stderr);
     }
 
+    // Validate IR for dynamic-dispatch: ensure enum/constant expressions carry numeric values
+    if (!ir_validate_for_dynamic_dispatch(ir_root)) {
+        // Generator already logged details via render_abort equivalents; surface a short message
+        lv_obj_t* label = lv_label_create(preview_panel);
+        lv_label_set_text(label, "#f04040 Error: IR validation failed for dynamic dispatch.#");
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_center(label);
+        ir_free((IRNode*)ir_root);
+        return;
+    }
+
 
     // --- Render a valid IR ---
     // Create the new registry for this render cycle. It will be freed on the next reload.

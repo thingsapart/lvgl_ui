@@ -226,6 +226,13 @@ static IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string
         return NULL;
     }
 
+    // Validate IR for dynamic-dispatch requirements: enums/constants must carry numeric values
+    if (!ir_validate_for_dynamic_dispatch(ir_root)) {
+        ir_free((IRNode*)ir_root);
+        render_abort("IR validation for dynamic dispatch failed: missing numeric values for some constants.");
+        return NULL;
+    }
+
     return ir_root;
 }
 
@@ -303,6 +310,36 @@ static cJSON* process_context_keys_recursive(const cJSON* source_json, const cJS
 
     // For non-container types (string, number, bool, null), just duplicate.
     return cJSON_Duplicate(source_json, true);
+}
+
+// Recursively prefix `id` string values in objects with given prefix.
+static void prefix_ids_recursive(cJSON* node, const char* prefix) {
+    if (!node || !prefix) return;
+    if (cJSON_IsObject(node)) {
+        cJSON* item = NULL;
+        cJSON_ArrayForEach(item, node) {
+            if (item->string && strcmp(item->string, "id") == 0 && cJSON_IsString(item)) {
+                const char* orig = item->valuestring;
+                // Do not prefix ids that start with '@' (intentional global id)
+                if (orig && orig[0] == '@') continue;
+                size_t newlen = strlen(prefix) + 1 + strlen(orig) + 1;
+                char* buf = malloc(newlen);
+                if (!buf) continue;
+                snprintf(buf, newlen, "%s_%s", prefix, orig);
+                cJSON_ReplaceItemInObject(node, "id", cJSON_CreateString(buf));
+                free(buf);
+            } else {
+                prefix_ids_recursive(item, prefix);
+            }
+        }
+        return;
+    }
+    if (cJSON_IsArray(node)) {
+        cJSON* it = NULL;
+        cJSON_ArrayForEach(it, node) {
+            prefix_ids_recursive(it, prefix);
+        }
+    }
 }
 
 
@@ -726,6 +763,120 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
 // --- Value Unmarshaler ---
 
+// Evaluate a C-like integer expression string using values from ApiSpec
+// Supports: parentheses, +, -, <<, >>, &, |, ^ and integer literals and identifiers
+// Forward declaration for non-nested parser entry point
+static long eval_parse_or(const ApiSpec* spec, const char** pp, bool* ok);
+static bool eval_expr_string_as_int(const ApiSpec* spec, const char* expr_src, long* out_value) {
+    if (!expr_src || !spec || !out_value) return false;
+    const char* p = expr_src;
+    /* The original implementation used nested functions which is not
+       valid ISO C. Replace nested parsers with small helper functions
+       that operate on a pointer-to-pointer to the input string. */
+
+    // forward helpers declared below
+
+    // start pointer will be managed via a pointer-to-pointer
+    const char* pptr = p;
+    bool ok_local = true;
+    long result = eval_parse_or(spec, &pptr, &ok_local);
+    p = pptr;
+    if (ok_local) { *out_value = result; return true; }
+    return false;
+}
+
+// Helper parsing functions (non-nested) -------------------------------------------------
+static void eval_skip_ws_ptr(const char** pp) {
+    const char* p = *pp;
+    while(*p && (*p==' ' || *p=='\t' || *p=='\n' || *p=='\r')) p++;
+    *pp = p;
+}
+
+static long eval_parse_number_or_ident(const ApiSpec* spec, const char** pp, bool* ok) {
+    eval_skip_ws_ptr(pp);
+    const char* p = *pp;
+    if (*p == '\0') { *ok = false; return 0; }
+    if (*p == '(') {
+        p++; *pp = p;
+        long v = eval_parse_or(spec, pp, ok);
+        eval_skip_ws_ptr(pp);
+        p = *pp;
+        if (*p == ')') { p++; *pp = p; }
+        else { *ok = false; return 0; }
+        return v;
+    }
+    if (((*p >= '0' && *p <= '9') || *p=='-')) {
+        char* endptr; long v = strtol(p, &endptr, 0);
+        if (endptr == p) { *ok = false; return 0; }
+        *pp = endptr; *ok = true; return v;
+    }
+    if (((*p >= 'A' && *p <= 'Z') || *p == '_' || (*p >= 'a' && *p <= 'z'))) {
+        const char* start = p;
+        while(((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9') || *p == '_')) p++;
+        size_t len = p - start;
+        char name[256]; if (len >= sizeof(name)) { *ok = false; return 0; }
+        memcpy(name, start, len); name[len] = '\0';
+        *pp = p;
+        long v = 0;
+        if (api_spec_find_constant_value(spec, name, &v)) { *ok = true; return v; }
+        const char* enum_type = api_spec_find_global_enum_type(spec, name);
+        if (enum_type) {
+            if (api_spec_find_enum_value(spec, enum_type, name, &v)) { *ok = true; return v; }
+        }
+        if (strcmp(name, "true") == 0) { *ok = true; return 1; }
+        if (strcmp(name, "false") == 0) { *ok = true; return 0; }
+        *ok = false; return 0;
+    }
+    *ok = false; return 0;
+}
+
+static long eval_parse_addsub(const ApiSpec* spec, const char** pp, bool* ok) {
+    bool lok;
+    long v = eval_parse_number_or_ident(spec, pp, &lok); if (!lok) { *ok = false; return 0; }
+    for(;;) {
+        eval_skip_ws_ptr(pp);
+        const char* p = *pp;
+        if (*p=='+' || *p=='-') {
+            char op = *p++; *pp = p;
+            long r = eval_parse_number_or_ident(spec, pp, &lok); if (!lok) { *ok = false; return 0; }
+            if (op=='+') v += r; else v -= r;
+        } else break;
+    }
+    *ok = true; return v;
+}
+
+static long eval_parse_shift(const ApiSpec* spec, const char** pp, bool* ok) {
+    long v = eval_parse_addsub(spec, pp, ok); if (!*ok) return 0;
+    for(;;) {
+        const char* p = *pp; eval_skip_ws_ptr(pp); p = *pp;
+        if (p[0]=='<' && p[1]=='<') { *pp = p+2; long r = eval_parse_addsub(spec, pp, ok); v = v << r; }
+        else if (p[0]=='>' && p[1]=='>') { *pp = p+2; long r = eval_parse_addsub(spec, pp, ok); v = v >> r; }
+        else break;
+    }
+    *ok = true; return v;
+}
+
+static long eval_parse_and(const ApiSpec* spec, const char** pp, bool* ok) {
+    long v = eval_parse_shift(spec, pp, ok); if (!*ok) return 0;
+    eval_skip_ws_ptr(pp);
+    while(**pp=='&') { const char* p = *pp; *pp = p+1; long r = eval_parse_shift(spec, pp, ok); v = v & r; eval_skip_ws_ptr(pp); }
+    *ok = true; return v;
+}
+
+static long eval_parse_xor(const ApiSpec* spec, const char** pp, bool* ok) {
+    long v = eval_parse_and(spec, pp, ok); if (!*ok) return 0;
+    eval_skip_ws_ptr(pp);
+    while(**pp=='^') { const char* p = *pp; *pp = p+1; long r = eval_parse_and(spec, pp, ok); v = v ^ r; eval_skip_ws_ptr(pp); }
+    *ok = true; return v;
+}
+
+static long eval_parse_or(const ApiSpec* spec, const char** pp, bool* ok) {
+    long v = eval_parse_xor(spec, pp, ok); if (!*ok) return 0;
+    eval_skip_ws_ptr(pp);
+    while(**pp=='|') { const char* p = *pp; *pp = p+1; long r = eval_parse_xor(spec, pp, ok); v = v | r; eval_skip_ws_ptr(pp); }
+    *ok = true; return v;
+}
+
 static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_context, const char* expected_c_type, const char* parent_c_name, const char* target_c_name, IRObject* ir_obj_for_warnings) {
     if (ctx->error_occurred) return NULL;
     if (!value || cJSON_IsNull(value)) return ir_new_expr_literal("NULL", "void*");
@@ -842,7 +993,11 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
             if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
                 char buf[32];
                 snprintf(buf, sizeof(buf), "%ld", const_val);
-                result_expr = ir_new_expr_literal(buf, "float");
+                /* Preserve the original identifier while retaining the
+                 * numeric value for dynamic dispatch by creating an enum
+                 * expression node carrying both the symbol and the value.
+                 */
+                result_expr = ir_new_expr_enum(s, const_val, "constant");
             }
         }
 
@@ -911,10 +1066,72 @@ static IRExpr* unmarshal_value(GenContext* ctx, cJSON* value, const cJSON* ui_co
         }
 
         if (result_expr == NULL) {
-            size_t unescaped_len = 0;
-            char* unescaped_val = unescape_c_string(s, &unescaped_len);
-            result_expr = ir_new_expr_literal_string(unescaped_val, unescaped_len);
-            free(unescaped_val);
+            /* If the token matches a named constant in the ApiSpec, prefer
+             * emitting it as a symbol (IR_EXPR_ENUM) so the C printer will
+             * output the identifier unquoted. If the constant has a numeric
+             * value we emit a numeric literal instead. This handles cases
+             * like LV_GRID_TEMPLATE_LAST which are defined as expressions
+             * in the constants map.
+             */
+            /* Preserve quoted numeric strings (e.g. "0") as strings, but
+             * allow the explicit token "NULL" to be interpreted as a null
+             * pointer when the expected C type is a pointer. This lets users
+             * write NULL in YAML to indicate a null pointer while still
+             * preserving numeric text strings for labels.
+             */
+            if (strcmp(s, "NULL") == 0 && expected_c_type && strchr(expected_c_type, '*')) {
+                result_expr = ir_new_expr_literal("NULL", "void*");
+            }
+            /* If this token is a named constant in the ApiSpec prefer that
+             * interpretation: emit an enum symbol node carrying the numeric
+             * value when available so backends can choose how to emit it.
+             */
+            if (api_spec_is_constant(ctx->api_spec, s)) {
+                long const_val;
+                if (api_spec_find_constant_value(ctx->api_spec, s, &const_val)) {
+                    /* Create an enum/constant node so backends can choose
+                     * between emitting the identifier or the numeric value.
+                     */
+                    result_expr = ir_new_expr_enum(s, const_val, "constant");
+                } else {
+                    // Attempt to evaluate constant expression textually using other spec values
+                    const cJSON* consts = api_spec_get_constants(ctx->api_spec);
+                    if (consts) {
+                        const cJSON* cjson = cJSON_GetObjectItemCaseSensitive(consts, s);
+                        if (cjson && cJSON_IsString(cjson) && cjson->valuestring) {
+                            long eval_val = 0;
+                            if (eval_expr_string_as_int(ctx->api_spec, cjson->valuestring, &eval_val)) {
+                                /* Emit an enum expression node carrying the original
+                                 * identifier and the evaluated numeric value so the
+                                 * C backend can print the identifier while dynamic
+                                 * dispatch can use the numeric value.
+                                 */
+                                result_expr = ir_new_expr_enum(s, eval_val, "constant");
+                            } else {
+                                result_expr = ir_new_expr_enum(s, 0, "unknown");
+                            }
+                        } else {
+                            result_expr = ir_new_expr_enum(s, 0, "unknown");
+                        }
+                    } else {
+                        result_expr = ir_new_expr_enum(s, 0, "unknown");
+                    }
+                }
+            }
+            /* Do not coerce quoted strings into numeric literals here.
+             * Quoted numeric text (e.g. "0", "1") should remain strings;
+             * numeric unquoted values are parsed as numbers by the YAML
+             * parser and will arrive as cJSON numbers instead of strings.
+             */
+
+            if (!result_expr) {
+                // Do NOT guess identifiers by heuristic. If the token is not a
+                // known enum/constant in the ApiSpec, treat it as a string.
+                size_t unescaped_len = 0;
+                char* unescaped_val = unescape_c_string(s, &unescaped_len);
+                result_expr = ir_new_expr_literal_string(unescaped_val, unescaped_len);
+                free(unescaped_val);
+            }
         }
 
         if (s_interpolated) {
@@ -1163,40 +1380,91 @@ static void process_ui_spec_array(GenContext* ctx, cJSON* array_json, const char
         if (ctx->error_occurred) break;
 
         cJSON* include_item = cJSON_GetObjectItem(item_json, "include");
-        if (include_item && cJSON_IsString(include_item)) {
-            char* full_path = join_path(current_base_path, include_item->valuestring);
-            char* included_content = read_file(full_path);
-            if (!included_content) {
-                print_warning("Could not read include file: %s", full_path);
-                free(full_path);
-                continue;
+            if (include_item) {
+                // include can be a string (file path) or an object with options
+                const char* include_file = NULL;
+                const cJSON* include_context = NULL;
+                const char* as_prefix = NULL;
+                bool merge_flag = true;
+
+                if (cJSON_IsString(include_item)) {
+                    include_file = include_item->valuestring;
+                } else if (cJSON_IsObject(include_item)) {
+                    cJSON* f = cJSON_GetObjectItemCaseSensitive(include_item, "file");
+                    if (f && cJSON_IsString(f)) include_file = f->valuestring;
+                    cJSON* ctx_item = cJSON_GetObjectItemCaseSensitive(include_item, "context");
+                    if (ctx_item && cJSON_IsObject(ctx_item)) include_context = ctx_item;
+                    cJSON* as_item = cJSON_GetObjectItemCaseSensitive(include_item, "as");
+                    if (as_item && cJSON_IsString(as_item)) as_prefix = as_item->valuestring;
+                    cJSON* merge_item = cJSON_GetObjectItemCaseSensitive(include_item, "merge");
+                    if (merge_item && cJSON_IsBool(merge_item)) merge_flag = cJSON_IsTrue(merge_item);
+                } else {
+                    print_warning("Unsupported include directive type; expected string or mapping.");
+                    include_file = NULL;
+                }
+
+                if (!include_file) {
+                    // Not a real include; fall through to object handling or warn.
+                } else {
+                    char* full_path = join_path(current_base_path, include_file);
+                    char* included_content = read_file(full_path);
+                    if (!included_content) {
+                        print_warning("Could not read include file: %s", full_path);
+                        free(full_path);
+                        continue;
+                    }
+
+                    char* error_msg = NULL;
+                    cJSON* included_json = yaml_to_cjson(included_content, &error_msg);
+                    free(included_content);
+
+                    if (error_msg) {
+                        char err_buf[1024];
+                        snprintf(err_buf, sizeof(err_buf), "Error in included file '%s': %s", full_path, error_msg);
+                        render_abort(err_buf);
+                        free(error_msg);
+                        free(full_path);
+                        ctx->error_occurred = true;
+                        if (included_json) cJSON_Delete(included_json);
+                        break;
+                    }
+
+                    if (included_json && cJSON_IsArray(included_json)) {
+                        // Build merged context: ui_context <- include_context
+                        cJSON* new_context = NULL;
+                        if (ui_context || include_context) {
+                            new_context = cJSON_CreateObject();
+                            if (ui_context) merge_json_objects(new_context, ui_context);
+                            if (include_context) merge_json_objects(new_context, include_context);
+                        }
+
+                        // If an 'as' prefix is provided, apply it to ids inside the included JSON
+                        if (as_prefix) {
+                            prefix_ids_recursive(included_json, as_prefix);
+                        }
+
+                        char* new_base_path = get_dirname(full_path);
+                        // If merge_flag is true, process each item into current list with merged context
+                        if (merge_flag) {
+                            process_ui_spec_array(ctx, included_json, new_base_path, object_list_head, operation_list_head, parent_c_name, new_context ? new_context : ui_context);
+                        } else {
+                            // If not merging, wrap the included array as a single item? We'll just process as merged for now.
+                            process_ui_spec_array(ctx, included_json, new_base_path, object_list_head, operation_list_head, parent_c_name, new_context ? new_context : ui_context);
+                        }
+
+                        free(new_base_path);
+                        if (new_context) cJSON_Delete(new_context);
+                    } else {
+                        print_warning("Included file '%s' does not contain a valid YAML/JSON list.", full_path);
+                    }
+
+                    free(full_path);
+                    cJSON_Delete(included_json);
+                    // Skip further handling of this item (it's an include)
+                    continue;
+                }
             }
-
-            char* error_msg = NULL;
-            cJSON* included_json = yaml_to_cjson(included_content, &error_msg);
-            free(included_content);
-
-            if (error_msg) {
-                char err_buf[1024];
-                snprintf(err_buf, sizeof(err_buf), "Error in included file '%s': %s", full_path, error_msg);
-                render_abort(err_buf);
-                free(error_msg);
-                free(full_path);
-                ctx->error_occurred = true;
-                break;
-            }
-
-            if (included_json && cJSON_IsArray(included_json)) {
-                char* new_base_path = get_dirname(full_path);
-                process_ui_spec_array(ctx, included_json, new_base_path, object_list_head, operation_list_head, parent_c_name, ui_context);
-                free(new_base_path);
-            } else {
-                print_warning("Included file '%s' does not contain a valid YAML/JSON list.", full_path);
-            }
-
-            free(full_path);
-            cJSON_Delete(included_json);
-        } else if (cJSON_IsObject(item_json)) {
+            else if (cJSON_IsObject(item_json)) {
              cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item_json, "type");
             if (type_item && cJSON_IsString(type_item)) {
                 if (strcmp(type_item->valuestring, "component") == 0) continue;

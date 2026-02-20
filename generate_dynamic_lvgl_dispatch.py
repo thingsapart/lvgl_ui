@@ -22,6 +22,12 @@ IGNORE_ARG_TYPES = [
     "lv_style_value_t", "lv_ll_t*", "lv_indev_t*", "ellipsis"
 ]
 
+# Return types we consider unsupported for automatic wrapping
+IGNORE_RETURN_TYPES = [
+    'SDL_Window', 'SDL_Renderer', 'SDL_Texture',
+    'lv_draw_buf_malloc_cb_t', 'lv_cache_ops_t'
+]
+
 # --- Whitelist Configuration ---
 # Functions in this set will be wrapped even if they would normally be ignored.
 # This is useful for functions with complex arguments (like `void*` or callbacks)
@@ -59,12 +65,105 @@ class CCodeGenerator:
 
     def __init__(self, api_spec):
         """Initializes the generator with the parsed API specification."""
-        self.spec = api_spec
+        # Normalize different possible API-spec shapes (raw lv_def.json, processed api_spec.json,
+        # or a flat list of definitions). After normalization `self.spec` will be a dict with
+        # at least 'enums' (dict) and 'functions' (dict) keys so downstream code can assume
+        # a common structure.
+        self.spec = self._normalize_spec(api_spec)
         self.functions = []
         self.archetypes = defaultdict(list)
         # This now correctly handles a dictionary format for enums.
         self.enum_types = set(self.spec.get('enums', {}).keys())
         self._prepare_functions()
+
+    def _normalize_spec(self, api_spec):
+        """Return a normalized spec dict with 'enums' and 'functions' as dicts.
+
+        Handles these cases:
+        - already-processed spec where 'enums' and 'functions' are dicts (no-op)
+        - lv_def.json style where 'enums' is a list -> convert to dict keyed by name
+        - a flat list of items (each with 'json_type') -> collect enums/functions by name
+        """
+        # Helper to convert lv_def style nested type dicts into C-like strings
+        def _type_to_c(t):
+            if not t:
+                return 'void'
+            # If this node is a wrapper with a 'type' child, unwrap
+            if isinstance(t, dict) and 'type' in t and isinstance(t['type'], dict) and t.get('json_type') not in ('lvgl_type', 'primitive_type'):
+                return _type_to_c(t['type'])
+            if isinstance(t, dict):
+                jt = t.get('json_type')
+                if jt == 'pointer':
+                    inner = _type_to_c(t.get('type'))
+                    if inner.endswith('*'):
+                        return inner
+                    return inner + '*'
+                if jt == 'array':
+                    inner = _type_to_c(t.get('type'))
+                    return inner + '*'
+                if jt in ('primitive_type', 'lvgl_type', 'ret_type'):
+                    name = t.get('name') or t.get('type', {}).get('name') if isinstance(t.get('type'), dict) else t.get('name')
+                    quals = t.get('quals') or []
+                    prefix = ' '.join(q for q in quals if q in ('const', 'volatile'))
+                    if prefix and name:
+                        return prefix + ' ' + name
+                    if name:
+                        return name
+            # fallback: string repr
+            return str(t)
+
+        # If it's a flat list of definitions, collect enums and functions by name
+        if isinstance(api_spec, list):
+            enums = {}
+            functions = {}
+            for item in api_spec:
+                if not isinstance(item, dict):
+                    continue
+                jt = item.get('json_type')
+                if jt == 'enum' and 'name' in item:
+                    enums[item['name']] = item
+                elif jt == 'function' and 'name' in item:
+                    name = item['name']
+                    # Convert to processed shape: return_type and args as strings
+                    ret = _type_to_c(item.get('type'))
+                    args = []
+                    for a in item.get('args', []):
+                        if isinstance(a, dict):
+                            args.append(_type_to_c(a.get('type')))
+                        else:
+                            args.append(_type_to_c(a))
+                    functions[name] = {'name': name, 'return_type': ret, 'args': args}
+            return {'enums': enums, 'functions': functions}
+
+        # If it's a dict, but contains lists for 'enums' or 'functions', convert them
+        if isinstance(api_spec, dict):
+            spec = dict(api_spec)  # shallow copy
+            if 'enums' in spec and isinstance(spec['enums'], list):
+                enums = {}
+                for e in spec['enums']:
+                    if isinstance(e, dict) and 'name' in e:
+                        enums[e['name']] = e
+                spec['enums'] = enums
+            if 'functions' in spec and isinstance(spec['functions'], list):
+                funcs = {}
+                for f in spec['functions']:
+                    if not isinstance(f, dict) or 'name' not in f:
+                        continue
+                    name = f['name']
+                    # Convert to processed shape: return_type and args as strings
+                    ret = _type_to_c(f.get('type'))
+                    args = []
+                    for a in f.get('args', []):
+                        if isinstance(a, dict):
+                            args.append(_type_to_c(a.get('type')))
+                        else:
+                            args.append(_type_to_c(a))
+                    funcs[name] = {'name': name, 'return_type': ret, 'args': args}
+                spec['functions'] = funcs
+            return spec
+
+        # Unknown shape: return as-is (downstream code will handle missing keys)
+        return api_spec
 
     def _prepare_functions(self):
         """Flattens all functions from the spec into a single list for processing."""
@@ -90,6 +189,12 @@ class CCodeGenerator:
         if any(func_name.startswith(p) for p in IGNORE_FUNC_PREFIXES): return False
         if any(func_name.endswith(s) for s in IGNORE_FUNC_SUFFIXES): return False
         if '...' in str(func_info.get('args', [])): return False  # Variadic functions
+
+        # Exclude functions returning unsupported types
+        ret = func_info.get('return_type', '') or ''
+        for bad in IGNORE_RETURN_TYPES:
+            if bad in ret and func_name not in WHITELIST_FUNCTIONS:
+                return False
 
         # Check argument types against the ignore list
         for arg_type in func_info.get('args', []):
