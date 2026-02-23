@@ -1,0 +1,6 @@
+{
+  "enums": [],
+  "macros": [
+    { "name": "LV_GLOBAL_DEFAULT", "params": null, "initializer": "(&lv_global)" }
+  ]
+}

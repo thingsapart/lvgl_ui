@@ -1,0 +1,11 @@
+{
+  "enums": [
+    {
+      "name": null,
+      "json_type": "enum",
+      "members": [
+        { "name": "FLAG_C", "value": "(1 << 2) | (1 << 3)" }
+      ]
+    }
+  ]
+}

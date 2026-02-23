@@ -1,0 +1,2 @@
+constants.lv_obj_del=lv_obj_delete
+constants.lv_obj_del_async=lv_obj_delete_async

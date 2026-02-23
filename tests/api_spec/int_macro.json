@@ -1,0 +1,11 @@
+{
+  "enums": [
+    {
+      "name": null,
+      "json_type": "enum",
+      "members": [
+        { "name": "LV_DRAW_LINE_POINT_NONE", "value": "INT32_MAX" }
+      ]
+    }
+  ]
+}

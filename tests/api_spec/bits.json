@@ -1,0 +1,14 @@
+{
+  "enums": [
+    {
+      "name": "lv_obj_flag_t",
+      "json_type": "enum",
+      "members": [
+        { "name": "LV_OBJ_FLAG_HIDDEN", "value": "(1u << 0)" },
+        { "name": "LV_OBJ_FLAG_CLICKABLE", "value": "(1u << 1)" },
+        { "name": "LV_OBJ_FLAG_CLICK_FOCUSABLE", "value": "(1u << 2)" },
+        { "name": "LV_OBJ_FLAG_SCROLLABLE", "value": "(1u << 4)" }
+      ]
+    }
+  ]
+}

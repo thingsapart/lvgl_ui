@@ -1,0 +1,12 @@
+{
+  "enums": [
+    {
+      "name": null,
+      "json_type": "enum",
+      "members": [
+        { "name": "FLAG_A", "value": "0x01u" },
+        { "name": "FLAG_B", "value": "0x04UL" }
+      ]
+    }
+  ]
+}

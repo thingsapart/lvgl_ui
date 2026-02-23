@@ -1,0 +1,11 @@
+{
+  "enums": [
+    {
+      "name": null,
+      "json_type": "enum",
+      "members": [
+        { "name": "FLAG_D", "value": "((uint32_t)1 << (3))" }
+      ]
+    }
+  ]
+}

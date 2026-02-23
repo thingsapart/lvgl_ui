@@ -1,0 +1,10 @@
+{
+  "macros": [
+    { "name": "lv_obj_del", "params": null, "initializer": "lv_obj_delete" },
+    { "name": "lv_obj_del_async", "params": null, "initializer": "lv_obj_delete_async" }
+  ],
+  "functions": [
+    { "name": "lv_obj_delete" },
+    { "name": "lv_obj_delete_async" }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "enums": [
+    {
+      "name": null,
+      "json_type": "enum",
+      "members": [
+        { "name": "BASE", "value": "(1 << 1)" },
+        { "name": "DERIVED", "value": "(BASE << 2)" }
+      ]
+    }
+  ]
+}

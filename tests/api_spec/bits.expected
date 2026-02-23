@@ -1,0 +1,8 @@
+constants.LV_OBJ_FLAG_CLICKABLE=2
+constants.LV_OBJ_FLAG_CLICK_FOCUSABLE=4
+constants.LV_OBJ_FLAG_HIDDEN=1
+constants.LV_OBJ_FLAG_SCROLLABLE=16
+enums.lv_obj_flag_t.LV_OBJ_FLAG_CLICKABLE=2
+enums.lv_obj_flag_t.LV_OBJ_FLAG_CLICK_FOCUSABLE=4
+enums.lv_obj_flag_t.LV_OBJ_FLAG_HIDDEN=1
+enums.lv_obj_flag_t.LV_OBJ_FLAG_SCROLLABLE=16
