@@ -3,5 +3,5 @@
 - include: "fonts.yaml"
 - include: "styles/global_styles.yaml"
 
-#- include: "main_480x320.yaml"
-- include: "main_tablet_portrait.yaml"
+- include: "main_480x320.yaml"
+#- include: "main_tablet_portrait.yaml"

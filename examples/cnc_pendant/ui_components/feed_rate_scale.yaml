@@ -22,7 +22,6 @@
       - layout: LV_LAYOUT_FLEX
         width: 100
         add_style: ['@container_transp', 0]
-        add_style: ['@debug', 0]
         flex_flow: LV_FLEX_FLOW_COLUMN
         size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
         min_width: 50

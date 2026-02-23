@@ -16,6 +16,7 @@
     outline_width: 0
     pad_column: 0
     name: main
+    remove_flag: LV_OBJ_FLAG_SCROLLABLE
     children:
       - layout: LV_LAYOUT_FLEX
         flex_flow: LV_FLEX_FLOW_COLUMN
@@ -34,6 +35,7 @@
       # Right main column (Feeds & Speeds)
       - layout: LV_LAYOUT_FLEX
         flex_flow: LV_FLEX_FLOW_COLUMN
+        remove_flag: LV_OBJ_FLAG_SCROLLABLE
         add_style: ['@container', 0]
         add_style: [@bg_gradient, 0]
         height: 100%

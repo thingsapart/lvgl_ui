@@ -75,6 +75,8 @@ $(API_SPEC_JSON): $(API_SPEC_LVGL) merge_custom_json.sh
 	@echo "Producing final API Spec: $(API_SPEC_JSON) (merging custom if present)"
 	bash merge_custom_json.sh
 
+$(LV_DEF_JSON): $(LV_CONF_PATH)
+	python3 $(LVGL_DIR)/scripts/gen_json/gen_json.py --lvgl-config="$(LV_CONF_PATH)" > $(LV_DEF_JSON)
 
 # Rule to generate dynamic_lvgl.h and dynamic_lvgl.c
 # These files depend on the Python script and the api_spec.json
@@ -132,6 +134,7 @@ ex_cnc/cnc_main_native.o: ex_cnc/cnc_main.c $(GENERATED_UI_HEADER)
 	$(CC) $(CFLAGS) -DCNC_STATIC_BUILD_MODE -c $< -o $@
 
 clean:
+	@rm $(API_SPEC_JSON) api_spec_lvgl.json $(LV_DEF_JSON)
 	@rm -f $(OBJECTS) $(TARGET) $(DYNAMIC_LVGL_H) $(DYNAMIC_LVGL_C) $(DYNAMIC_LVGL_O)
 	@# rm -rf $(LVGL_BUILD_DIR)
 	@rm -f $(TARGET_CNC_NATIVE) $(TARGET_CNC_RENDERED) $(GENERATED_UI_OBJ)
