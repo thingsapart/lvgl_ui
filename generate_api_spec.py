@@ -1,5 +1,6 @@
 import json
 import re
+import ast
 import sys
 from collections import defaultdict
 import argparse
@@ -96,18 +97,211 @@ class LVGLApiParser:
 
     def _translate_primitives(self):
         """Translate enums, constants, and raw function signatures."""
+        # Collect raw constants from anonymous enums and macros
+        raw_constants = {}
+        enum_members_by_enum = {}
+
         for enum in self.spec.get('enums', []):
-            members = {member['name']: member['value'] for member in enum.get('members', [])}
+            members = {member['name']: member.get('value') for member in enum.get('members', [])}
             if enum.get('name'):
-                self.result['enums'][enum['name']] = members
+                enum_members_by_enum[enum['name']] = members
             else:
-                print("!!", enum, members)
-                self.result['constants'].update(members)
+                # anonymous enum -> global constants
+                raw_constants.update(members)
 
         for macro in self.spec.get('macros', []):
             if macro.get('params') is None and macro.get('initializer'):
-                self.result['constants'][macro['name']] = macro['initializer']
+                raw_constants[macro['name']] = macro['initializer']
 
+        # Try to resolve numeric values using Python evaluator first
+        resolved = {}
+
+        # quick pass to pick up direct integer literals
+        for name, val in list(raw_constants.items()):
+            if isinstance(val, str):
+                try:
+                    cleaned_val = re.sub(r'/\*.*?\*/', '', val).strip()
+                    cleaned_val = re.sub(r'([uUlL]+)$', '', cleaned_val)
+                    resolved[name] = int(cleaned_val, 0)
+                except Exception:
+                    pass
+            elif isinstance(val, int):
+                resolved[name] = int(val)
+
+        # Also try enum members (keep enum structure) - add to raw set for resolution
+        for enum_name, members in enum_members_by_enum.items():
+            for mname, mval in members.items():
+                raw_constants.setdefault(mname, mval)
+
+        # Iteratively try to evaluate expressions that reference other constants
+        changed = True
+        while changed:
+            changed = False
+            for name, val in list(raw_constants.items()):
+                if name in resolved: continue
+                if not isinstance(val, str):
+                    continue
+                processed = re.sub(r'/\*.*?\*/', '', val).strip()
+                processed = re.sub(r'([uUlL]+)$', '', processed)
+                if not processed:
+                    continue
+                # If it's a simple integer literal, convert
+                try:
+                    resolved[name] = int(processed, 0)
+                    changed = True
+                    continue
+                except Exception:
+                    pass
+                # Try our C-expression evaluator
+                try:
+                    v = self._eval_c_expression(processed, resolved)
+                    resolved[name] = int(v)
+                    changed = True
+                except ValueError:
+                    # leave unresolved for now
+                    continue
+
+        # Update enums with resolved values where possible
+        for enum_name, members in enum_members_by_enum.items():
+            out_members = {}
+            for mname, mval in members.items():
+                if mname in resolved:
+                    out_members[mname] = str(resolved[mname])
+                else:
+                    out_members[mname] = mval
+            self.result['enums'][enum_name] = out_members
+
+        # Update constants with resolved values (from anonymous enums / macros)
+        # Do NOT duplicate named enum members into the top-level `constants`
+        # map — keep them under `enums` so downstream IR generation can
+        # preserve their enum type information.
+        enum_member_names = set()
+        for members in enum_members_by_enum.values():
+            enum_member_names.update(members.keys())
+
+        for name, val in raw_constants.items():
+            if name in enum_member_names:
+                continue
+            if name in resolved:
+                self.result['constants'][name] = str(resolved[name])
+            else:
+                self.result['constants'][name] = val
+
+        # Attempt to resolve remaining complex constants using the C compiler helper
+        # here, before we perform the final unresolved check. Doing this inside
+        # this method ensures complex macros (eg LV_PCT(...)) that need C
+        # preprocessing/expansion are evaluated and substituted before we decide
+        # whether any unresolved numeric constants remain.
+        try:
+            self._evaluate_complex_constants(self.result['constants'])
+        except Exception as e:
+            print(f"Error while evaluating complex constants with compiler: {e}", file=sys.stderr)
+
+        
+        # Normalize and try to resolve aliases (identifiers pointing to other constants),
+        # accept function aliases and pointer-like entries as non-numeric and skip them.
+        function_names = {f.get('name') for f in self.spec.get('functions', []) if f.get('name')}
+        known_macros = {
+            'INT32_MAX': 2**31 - 1,
+            'UINT32_MAX': 2**32 - 1,
+            'INT16_MAX': 2**15 - 1
+        }
+
+        def _clean_token(tok):
+            if not isinstance(tok, str):
+                return tok
+            s = re.sub(r'/\*.*?\*/', '', tok).strip()
+            # strip surrounding parentheses
+            while s.startswith('(') and s.endswith(')'):
+                s = s[1:-1].strip()
+            # strip trailing unsigned/long suffixes
+            s = re.sub(r'([uUlL]+)$', '', s)
+            return s.strip()
+
+        unresolved = []
+        # Check top-level constants
+        for k, v in list(self.result['constants'].items()):
+            cleaned = _clean_token(v)
+            if cleaned == '':
+                continue
+            # If numeric, ok
+            try:
+                int(cleaned, 0)
+                continue
+            except Exception:
+                pass
+            # If it's a string literal, accept it
+            if cleaned.startswith('"') and cleaned.endswith('"'):
+                continue
+            # If it's a known macro, substitute (allow matching by word)
+            if any(re.search(r'\b' + re.escape(key) + r'\b', cleaned) for key in known_macros):
+                # pick the first matching macro
+                for key, val in known_macros.items():
+                    if re.search(r'\b' + re.escape(key) + r'\b', cleaned):
+                        self.result['constants'][k] = str(val)
+                        break
+                continue
+            # If it's a bare identifier referencing another constant, try to resolve
+            if re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', cleaned):
+                if cleaned in self.result['constants']:
+                    # resolve to referenced value if that one is numeric
+                    ref = _clean_token(self.result['constants'][cleaned])
+                    try:
+                        self.result['constants'][k] = str(int(ref, 0))
+                        continue
+                    except Exception:
+                        pass
+                # Treat bare identifiers (aliases to other symbols or functions)
+                # as non-fatal and skip them: they are valid aliases.
+                continue
+            # If it looks like a pointer/address or contains & or sizeof or ->, skip (non-numeric)
+            if any(x in cleaned for x in ['&', 'sizeof', '->', '.']) or re.match(r'^[^0-9]+$', cleaned):
+                # treat as non-numeric alias/pointer and skip
+                continue
+            # Otherwise unresolved
+            unresolved.append(f"{k}: {v}")
+
+        # Check enum members
+        for ename, members in self.result['enums'].items():
+            for mname, mval in list(members.items()):
+                cleaned = _clean_token(mval)
+                if cleaned == '':
+                    continue
+                try:
+                    int(cleaned, 0)
+                    continue
+                except Exception:
+                    pass
+                # If it's a string literal, accept it
+                if cleaned.startswith('"') and cleaned.endswith('"'):
+                    continue
+                if any(re.search(r'\b' + re.escape(key) + r'\b', cleaned) for key in known_macros):
+                    for key, val in known_macros.items():
+                        if re.search(r'\b' + re.escape(key) + r'\b', cleaned):
+                            self.result['enums'][ename][mname] = str(val)
+                            break
+                    continue
+                if re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', cleaned):
+                    if cleaned in self.result['constants']:
+                        ref = _clean_token(self.result['constants'][cleaned])
+                        try:
+                            self.result['enums'][ename][mname] = str(int(ref, 0))
+                            continue
+                        except Exception:
+                            pass
+                    if cleaned in function_names:
+                        continue
+                if any(x in cleaned for x in ['&', 'sizeof', '->', '.']):
+                    continue
+                unresolved.append(f"{mname} (enum {ename}): {mval}")
+
+        if unresolved:
+            print("Error: Unable to resolve the following constants to numeric values:", file=sys.stderr)
+            for k in unresolved[:200]:
+                print(f"  {k}", file=sys.stderr)
+            sys.exit(2)
+
+        # Now translate functions as before
         for func in self.spec.get('functions', []):
             func_name = func.get('name', '')
             if not func_name: continue
@@ -132,6 +326,80 @@ class LVGLApiParser:
         except (ValueError, TypeError):
             pass
         return True
+
+    def _eval_c_expression(self, expr, known_symbols):
+        """Try to safely evaluate a C-style integer expression using Python.
+
+        - Removes common C annotations (unsigned/long suffixes and simple casts)
+        - Replaces known symbol names with their numeric values
+        - Uses ast to validate allowed nodes before evaluating
+        Returns integer on success, raises ValueError on failure.
+        """
+        if not isinstance(expr, str):
+            raise ValueError("Expression is not a string")
+
+        # strip comments
+        s = re.sub(r'/\*.*?\*/', '', expr)
+        s = s.strip()
+        if not s:
+            raise ValueError("Empty expression")
+
+        # Remove unsigned/long suffixes from numeric literals like 1u, 0x1UL
+        s = re.sub(r'(?<=[0-9a-fA-F])([uUlL]+)\b', '', s)
+
+        # Remove simple C-style casts like (uint32_t)
+        s = re.sub(r'\(\s*[A-Za-z_][A-Za-z0-9_]*\s*\)', '', s)
+
+        # Replace identifiers with numeric values if known
+        def _ident_repl(m):
+            name = m.group(0)
+            if name in known_symbols:
+                return str(known_symbols[name])
+            return name
+
+        s_replaced = re.sub(r'\b[A-Za-z_][A-Za-z0-9_]*\b', _ident_repl, s)
+
+        # Validate AST to only allow safe operations
+        try:
+            node = ast.parse(s_replaced, mode='eval')
+        except SyntaxError as e:
+            raise ValueError(f"Syntax error parsing expression: {expr}: {e}")
+
+        # Build allowed AST node types dynamically to be compatible across
+        # Python versions where some classes (eg ast.Num) may be absent.
+        _maybe = lambda n: getattr(ast, n, None)
+        allowed_list = [
+            _maybe('Expression'), _maybe('BinOp'), _maybe('UnaryOp'), _maybe('Constant'), _maybe('Num'),
+            _maybe('BitAnd'), _maybe('BitOr'), _maybe('BitXor'), _maybe('Invert'), _maybe('LShift'), _maybe('RShift'),
+            _maybe('Add'), _maybe('Sub'), _maybe('Mult'), _maybe('Div'), _maybe('Mod'), _maybe('Pow'), _maybe('USub'),
+            _maybe('UAdd'), _maybe('FloorDiv'), _maybe('Call'), _maybe('Name'), _maybe('Load'), _maybe('Subscript'),
+            _maybe('Tuple'), _maybe('List'), _maybe('Dict'), _maybe('Compare'), _maybe('Eq'), _maybe('NotEq'),
+            _maybe('Lt'), _maybe('LtE'), _maybe('Gt'), _maybe('GtE')
+        ]
+        allowed_nodes = tuple([n for n in allowed_list if n is not None])
+
+        # We intentionally allow a limited set but will disallow names remaining
+        for n in ast.walk(node):
+            if isinstance(n, ast.Name):
+                # If a Name is left after replacement it's unknown -> fail
+                raise ValueError(f"Unknown identifier in expression: {expr} -> {n.id}")
+            if not isinstance(n, allowed_nodes):
+                raise ValueError(f"Disallowed AST node in expression: {type(n).__name__}")
+
+        # Evaluate in a locked-down environment
+        try:
+            value = eval(compile(node, '<expr>', 'eval'), {'__builtins__': None}, {})
+        except Exception as e:
+            raise ValueError(f"Error evaluating expression '{expr}': {e}")
+
+        if not isinstance(value, int):
+            # Sometimes ast/py returns booleans for e.g. comparisons; coerce
+            try:
+                value = int(value)
+            except Exception:
+                raise ValueError(f"Expression did not evaluate to integer: {expr}")
+
+        return value
 
     def _evaluate_complex_constants(self, constants):
         """Generates, compiles, and runs a C program to resolve complex constant macros."""
@@ -176,7 +444,6 @@ class LVGLApiParser:
             if self._is_complex_constant(v):
                 complex_consts[k] = v
         if not complex_consts:
-            print("No complex constants found to evaluate.", file=sys.stderr)
             return
 
         print(f"Found {len(complex_consts)} complex constants to evaluate using C compiler.", file=sys.stderr)
@@ -343,8 +610,6 @@ class LVGLApiParser:
         self._notes()
         self._discover_types()
         self._translate_primitives()
-        if not self.args.no_eval_constants:
-            self._evaluate_complex_constants(self.result['constants'])
         self._structure_api()
         self._finalize_and_sort()
         return self.result

@@ -470,6 +470,8 @@
               letter: F
               ovr: Feed Ovr
               pad_bottom: 12
+              override_value: overrides.feed_pct
+              override_state: set_feed_override
           - type: use-view
             id: '@feed_rate_scale'
             context:
@@ -478,6 +480,8 @@
               letter: S
               ovr: Speed Ovr
               pad_bottom: 12
+              override_value: speed_override_pct
+              override_state: set_speed_override
           - type: use-view
             id: '@jog_feed'
             context:

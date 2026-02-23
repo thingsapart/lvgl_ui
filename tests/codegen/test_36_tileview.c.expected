@@ -4,6 +4,13 @@
 #include "lvgl_ui.h"
 #include <stdlib.h> // For malloc
 
+// --- Custom Includes from API Spec ---
+#include "ui/components/lv_cam_positioning.h"
+#include "ui/components/lv_cam_stream.h"
+#include "ui/components/lv_probing_wizard_stubs.h"
+#include "ui/components/lv_probing_wizard.h"
+#include "ui.h"
+
 void create_ui(lv_obj_t* parent) {
     // unnamed: tileview_0 (tileview)
     lv_obj_t* tileview_0 = lv_tileview_create(parent);

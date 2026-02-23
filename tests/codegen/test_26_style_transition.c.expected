@@ -4,9 +4,16 @@
 #include "lvgl_ui.h"
 #include <stdlib.h> // For malloc
 
+// --- Custom Includes from API Spec ---
+#include "ui/components/lv_cam_positioning.h"
+#include "ui/components/lv_cam_stream.h"
+#include "ui/components/lv_probing_wizard_stubs.h"
+#include "ui/components/lv_probing_wizard.h"
+#include "ui.h"
+
 void create_ui(lv_obj_t* parent) {
     // --- Static Arrays for LVGL properties ---
-    static const void* s_static_array_5[] = { "user_data", NULL };
+    static const void* s_static_array_5[] = { "user_data", "NULL" };
     static const void* s_static_array_4[] = { "delay", 0 };
     static const void* s_static_array_3[] = { "time", 200 };
     static const void* s_static_array_2[] = { "path", "lv_anim_path_linear" };

@@ -4,6 +4,13 @@
 #include "lvgl_ui.h"
 #include <stdlib.h> // For malloc
 
+// --- Custom Includes from API Spec ---
+#include "ui/components/lv_cam_positioning.h"
+#include "ui/components/lv_cam_stream.h"
+#include "ui/components/lv_probing_wizard_stubs.h"
+#include "ui/components/lv_probing_wizard.h"
+#include "ui.h"
+
 void create_ui(lv_obj_t* parent) {
     // unnamed: led_0 (led)
     lv_obj_t* led_0 = lv_led_create(parent);
@@ -23,5 +30,12 @@ void create_ui(lv_obj_t* parent) {
 
     lv_obj_align(led_2, LV_ALIGN_CENTER, 80, 0);
     lv_led_on(led_2);
+
+    // observed_led: observed_led_3 (led)
+    lv_obj_t* observed_led_3 = lv_led_create(parent);
+
+    obj_registry_add("observed_led", observed_led_3);
+    lv_obj_align(observed_led_3, LV_ALIGN_CENTER, 0, 80);
+    data_binding_add_observer("machine.homed", observed_led_3, 5, (const binding_map_entry_t[]){ { .key = { .type=BINDING_TYPE_BOOL, .as.b_val=true }, .value = { .b_val = true } } }, 1, (const void*)&(bool){false});
 
 }
