@@ -316,6 +316,26 @@ ApiSpec* api_spec_parse(const cJSON* root_json) {
     spec->constants = cJSON_GetObjectItemCaseSensitive(root_json, "constants");
     spec->enums = cJSON_GetObjectItemCaseSensitive(root_json, "enums");
     spec->global_properties_json_node = cJSON_GetObjectItemCaseSensitive(root_json, "properties");
+    /* Parse optional includes structure. Backwards-compatible shapes:
+     * - "includes": [ "file.h", ... ]
+     * - "includes": { "c_gen": [...], "dispatch": [...] }
+     * - "includes": "single.h"
+     */
+    spec->includes_c_gen = NULL;
+    spec->includes_dispatch = NULL;
+    cJSON* includes_json = cJSON_GetObjectItemCaseSensitive((cJSON*)root_json, "includes");
+    if (includes_json) {
+        if (cJSON_IsArray(includes_json) || cJSON_IsString(includes_json)) {
+            /* legacy: treat array or single string as both c_gen and dispatch */
+            spec->includes_c_gen = includes_json;
+            spec->includes_dispatch = includes_json;
+        } else if (cJSON_IsObject(includes_json)) {
+            cJSON* cgen = cJSON_GetObjectItemCaseSensitive(includes_json, "c_gen");
+            cJSON* dispatch = cJSON_GetObjectItemCaseSensitive(includes_json, "dispatch");
+            if (cgen) spec->includes_c_gen = cgen;
+            if (dispatch) spec->includes_dispatch = dispatch;
+        }
+    }
 
     cJSON* functions_json_obj = cJSON_GetObjectItemCaseSensitive(root_json, "functions");
     if (functions_json_obj && cJSON_IsObject(functions_json_obj)) {

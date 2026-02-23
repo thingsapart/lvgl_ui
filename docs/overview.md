@@ -38,6 +38,7 @@ The generator's goal is to convert the *declarative* nature of JSON (defining "w
     -   This function is called from `main.c` after the API spec is parsed.
     -   It initializes a `GenContext` which holds the `ApiSpec`, a `Registry` for tracking generated variable names, and a counter for unique name generation.
     -   It iterates through the top-level array of the `ui_spec.json`. For each JSON object in the array, it calls the main recursive parser, `parse_object`.
+    -   Include processing: the parser recognizes an `include` directive on array items. An include may be a simple string (path) or an object with `file`, `context`, `as`, and `merge` options. Included files (YAML or JSON) are parsed relative to the including file's directory; an included `context` is merged with the active UI context (included context overrides outer keys), and an `as` prefix will be applied to `id` values inside the included content (IDs starting with `@` are left global). Included content must be a top-level array of UI elements.
 
 2.  **Object Parsing (`parse_object`):**
     -   This function is the heart of the generator and handles a single JSON object.

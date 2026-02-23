@@ -192,7 +192,8 @@ static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
 
         // Reallocate the LVGL draw buffer
         if (lvgl_draw_buffer) free(lvgl_draw_buffer);
-        size_t lv_buf_size = (size_t)VSC_WIDTH * VSC_HEIGHT * sizeof(lv_color_t);
+        //size_t lv_buf_size = (size_t)VSC_WIDTH * VSC_HEIGHT * sizeof(lv_color_t);
+        size_t lv_buf_size = (size_t)new_width * new_height * sizeof(lv_color_t);
         lvgl_draw_buffer = malloc(lv_buf_size);
         if (!lvgl_draw_buffer) {
             render_abort("Failed to allocate LVGL draw buffer.");
@@ -201,7 +202,7 @@ static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
 
         // Reallocate the RGBA conversion buffer
         if (rgba_buffer) free(rgba_buffer);
-        size_t rgba_buf_size = (size_t)VSC_WIDTH * VSC_HEIGHT * 4;
+        size_t rgba_buf_size = (size_t)new_width * new_height * 4;
         rgba_buffer = malloc(rgba_buf_size);
         if(!rgba_buffer) {
             render_abort("Failed to allocate RGBA conversion buffer.");
@@ -209,12 +210,18 @@ static void handle_render_command(cJSON* payload, ApiSpec* api_spec) {
         }
         // Use PARTIAL render mode for efficiency.
         lv_display_set_buffers(disp, lvgl_draw_buffer, NULL, lv_buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
-        lv_display_set_resolution(disp, VSC_WIDTH, VSC_HEIGHT);
+        lv_display_set_resolution(disp, new_width, new_height);
     }
 
     // lvgl_renderer_reload_ui_from_string will handle parsing and rendering.
-    // It also handles cleaning the screen internally, both on success and failure.
-    lvgl_renderer_reload_ui_from_string(source_item->valuestring, api_spec, lv_screen_active(), NULL);
+    // If the editor provided a basePath, use it so relative includes are
+    // resolved relative to the edited file instead of the server CWD.
+    cJSON* base_item = cJSON_GetObjectItem(payload, "basePath");
+    if (base_item && cJSON_IsString(base_item) && base_item->valuestring && base_item->valuestring[0]) {
+        lvgl_renderer_reload_ui_from_string_with_base_path(source_item->valuestring, base_item->valuestring, api_spec, lv_screen_active(), NULL);
+    } else {
+        lvgl_renderer_reload_ui_from_string(source_item->valuestring, api_spec, lv_screen_active(), NULL);
+    }
 
     // Invalidate the screen to force LVGL to redraw it in the next lv_timer_handler call.
     lv_obj_invalidate(lv_screen_active());

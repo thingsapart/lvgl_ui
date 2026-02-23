@@ -55,5 +55,11 @@ void lvgl_renderer_reload_ui(const char* ui_spec_path, ApiSpec* api_spec, lv_obj
  */
 void lvgl_renderer_reload_ui_from_string(const char* ui_spec_string, ApiSpec* api_spec, lv_obj_t* preview_panel, lv_obj_t* inspector_panel);
 
+/**
+ * @brief Reloads the UI from a string but uses the provided base path when
+ * resolving relative include directives. If `base_path` is NULL, behavior
+ * falls back to the default behavior (current directory).
+ */
+void lvgl_renderer_reload_ui_from_string_with_base_path(const char* ui_spec_string, const char* base_path, ApiSpec* api_spec, lv_obj_t* preview_panel, lv_obj_t* inspector_panel);
 
 #endif // LVGL_RENDERER_H

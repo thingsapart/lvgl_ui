@@ -7,6 +7,7 @@ const path = require("path");
 const fs = require("fs");
 const child_process_1 = require("child_process");
 const LOGGING_ENABLED = true; // Set to true for verbose debug output
+let SUPER_VERBOSE_LOGGING = false; // Toggle for very chatty parser recv logs
 const RESOLUTIONS = [
     { name: 'Default (480x320)', width: 480, height: 320 },
     { name: 'Phone Portrait (320x480)', width: 320, height: 480 },
@@ -16,6 +17,10 @@ const RESOLUTIONS = [
     { name: 'Large Landscape (800x480)', width: 800, height: 480 },
     { name: 'Large Portrait (480x800)', width: 480, height: 800 },
     { name: 'WXGA (1280x720)', width: 1280, height: 720 },
+    { name: '7in Portrait (800x1024)', width: 800, height: 1024 },
+    { name: '7in Landscape (1024x800)', width: 1024, height: 800 },
+    { name: '10in Portrait (800x1280)', width: 800, height: 1280 },
+    { name: '10in Landscape (1280x800)', width: 1280, height: 800 },
 ];
 const STORAGE_KEY_RESOLUTION = 'lvglPreview.lastResolution';
 const STORAGE_KEY_TRACE_SIM = 'lvglPreview.traceSimEnabled';
@@ -25,6 +30,9 @@ let outputChannel;
 let logChannel;
 let previewedDocumentUri = undefined;
 let renderTimeout;
+// Map of absolute path -> FSWatcher for included files. Some platforms may
+// fallback to a minimal watcher wrapper (only `close()`), so accept either.
+const includeWatchers = new Map();
 // pending completions map (requestId -> resolver + context)
 let pendingCompletions = new Map();
 // This holds the active resolution for the current preview session.
@@ -32,14 +40,210 @@ let currentResolution = { width: 480, height: 320 };
 // This holds the active trace setting for the current preview session.
 let traceSimEnabled = false;
 let apiSpec = null;
+// Track whether the currently running server process (if any) was started
+// in background mode. This influences whether we should restart it when the
+// preview panel is opened so that an interactive INIT handshake is emitted.
+let serverIsBackground = false;
 const shorten = (s, n = 80) => { if (!s)
     return ''; return s.length > n ? s.substr(0, n - 3) + '...' : s; };
+// Collect includes recursively from a filesystem path. Returns absolute paths.
+function collectIncludesRecursive(rootPath, visited = new Set()) {
+    const out = [];
+    try {
+        if (LOGGING_ENABLED && logChannel)
+            logChannel.appendLine(`[Includes] collectIncludesRecursive root=${shorten(rootPath, 200)}`);
+        const absRoot = path.resolve(rootPath);
+        if (visited.has(absRoot)) {
+            if (LOGGING_ENABLED && logChannel)
+                logChannel.appendLine(`[Includes] Skipping already-visited ${absRoot}`);
+            return [];
+        }
+        visited.add(absRoot);
+        if (!fs.existsSync(absRoot))
+            return [];
+        const content = fs.readFileSync(absRoot, 'utf8');
+        const lines = content.split(/\r?\n/);
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const m = line.match(/^\s*include\s*:\s*["']?(.*?)?["']?\s*$/);
+            // also accept inline list item style: - include: "file.yaml"
+            const mListInline = line.match(/^\s*-\s*include\s*:\s*["']?(.*?)?["']?\s*$/);
+            if (mListInline && mListInline[1]) {
+                if (LOGGING_ENABLED && logChannel)
+                    logChannel.appendLine(`[Includes] ${absRoot} -> ${mListInline[1]}`);
+                const p = path.resolve(path.dirname(absRoot), mListInline[1]);
+                out.push(p);
+                const deeper = collectIncludesRecursive(p, visited);
+                out.push(...deeper);
+                continue;
+            }
+            if (m && m[1]) {
+                const p = path.resolve(path.dirname(absRoot), m[1]);
+                if (LOGGING_ENABLED && logChannel)
+                    logChannel.appendLine(`[Includes] ${absRoot} -> ${p}`);
+                out.push(p);
+                const deeper = collectIncludesRecursive(p, visited);
+                out.push(...deeper);
+                continue;
+            }
+            const incKey = line.match(/^\s*include\s*:\s*$/);
+            if (incKey) {
+                const baseIndent = (line.match(/^(\s*)/) || ['', ''])[1].length;
+                for (let j = i + 1; j < lines.length; j++) {
+                    const l = lines[j];
+                    const indent = (l.match(/^(\s*)/) || ['', ''])[1].length;
+                    if (l.trim() === '')
+                        continue;
+                    if (indent <= baseIndent)
+                        break;
+                    const m2 = l.match(/^[-]\s*["']?(.*?)["']?\s*$/);
+                    if (m2 && m2[1]) {
+                        const p = path.resolve(path.dirname(absRoot), m2[1]);
+                        if (LOGGING_ENABLED && logChannel)
+                            logChannel.appendLine(`[Includes] ${absRoot} -> ${p}`);
+                        out.push(p);
+                        const deeper = collectIncludesRecursive(p, visited);
+                        out.push(...deeper);
+                    }
+                }
+            }
+        }
+    }
+    catch (e) {
+        if (LOGGING_ENABLED && logChannel)
+            logChannel.appendLine(`[Includes] collectIncludesRecursive error: ${String(e)}`);
+    }
+    // dedupe
+    if (LOGGING_ENABLED && logChannel)
+        logChannel.appendLine(`[Includes] collectIncludesRecursive found ${out.length} includes`);
+    return Array.from(new Set(out));
+}
+// Module-level helper: watch includes for a TextDocument and trigger re-renders
+function watchIncludesForDocument(doc, context) {
+    try {
+        const root = doc.uri.fsPath;
+        if (LOGGING_ENABLED && logChannel)
+            logChannel.appendLine(`[Includes] watchIncludesForDocument root=${root}`);
+        const newIncludes = collectIncludesRecursive(root);
+        const keep = new Set(newIncludes);
+        for (const [p, w] of Array.from(includeWatchers.entries())) {
+            if (!keep.has(p)) {
+                try {
+                    w.close();
+                }
+                catch (e) {
+                    if (LOGGING_ENABLED && logChannel)
+                        logChannel.appendLine(`[Includes] Error closing watcher ${p}: ${String(e)}`);
+                }
+                includeWatchers.delete(p);
+                if (LOGGING_ENABLED && logChannel)
+                    logChannel.appendLine(`[Includes] Stopped watching ${p}`);
+            }
+        }
+        if (LOGGING_ENABLED && logChannel)
+            logChannel.appendLine(`[Includes] New includes (${newIncludes.length}): ${newIncludes.join(', ')}`);
+        for (const p of newIncludes) {
+            if (includeWatchers.has(p))
+                continue;
+            if (!fs.existsSync(p))
+                continue;
+            try {
+                // Try a persistent fs.watch first; on some platforms (macOS)
+                // atomic saves can cause surprising rename events so we also
+                // add a fallback using fs.watchFile when needed.
+                let watcher;
+                try {
+                    watcher = fs.watch(p, { persistent: true }, (eventType) => {
+                        if (LOGGING_ENABLED && logChannel)
+                            logChannel.appendLine(`[Includes] fs.watch event ${eventType} on ${p}`);
+                        try {
+                            if (!previewedDocumentUri) {
+                                if (LOGGING_ENABLED && logChannel)
+                                    logChannel.appendLine(`[Includes] Change on ${p} but no previewed document set`);
+                                return;
+                            }
+                            vscode.workspace.openTextDocument(previewedDocumentUri).then(doc2 => { renderDocument(doc2, currentResolution.width, currentResolution.height, context); }, (err) => { if (LOGGING_ENABLED && logChannel)
+                                logChannel.appendLine(`[Includes] openTextDocument failed: ${String(err)}`); });
+                        }
+                        catch (e) {
+                            if (LOGGING_ENABLED && logChannel)
+                                logChannel.appendLine(`[Includes] watcher callback error: ${String(e)}`);
+                        }
+                    });
+                    includeWatchers.set(p, watcher);
+                    if (LOGGING_ENABLED && logChannel)
+                        logChannel.appendLine(`[Includes] Now watching ${p} (fs.watch)`);
+                }
+                catch (e) {
+                    // Fallback to fs.watchFile which polls the mtime. Store a
+                    // small wrapper with a close() method so cleanup works.
+                    if (LOGGING_ENABLED && logChannel)
+                        logChannel.appendLine(`[Includes] fs.watch failed for ${p}, falling back to fs.watchFile: ${String(e)}`);
+                    fs.watchFile(p, { interval: 500 }, (curr, prev) => {
+                        if (curr && prev && curr.mtimeMs !== prev.mtimeMs) {
+                            if (LOGGING_ENABLED && logChannel)
+                                logChannel.appendLine(`[Includes] fs.watchFile change detected on ${p}`);
+                            try {
+                                if (!previewedDocumentUri) {
+                                    if (LOGGING_ENABLED && logChannel)
+                                        logChannel.appendLine(`[Includes] Change on ${p} but no previewed document set`);
+                                    return;
+                                }
+                                vscode.workspace.openTextDocument(previewedDocumentUri).then(doc2 => { renderDocument(doc2, currentResolution.width, currentResolution.height, context); }, (err) => { if (LOGGING_ENABLED && logChannel)
+                                    logChannel.appendLine(`[Includes] openTextDocument failed: ${String(err)}`); });
+                            }
+                            catch (e) {
+                                if (LOGGING_ENABLED && logChannel)
+                                    logChannel.appendLine(`[Includes] watchFile callback error: ${String(e)}`);
+                            }
+                        }
+                    });
+                    includeWatchers.set(p, { close: () => { fs.unwatchFile(p); } });
+                    if (LOGGING_ENABLED && logChannel)
+                        logChannel.appendLine(`[Includes] Now watching ${p} (fs.watchFile)`);
+                }
+            }
+            catch (e) { }
+        }
+    }
+    catch (e) { }
+}
+// Module-level helper: trigger a render for a TextDocument
+function renderDocument(document, width, height, context) {
+    if (!previewPanel)
+        return;
+    if (!serverProcess) {
+        startServerProcess(context);
+        return;
+    }
+    clearTimeout(renderTimeout);
+    renderTimeout = setTimeout(() => {
+        if (!serverProcess)
+            return;
+        const source = document.getText();
+        const relativePath = vscode.workspace.asRelativePath(document.uri);
+        if (previewPanel)
+            previewPanel.title = `LVGL Preview: ${path.basename(relativePath)}`;
+        const command = { command: 'render', source: source, width: width, height: height, basePath: path.dirname(document.uri.fsPath) };
+        serverProcess.stdin.write(JSON.stringify(command) + '\n');
+    }, 250);
+}
 function activate(context) {
     outputChannel = vscode.window.createOutputChannel("LVGL UI Preview");
     logChannel = vscode.window.createOutputChannel("LVGL UI Preview LOG");
     if (LOGGING_ENABLED) {
         logChannel.show(true); // Show the log channel on activation if enabled
         logChannel.appendLine('[EXTENSION] Starting...');
+    }
+    // Read super-verbose flag from configuration so users can toggle recv logs
+    try {
+        const cfg = vscode.workspace.getConfiguration('lvglPreview');
+        SUPER_VERBOSE_LOGGING = cfg.get('superVerboseLogs', false) || false;
+        if (LOGGING_ENABLED && SUPER_VERBOSE_LOGGING)
+            logChannel.appendLine('[EXT] Super-verbose logs enabled');
+    }
+    catch (e) {
+        // ignore config errors
     }
     // Load persisted settings
     traceSimEnabled = context.workspaceState.get(STORAGE_KEY_TRACE_SIM, false);
@@ -85,6 +289,11 @@ function activate(context) {
             }
             previewPanel.reveal(vscode.ViewColumn.Beside, true);
             startServerProcess(context);
+            if (previewedDocumentUri) {
+                vscode.workspace.openTextDocument(previewedDocumentUri).then(doc => {
+                    watchIncludesForDocument(doc, context);
+                }, () => { });
+            }
         }
         else {
             previewPanel = vscode.window.createWebviewPanel('lvglPreview', 'LVGL Preview', { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true }, { enableScripts: true, retainContextWhenHidden: true });
@@ -119,9 +328,19 @@ function activate(context) {
             const need = hasOpenYaml();
             if (need) {
                 if (!serverProcess) {
-                    if (LOGGING_ENABLED)
-                        logChannel.appendLine('[Server] Starting background server because YAML files are open.');
-                    startServerProcess(context, true);
+                    // If a preview panel already exists, prefer starting an interactive
+                    // server so the webview receives the INIT handshake. Only start a
+                    // background server when there is no preview panel.
+                    if (previewPanel) {
+                        if (LOGGING_ENABLED)
+                            logChannel.appendLine('[Server] Preview panel present; starting interactive server.');
+                        startServerProcess(context, false);
+                    }
+                    else {
+                        if (LOGGING_ENABLED)
+                            logChannel.appendLine('[Server] Starting background server because YAML files are open.');
+                        startServerProcess(context, true);
+                    }
                 }
             }
             else {
@@ -155,6 +374,18 @@ function activate(context) {
                 // Re-render with the currently active resolution.
                 triggerRender(editor, currentResolution.width, currentResolution.height, context);
             }
+        }
+    });
+    // When any text document is saved/changed on disk (not just open), we may need
+    // to refresh the preview. Listen to file saves to update include watchers.
+    vscode.workspace.onDidSaveTextDocument((doc) => {
+        if (!previewPanel)
+            return;
+        // If the saved doc is the preview root, refresh watchers and re-render.
+        if (previewedDocumentUri && doc.uri.toString() === previewedDocumentUri.toString()) {
+            watchIncludesForDocument(doc, context);
+            // Trigger an immediate render
+            renderDocument(doc, currentResolution.width, currentResolution.height, context);
         }
     });
     const parseDefinedNodes = (doc) => {
@@ -609,14 +840,41 @@ function activate(context) {
 function setupPreviewPanel(context) {
     if (!previewPanel)
         return;
+    // Attach message handler before setting html so we receive the initial ready signal.
+    previewPanel.webview.onDidReceiveMessage(message => {
+        if (message && message.command === 'webviewReady') {
+            if (LOGGING_ENABLED)
+                logChannel.appendLine('[Extension] Webview signalled ready. Starting server.');
+            startServerProcess(context);
+            // Setup include watchers for the currently previewed document
+            if (previewedDocumentUri) {
+                vscode.workspace.openTextDocument(previewedDocumentUri).then(doc => {
+                    // use recursive watcher discovery
+                    watchIncludesForDocument(doc, context);
+                    // trigger initial render
+                    renderDocument(doc, currentResolution.width, currentResolution.height, context);
+                }, () => { });
+            }
+            return;
+        }
+        // existing handlers (will be added after)
+    }, null, context.subscriptions);
     previewPanel.webview.html = getWebviewContent();
-    startServerProcess(context);
     previewPanel.onDidDispose(() => {
         serverProcess?.kill();
         serverProcess = undefined;
         previewPanel = undefined;
         previewedDocumentUri = undefined;
+        // Close any include watchers
+        for (const [, w] of includeWatchers) {
+            try {
+                w.close();
+            }
+            catch (e) { }
+        }
+        includeWatchers.clear();
     }, null, context.subscriptions);
+    // additional message handling for commands from the webview
     previewPanel.webview.onDidReceiveMessage(message => {
         if (message.command === 'changeResolution') {
             const { width, height } = message.resolution;
@@ -657,9 +915,23 @@ function setupPreviewPanel(context) {
 }
 function startServerProcess(context, allowWithoutPreview = false) {
     if (serverProcess) {
-        if (LOGGING_ENABLED)
-            logChannel.appendLine('[Server] Attempted to start server, but one is already running.');
-        return;
+        // If a background server is running but we now want an interactive
+        // server (preview open), restart it so the server emits an INIT.
+        if (!allowWithoutPreview && serverIsBackground) {
+            if (LOGGING_ENABLED)
+                logChannel.appendLine('[Server] Interactive preview requested; restarting background server as interactive.');
+            try {
+                serverProcess.kill();
+            }
+            catch (e) { }
+            serverProcess = undefined;
+            // fallthrough to start a new interactive server
+        }
+        else {
+            if (LOGGING_ENABLED)
+                logChannel.appendLine('[Server] Attempted to start server, but one is already running.');
+            return;
+        }
     }
     if (!previewPanel && !allowWithoutPreview) {
         if (LOGGING_ENABLED)
@@ -695,6 +967,7 @@ function startServerProcess(context, allowWithoutPreview = false) {
     if (LOGGING_ENABLED)
         logChannel.appendLine(`[Server] Spawning server process: ${serverPath} ${serverArgs.join(' ')}`);
     serverProcess = (0, child_process_1.spawn)(serverPath, serverArgs, { cwd });
+    serverIsBackground = !!allowWithoutPreview;
     serverProcess.on('error', (err) => {
         if (LOGGING_ENABLED)
             logChannel.appendLine(`[Server] Failed to start server process: ${err.message}`);
@@ -706,6 +979,7 @@ function startServerProcess(context, allowWithoutPreview = false) {
             logChannel.appendLine(`[Server] Process exited with code ${code}, signal ${signal}.`);
         previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: 'error', text: 'Render server has stopped. It will restart on the next change.' });
         serverProcess = undefined; // CRITICAL: Mark server as dead
+        serverIsBackground = false;
     });
     let buffer = Buffer.alloc(0);
     const MAGIC_HEADER = Buffer.from("DATA:");
@@ -714,7 +988,7 @@ function startServerProcess(context, allowWithoutPreview = false) {
     pendingCompletions = new Map();
     serverProcess.stdout.on('data', (data) => {
         buffer = Buffer.concat([buffer, data]);
-        if (LOGGING_ENABLED)
+        if (LOGGING_ENABLED && SUPER_VERBOSE_LOGGING)
             logChannel.appendLine(`[Parser] STDOUT recv... ${data.length}`);
         while (true) {
             const magicIndex = buffer.indexOf(MAGIC_HEADER);
@@ -737,6 +1011,19 @@ function startServerProcess(context, allowWithoutPreview = false) {
                 previewPanel?.webview.postMessage({ command: 'initialize', resolution: currentResolution, allResolutions: RESOLUTIONS, traceSimEnabled: traceSimEnabled });
                 if (editor) {
                     triggerRender(editor, currentResolution.width, currentResolution.height, context);
+                }
+                else if (previewedDocumentUri) {
+                    // If the editor is not currently visible, open the document silently
+                    // and trigger a render using the document-based helper. Also refresh include watchers.
+                    vscode.workspace.openTextDocument(previewedDocumentUri).then(doc => {
+                        try {
+                            watchIncludesForDocument(doc, context);
+                        }
+                        catch (e) { }
+                        renderDocument(doc, currentResolution.width, currentResolution.height, context);
+                    }, () => {
+                        // ignore
+                    });
                 }
                 buffer = buffer.subarray(16);
                 continue;
@@ -853,8 +1140,8 @@ function startServerProcess(context, allowWithoutPreview = false) {
     });
     let stderrBuffer = '';
     serverProcess.stderr.on('data', (data) => {
-        if (LOGGING_ENABLED)
-            logChannel.appendLine(`[Parser] STDERR recv... ${data.length}: ${data.toString()}`);
+        if (LOGGING_ENABLED && SUPER_VERBOSE_LOGGING)
+            logChannel.appendLine(`[Parser] STDERR recv... ${data.length} bytes`);
         stderrBuffer += data.toString();
         let eolIndex;
         while ((eolIndex = stderrBuffer.indexOf('\n')) >= 0) {
@@ -862,8 +1149,12 @@ function startServerProcess(context, allowWithoutPreview = false) {
             stderrBuffer = stderrBuffer.substring(eolIndex + 1);
             if (!line)
                 continue;
-            outputChannel.appendLine(line);
+            // Filter out extremely verbose internal server logs marked as SERVER_LOG
+            // to avoid flooding the extension logs. Keep other messages.
             const cleanLine = line.replace(/\x1b\[[0-9;]*m/g, '');
+            if (cleanLine.startsWith('SERVER_LOG:'))
+                continue;
+            outputChannel.appendLine(line);
             const match = cleanLine.match(/^\[(ERROR|WARNING|HINT)\]\s*(.*)/);
             if (match) {
                 previewPanel?.webview.postMessage({ command: 'showConsoleMessage', type: match[1].toLowerCase(), text: match[2].trim() });
@@ -885,7 +1176,6 @@ function triggerRender(editor, width, height, context) {
         startServerProcess(context);
         return; // Stop here. The restarted server will trigger the render.
     }
-    previewPanel.webview.postMessage({ command: 'hideConsole' });
     clearTimeout(renderTimeout);
     renderTimeout = setTimeout(() => {
         // Re-check server process existence inside the timeout, in case it died
@@ -903,7 +1193,8 @@ function triggerRender(editor, width, height, context) {
             command: 'render',
             source: source,
             width: width,
-            height: height
+            height: height,
+            basePath: path.dirname(editor.document.uri.fsPath)
         };
         const commandString = JSON.stringify(command) + '\n';
         if (LOGGING_ENABLED) {
@@ -988,7 +1279,7 @@ function getWebviewContent() {
         </div>
     </div>
 
-    <div id="console" class="console-container" style="display: none;">
+    <div id="console" class="console-container" style="display: flex;">
         <div class="console-header">
             <span>Console</span>
             <button id="console-close-btn">×</button>
@@ -1124,6 +1415,9 @@ function getWebviewContent() {
         canvas.addEventListener('mouseup', e => { isMouseDown = false; sendMouseEvent(e, false); });
         canvas.addEventListener('mousemove', e => { if (isMouseDown) sendMouseEvent(e, true); });
         canvas.addEventListener('mouseleave', e => { if(isMouseDown) { isMouseDown = false; sendMouseEvent(e, false); } });
+        // Notify the extension that the webview is ready to receive INIT
+        // This triggers the extension to start (or restart) the server interactively.
+        vscode.postMessage({ command: 'webviewReady' });
 
     </script>
 </body>

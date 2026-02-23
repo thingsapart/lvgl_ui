@@ -70,8 +70,13 @@ typedef struct ApiSpec {
     WidgetMapNode* widgets_list_head;                   // Head of the linked list for widget definitions
     FunctionMapNode* functions;                  // Head of linked list for functions
     const cJSON* constants;                             // Reference to parsed constants from JSON (owned by main cJSON doc)
-    const cJSON* enums;                                 // Reference to parsed enums from JSON (owned by main cJSON doc)
+    const cJSON* enums;                                 // Reference to parsed enums (dict) from JSON (owned by main cJSON doc)
     const cJSON* global_properties_json_node;           // Reference to global #/properties from JSON (owned by main cJSON doc)
+    // Optional include directives from the API spec. These may be either an
+    // array (legacy) or an object with keys "c_gen" and "dispatch".
+    // Stored as cJSON pointers so callers can iterate or inspect them.
+    const cJSON* includes_c_gen;    // Includes intended for the c_code backend output
+    const cJSON* includes_dispatch; // Includes intended for the dynamic dispatch C file
 } ApiSpec;
 
 

@@ -1,0 +1,139 @@
+---
+##########
+# Styles #
+##########
+
+- type: style
+  id: '@debug'
+  outline_width: 1
+  outline_color: '#ffeeff'
+  outline_opa: 150
+  border_width: 1
+  border_color: '#ffeeff'
+  border_opa: 150
+  radius: 0
+
+- type: style
+  id: '@container'
+  pad_all: 0
+  margin_all: 0
+  border_width: 0
+  pad_row: 3
+  pad_column: 5
+  bg_color: '#222222'
+  text_color: '#ebebcb'
+  radius: 0
+
+- type: style
+  id: '@container_transp'
+  pad_all: 0
+  margin_all: 0
+  border_width: 0
+  pad_row: 3
+  pad_column: 5
+  bg_color: '#222222'
+  text_color: '#ebebcb'
+  radius: 0
+  bg_opa: 0
+
+- type: style
+  id: '@bar_indicator'
+  radius: 4
+
+- type: style
+  id: '@bg_gradient'
+  bg_opa: 255
+  bg_color: '#353535'
+
+- type: style
+  id: '@flex_x'
+  layout: LV_LAYOUT_FLEX
+  flex_flow: LV_FLEX_FLOW_ROW
+
+- type: style
+  id: '@flex_y'
+  layout: LV_LAYOUT_FLEX
+  flex_flow: LV_FLEX_FLOW_COLUMN
+
+- type: style
+  id: '@indicator_green'
+  text_color: '#44ee44'
+
+- type: style
+  id: '@indicator_yellow'
+  text_color: '#ffff55'
+
+- type: style
+  id: '@text_actionable'
+  text_color: '#ffff55'
+  text_font: @font_kode_14
+
+- type: style
+  id: '@jog_btn'
+  pad_all: 5
+  pad_bottom: 10
+  pad_top: 10
+  margin_all: 0
+  radius: 2
+
+- type: style
+  id: '@border_top_btn'
+  border_width: 1
+  border_color: '#ffffff'
+  border_opa: 50
+  border_side: LV_BORDER_SIDE_TOP | LV_BORDER_SIDE_BOTTOM
+
+- type: style
+  id: '@border_right'
+  border_width: 1
+  border_color: '#ffffff'
+  border_opa: 50
+  border_side: LV_BORDER_SIDE_RIGHT
+
+- type: style
+  id: '@indicator_light'
+  border_width: 6
+  pad_left: 12
+  margin_left: 5
+  border_opa: 200
+  border_side: LV_BORDER_SIDE_LEFT
+
+- type: style
+  id: '@indicator_light_red'
+  border_color: '#ff5555'
+
+- type: style
+  id: '@indicator_light_green'
+  border_color: '#55ff55'
+
+- type: style
+  id: '@indicator_light_yellow'
+  border_color: '#ffff55'
+
+- type: style
+  id: @debug
+  bg_color: '#f000f0'
+  bg_opa: LV_OPA_COVER
+
+- type: style
+  id: @btn_clicked
+  bg_color: '#777777'
+  bg_opa: 60
+
+- type: style
+  id: @bg_group
+  bg_opa: 40
+  bg_color: '#111111'
+
+- type: style
+  id: @tick_color
+  line_color: '#777777'
+
+- type: style
+  id: @background_purple
+  text_color: '#ff00ff'
+
+- type: style
+  id: @background_none
+  shadow_opa: 0
+  bg_opa: 0

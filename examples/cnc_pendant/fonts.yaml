@@ -1,0 +1,37 @@
+##########
+# Fonts #
+##########
+- type: font
+  id: '@font_kode_40'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 40
+
+- type: font
+  id: '@font_kode_34'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 34
+
+- type: font
+  id: '@font_kode_30'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 30
+
+- type: font
+  id: '@font_kode_24'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 24
+
+- type: font
+  id: '@font_kode_20'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 20
+
+- type: font
+  id: '@font_kode_14'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/examples/fonts/kodemono-medium.ttf'
+  size: 14
+
+- type: font
+  id: '@font_montserrat_14'
+  path: 'S:~/Development/SW/CNC/lvgl_ui/lvgl/scripts/built_in_font/Montserrat-Medium.ttf'
+  size: 14

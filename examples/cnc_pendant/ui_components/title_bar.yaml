@@ -1,0 +1,81 @@
+- type: style
+  id: @titlebar
+  outline_width: 1
+  outline_color: '#ffeeff'
+  outline_opa: 150
+  border_width: 1
+  border_color: '#777777'
+  border_opa: 255
+  outline_opa: 0
+  shadow_opa: 0
+  radius: 0
+  margin_all: 0
+  pad_all: 0
+  radius: 8
+  margin_right: 3
+  margin_left: 3
+
+- type: style
+  id: @titlebar_entry
+  pad_left: 10
+  pad_right: 10
+  width: LV_SIZE_CONTENT
+
+- type: style
+  id: @titlebar_entry_center_kode
+  pad_top: 2
+
+- type: style
+  id: @font_default
+  text_font: null
+
+- type: component
+  id: @titlebar
+  content:
+    type: obj
+    add_style: [@container, 0]
+    add_style: [@titlebar, 0]
+    add_style: [@flex_x, 0]
+    text_font: @font_kode_14
+    size: [100%, 35]
+    flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_SPACE_EVENLY]
+    children:
+      - type: label
+        add_style: [@titlebar_entry, 0]
+        text_font: @LV_FONT_DEFAULT
+        text: "\uF015  "
+        pad_right: 0
+      - type: led
+        size: [15, 15]
+        pad_left: 0
+        observes: { motion.homed.all: { led_on: { true: true, default: false } } }
+      - type: label
+        add_style: [@titlebar_entry, 0]
+        text_font: @LV_FONT_DEFAULT
+        text: "\uF124 "
+        pad_right: 0
+      - type: label
+        add_style: [@titlebar_entry, 0]
+        add_style: [@titlebar_entry_center_kode, 0]
+        pad_left: 0
+        text: "?"
+        observes: { motion.wcs.active_name: { text: "%s" } }
+      - type: label
+        add_style: [@titlebar_entry, 0]
+        add_style: [@titlebar_entry_center_kode, 0]
+        text: "Status: ?"
+        flex_grow: 1
+        text_align: LV_TEXT_ALIGN_CENTER
+        text_color: "#ffff44"
+        observes: { machine.status_text: { text: "Status: %s" } }
+      - type: obj
+        # Right-side spacer to "center" the "Status: " label.
+        add_style: [@container, 0]
+        size: [120, 100%]
+        text_font: @LV_FONT_DEFAULT
+        children: 
+          - type: dropdown
+            add_style: [@container, 0]
+            size: [100%, 100%]
+            ext_click_area: 20
+            lv_dropdown_set_options: ["Jog/Pos\nProbe\nProbe Wiz"]

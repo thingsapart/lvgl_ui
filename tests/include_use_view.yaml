@@ -1,0 +1,3 @@
+- include: "include_component.yaml.included"
+- type: use-view
+  id: @my_comp

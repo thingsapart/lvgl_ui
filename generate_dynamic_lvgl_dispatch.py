@@ -366,6 +366,35 @@ typedef void (*generic_lvgl_func_t)(void);
 typedef RenderValue (*lvgl_ir_dispatcher_t)(generic_lvgl_func_t fn, void* target, struct IRNode** ir_args, int arg_count, struct ApiSpec* spec);
 """)
 
+            # Inject any custom includes declared in the API spec.
+            includes_node = self.spec.get('includes', None) if isinstance(self.spec, dict) else None
+            # Determine dispatch-specific includes (new shape: {"dispatch": [...]})
+            dispatch_includes = []
+            if isinstance(includes_node, dict):
+                dispatch_includes = includes_node.get('dispatch', []) or []
+            elif isinstance(includes_node, list):
+                # legacy: includes was a list -- treat as dispatch includes for backward compatibility
+                dispatch_includes = includes_node
+            elif isinstance(includes_node, str):
+                dispatch_includes = [includes_node]
+
+            if dispatch_includes:
+                f.write("\n// --- Custom Includes from API Spec (dispatch) ---\n")
+                for inc in dispatch_includes:
+                    try:
+                        s = str(inc).strip()
+                    except Exception:
+                        continue
+                    if not s:
+                        continue
+                    # If the include already looks like a full preprocessor include, emit it raw
+                    if s.startswith('#include'):
+                        f.write(s + "\n")
+                    elif s.startswith('<') or s.startswith('"'):
+                        f.write(f'#include {s}\n')
+                    else:
+                        f.write(f'#include "{s}"\n')
+
             f.write("\n// --- Forward Declarations for Archetype Dispatchers ---\n")
             self.archetype_map = {}
             for i, key in enumerate(self.archetypes.keys()):
@@ -578,6 +607,7 @@ void* obj_registry_get(const char* id) {
     if (!id) return NULL;
     if (strcmp(id, "SCREEN_ACTIVE") == 0) return (void*)lv_screen_active();
     if (strcmp(id, "NULL") == 0) return NULL;
+    if (strcmp(id, "LV_FONT_DEFAULT") == 0) return (void*)LV_FONT_DEFAULT;
 
     for (int i = 0; i < obj_registry_count; i++) {
         if (strcmp(obj_registry[i].id, id) == 0) {
@@ -637,6 +667,7 @@ def main():
     generator.generate_files(args.header_out, args.source_out)
 
     print("Done.", file=sys.stderr)
+
 
 if __name__ == '__main__':
     main()

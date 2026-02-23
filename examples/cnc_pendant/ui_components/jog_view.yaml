@@ -1,0 +1,90 @@
+- type: component
+  id: '@jog_view'
+  info: |
+    Main jog view layout.
+    ---
+    Top-level jog view: left column shows axis positions, right column contains feed/speed scales and chipload. No context required; use as top-level view.
+  content:
+    layout: LV_LAYOUT_FLEX
+    flex_flow: LV_FLEX_FLOW_ROW
+    flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+    add_style: ['@container', 0]
+    size: [100%, 100%]
+    border_width: 0
+    pad_all: 0
+    margin_all: 0
+    outline_width: 0
+    pad_column: 0
+    name: main
+    children:
+      - layout: LV_LAYOUT_FLEX
+        flex_flow: LV_FLEX_FLOW_COLUMN
+        add_style: ['@container', 0]
+        height: 100%
+        flex_grow: 4
+        border_side: LV_BORDER_SIDE_RIGHT
+        border_width: 1
+        radius: 0
+        border_color: '#333333'
+        border_opa: 255
+        children:
+          - type: use-view
+            id: '@xyz_axis_pos_display'
+
+      # Right main column (Feeds & Speeds)
+      - layout: LV_LAYOUT_FLEX
+        flex_flow: LV_FLEX_FLOW_COLUMN
+        add_style: ['@container', 0]
+        add_style: [@bg_gradient, 0]
+        height: 100%
+        flex_grow: 4
+        pad_top: 2
+        pad_right: 2
+        margin_left: 2
+        margin_right: 2
+        children:
+          - type: use-view
+            id: '@feed_rate_scale'
+            context:
+              unit: MM/MIN
+              label: FEED
+              letter: F
+              ovr: F Ovr
+              pad: 4
+              rate_value: motion.feedrate_current
+              range_min: 0
+              range_max: 5000
+              override_value: overrides.feed_pct
+              override_state: set_feed_override
+          - type: use-view
+            id: '@feed_rate_scale'
+            context:
+              unit: /MIN
+              label: SPEED
+              letter: S
+              ovr: S Ovr
+              pad: 4
+              range_min: 0
+              range_max: 24000
+              rate_value: spindle.speed_rpm
+              override_value: speed_override_pct
+              override_state: set_speed_override
+          - type: use-view
+            id: '@jog_feed'
+            observes: { machine.program_is_running: { visible: { true: false, false: true } } }
+            context:
+              unit: MM
+              label: JOG
+              ovr: Jog Ovr
+              pad: 18
+          - type: use-view
+            id: '@chipload_scale'
+            observes: { machine.program_is_running: { visible: { true: true, false: false } } }
+            context:
+              unit: /MIN
+              label: Chipload
+              letter: C
+              pad: 4
+              range_min: -50
+              range_max: 150
+              rate_value: chipload_disp

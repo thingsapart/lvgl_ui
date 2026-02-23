@@ -1,0 +1,87 @@
+- type: component
+  id: '@xyz_axis_pos_display'
+  info: |
+    XYZ axis position container.
+    ---
+    Hosts three `axis_pos_display` views for X/Y/Z and a small control row with play/stop and status. No extra context required.
+  content:
+    size: [100%, 100%]
+    add_style: [@container, 0]
+    add_style: [@flex_y, 0]
+    add_style: [@bg_gradient, 0]
+    bg_opa: 255
+    pad_column: 0
+    pad_row: 0
+    remove_flag: LV_OBJ_FLAG_SCROLLABLE
+    children:
+      - type: use-view
+        id: @axis_pos_display
+        context:
+          axis: X
+          abs_pos: "000.00"
+          wcs_pos: "000.00 G54"
+          delta_pos: "000.00   "
+          homed_state: motion.homed.x
+          selected_state: motion.jog.axis_is_x
+          home_action: action.motion.jog.axis_select_x
+          wcs_state: motion.position.work_x
+          pos_state: motion.position.machine_x
+          delta_pos_state: delta_pos_x
+
+      - type: use-view
+        id: @axis_pos_display
+        context:
+          axis: Y
+          abs_pos: "000.00"
+          wcs_pos: "000.00"
+          delta_pos: "000.00   "
+          homed_state: motion.homed.y
+          selected_state: motion.jog.axis_is_y
+          home_action: action.motion.jog.axis_select_y
+          wcs_state: motion.position.work_y
+          pos_state: motion.position.machine_y
+          delta_pos_state: delta_pos_y
+
+      - type: use-view
+        id: @axis_pos_display
+        context:
+          axis: Z
+          abs_pos: "000.00"
+          wcs_pos: "000.00"
+          delta_pos: "000.00   "
+          homed_state: motion.homed.z
+          selected_state: motion.jog.axis_is_z
+          home_action: action.motion.jog.axis_select_x
+          wcs_state: motion.position.work_z
+          pos_state: motion.position.machine_z
+          delta_pos_state: delta_pos_z
+
+- type: component
+  id: unused
+  content:
+        layout: LV_LAYOUT_FLEX
+        flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START]
+        add_style: [@container_transp, 0]
+        size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+        pad_right: 5
+        children:
+          - type: button
+            observes: {machine.program_is_running: visible }
+            children:
+              - type: label
+                text: LV_SYMBOL_PLAY
+                width: LV_SIZE_CONTENT
+                action: { action.program.run: trigger }
+          - type: button
+            observes: { machine.program_is_running: { visible: { true: true, false: false } } }
+            children:
+              - type: label
+                text: LV_SYMBOL_STOP
+                width: LV_SIZE_CONTENT
+                action: { action.program.stop: trigger }
+          - type: label
+            observes: { machine.status_text: { text: "MODE: %s" } }
+          - type: label
+            add_style: [@indicator_yellow, 0]
+            observes: { motion.wcs.active_name: { text: "- %s" } }
+            action: { action.motion.wcs.cycle: trigger }

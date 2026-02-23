@@ -52,5 +52,13 @@ IRRoot* generate_ir_from_file(const char* ui_spec_path, const ApiSpec* api_spec)
  */
 IRRoot* generate_ir_from_string(const char* ui_spec_string, const ApiSpec* api_spec);
 
+/**
+ * @brief Parse a UI specification string and resolve includes relative to the
+ * given base path. This mirrors `generate_ir_from_string` but accepts a
+ * `base_path` to control include resolution for in-memory strings (used by
+ * the VSCode extension when the spec is not loaded from disk).
+ */
+IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string, const char* base_path, const ApiSpec* api_spec);
+
 
 #endif // GENERATOR_H

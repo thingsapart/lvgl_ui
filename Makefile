@@ -33,6 +33,7 @@ TARGET = lvgl_ui_generator
 API_SPEC_GENERATOR_PY = ./generate_dynamic_lvgl_dispatch.py
 LV_DEF_JSON = ./data/lv_def.json
 API_SPEC_JSON = ./api_spec.json
+API_SPEC_LVGL = ./api_spec_lvgl.json
 DYNAMIC_LVGL_H = ./c_gen/lvgl_dispatch.h
 DYNAMIC_LVGL_C = ./c_gen/lvgl_dispatch.c
 DYNAMIC_LVGL_O = $(DYNAMIC_LVGL_C:.c=.o)
@@ -65,9 +66,14 @@ $(LVGL_LIB):
 	@echo "LVGL library not found or out of date. Building it..."
 	./build_lvgl.sh
 
-$(API_SPEC_JSON) : ./generate_api_spec.py $(LV_DEF_JSON)
-	@echo "Generating API Spec: $(API_SPEC_JSON)"
-	python3 ./generate_api_spec.py ./data/lv_def.json --lvgl-conf $(LV_CONF_PATH) > $(API_SPEC_JSON)
+$(API_SPEC_LVGL) : ./generate_api_spec.py $(LV_DEF_JSON)
+	@echo "Generating LVGL API Spec: $(API_SPEC_LVGL)"
+	python3 ./generate_api_spec.py ./data/lv_def.json --lvgl-conf $(LV_CONF_PATH) > $(API_SPEC_LVGL)
+
+
+$(API_SPEC_JSON): $(API_SPEC_LVGL) merge_custom_json.sh
+	@echo "Producing final API Spec: $(API_SPEC_JSON) (merging custom if present)"
+	bash merge_custom_json.sh
 
 
 # Rule to generate dynamic_lvgl.h and dynamic_lvgl.c

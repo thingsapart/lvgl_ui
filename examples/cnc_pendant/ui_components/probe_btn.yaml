@@ -1,0 +1,23 @@
+- type: component
+  id: '@probe_btn'
+  info: |
+    Probe grid button.
+    ---
+    Small square button showing an image; context: $row, $col, $path (image src). Used by probe grid views.
+  content:
+    add_style: [@container_transp, 0]
+    grid_cell: [LV_GRID_ALIGN_CENTER, $col, 1, LV_GRID_ALIGN_CENTER, $row, 1]
+    size: [76, 76]
+    children:
+      - type: button
+        size: [100%, 100%]
+        add_style: [@container_transp, 0]
+        border_width: 0
+        outline_width: 0
+        shadow_width: 5
+        shadow_opa: 100
+        shadow_spread: 3
+        pad_all: 1
+        children:
+          - type: image
+            src: $path

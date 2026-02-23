@@ -1,0 +1,92 @@
+- type: component
+  id: '@jog_feed'
+  info: |
+    Jog feed control block.
+    ---
+    Shows step selectors for XY/Z and a small right column with override/unit labels. Context: $label, $unit, $ovr, $pad.
+  content:
+    size: [100%, 100%]
+    add_style: ['@container_transp', 0]
+    add_style: ['@bg_group', 0]
+    layout: LV_LAYOUT_FLEX
+    flex_flow: LV_FLEX_FLOW_ROW
+    height: LV_SIZE_CONTENT
+    pad_column: 0
+    pad_bottom: $pad
+    pad_top: $pad
+    children:
+      # Left Column
+      - layout: LV_LAYOUT_FLEX
+        add_style: ['@container_transp', 0]
+        flex_flow: LV_FLEX_FLOW_COLUMN
+        width: 100%
+        height: LV_SIZE_CONTENT
+        flex_grow: 1
+        children:
+          - type: label
+            text: $label
+            height: LV_SIZE_CONTENT
+            width: 100%
+            text_font: '@font_kode_20'
+            add_style: ['@border_top_btn', 0]
+          - type: obj # grid
+            layout: LV_LAYOUT_GRID
+            grid_dsc_array: [[22, 50, 12 , 50, LV_GRID_TEMPLATE_LAST], [LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST]]
+            add_style: ['@container_transp', 0]
+            width: 100%
+            height: LV_SIZE_CONTENT
+            pad_left: 2
+            children:
+              - type: label
+                text: 'XY'
+                text_font: '@font_kode_20'
+                grid_cell: [LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1]
+                height: LV_SIZE_CONTENT
+                add_flag: LV_OBJ_FLAG_CLICKABLE
+                action: { action.jog.cycle_step_xy: trigger }
+              - type: label
+                grid_cell: [LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_END, 0, 1]
+                text_font: '@font_kode_20'
+                height: LV_SIZE_CONTENT
+                text: '10'
+                pad_right: 10
+                add_style: ['@indicator_yellow', 0]
+                add_flag: LV_OBJ_FLAG_CLICKABLE
+                action: { action.jog.cycle_step_xy: trigger }
+                observes: { motion.jog.step_xy: { text: '%g' } }
+              - type: label
+                text: Z
+                text_font: '@font_kode_20'
+                grid_cell: [LV_GRID_ALIGN_START, 2, 1, LV_GRID_ALIGN_START, 0, 1]
+                height: LV_SIZE_CONTENT
+                add_flag: LV_OBJ_FLAG_CLICKABLE
+                action: { action.jog.cycle_step_z: trigger }
+              - type: label
+                grid_cell: [LV_GRID_ALIGN_START, 3, 1, LV_GRID_ALIGN_END, 0, 1]
+                text_font: '@font_kode_20'
+                height: LV_SIZE_CONTENT
+                text: ' 5'
+                add_style: ['@indicator_yellow', 0]
+                add_flag: LV_OBJ_FLAG_CLICKABLE
+                action: { action.jog.cycle_step_z: trigger }
+                observes: { motion.jog.step_z: { text: '%g' } }
+
+      # Right column
+      - layout: LV_LAYOUT_FLEX
+        add_style: ['@container_transp', 0]
+        flex_flow: LV_FLEX_FLOW_COLUMN
+        width: LV_SIZE_CONTENT
+        min_width: 50
+        height: LV_SIZE_CONTENT
+        pad_right: 0
+        children:
+          - type: label
+            text: $unit
+            text_font: '@font_kode_14'
+            add_style: ['@border_top_btn', 0]
+          - type: label
+            text: $ovr
+          - type: label
+            text_font: '@font_kode_14'
+            add_style: [@indicator_yellow, 0]
+            text: '100% '

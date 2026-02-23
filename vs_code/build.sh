@@ -35,10 +35,14 @@ echo "api_spec.json copied to $EXTENSION_DIR/bin/"
 cd "$EXTENSION_DIR"
 
 echo "Installing npm dependencies..."
+echo "Bumping extension package.json version (patch +1)..."
+node -e 'const fs=require("fs"); const p=require("./package.json"); if(!p.version) { console.error("No version field in package.json"); process.exit(1); } const parts=p.version.split(".").map(x=>parseInt(x,10)||0); parts[2]=parts[2]+1; p.version=parts.join("."); fs.writeFileSync("./package.json", JSON.stringify(p,null,2)+"\n"); console.log("Package version bumped to", p.version);'
+
 npm install
 
 echo "Compiling TypeScript..."
 npm run compile
+
 
 echo "--- Build Complete ---"
 echo "To run the extension, open the project root folder in VSCode and press F5 (Run Extension)."

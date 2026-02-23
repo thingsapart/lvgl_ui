@@ -1,0 +1,84 @@
+# Main layout: component includes, tileview, overlays and top-level widgets
+- include: "ui_components/axis_pos_display.yaml"
+- include: "ui_components/xyz_axis_pos_display.yaml"
+- include: "ui_components/labeled_scale.yaml"
+- include: "ui_components/feed_rate_scale.yaml"
+- include: "ui_components/chipload_scale.yaml"
+- include: "ui_components/jog_feed.yaml"
+- include: "ui_components/jog_view.yaml"
+- include: "ui_components/probe_modes_tab.yaml"
+- include: "ui_components/label_text_actionable.yaml"
+- include: "ui_components/probe_view.yaml"
+- include: "ui_components/probing_wizard.yaml"
+- include: "ui_components/title_bar.yaml"
+
+- type: obj
+  add_style: [@container, 0]
+  add_style: [@flex_y, 0]
+  size: [100%, 100%]
+  lv_obj_remove_flag: LV_OBJ_FLAG_SCROLLABLE
+  children:
+    - type: use-view
+      id: @titlebar
+      size: [100%, 35]
+
+    - type: obj
+      size: [100%, 300]
+      add_style: ['@container', 0]
+      lv_obj_remove_flag: LV_OBJ_FLAG_SCROLLABLE
+      children:
+        - type: use-view
+          id: '@jog_view'
+
+    - type: obj
+      size: [100%, 300]
+      lv_obj_remove_flag: LV_OBJ_FLAG_SCROLLABLE
+      add_style: ['@container', 0]
+      children:
+        - type: use-view
+          id: '@probe_view'
+
+    - type: obj
+      size: [100%, 300]
+      add_style: ['@container', 0]
+      children:
+        - type: use-view
+          id: '@probing_wizard'
+
+# This overlay will appear when the machine is disconnected.
+# It covers the whole screen and prevents interaction with other controls.
+- type: obj
+  id: '@disconnected_overlay'
+  size: [100%, 100%]
+  bg_color: '#000000'
+  bg_opa: LV_OPA_70
+  add_flag: LV_OBJ_FLAG_CLICKABLE
+  add_flag: LV_OBJ_FLAG_HIDDEN
+  observes:
+    machine.connection_status:
+      visible: { true: false, false: true, default: true } # Show when not connected
+  children:
+    - type: label
+      text: "Connecting..."
+      text_font: '@font_kode_34'
+      center: []
+
+- type: button
+  id: '@jog_axis_selector'
+  size: [55, 55]
+  radius: LV_RADIUS_CIRCLE
+  lv_obj_align: [LV_ALIGN_BOTTOM_RIGHT, -15, -15]
+  # lv_obj_align: [LV_ALIGN_TOP_LEFT, 15, 15]
+  #lv_obj_align: [LV_ALIGN_BOTTOM_LEFT, 15, -15]
+  shadow_width: 10
+  shadow_opa: 150
+  shadow_offset_y: 4
+  action: { action.motion.jog.axis_cycle: trigger }
+  observes: { ui.active_tile_index: { visible: { 0: false, 1: true, 2: true } } }
+  children:
+    - type: label
+      text_font: '@font_kode_24'
+      center: []
+      observes:
+        motion.jog.axis_selected_str:
+          text: "%s"

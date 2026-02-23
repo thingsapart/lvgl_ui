@@ -39,6 +39,11 @@ void lvgl_render_backend(IRRoot* root, ApiSpec* api_spec, lv_obj_t* parent, Regi
     obj_registry_init();
     registry_add_pointer(registry, parent, "parent", "obj", "lv_obj_t*");
     obj_registry_add("parent", parent);
+    /* Ensure the default LVGL font is available in both registries. */
+    registry_add_pointer(registry, (void*)LV_FONT_DEFAULT, "LV_FONT_DEFAULT", "font", "lv_font_t*");
+    registry_add_pointer(registry, (void*)LV_FONT_DEFAULT, "lv_font_default", "font", "lv_font_t*");
+    obj_registry_add("LV_FONT_DEFAULT", (void*)LV_FONT_DEFAULT);
+    obj_registry_add("lv_font_default", (void*)LV_FONT_DEFAULT);
 
     DEBUG_LOG(LOG_MODULE_RENDERER, "Starting LVGL render backend.");
 
@@ -124,6 +129,63 @@ void lvgl_renderer_reload_ui_from_string(const char* ui_spec_string, ApiSpec* ap
     ui_sim_start();
 
     DEBUG_LOG(LOG_MODULE_RENDERER, "UI reload complete.");
+}
+
+
+void lvgl_renderer_reload_ui_from_string_with_base_path(const char* ui_spec_string, const char* base_path, ApiSpec* api_spec, lv_obj_t* preview_panel, lv_obj_t* inspector_panel) {
+    DEBUG_LOG(LOG_MODULE_RENDERER, "Reloading UI from string with base path: %s", base_path ? base_path : "(null)");
+
+    if (g_renderer_registry) {
+        registry_free(g_renderer_registry);
+        g_renderer_registry = NULL;
+    }
+
+    lv_obj_clean(preview_panel);
+    if (inspector_panel) {
+        lv_obj_clean(inspector_panel);
+    }
+    obj_registry_deinit();
+    data_binding_init();
+    ui_sim_init();
+
+    IRRoot* ir_root = generate_ir_from_string_with_base_path(ui_spec_string, base_path ? base_path : ".", api_spec);
+
+    if (!ir_root) {
+        lv_obj_t* label = lv_label_create(preview_panel);
+        lv_label_set_text(label, "#f04040 Error generating UI.\nSee VSCode console for details.#");
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_center(label);
+        return;
+    }
+
+    if (ir_root->root_objects == NULL) {
+        fprintf(stderr, "[HINT] UI specification is empty or contains no renderable objects. The preview will be blank.\n");
+        fflush(stderr);
+    }
+
+    if (!ir_validate_for_dynamic_dispatch(ir_root)) {
+        lv_obj_t* label = lv_label_create(preview_panel);
+        lv_label_set_text(label, "#f04040 Error: IR validation failed for dynamic dispatch.#");
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_center(label);
+        ir_free((IRNode*)ir_root);
+        return;
+    }
+
+    g_renderer_registry = registry_create();
+    if (g_renderer_registry) {
+        lvgl_render_backend(ir_root, api_spec, preview_panel, g_renderer_registry);
+    }
+
+    if (inspector_panel) {
+        view_inspector_init(inspector_panel, ir_root, api_spec);
+    }
+
+    ir_free((IRNode*)ir_root);
+
+    ui_sim_start();
+
+    DEBUG_LOG(LOG_MODULE_RENDERER, "UI reload complete (with base path).");
 }
 
 
@@ -374,9 +436,26 @@ static void evaluate_expression(RenderContext* ctx, IRExpr* expr, RenderValue* o
         }
         case IR_EXPR_LITERAL: {
             IRExprLiteral* lit = (IRExprLiteral*)expr;
+            // If the literal text is exactly "NULL" and the declared C type
+            // is a pointer type (but not a char/string pointer), treat this
+            // as a genuine NULL pointer value rather than a string.
+            if (lit->value && strcmp(lit->value, "NULL") == 0 && lit->base.c_type && strchr(lit->base.c_type, '*') != NULL && strstr(lit->base.c_type, "char") == NULL) {
+                out_val->type = RENDER_VAL_TYPE_NULL;
+                out_val->as.p_val = NULL;
+                return;
+            }
             if (lit->is_string) {
-                out_val->type = RENDER_VAL_TYPE_STRING;
-                out_val->as.s_val = lit->value;
+                // Special-case: if the literal is the exact string "NULL" and
+                // the declared C type for this literal is a pointer type but
+                // not a char/string pointer, treat it as a genuine NULL
+                // pointer instead of the address of the string "NULL".
+                if (lit->value && strcmp(lit->value, "NULL") == 0 && lit->base.c_type && strchr(lit->base.c_type, '*') != NULL && strstr(lit->base.c_type, "char") == NULL) {
+                    out_val->type = RENDER_VAL_TYPE_NULL;
+                    out_val->as.p_val = NULL;
+                } else {
+                    out_val->type = RENDER_VAL_TYPE_STRING;
+                    out_val->as.s_val = lit->value;
+                }
             } else {
                 if(strcmp(lit->base.c_type, "bool") == 0) {
                     out_val->type = RENDER_VAL_TYPE_BOOL;

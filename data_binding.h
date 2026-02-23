@@ -60,6 +60,7 @@ typedef enum {
     OBSERVER_TYPE_VISIBLE,
     OBSERVER_TYPE_CHECKED,
     OBSERVER_TYPE_DISABLED,
+    OBSERVER_TYPE_LED_ON,
     OBSERVER_TYPE_VALUE, // For sliders, bars, arcs, etc.
 } observer_update_type_t;
 

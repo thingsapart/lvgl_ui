@@ -10,3 +10,12 @@
 - type: led
   lv_obj_align: [LV_ALIGN_CENTER, 80, 0]
   lv_led_on: []
+
+- type: led
+  id: '@observed_led'
+  lv_obj_align: [LV_ALIGN_CENTER, 0, 80]
+  observes:
+    machine.homed:
+      led_on:
+        true: true
+        default: false

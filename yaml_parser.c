@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
+#include <limits.h>
 #include "utils.h"
 
 #define YAML_PARSER_MAX_DEPTH 64
@@ -652,9 +653,73 @@ void parse_line(ParserState *state, int line_idx) {
             cjson_add_item_to_object_with_duplicates(current_parent, key, cJSON_CreateNull());
         }
     } else {
-        state->ptr = val_str;
-        cJSON* val_node = parse_value(state, false);
-        cjson_add_item_to_object_with_duplicates(current_parent, key, val_node);
+        // Support YAML literal block scalars starting with '|'
+        if (*val_str == '|') {
+            int last_idx = line_idx;
+            int min_content_indent = INT_MAX;
+            // First pass: determine extent of block and minimum content indent
+            for (int k = line_idx + 1; k < state->num_lines; k++) {
+                char *ln = state->lines[k];
+                int indent_k = get_indent(ln);
+                char *content_k = trim_whitespace(ln + indent_k);
+                if (*content_k == '\0') {
+                    // Empty line: include only if it's more-indented than the key line
+                    if (indent_k <= indent) break;
+                    last_idx = k;
+                    continue;
+                }
+                if (indent_k <= indent) break; // end of block
+                if (indent_k < min_content_indent) min_content_indent = indent_k;
+                last_idx = k;
+            }
+
+            // Build the resulting string by dedenting by min_content_indent
+            size_t buf_sz = 256;
+            char *buf = malloc(buf_sz);
+            if (!buf) { set_error(state, val_str, 1, "Out of memory while parsing block scalar"); return; }
+            buf[0] = '\0';
+            size_t used = 0;
+
+            for (int k = line_idx + 1; k <= last_idx; k++) {
+                char *ln = state->lines[k];
+                int indent_k = get_indent(ln);
+                char *content_k = trim_whitespace(ln + indent_k);
+
+                // Determine start of content after dedent
+                char *start_ptr;
+                if (*content_k == '\0') {
+                    start_ptr = NULL; // empty line
+                } else {
+                    int dedent = (min_content_indent == INT_MAX) ? indent_k : min_content_indent;
+                    if ((int)strlen(ln) <= dedent) start_ptr = "";
+                    else start_ptr = ln + dedent;
+                }
+
+                size_t add_len = (start_ptr) ? strlen(start_ptr) : 0;
+                // Ensure enough space (plus one for newline)
+                if (used + add_len + 2 > buf_sz) {
+                    buf_sz = (used + add_len + 2) * 2;
+                    char *nb = realloc(buf, buf_sz);
+                    if (!nb) { free(buf); set_error(state, val_str, 1, "Out of memory while parsing block scalar"); return; }
+                    buf = nb;
+                }
+                if (start_ptr) {
+                    memcpy(buf + used, start_ptr, add_len);
+                    used += add_len;
+                }
+                buf[used++] = '\n';
+                buf[used] = '\0';
+            }
+
+            cJSON *val_node = cJSON_CreateString((used > 0) ? buf : "");
+            free(buf);
+            cjson_add_item_to_object_with_duplicates(current_parent, key, val_node);
+            state->current_line_idx = last_idx;
+        } else {
+            state->ptr = val_str;
+            cJSON* val_node = parse_value(state, false);
+            cjson_add_item_to_object_with_duplicates(current_parent, key, val_node);
+        }
     }
 }
 

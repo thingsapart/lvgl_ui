@@ -201,6 +201,35 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
                         }
                         break;
                     }
+                    case OBSERVER_TYPE_LED_ON: {
+                        bool target_state;
+                        if (obs->config.config_len > 0) { // Map-based
+                            bool found = false;
+                            binding_map_entry_t* map = (binding_map_entry_t*)obs->config.config;
+                            for (size_t k = 0; k < obs->config.config_len; k++) {
+                                if (values_equal(&map[k].key, &new_value)) {
+                                    target_state = map[k].value.b_val;
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found && obs->config.default_value) {
+                                target_state = *(bool*)obs->config.default_value;
+                            } else if (!found) {
+                                continue;
+                            }
+                        } else { // Direct bool mapping
+                            bool is_truthy = (new_value.type == BINDING_TYPE_BOOL && new_value.as.b_val) ||
+                                             (new_value.type == BINDING_TYPE_FLOAT && new_value.as.f_val != 0.0f) ||
+                                             (new_value.type == BINDING_TYPE_STRING && new_value.as.s_val && *new_value.as.s_val != '\0');
+                            bool is_inverse = (obs->config.config == NULL) || !(*(bool*)obs->config.config);
+                            target_state = is_inverse ? !is_truthy : is_inverse;
+                        }
+
+                        if (target_state) lv_led_on(obs->widget);
+                        else lv_led_off(obs->widget);
+                        break;
+                    }
                     case OBSERVER_TYPE_STYLE: {
                         // ** THE FIX **: Do not apply custom styles if the object is disabled,
                         // as LVGL's disabled style should take precedence.

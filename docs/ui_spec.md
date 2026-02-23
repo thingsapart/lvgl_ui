@@ -15,6 +15,60 @@ In essence, the format provides a high-level, human-readable abstraction over th
 
 ---
 
+### YAML/JSON Include Directives
+
+The generator supports including external YAML or JSON files directly from a UI-SPEC. Includes are processed during parsing by `generator.c` and support a small set of options.
+
+- Basic form (string):
+
+```
+- include: other_parts.yaml
+```
+
+- Object form with options:
+
+```
+ - include:
+     file: components/buttons.yaml
+     context:
+       title: "OK"
+       font: my_font
+     as: myprefix
+     merge: true
+```
+
+Key behaviors implemented by the generator:
+
+- `file` / string: The include target path (relative paths are resolved against the including file's directory).
+- `context`: An object merged with the current UI context for the scope of the included content. Values from the include's `context` override values from the outer context when keys conflict.
+- `as`: If provided, all `id` string values inside the included content are prefixed with `as` + `_` (for example `btn1` becomes `myprefix_btn1`). IDs that already start with `@` are considered global and are NOT prefixed.
+- `merge`: Boolean flag (default true). The included file must contain a top-level YAML/JSON array of UI elements; the elements are processed into the including document's object list. (Note: current generator implementation treats `merge=false` the same as `merge=true`.)
+- Included files are parsed via the same YAML-to-cJSON path as top-level specs; non-array included content will produce a warning.
+
+Context variable and key interpolation interplay:
+
+- The generator supports `$`-prefixed keys in object maps, which are replaced at parse time using the active context. For example, an object key named `$label` will be replaced by the string value held in the context under `label`.
+- A key may use the inline-doc form `$name/doc-info`; the portion before the slash (`name`) is looked up in the context and its string value is used as the final key name.
+
+Example - include with context and id-prefixing:
+
+```
+- include:
+    file: controls/toolbar.yaml
+    context:
+      title: "Main"
+    as: toolbar
+
+# In controls/toolbar.yaml (each file must be a top-level array)
+- type: label
+  id: title
+  text: $title
+
+# After include the label id becomes `toolbar_title` and $title -> "Main" for the included scope.
+```
+
+---
+
 ### Formalized Pseudo-Code Description
 
 The following pseudo-code describes the structure of the UI definition.
@@ -58,7 +112,7 @@ Defines a reusable UI template. It is not rendered directly but is referenced by
 ComponentDefinition {
   type: "component"            // Required.
   id: "@component_name"        // Required. The unique identifier for this component.
-  root: Widget                 // Required. The root widget definition for this component.
+  content: Widget              // Required. The root widget definition for this component.
 }
 ```
 

@@ -164,6 +164,7 @@ void registry_add_pointer(Registry* reg, void* ptr, const char* id, const char* 
 void* registry_get_pointer(const Registry* reg, const char* id, const char* type) {
     if (!reg || !id) return NULL;
     const char* key = (id[0] == '@') ? id + 1 : id;
+
     for (PointerRegistryNode* node = reg->pointers; node; node = node->next) {
         if (strcmp(node->id, key) == 0) {
             if (type && node->json_type && strcmp(node->json_type, type) == 0) {

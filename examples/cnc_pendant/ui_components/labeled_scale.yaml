@@ -1,0 +1,78 @@
+- type: component
+  id: @labeled_scale
+  info: |
+    Small labeled scale + value display.
+    ---
+    Shows a letter, label and a numeric value with a bar/scale control. Context variables:
+    - $letter: short identifying letter (eg. 'F' or 'S')
+    - $label: descriptive label
+    - $rate_value: observable numeric value for the bar/scale
+    - $range_min, $range_max: scale range
+  content:
+    layout: LV_LAYOUT_FLEX
+    add_style: ['@container_transp', 0]
+    flex_flow: LV_FLEX_FLOW_COLUMN
+    width: 100%
+    height: LV_SIZE_CONTENT
+    flex_grow: 1
+    children:
+      - type: obj # grid
+        layout: LV_LAYOUT_GRID
+        grid_dsc_array: [[LV_GRID_CONTENT, LV_GRID_FR1, LV_GRID_TEMPLATE_LAST], [LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST]]
+        add_style: ['@container_transp', 0]
+        width: 100%
+        height: LV_SIZE_CONTENT
+        children:
+          - layout: LV_LAYOUT_FLEX
+            size: [100, LV_SIZE_CONTENT]
+            add_style: [@container_transp, 0]
+            grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1]
+            remove_flag: LV_OBJ_FLAG_SCROLLABLE
+            pad_column: 0
+            pad_bottom: -8
+            children:
+              - type: label
+                text: $letter
+                text_font: '@font_kode_40'
+                height: LV_SIZE_CONTENT
+                pad_left: 5
+              - type: label
+                text: $label
+                pad_left: 0
+                height: LV_SIZE_CONTENT
+                text_font: '@font_kode_14'
+                add_style: ['@border_top_btn', 0]
+          - type: label
+            grid_cell: [LV_GRID_ALIGN_END, 1, 1, LV_GRID_ALIGN_END, 0, 1]
+            text_font: '@font_kode_30'
+            height: LV_SIZE_CONTENT
+            text: '1000'
+            pad_right: 5
+            observes: { $rate_value: { text: "%.0f" } }
+      - layout: LV_LAYOUT_FLEX
+        flex_flow: LV_FLEX_FLOW_COLUMN
+        add_style: ['@container_transp', 0]
+        width: 100%
+        height: LV_SIZE_CONTENT
+        children:
+          - type: bar
+            width: 100%
+            height: 15
+            margin_left: 15
+            margin_right: 15
+            add_style: ['@bar_indicator', LV_PART_MAIN]
+            add_style: ['@bar_indicator', LV_PART_INDICATOR]
+            value: [65, 0]
+            range: [$range_min, $range_max]
+            bg_color: '#5dd555'
+            bg_opa: 255
+            observes: { $rate_value: 'value'}
+          - type: scale
+            width: 100%
+            height: 18
+            margin_left: 15
+            margin_right: 15
+            margin_bottom: 2
+            add_style: [@tick_color, LV_PART_ITEMS]
+            add_style: [@tick_color, LV_PART_MAIN]
+            add_style: [@tick_color, LV_PART_INDICATOR]

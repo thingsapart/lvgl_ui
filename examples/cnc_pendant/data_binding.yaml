@@ -1,0 +1,316 @@
+# CNC data-binding.
+- type: data-binding
+  state:
+    # -- Machine State --
+    - time: 0.0
+    - machine.status_text: [string, "IDLE"] # IDLE, AUTO, JOG, MDI, HOMING, ALARM
+    - machine.program_is_running: false
+    - machine.program_is_paused: false
+    - spindle.is_on: false
+    - coolant_on: false
+    - homing_axis_x: false # True if X axis homing is in progress
+    - homing_axis_y: false # True if Y axis homing is in progress
+    - homing_axis_z: false # True if Z axis homing is in progress
+    - motion.homed.x: false
+    - motion.homed.y: false
+    - motion.homed.z: false
+
+    # -- Step --
+    - motion.jog.step_xy: [float, 1.0]
+    - motion.jog.step_z: [float, 1.0]
+
+    - motion.jog.axis_selected_str: [string, "Off"]
+
+    # -- Program Execution --
+    - program_elapsed_time: 0.0
+    - program_total_time: 30.0 # Simulate a 30-second program
+
+    # -- Machine Absolute Position (G53) - INTERNAL USE --
+    - pos_x: 10.0
+    - pos_y: 15.0
+    - pos_z: 50.0
+
+    - delta_pos_x: 0.0
+    - delta_pos_y: 0.0
+    - delta_pos_z: 0.0
+
+    # -- UI --
+    - ui.active_tile_index: 0 # 0=Main, 1=Probe-View, 2=Probe-Wiz
+
+    # -- Work Coordinate Systems (WCS) --
+    - motion.wcs.active_name: [string, "G54"] # Active WCS
+    - wcs54_x_zero: 20.5
+    - wcs54_y_zero: 17.2
+    - wcs54_z_zero: 10.0
+    - wcs55_x_zero: 40.0
+    - wcs55_y_zero: 75.2
+    - wcs55_z_zero: 10.5
+
+    # -- Probing Geometry (Defines the imaginary part to probe) --
+    - probe_stock_min_x: 45.5
+    - probe_stock_max_x: 180.5
+    - probe_stock_min_y: -69.75
+    - probe_stock_max_y: 30.25
+    - probe_stock_min_z: 0.0
+    - probe_stock_max_z: 35.0
+
+    # -- Overrides --
+    - jog_speed: 10.0
+    - overrides.feed_pct: 1.0
+    - feed_max: 5000.0
+    - motion.feedrate_current: 0.0
+    - speed_override: 1.0
+    - spindle.speed_rpm: 0.0
+    - spindle_rpm_max: 10000.0
+
+    # -- Tool --
+    - tool_n_flutes: 1
+    - tool_dia: 6.0
+    - tool_material: 'AL'
+
+    # -- Probe --
+    - probe_quick: false
+    - probe_w: 100
+    - probe_h: 100
+    - probe_ov: 2
+    - probe_cl: 5
+
+    - motion.jog.axis_is_x: true
+    - motion.jog.axis_is_y: false
+    - motion.jog.axis_is_z: false
+
+    # -------------------
+    # -- DERIVED STATE --
+    # -------------------
+    - overrides.feed_pct:
+      derived_expr: [mul, 100.0, feed_override]
+    - speed_override_pct:
+      derived_expr: [mul, 100.0, speed_override]
+    - program_status:
+        derived_expr:
+          case:
+            - [[==, machine_mode, "HOMING"], "HOMING..."]
+            - [machine.program_is_paused, "PAUSED"]
+            - [machine.program_is_running, "RUNNING"]
+            - [spindle.is_on, "SPINDLE ON"]
+            - [true, "IDLE"]
+
+    - program_progress:
+        derived_expr:
+          [clamp, [mul, [div, program_elapsed_time, program_total_time], 100], 0, 100]
+
+    # -- Display Positions (Show 9999.99 if not homed) --
+    - motion.position.machine_x: { derived_expr: { case: [[[or, motion.homed.x, homing_axis_x], pos_x], [true, 9999.99]] } }
+    - motion.position.machine_y: { derived_expr: { case: [[[or, motion.homed.y, homing_axis_y], pos_y], [true, 9999.99]] } }
+    - motion.position.machine_z: { derived_expr: { case: [[[or, motion.homed.z, homing_axis_z], pos_z], [true, 9999.99]] } }
+
+    - motion.position.work_x_: { derived_expr: { case: [[motion.homed.x, [sub, pos_x, [case, [[[==, wcs_name, "G54"], wcs54_x_zero], [true, wcs55_x_zero]]]]], [true, 9999.99]] } }
+    - motion.position.work_y_: { derived_expr: { case: [[motion.homed.y, [sub, pos_y, [case, [[[==, wcs_name, "G54"], wcs54_y_zero], [true, wcs55_y_zero]]]]], [true, 9999.99]] } }
+    - motion.position.work_z_: { derived_expr: { case: [[motion.homed.z, [sub, pos_z, [case, [[[==, wcs_name, "G54"], wcs54_z_zero], [true, wcs55_z_zero]]]]], [true, 9999.99]] } }
+
+    - motion.position.work_x: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_x, wcs54_x_zero]], [true, [sub, pos_x, wcs55_x_zero]]] }  }
+    - motion.position.work_y: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_y, wcs54_y_zero]], [true, [sub, pos_y, wcs55_y_zero]]] } }
+    - motion.position.work_z: { derived_expr: { case: [[[==, wcs_name, "G54"], [sub, pos_z, wcs54_z_zero]], [true, [sub, pos_z, wcs55_z_zero]]] } }
+
+    # -- Derived Delta Position / Distance To Go (Simulated) --
+    - delta_pos_x:
+        derived_expr:
+          case:
+            - [machine.program_is_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 7.3]]]]]
+            - [true, 0.0]
+    - delta_pos_y:
+        derived_expr:
+          case:
+            - [machine.program_is_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 8.1]]]]]
+            - [true, 0.0]
+    - delta_pos_z:
+        derived_expr:
+          case:
+            - [machine.program_is_running, [add, 0.55, [mul, 0.45, [sin, [mul, time, 6.5]]]]]
+            - [true, 0.0]
+
+    # Chipload
+    - chipload_min: { derived_expr: [mul, 0.01, tool_dia] }
+    - chipload_max: { derived_expr: [mul, 0.02, tool_dia] }
+    - chipload: { derived_expr: [div, feed, [mul, spindle_rpm, tool_n_flutes]] }
+    - chipload_disp:
+        derived_expr:
+          case:
+            - [machine.program_is_running, [add, 0, [mul, [div, [sub, chipload, chipload_min], [sub, chipload_max, chipload_min]], 100]]]
+            - [true, 0]
+  actions:
+    # -- Machine Control --
+    - action.motion.jog.axis_select_x:
+      - when: { condition: [==, motion.homed.x, true], then: { set: { motion.jog.axis_is_x: !motion.jog.axis_is_x, motion.jog.axis_is_y: false, motion.jog.axis_is_z: false  } } }
+      - when: { condition: [==, motion.homed.x, false], then: { set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, motion.homed.x: false, motion.homed.y: false, motion.homed.z: false } } }
+    - action.motion.jog.axis_select_y:
+      - when: { condition: [==, motion.homed.y, true], then: { set: { motion.jog.axis_is_x: false, motion.jog.axis_is_y: !motion.jog.axis_is_y, motion.jog.axis_is_z: false  } } }
+      - when: { condition: [==, motion.homed.y, false], then: { set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, motion.homed.x: false, motion.homed.y: false, motion.homed.z: false } } }
+    - action.motion.jog.axis_select_z:
+      - when: { condition: [==, motion.homed.z, true], then: { set: { motion.jog.axis_is_x: false, motion.jog.axis_is_y: false, motion.jog.axis_is_z: !motion.jog.axis_is_z  } } }
+      - when: { condition: [==, motion.homed.z, false], then: { set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, motion.homed.x: false, motion.homed.y: false, motion.homed.z: false } } }
+    - home_machine:
+        set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_x: true, homing_axis_y: true, homing_axis_z: true, motion.homed.x: false, motion.homed.y: false, motion.homed.z: false }
+    - home_machine_x:
+        set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_x: true, motion.homed.x: false }
+    - home_machine_y:
+        set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_y: true, motion.homed.y: false }
+    - home_machine_z:
+        set: { machine.status_text: "HOMING", machine.program_is_running: false, homing_axis_z: true, motion.homed.z: false }
+    - feed_hold:
+        toggle: machine.program_is_paused
+    - action.program.run:
+        when:
+          condition: [and, motion.homed.x, motion.homed.y, motion.homed.z]
+          then:
+            - set: { machine.status_text: "AUTO", machine.program_is_running: true, spindle.is_on: true, coolant_on: true, program_elapsed_time: 0.0, machine.program_is_paused: false }
+    - action.program.stop:
+        set: { machine.status_text: "IDLE", machine.program_is_running: false, spindle.is_on: false, coolant_on: false, machine.program_is_paused: false }
+    - action.motion.wcs.cycle:
+        cycle: { motion.wcs.active_name: ["G54", "G55"] }
+    - action.jog.cycle_step_xy:
+        cycle: { motion.jog.step_xy: [0.01, 0.1, 1.0, 5.0, 10.0] }
+    - action.jog.cycle_step_z:
+        cycle: { motion.jog.step_z: [0.01, 0.1, 1.0, 5.0] }
+    - zero_wcs_x:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: { wcs54_x_zero: pos_x } } }
+        - when: { condition: [==, wcs_name, "G55"], then: { set: { wcs55_x_zero: pos_x } } }
+    - zero_wcs_y:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: { wcs54_y_zero: pos_y } } }
+        - when: { condition: [==, wcs_name, "G55"], then: { set: { wcs55_y_zero: pos_y } } }
+    - zero_wcs_z:
+        - when: { condition: [==, wcs_name, "G54"], then: { set: { wcs54_z_zero: pos_z } } }
+        - when: { condition: [==, wcs_name, "G55"], then: { set: { wcs55_z_zero: pos_z } } }
+    - set_overrides.feed_pct:
+      set: { overrides.feed_pct: [div, value.float, 100.0] }
+    - action.overrides.spindle.set_pct:
+      set: { speed_override: [div, value.float, 100.0] }
+    - set_probe_quick:
+      set: { probe_quick: value.bool }
+    - set_probe_width:
+      set: { probe_w: value.float }
+    - set_probe_height:
+      set: { probe_h: value.float }
+    - set_probe_ov:
+      set: { probe_ov: value.float }
+    - set_probe_cl:
+      set: { probe_cl: value.float }
+    - action.motion.jog.axis_cycle:
+        cycle: { motion.jog.axis_selected_str: ["X", "Y", "Z", "Off"] }
+  updates:
+    # -- Homing Sequence --
+    - when:
+        condition: [==, machine_mode, "HOMING"]
+        then:
+          # Step 1: Home Z axis if requested and not already done
+          - when:
+              condition: [and, homing_axis_z, !motion.homed.z]
+              then:
+                - dec: { pos_z: 2.5 } # Move towards zero
+                - when:
+                    condition: [<=, pos_z, 0]
+                    then:
+                      - set: { pos_z: 0, motion.homed.z: true }
+          # Step 2: Home X and Y axes if requested, but only after Z is done
+          - when:
+              condition: [and, [or, homing_axis_x, homing_axis_y], motion.homed.z]
+              then:
+                - when:
+                    condition: [and, homing_axis_x, !motion.homed.x]
+                    then:
+                      - dec: { pos_x: 2.5 }
+                      - when:
+                          condition: [<=, pos_x, 0]
+                          then: { set: { pos_x: 0, motion.homed.x: true } }
+                - when:
+                    condition: [and, homing_axis_y, !motion.homed.y]
+                    then:
+                      - dec: { pos_y: 2.5 }
+                      - when:
+                          condition: [<=, pos_y, 0]
+                          then: {set: { pos_y: 0, motion.homed.y: true }}
+          # Step 3: Finish Homing Cycle when all requested axes are done
+          - when:
+              condition: [and, [==, homing_axis_x, motion.homed.x], [==, homing_axis_y, motion.homed.y], [==, homing_axis_z, motion.homed.z]]
+              then:
+                - set: { machine.status_text: "IDLE", homing_axis_x: false, homing_axis_y: false, homing_axis_z: false }
+
+    # -- Program Execution and Movement --
+    - when:
+        condition: [and, machine.program_is_running, !machine.program_is_paused]
+        then:
+          # 1. Update program time
+          - inc: { program_elapsed_time: 0.033 }
+          # 2. Simulate machine movement
+          - set: { pos_x: [add, 200, [mul, 50, [cos, [mul, program_elapsed_time, 0.5]]]] }
+          - set: { pos_y: [add, 150, [mul, 50, [sin, [mul, program_elapsed_time, 0.5]]]] }
+          - range: { pos_z: [10, 20, 0.2] }
+          # 3. Simulate spindle RPM
+          - set:
+              spindle.speed_rpm:
+                case:
+                  - [spindle.is_on, [add, 8000, [mul, 200, [sin, [mul, time, 10]]]]]
+                  - [true, 0]
+          # 4. Simulate feed speed
+          - set:
+              motion.feedrate_current:
+                case:
+                  - [spindle.is_on, [add, 2000, [mul, 500, [sin, [mul, time, 10]]]]]
+                  - [true, 0]
+          -  set: { delta_pos_x: [add, 1, [mul, 0.5, [sin, [mul, time, 10]]]] }
+          -  set: { delta_pos_y: [add, 1, [mul, 0.5, [sin, [mul, time, 10]]]] }
+          -  set: { delta_pos_z: [add, 1, [mul, 0.5, [sin, [mul, time, 10]]]] }
+
+    # -- Program Completion --
+    - when:
+        condition: [>=, program_progress, 100]
+        then:
+          - set: { machine.status_text: "IDLE", machine.program_is_running: false, spindle.is_on: false, coolant_on: false }
+
+    # -- Homing Sequence --
+    - when:
+        condition: [==, machine_mode, "HOMING"]
+        then:
+          - when: # Step 1: Home Z axis
+              condition: [==, homing_step, 1]
+              then:
+                - dec: { pos_z: 2.5 } # Move towards zero
+                - when:
+                    condition: [<=, pos_z, 0]
+                    then:
+                      - set: { pos_z: 0, motion.homed.z: true, homing_step: 2 }
+          - when: # Step 2: Home X and Y axes
+              condition: [==, homing_step, 2]
+              then:
+                - dec: { pos_x: 2.5 }
+                - dec: { pos_y: 2.5 }
+                - when:
+                    condition: [and, [<=, pos_x, 0], [<=, pos_y, 0]]
+                    then:
+                      - set: { pos_x: 0, pos_y: 0, motion.homed.x: true, motion.homed.y: true, homing_step: 3 }
+          - when: # Step 3: Finish Homing
+              condition: [==, homing_step, 3]
+              then:
+                - set: { machine.status_text: "IDLE", homing_step: 0 }
+
+    # -- Program Execution and Movement --
+    - when:
+        condition: [and, machine.program_is_running, !machine.program_is_paused]
+        then:
+          # 1. Update program time
+          - inc: { program_elapsed_time: 0.033 }
+          # 2. Simulate machine movement
+          - set: { pos_x: [add, 200, [mul, 50, [cos, [mul, program_elapsed_time, 0.5]]]] }
+          - set: { pos_y: [add, 150, [mul, 50, [sin, [mul, program_elapsed_time, 0.5]]]] }
+          - range: { pos_z: [10, 20, 0.2] }
+          # 3. Simulate spindle RPM
+          - set:
+              spindle.speed_rpm:
+                case:
+                  - [spindle.is_on, [add, 22000, [mul, 200, [sin, [mul, time, 10]]]]]
+                  - [true, 0]
+    # -- Program Completion --
+    - when:
+        condition: [>=, program_progress, 100]
+        then:
+          - set: { machine.program_is_running: false, spindle.is_on: false, coolant_on: false }

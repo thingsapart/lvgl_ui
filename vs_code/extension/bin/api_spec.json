@@ -1,5 +1,6 @@
 {
   "constants": {
+    "LV_FONT_DEFAULT": "LV_FONT_DEFAULT",
     "CLR_COL": "0x4 ",
     "CLR_STN": "0x2 ",
     "CLR_TAG": "0x1 ",
@@ -1917,6 +1918,53 @@
       "LV_TEXT_FLAG_FIT": "0x2",
       "LV_TEXT_FLAG_BREAK_ALL": "0x4",
       "LV_TEXT_FLAG_RECOLOR": "0x8"
+    },
+    "lv_cam_pos_mode_t": {
+      "LV_CAM_POS_MODE_NONE": 0,
+      "LV_CAM_POS_MODE_POINT": 1,
+      "LV_CAM_POS_MODE_RECTANGLE": 2,
+      "LV_CAM_POS_MODE_CIRCLE": 3
+    },
+    "lv_cam_stream_fit_t": {
+      "LV_CAM_STREAM_FIT_CONTAIN": 0,
+      "LV_CAM_STREAM_FIT_COVER": 1,
+      "LV_CAM_STREAM_FIT_FILL": 2,
+      "LV_CAM_STREAM_FIT_NONE": 3
+    },
+    "lv_probing_wizard_mode_t": {
+      "LV_PROBING_WIZARD_MODE_RECTANGLE": 0,
+      "LV_PROBING_WIZARD_MODE_CIRCLE": 1,
+      "LV_PROBING_WIZARD_MODE_CORNER": 2
+    },
+    "lv_probing_wizard_corner_t": {
+      "LV_PROBING_CORNER_NONE": 0,
+      "LV_PROBING_CORNER_FRONT_LEFT": 1,
+      "LV_PROBING_CORNER_FRONT_RIGHT": 2,
+      "LV_PROBING_CORNER_BACK_LEFT": 3,
+      "LV_PROBING_CORNER_BACK_RIGHT": 4
+    },
+    "highlight_part_t": {
+      "HIGHLIGHT_NONE": 0,
+      "HIGHLIGHT_CORNER_BL": 0,
+      "HIGHLIGHT_CORNER_BR": 0,
+      "HIGHLIGHT_CORNER_FL": 0,
+      "HIGHLIGHT_CORNER_FR": 0,
+      "HIGHLIGHT_PROBE_POINT_0": 0,
+      "HIGHLIGHT_PROBE_POINT_1": 0,
+      "HIGHLIGHT_PROBE_POINT_2": 0,
+      "HIGHLIGHT_PROBE_POINT_3": 0,
+      "HIGHLIGHT_OUTLINE": 0,
+      "HIGHLIGHT_CENTER": 0,
+      "HIGHLIGHT_Z_PROBE": 0
+    },
+    "lv_probing_action_type_t": {
+      "ACTION_AWAIT_START": 0,
+      "ACTION_JOG_AND_CONFIRM": 1,
+      "ACTION_SELECT_CORNER": 2,
+      "ACTION_PROBE_POINT": 3,
+      "ACTION_PROBE_Z_TOP": 4,
+      "ACTION_MESSAGE": 5,
+      "ACTION_COMPLETE": 6
     }
   },
   "functions": {
@@ -15391,6 +15439,323 @@
       "return_type": "void*",
       "args": [
         "size_t"
+      ]
+    },
+    "lv_cam_positioning_create": {
+      "return_type": "lv_obj_t*",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *parent"
+      ]
+    },
+    "lv_cam_positioning_get_stream": {
+      "return_type": "lv_obj_t*",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_cam_positioning_set_mode": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "lv_cam_pos_mode_t"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "lv_cam_pos_mode_t mode"
+      ]
+    },
+    "lv_cam_positioning_get_mode": {
+      "return_type": "lv_cam_pos_mode_t",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_cam_positioning_clear_shapes": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_cam_positioning_has_grid": {
+      "return_type": "bool",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_cam_stream_create": {
+      "return_type": "lv_obj_t*",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *parent"
+      ]
+    },
+    "lv_cam_stream_set_fit": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "lv_cam_stream_fit_t"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "lv_cam_stream_fit_t fit"
+      ]
+    },
+    "lv_cam_stream_get_fit": {
+      "return_type": "lv_cam_stream_fit_t",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_cam_stream_set_show_info": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "bool"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "bool show"
+      ]
+    },
+    "lv_cam_stream_refresh": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_cam_stream_get_image_obj": {
+      "return_type": "lv_obj_t*",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_probing_wizard_register_stub_callbacks": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t * obj"
+      ]
+    },
+    "lv_probing_wizard_set_z_top_deferred": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "float"
+      ],
+      "args_named": [
+        "lv_obj_t * obj",
+        "float z_top"
+      ]
+    },
+    "lv_probing_wizard_report_final_result_deferred": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "float",
+        "float"
+      ],
+      "args_named": [
+        "lv_obj_t * obj",
+        "float x",
+        "float y"
+      ]
+    },
+    "lv_probing_wizard_advance_step_deferred": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t * obj"
+      ]
+    },
+    "lv_probing_wizard_set_active_step_deferred": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "int8_t"
+      ],
+      "args_named": [
+        "lv_obj_t * obj",
+        "int8_t step_index"
+      ]
+    },
+    "lv_probing_wizard_create": {
+      "return_type": "lv_obj_t*",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t * parent"
+      ]
+    },
+    "lv_probing_wizard_set_mode": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "lv_probing_wizard_mode_t",
+        "bool"
+      ],
+      "args_named": [
+        "lv_obj_t * obj",
+        "lv_probing_wizard_mode_t mode",
+        "bool is_inside"
+      ]
+    },
+    "lv_probing_wizard_set_corner_type": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "lv_probing_wizard_corner_t"
+      ],
+      "args_named": [
+        "lv_obj_t * obj",
+        "lv_probing_wizard_corner_t corner"
+      ]
+    },
+    "lv_probing_wizard_set_active_step": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "int8_t",
+        "bool"
+      ],
+      "args_named": [
+        "lv_obj_t * obj",
+        "int8_t step_index",
+        "bool defer_ui_update"
+      ]
+    },
+    "lv_probing_wizard_probe_intalled": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t * obj"
+      ]
+    },
+    "lv_probing_wizard_set_connected": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "bool"
+      ],
+      "args_named": [
+        "lv_obj_t * obj",
+        "bool connected"
+      ]
+    },
+    "lv_probing_wizard_report_probe_result": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "uint8_t",
+        "float",
+        "float"
+      ],
+      "args_named": [
+        "lv_obj_t * obj",
+        "uint8_t probe_index",
+        "float x",
+        "float y"
+      ]
+    },
+    "lv_probing_wizard_report_final_result": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "float",
+        "float"
+      ],
+      "args_named": [
+        "lv_obj_t * obj",
+        "float x",
+        "float y"
+      ]
+    },
+    "lv_probing_wizard_set_z_top": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "float"
+      ],
+      "args_named": [
+        "lv_obj_t * obj",
+        "float z_top"
+      ]
+    },
+    "lv_probing_wizard_advance_step": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t * obj"
+      ]
+    },
+    "lv_probing_wizard_get_z_top": {
+      "return_type": "float",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t * obj"
+      ]
+    },
+    "lv_probing_wizard_get_mode": {
+      "return_type": "lv_probing_wizard_mode_t",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t * obj"
+      ]
+    },
+    "lv_probing_wizard_get_is_inside": {
+      "return_type": "bool",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t * obj"
+      ]
+    },
+    "lv_probing_wizard_get_corner_type": {
+      "return_type": "lv_probing_wizard_corner_t",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t * obj"
       ]
     }
   },
@@ -30607,5 +30972,17 @@
       "init": "lv_theme_simple_init"
     }
   },
-  "NOTES": "DO NOT EDIT! This file is auto-generated by `generate_api_spec.py`."
+  "NOTES": "DO NOT EDIT! This file is auto-generated by `generate_api_spec.py`.",
+  "includes": {
+    "dispatch": [
+      "include/ui_stubs.h"
+    ],
+    "c_gen": [
+      "ui/components/lv_cam_positioning.h",
+      "ui/components/lv_cam_stream.h",
+      "ui/components/lv_probing_wizard_stubs.h",
+      "ui/components/lv_probing_wizard.h",
+      "ui.h"
+    ]
+  }
 }

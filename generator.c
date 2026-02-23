@@ -35,7 +35,7 @@ static int count_cjson_array(cJSON* array_json);
 static int count_function_args(const FunctionArg* head);
 static bool types_compatible(const char* expected, const char* actual);
 static cJSON* process_context_keys_recursive(const cJSON* source_json, const cJSON* context);
-static IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string, const char* base_path, const ApiSpec* api_spec);
+IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string, const char* base_path, const ApiSpec* api_spec);
 static void process_ui_spec_array(GenContext* ctx, cJSON* array_json, const char* current_base_path, IRObject** object_list_head, IROperationNode** operation_list_head, const char* parent_c_name, const cJSON* ui_context);
 
 
@@ -81,6 +81,142 @@ static char* interpolate_home_path(const char* path) {
 }
 
 
+/* Forward declaration needed because expand_includes_in_array calls this
+ * function which is defined later in the file. */
+static void prefix_ids_recursive(cJSON* node, const char* prefix);
+
+/**
+ * Expand top-level include directives in an array by replacing the include
+ * entry with the array contents of the included file. Returns true on
+ * success, false on fatal error (render_abort called).
+ */
+static bool expand_includes_in_array(cJSON* array, const char* base_path) {
+    if (!array || !cJSON_IsArray(array)) return true;
+
+    int i = 0;
+    while (i < cJSON_GetArraySize(array)) {
+        cJSON* item = cJSON_GetArrayItem(array, i);
+        if (!item) { i++; continue; }
+
+        cJSON* include_item = cJSON_GetObjectItem(item, "include");
+        if (!include_item) { i++; continue; }
+
+        // Ensure include is standalone
+        int other_keys = 0;
+        cJSON* tmp = NULL;
+        cJSON_ArrayForEach(tmp, item) {
+            if (!tmp->string) continue;
+            if (strncmp(tmp->string, "//", 2) == 0) continue;
+            if (strcmp(tmp->string, "include") == 0) continue;
+            other_keys++;
+        }
+        if (other_keys > 0) {
+            render_abort("Include directive must be a standalone item with no other keys.");
+            return false;
+        }
+
+        const char* include_file = NULL;
+        const cJSON* include_context = NULL;
+        const char* as_prefix = NULL;
+
+        if (cJSON_IsString(include_item)) {
+            include_file = include_item->valuestring;
+        } else if (cJSON_IsObject(include_item)) {
+            cJSON* f = cJSON_GetObjectItemCaseSensitive((cJSON*)include_item, "file");
+            if (f && cJSON_IsString(f)) include_file = f->valuestring;
+            cJSON* ctx_item = cJSON_GetObjectItemCaseSensitive((cJSON*)include_item, "context");
+            if (ctx_item && cJSON_IsObject(ctx_item)) include_context = ctx_item;
+            cJSON* as_item = cJSON_GetObjectItemCaseSensitive((cJSON*)include_item, "as");
+            if (as_item && cJSON_IsString(as_item)) as_prefix = as_item->valuestring;
+        } else {
+            render_abort("Unsupported include directive type; expected string or mapping.");
+            return false;
+        }
+
+        if (!include_file) {
+            render_abort("Include directive missing 'file' entry.");
+            return false;
+        }
+
+        // Resolve path relative to base_path and expand S:~/ style
+        char* expanded_include = interpolate_home_path(include_file);
+        char* include_copy = expanded_include ? expanded_include : strdup(include_file);
+        char* full_path = join_path(base_path, include_copy);
+        if (expanded_include) free(expanded_include);
+        free(include_copy);
+
+        char* included_content = read_file(full_path);
+        if (!included_content) {
+            char err_buf[512];
+            snprintf(err_buf, sizeof(err_buf), "Could not read include file: %s", full_path);
+            render_abort(err_buf);
+            free(full_path);
+            return false;
+        }
+
+        char* error_msg = NULL;
+        cJSON* included_json = yaml_to_cjson(included_content, &error_msg);
+        free(included_content);
+        if (error_msg) {
+            char err_buf[1024];
+            snprintf(err_buf, sizeof(err_buf), "Error in included file '%s': %s", full_path, error_msg);
+            render_abort(err_buf);
+            free(error_msg);
+            free(full_path);
+            if (included_json) cJSON_Delete(included_json);
+            return false;
+        }
+
+        if (!included_json || !cJSON_IsArray(included_json)) {
+            char err_buf[512];
+            snprintf(err_buf, sizeof(err_buf), "Included file '%s' does not contain a top-level YAML/JSON list.", full_path);
+            render_abort(err_buf);
+            if (included_json) cJSON_Delete(included_json);
+            free(full_path);
+            return false;
+        }
+
+        // Recursively expand nested includes inside the included file
+        char* new_base = get_dirname(full_path);
+        if (!expand_includes_in_array(included_json, new_base)) {
+            free(new_base);
+            cJSON_Delete(included_json);
+            free(full_path);
+            return false;
+        }
+
+        // Optionally prefix ids inside included content
+        if (as_prefix) prefix_ids_recursive(included_json, as_prefix);
+
+        // Duplicate included items and (optionally) attach include_context
+        int included_count = cJSON_GetArraySize(included_json);
+        cJSON** dup_items = calloc(included_count, sizeof(cJSON*));
+        for (int j = 0; j < included_count; j++) {
+            cJSON* src = cJSON_GetArrayItem(included_json, j);
+            dup_items[j] = cJSON_Duplicate(src, true);
+            if (include_context && cJSON_IsObject(include_context) && dup_items[j] && cJSON_IsObject(dup_items[j])) {
+                cJSON_AddItemToObject(dup_items[j], "__include_context", cJSON_Duplicate((cJSON*)include_context, true));
+            }
+        }
+
+        // Remove the include entry and splice duplicated items in its place
+        cJSON_DeleteItemFromArray(array, i);
+        for (int j = 0; j < included_count; j++) {
+            cJSON_InsertItemInArray(array, i + j, dup_items[j]);
+        }
+
+        free(dup_items);
+        cJSON_Delete(included_json);
+        free(new_base);
+        free(full_path);
+
+        // Advance index past inserted items
+        i += included_count;
+    }
+    return true;
+}
+
+
 // --- Main Entry Point ---
 
 IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_spec) {
@@ -114,7 +250,8 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
             if (type_item && cJSON_IsString(type_item)) {
                 if (strcmp(type_item->valuestring, "component") == 0) {
                     cJSON* id_item = cJSON_GetObjectItemCaseSensitive(item_json, "id");
-                    cJSON* content_item = cJSON_GetObjectItemCaseSensitive(item_json, "content");
+                    cJSON* content_item = cJSON_GetObjectItemCaseSensitive(item_json, "root");
+                    if (!content_item) content_item = cJSON_GetObjectItemCaseSensitive(item_json, "content");
                     if (id_item && cJSON_IsString(id_item) && content_item && cJSON_IsObject(content_item)) {
                         registry_add_component(ctx.registry, id_item->valuestring, content_item);
                         DEBUG_LOG(LOG_MODULE_GENERATOR, "Registered component: %s", id_item->valuestring);
@@ -125,10 +262,10 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
                         print_warning("Found 'component' with 'id' that is not a string.");
                       }
                       if (!content_item) {
-                        print_warning("Found 'component' with missing 'content'.");
+                        print_warning("Found 'component' with missing 'root'/'content'.");
 
                       } else if (!cJSON_IsObject(content_item)) {
-                        print_warning("Found 'component' with 'content' that is not an 'object' (aka 'hash' or 'dict').");
+                        print_warning("Found 'component' with 'root'/'content' that is not an object (got array or scalar instead).");
                       }
                     }
                 }
@@ -154,7 +291,7 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
     return ir_root;
 }
 
-static IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string, const char* base_path, const ApiSpec* api_spec) {
+IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string, const char* base_path, const ApiSpec* api_spec) {
     if (!ui_spec_string || strlen(ui_spec_string) == 0) {
         return ir_new_root();
     }
@@ -195,6 +332,13 @@ static IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string
         return NULL;
     }
 
+    // Pre-expand any include directives so subsequent pre-passes (component
+    // registration etc.) see the included items as if they were inline.
+    if (!expand_includes_in_array(ui_spec_json, base_path)) {
+        cJSON_Delete(ui_spec_json);
+        return NULL;
+    }
+
     IRRoot* ir_root = ir_new_root();
     GenContext ctx = { .api_spec = api_spec, .registry = registry_create(), .var_counter = 0, .error_occurred = false };
 
@@ -209,6 +353,13 @@ static IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string
                 if (!content_item) content_item = cJSON_GetObjectItemCaseSensitive(item_json, "content");
                 if (id_item && cJSON_IsString(id_item) && content_item && cJSON_IsObject(content_item)) {
                     registry_add_component(ctx.registry, id_item->valuestring, content_item);
+                } else {
+                    if (!id_item || !cJSON_IsString(id_item))
+                        print_warning("Found 'component' with missing or non-string 'id'.");
+                    if (!content_item)
+                        print_warning("Found 'component' with missing 'root'/'content'.");
+                    else if (!cJSON_IsObject(content_item))
+                        print_warning("Found 'component' with 'root'/'content' that is not an object (got array or scalar instead).");
                 }
             }
         }
@@ -494,6 +645,11 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
 
     cJSON* new_scope_context = cJSON_CreateObject();
     if(ui_context) merge_json_objects(new_scope_context, ui_context);
+    // If this object was produced from an include, it may carry a
+    // synthetic '__include_context' object that should be merged into
+    // the active ui context for this item's parsing.
+    cJSON* include_ctx_item = cJSON_GetObjectItemCaseSensitive(obj_json, "__include_context");
+    if (include_ctx_item && cJSON_IsObject(include_ctx_item)) merge_json_objects(new_scope_context, include_ctx_item);
     cJSON* local_context = cJSON_GetObjectItem(obj_json, "context");
     if (local_context && cJSON_IsObject(local_context)) merge_json_objects(new_scope_context, local_context);
 
@@ -661,6 +817,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                         else if (strcmp(binding_key, "visible") == 0) update_type = OBSERVER_TYPE_VISIBLE;
                         else if (strcmp(binding_key, "checked") == 0) update_type = OBSERVER_TYPE_CHECKED;
                         else if (strcmp(binding_key, "disabled") == 0) update_type = OBSERVER_TYPE_DISABLED;
+                        else if (strcmp(binding_key, "led_on") == 0) update_type = OBSERVER_TYPE_LED_ON;
                         else if (strcmp(binding_key, "value") == 0) update_type = OBSERVER_TYPE_VALUE;
                         else {
                             print_warning("Unknown binding type '%s' for observable '%s'.", binding_key, state_name);
@@ -1398,91 +1555,117 @@ static void process_ui_spec_array(GenContext* ctx, cJSON* array_json, const char
     cJSON_ArrayForEach(item_json, array_json) {
         if (ctx->error_occurred) break;
 
-        cJSON* include_item = cJSON_GetObjectItem(item_json, "include");
-            if (include_item) {
-                // include can be a string (file path) or an object with options
-                const char* include_file = NULL;
-                const cJSON* include_context = NULL;
-                const char* as_prefix = NULL;
-                bool merge_flag = true;
+            cJSON* include_item = cJSON_GetObjectItem(item_json, "include");
+                if (include_item) {
+                    // include can be a string (file path) or an object with options
+                    const char* include_file = NULL;
+                    const cJSON* include_context = NULL;
+                    const char* as_prefix = NULL;
+                    bool merge_flag = true;
 
-                if (cJSON_IsString(include_item)) {
-                    include_file = include_item->valuestring;
-                } else if (cJSON_IsObject(include_item)) {
-                    cJSON* f = cJSON_GetObjectItemCaseSensitive(include_item, "file");
-                    if (f && cJSON_IsString(f)) include_file = f->valuestring;
-                    cJSON* ctx_item = cJSON_GetObjectItemCaseSensitive(include_item, "context");
-                    if (ctx_item && cJSON_IsObject(ctx_item)) include_context = ctx_item;
-                    cJSON* as_item = cJSON_GetObjectItemCaseSensitive(include_item, "as");
-                    if (as_item && cJSON_IsString(as_item)) as_prefix = as_item->valuestring;
-                    cJSON* merge_item = cJSON_GetObjectItemCaseSensitive(include_item, "merge");
-                    if (merge_item && cJSON_IsBool(merge_item)) merge_flag = cJSON_IsTrue(merge_item);
-                } else {
-                    print_warning("Unsupported include directive type; expected string or mapping.");
-                    include_file = NULL;
-                }
-
-                if (!include_file) {
-                    // Not a real include; fall through to object handling or warn.
-                } else {
-                    char* full_path = join_path(current_base_path, include_file);
-                    char* included_content = read_file(full_path);
-                    if (!included_content) {
-                        print_warning("Could not read include file: %s", full_path);
-                        free(full_path);
-                        continue;
+                    // Ensure the include mapping is standalone (no other keys besides comments)
+                    int other_keys = 0;
+                    cJSON* tmp_k = NULL;
+                    cJSON_ArrayForEach(tmp_k, item_json) {
+                        if (!tmp_k->string) continue;
+                        if (strncmp(tmp_k->string, "//", 2) == 0) continue;
+                        if (strcmp(tmp_k->string, "include") == 0) continue;
+                        other_keys++;
                     }
-
-                    char* error_msg = NULL;
-                    cJSON* included_json = yaml_to_cjson(included_content, &error_msg);
-                    free(included_content);
-
-                    if (error_msg) {
-                        char err_buf[1024];
-                        snprintf(err_buf, sizeof(err_buf), "Error in included file '%s': %s", full_path, error_msg);
-                        render_abort(err_buf);
-                        free(error_msg);
-                        free(full_path);
+                    if (other_keys > 0) {
+                        render_abort("Include directive must be a standalone item with no other keys.");
                         ctx->error_occurred = true;
-                        if (included_json) cJSON_Delete(included_json);
                         break;
                     }
 
-                    if (included_json && cJSON_IsArray(included_json)) {
-                        // Build merged context: ui_context <- include_context
-                        cJSON* new_context = NULL;
-                        if (ui_context || include_context) {
-                            new_context = cJSON_CreateObject();
-                            if (ui_context) merge_json_objects(new_context, ui_context);
-                            if (include_context) merge_json_objects(new_context, include_context);
-                        }
-
-                        // If an 'as' prefix is provided, apply it to ids inside the included JSON
-                        if (as_prefix) {
-                            prefix_ids_recursive(included_json, as_prefix);
-                        }
-
-                        char* new_base_path = get_dirname(full_path);
-                        // If merge_flag is true, process each item into current list with merged context
-                        if (merge_flag) {
-                            process_ui_spec_array(ctx, included_json, new_base_path, object_list_head, operation_list_head, parent_c_name, new_context ? new_context : ui_context);
-                        } else {
-                            // If not merging, wrap the included array as a single item? We'll just process as merged for now.
-                            process_ui_spec_array(ctx, included_json, new_base_path, object_list_head, operation_list_head, parent_c_name, new_context ? new_context : ui_context);
-                        }
-
-                        free(new_base_path);
-                        if (new_context) cJSON_Delete(new_context);
+                    if (cJSON_IsString(include_item)) {
+                        include_file = include_item->valuestring;
+                    } else if (cJSON_IsObject(include_item)) {
+                        cJSON* f = cJSON_GetObjectItemCaseSensitive(include_item, "file");
+                        if (f && cJSON_IsString(f)) include_file = f->valuestring;
+                        cJSON* ctx_item = cJSON_GetObjectItemCaseSensitive(include_item, "context");
+                        if (ctx_item && cJSON_IsObject(ctx_item)) include_context = ctx_item;
+                        cJSON* as_item = cJSON_GetObjectItemCaseSensitive(include_item, "as");
+                        if (as_item && cJSON_IsString(as_item)) as_prefix = as_item->valuestring;
+                        cJSON* merge_item = cJSON_GetObjectItemCaseSensitive(include_item, "merge");
+                        if (merge_item && cJSON_IsBool(merge_item)) merge_flag = cJSON_IsTrue(merge_item);
                     } else {
-                        print_warning("Included file '%s' does not contain a valid YAML/JSON list.", full_path);
+                        render_abort("Unsupported include directive type; expected string or mapping.");
+                        ctx->error_occurred = true;
+                        break;
                     }
 
-                    free(full_path);
-                    cJSON_Delete(included_json);
-                    // Skip further handling of this item (it's an include)
-                    continue;
+                    if (!include_file) {
+                        render_abort("Include directive missing 'file' entry.");
+                        ctx->error_occurred = true;
+                        break;
+                    } else {
+                        char* expanded_include = interpolate_home_path(include_file);
+                        char* include_copy = expanded_include ? expanded_include : strdup(include_file);
+                        char* full_path = join_path(current_base_path, include_copy);
+                        if (expanded_include) free(expanded_include);
+                        free(include_copy);
+                        char* included_content = read_file(full_path);
+                        if (!included_content) {
+                            char err_buf[512];
+                            snprintf(err_buf, sizeof(err_buf), "Could not read include file: %s", full_path);
+                            render_abort(err_buf);
+                            free(full_path);
+                            ctx->error_occurred = true;
+                            break;
+                        }
+
+                        char* error_msg = NULL;
+                        cJSON* included_json = yaml_to_cjson(included_content, &error_msg);
+                        free(included_content);
+
+                        if (error_msg) {
+                            char err_buf[1024];
+                            snprintf(err_buf, sizeof(err_buf), "Error in included file '%s': %s", full_path, error_msg);
+                            render_abort(err_buf);
+                            free(error_msg);
+                            free(full_path);
+                            ctx->error_occurred = true;
+                            if (included_json) cJSON_Delete(included_json);
+                            break;
+                        }
+
+                        if (included_json && cJSON_IsArray(included_json)) {
+                            // Build merged context: ui_context <- include_context
+                            cJSON* new_context = NULL;
+                            if (ui_context || include_context) {
+                                new_context = cJSON_CreateObject();
+                                if (ui_context) merge_json_objects(new_context, ui_context);
+                                if (include_context) merge_json_objects(new_context, include_context);
+                            }
+
+                            // If an 'as' prefix is provided, apply it to ids inside the included JSON
+                            if (as_prefix) {
+                                prefix_ids_recursive(included_json, as_prefix);
+                            }
+
+                            char* new_base_path = get_dirname(full_path);
+                            // Process included array items as if they were inline in the parent array
+                            process_ui_spec_array(ctx, included_json, new_base_path, object_list_head, operation_list_head, parent_c_name, new_context ? new_context : ui_context);
+
+                            free(new_base_path);
+                            if (new_context) cJSON_Delete(new_context);
+                        } else {
+                            char err_buf[512];
+                            snprintf(err_buf, sizeof(err_buf), "Included file '%s' does not contain a top-level YAML/JSON list.", full_path);
+                            render_abort(err_buf);
+                            ctx->error_occurred = true;
+                            if (included_json) cJSON_Delete(included_json);
+                            free(full_path);
+                            break;
+                        }
+
+                        free(full_path);
+                        cJSON_Delete(included_json);
+                        // Skip further handling of this item (it's an include)
+                        continue;
+                    }
                 }
-            }
             else if (cJSON_IsObject(item_json)) {
              cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item_json, "type");
             if (type_item && cJSON_IsString(type_item)) {

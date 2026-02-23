@@ -1,0 +1,45 @@
+- type: component
+  id: '@feed_rate_scale'
+  info: |
+    Feed / speed labeled scale with override column.
+    ---
+    A two-column row where left is a `labeled_scale` and right column shows units/override info. Context is typically inherited from parent.
+  content:
+    size: [100%, 100%]
+    add_style: ['@container_transp', 0]
+    add_style: ['@bg_group', 0]
+    layout: LV_LAYOUT_FLEX
+    flex_flow: LV_FLEX_FLOW_ROW
+    height: LV_SIZE_CONTENT
+    remove_flag: LV_OBJ_FLAG_SCROLLABLE
+    pad_column: 0
+    pad_bottom: $pad
+    pad_top: $pad
+    children:
+      - type: use-view
+        id: @labeled_scale
+        # context: is all inherited.
+
+      # Right column
+      - layout: LV_LAYOUT_FLEX
+        add_style: ['@container_transp', 0]
+        flex_flow: LV_FLEX_FLOW_COLUMN
+        size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+        min_width: 50
+        pad_right: 0
+        flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER]
+        add_flag: LV_OBJ_FLAG_CLICKABLE
+        pad_top: 18
+        action: { $override_state: { numeric_input_dialog: { min: 0, max: 200, initial: 100, format: "%d %% ", text: 'Override:' } } }
+        children:
+          - type: label
+            text: $unit
+            text_font: '@font_kode_14'
+            add_style: ['@border_top_btn', 0]
+          - type: label
+            text: $ovr
+          - type: label
+            text: 65%%
+            text_font: '@font_kode_14'
+            add_style: [@indicator_yellow, 0]
+            observes: { $override_value: { text: "%g%%" } }

@@ -1,0 +1,12 @@
+- type: component
+  id: "@my_comp"
+  content:
+    type: obj
+    children:
+      - type: label
+        text: "Hello from component"
+      - type: button
+        id: comp_button
+        children:
+          - type: label
+            text: "Click Me"

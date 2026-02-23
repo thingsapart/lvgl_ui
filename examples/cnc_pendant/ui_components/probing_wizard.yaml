@@ -1,0 +1,10 @@
+- type: component
+  id: @probing_wizard
+  info: |
+    Probing wizard placeholder.
+    ---
+    Wrapper component for the probing_wizard control used in the third tile. Kept as a component so it can be included as a view.
+  content:
+    init: { lv_probing_wizard_create: [] }
+    id: '@probing_wizard'
+    lv_probing_wizard_set_mode: [LV_PROBING_WIZARD_MODE_RECTANGLE, false]

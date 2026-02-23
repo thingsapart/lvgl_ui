@@ -1,0 +1,7 @@
+# Split include-based main file for cnc_pendant
+- include: "data_binding.yaml"
+- include: "fonts.yaml"
+- include: "styles/global_styles.yaml"
+
+- include: "main_480x320.yaml"
+#- include: "main_tablet_portrait.yaml"

@@ -70,6 +70,7 @@ void* obj_registry_get(const char* id) {
     if (!id) return NULL;
     if (strcmp(id, "SCREEN_ACTIVE") == 0) return (void*)lv_screen_active();
     if (strcmp(id, "NULL") == 0) return NULL;
+    if (strcmp(id, "lv_font_default") == 0 || strcmp(id, "@lv_font_default") == 0) return (void*)LV_FONT_DEFAULT;
 
     for (int i = 0; i < obj_registry_count; i++) {
         if (strcmp(obj_registry[i].id, id) == 0) {

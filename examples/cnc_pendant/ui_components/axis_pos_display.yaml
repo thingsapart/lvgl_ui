@@ -1,0 +1,90 @@
+- type: component
+  id: '@axis_pos_display'
+  info: |
+    Axis position display.
+    ---
+    Shows axis label with homing/selection indicators and both work and machine positions. Context variables:
+    - $name: component instance name (optional)
+    - $axis: single-letter axis label (eg. "X")
+    - $wcs_pos: formatted work coordinate string
+    - $abs_pos: formatted absolute coordinate string
+    - $delta_pos: formatted distance-to-go string
+    - $homed_state: boolean observable for homed indicator
+    - $selected_state: boolean observable for selection highlight
+    - $home_action: action to trigger when the axis button is pressed
+  content:
+    add_style: ['@flex_x', 0]
+    add_style: ['@container_transp', 0]
+    add_style: ['@bg_group', 0]
+    size: [100%, LV_SIZE_CONTENT]
+    pad_all: 10
+    pad_bottom: 18
+    border_color: '#ffffff'
+    border_opa: 40
+    margin_all: 2
+    name: $name
+    children:
+      # Axis label / latter with homing indicator
+      - type: button
+        text_font: '@font_kode_40'
+        width: 35
+        add_style: ['@indicator_light', 0]
+        add_style: ['@btn_clicked', LV_STATE_PRESSED]
+        radius: 0
+        bg_opa: 0
+        shadow_opa: 0
+        pad_right: 0
+        pad_bottom: 0
+        pad_top: 0
+        lv_obj_set_ext_click_area: 30
+        observes: { $homed_state: { style: { true: '@indicator_light_green', false: '@indicator_light_red' } } }
+        observes: { $selected_state: { style: { true: '@background_purple', false: '@background_none' } } }
+        action: { $home_action: trigger }
+        children:
+          - type: label
+            text: $axis
+            center: []
+      # Right side including WCS pos (large) and abs-pos and dist-to-go (small).
+      - add_style: ['@flex_y', 0]
+        add_style: ['@container_transp', 0]
+        flex_grow: 1
+        height: LV_SIZE_CONTENT
+        children:
+          # WCS position.
+          - add_style: ['@flex_x', 0]
+            add_style: ['@container_transp', 0]
+            size: [100%, LV_SIZE_CONTENT]
+            children:
+              - type: 'label'
+                text_font: '@font_kode_34'
+                text: $wcs_pos
+                flex_grow: 1
+                add_style: ['@indicator_green', 0]
+                text_align: LV_TEXT_ALIGN_RIGHT
+                observes: { $wcs_state: { text: '%4.2f' } }
+          - add_style: ['@flex_x', 0]
+            add_style: ['@container_transp', 0]
+            size: [100%, LV_SIZE_CONTENT]
+            children:
+              - type: 'label'
+                text: "\uF124"
+                width: 14
+              - type: 'label'
+                text_font: '@font_kode_14'
+                text: $abs_pos
+                flex_grow: 1
+                text_align: LV_TEXT_ALIGN_RIGHT
+                add_style: ['@indicator_yellow', 0]
+                observes: { $pos_state: { text: '%4.2f' } }
+
+              - type: 'label'
+                text: "\uF051"
+                width: 14
+              - type: 'label'
+                text_font: '@font_kode_14'
+                text: $delta_pos
+                text_align: LV_TEXT_ALIGN_RIGHT
+                add_style: ['@indicator_yellow', 0]
+                flex_grow: 1
+                observes: { $delta_pos_state: { text: '%4.2f' } }
+

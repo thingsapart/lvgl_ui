@@ -216,6 +216,7 @@ The `observes` key contains a map of `state_name` keys to one or more **bindings
 *   **`visible`**: Toggles the widget's visibility (`LV_OBJ_FLAG_HIDDEN`). The configuration must be a map from state values to booleans (`true` for visible, `false` for hidden).
 *   **`checked`**: Toggles the widget's checked state (`LV_STATE_CHECKED`). The configuration must be a map from state values to booleans.
 *   **`disabled`**: Toggles the widget's disabled state (`LV_STATE_DISABLED`). The configuration must be a map from state values to booleans.
+*   **`led_on`**: Turns an LVGL `led` object on/off using `lv_led_on()` and `lv_led_off()`. The configuration must be a map from state values to booleans (or a direct boolean), similar to `visible` and `checked`.
 
 ### Notifying the UI of State Changes in C
 
