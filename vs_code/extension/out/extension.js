@@ -1215,7 +1215,7 @@ function getWebviewContent() {
         .main-content { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; /* Flexbox fix for overflow */ }
         .controls { padding: 8px; background-color: #333; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #444; flex-shrink: 0; gap: 16px; }
         #resolution-select { background: #3c3c3c; color: #f0f0f0; border: 1px solid #666; padding: 4px; border-radius: 4px; }
-        .canvas-container { flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; overflow: auto; padding: 16px; box-sizing: border-box;}
+        .canvas-container { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; width: 100%; overflow: auto; padding: 16px; box-sizing: border-box;}
         canvas { background-color: #fff; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; box-shadow: 0 4px 12px rgba(0,0,0,0.5); flex-shrink: 0; }
 
         /* Console Styles */
@@ -1273,6 +1273,17 @@ function getWebviewContent() {
             <div>
                  <label><input type="checkbox" id="trace-sim-checkbox"> Trace UI simulation</label>
             </div>
+            <div>
+                <label for="scale-select" style="margin-right: 8px;">Scale:</label>
+                <select id="scale-select" style="background:#3c3c3c;color:#f0f0f0;border:1px solid #666;padding:4px;border-radius:4px;">
+                    <option value="0.25">0.25x</option>
+                    <option value="0.5">0.5x</option>
+                    <option value="0.75">0.75x</option>
+                    <option value="1.0" selected>1.0x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2.0">2.0x</option>
+                </select>
+            </div>
         </div>
         <div class="canvas-container">
             <canvas id="preview-canvas"></canvas>
@@ -1293,11 +1304,13 @@ function getWebviewContent() {
         const vscode = acquireVsCodeApi();
         const resolutionSelect = document.getElementById('resolution-select');
         const traceSimCheckbox = document.getElementById('trace-sim-checkbox');
+        const scaleSelect = document.getElementById('scale-select');
         const consoleContainer = document.getElementById('console');
         const consoleOutput = document.getElementById('console-output');
         const consoleCloseBtn = document.getElementById('console-close-btn');
 
         let isMouseDown = false;
+        let currentScale = 1.0;
         const frameQueue = [];
 
         consoleCloseBtn.addEventListener('click', () => {
@@ -1308,8 +1321,13 @@ function getWebviewContent() {
             if (canvas.width !== width || canvas.height !== height) {
                 canvas.width = width;
                 canvas.height = height;
-                canvas.style.width = width + 'px';
-                canvas.style.height = height + 'px';
+                // Style size reflects the selected scale so the visual viewport is zoomed
+                canvas.style.width = (width * currentScale) + 'px';
+                canvas.style.height = (height * currentScale) + 'px';
+            } else {
+                // Ensure style matches current scale even if logical size unchanged
+                canvas.style.width = (width * currentScale) + 'px';
+                canvas.style.height = (height * currentScale) + 'px';
             }
         }
 
@@ -1396,6 +1414,16 @@ function getWebviewContent() {
             });
         });
 
+        // Scale selection handling
+        scaleSelect.addEventListener('change', e => {
+            const v = parseFloat(e.target.value);
+            if (!isFinite(v) || v <= 0) return;
+            currentScale = v;
+            // Update visual dimensions immediately
+            canvas.style.width = (canvas.width * currentScale) + 'px';
+            canvas.style.height = (canvas.height * currentScale) + 'px';
+        });
+
         traceSimCheckbox.addEventListener('change', e => {
             vscode.postMessage({
                 command: 'setTrace',
@@ -1405,8 +1433,11 @@ function getWebviewContent() {
 
         function sendMouseEvent(e, pressed) {
             const rect = canvas.getBoundingClientRect();
-            const x = Math.floor(e.clientX - rect.left);
-            const y = Math.floor(e.clientY - rect.top);
+            // Map visual (scaled) coordinates back to logical canvas pixels
+            const scaleFactorX = canvas.width / rect.width;
+            const scaleFactorY = canvas.height / rect.height;
+            const x = Math.floor((e.clientX - rect.left) * scaleFactorX);
+            const y = Math.floor((e.clientY - rect.top) * scaleFactorY);
             if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) return;
             vscode.postMessage({ type: 'mouse', x, y, pressed });
         }

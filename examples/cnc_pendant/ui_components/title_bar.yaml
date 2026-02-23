@@ -47,8 +47,9 @@
         pad_right: 0
       - type: led
         size: [15, 15]
+        lv_led_off: []
         pad_left: 0
-        observes: { motion.homed.all: { led_on: { true: true, default: false } } }
+        observes: { motion.homed.all: { led_on: { true: true, false: false, default: false } } }
       - type: label
         add_style: [@titlebar_entry, 0]
         text_font: @LV_FONT_DEFAULT
