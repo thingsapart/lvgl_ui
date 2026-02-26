@@ -30,13 +30,14 @@ typedef struct DeferredNode {
     struct DeferredNode* next;
 } DeferredNode;
 
-// --- Hoisted Variable (cross-scope deferred refs) ---
-// Variables declared in create_ui but referenced inside deferred functions are
-// promoted to file-scope statics so both scopes can see them.
+// --- Hoisted Variable (cross-scope deferred refs + all malloc-constructed vars) ---
+// Variables declared in create_ui or inside a deferred function that are either
+// cross-scope referenced OR heap-allocated are promoted to file-scope statics.
 typedef struct HoistedVarNode {
     char*  c_name;
     char*  c_type;
-    bool   needs_free;   // true → LVGL_UI_FREE in destroy_ui
+    bool   needs_free;        // true → LVGL_UI_FREE in destroy_ui / destroy_*
+    char*  owner_fn_name;     // NULL = create_ui scope; else = the create_* fn that owns it
     struct HoistedVarNode* next;
 } HoistedVarNode;
 
@@ -53,7 +54,7 @@ static void print_node(IRNode* node, int indent_level, const char* parent_c_name
 static void find_and_map_arrays(IRObject* head, MapNode** array_map_head, int* counter);
 static void id_map_dump(IdMapNode* map_head);
 static void collect_deferred_objects(IRObject* head, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr);
-static void emit_deferred_function(IRObject* obj, IdMapNode* global_id_map);
+static void emit_deferred_function(IRObject* obj, IdMapNode* global_id_map, HoistedVarNode* hoisted_vars);
 
 // --- Map Helpers: ID Map ---
 static void id_map_add(IdMapNode** map_head, const char* id, const char* c_name, const char* c_type) {
@@ -529,15 +530,21 @@ static bool is_hoisted(const HoistedVarNode* h, const char* c_name) {
     return false;
 }
 static void hoisted_var_add(HoistedVarNode** h, const char* c_name,
-                             const char* c_type, bool needs_free) {
+                             const char* c_type, bool needs_free,
+                             const char* owner_fn_name) {
     if (is_hoisted(*h, c_name)) return;
     HoistedVarNode* n = malloc(sizeof(HoistedVarNode));
     if (!n) return;
     n->c_name = strdup(c_name); n->c_type = strdup(c_type);
-    n->needs_free = needs_free; n->next = *h; *h = n;
+    n->needs_free = needs_free;
+    n->owner_fn_name = owner_fn_name ? strdup(owner_fn_name) : NULL;
+    n->next = *h; *h = n;
 }
 static void hoisted_var_free_list(HoistedVarNode* h) {
-    while (h) { HoistedVarNode* nx = h->next; free(h->c_name); free(h->c_type); free(h); h = nx; }
+    while (h) {
+        HoistedVarNode* nx = h->next;
+        free(h->c_name); free(h->c_type); free(h->owner_fn_name); free(h); h = nx;
+    }
 }
 
 // Collect every c_name declared inside a subtree (not the root itself).
@@ -563,7 +570,7 @@ static void find_external_refs_in_expr(IRExpr* e, const CNameSetNode* local_set,
             const IdMapNode* node = id_map_get_node(id_map, lookup);
             if (!node) break;
             if (!c_name_set_contains(local_set, node->c_name))
-                hoisted_var_add(out, node->c_name, node->c_type, false);
+                hoisted_var_add(out, node->c_name, node->c_type, false, NULL);
             break;
         }
         case IR_EXPR_FUNCTION_CALL:

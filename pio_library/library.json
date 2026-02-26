@@ -20,6 +20,8 @@
       "+<../api_spec.h>",
       "+<../data_binding.c>",
       "+<../data_binding.h>",
+      "+<../deferred_loader.h>",
+      "+<../deferred_loader.c>",
       "+<../utils.c>",
       "+<../utils.h>",
       "+<../obj_registry.c>",
