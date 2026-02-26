@@ -101,7 +101,9 @@ A backend is a module that consumes the `IRRoot` and produces an output. The `c_
 
 #### Deferred UI Functions
 
-When an `IRObject` has a non-NULL `deferred_fn_name`, its children are not inlined into `create_ui`. Instead they are emitted as a separate, self-contained `static` helper function that can be called from the application at any time — for example when the user navigates to a tab or page. This is the primary mechanism for **deferred / lazy page loading** on memory-constrained targets such as the ESP32-S3.
+When an `IRObject` has a non-NULL `deferred_fn_name`, its children are not inlined into `create_ui`. Instead they are emitted as a separate, self-contained `static void fn(lv_obj_t* parent)` helper function that is invoked at runtime by the **deferred loader** — a small generic library (`deferred_loader.c/.h`) — only when that child becomes visible. This is the primary mechanism for **deferred / lazy page loading** on memory-constrained targets such as the ESP32-S3.
+
+**Code generation changes (`c_code_printer.c`)**
 
 The `c_code_print_backend` performs an extra traversal (`collect_deferred_objects`) that walks the entire IR tree and collects all objects with a non-NULL `deferred_fn_name`. For each such object it calls `emit_deferred_function`, which emits:
 
@@ -111,13 +113,24 @@ static void <deferred_fn_name>(lv_obj_t* parent) {
 }
 ```
 
-These functions are emitted *before* `void create_ui(lv_obj_t* parent)`, under a `// --- Deferred UI Functions ---` header comment. Inside `create_ui`, the original object's own setup operations are still emitted inline; only the child construction is replaced by a single call:
+These functions are emitted *before* `void create_ui(lv_obj_t* parent)`, under a `// --- Deferred UI Functions ---` header comment.
+
+Inside `create_ui`, instead of inlining children or calling the deferred function directly, the printer emits a `deferred_loader_register` call for each deferred child, followed by a single `deferred_loader_init` call on the parent once all children have been registered:
 
 ```c
-<deferred_fn_name>(<c_name>);   // ← replaces inlined children
+deferred_loader_register(tabview_0, obj_1, create_tab_1);
+deferred_loader_register(tabview_0, obj_3, create_tab_2);
+deferred_loader_register(tabview_0, obj_5, create_tab_3);
+deferred_loader_init(tabview_0);
 ```
 
-The `lvgl_renderer` backend intentionally ignores `deferred_fn_name` and always renders all children inline, so the live SDL preview continues to work without modification.
+**Runtime library (`deferred_loader.c/.h`)**
+
+`deferred_loader_init` installs `LV_EVENT_VALUE_CHANGED` and `LV_EVENT_DELETE` handlers on the scroll-container parent, then immediately populates the currently-active child.  On each subsequent `LV_EVENT_VALUE_CHANGED` (fired by LVGL between `lv_task_handler()` calls when the user switches tabs/tiles), the handler calls `create_fn(child)` for the newly-active child and `lv_obj_clean(child)` for the previously-active one.
+
+Supported parent widget types: `lv_tabview` and `lv_tileview`. Adding new types requires only extending the `get_active_child` dispatch function in `deferred_loader.c`.
+
+The `lvgl_renderer` backend intentionally ignores `deferred_fn_name` and always renders children inline, so the live SDL preview continues to work without modification.
 
 It works in two passes (plus the deferred pre-pass above):
 

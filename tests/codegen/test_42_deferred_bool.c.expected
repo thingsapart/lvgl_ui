@@ -31,7 +31,7 @@ void create_ui(lv_obj_t* parent) {
     // unnamed: obj_1 (obj)
     lv_obj_t* obj_1 = lv_tabview_add_tab(tabview_0, "Page A");
 
-    create_ui_obj_1(obj_1);
+    deferred_loader_register(tabview_0, obj_1, create_ui_obj_1);
 
     // unnamed: obj_3 (obj)
     lv_obj_t* obj_3 = lv_tabview_add_tab(tabview_0, "Page B");
@@ -43,5 +43,6 @@ void create_ui(lv_obj_t* parent) {
     lv_obj_set_style_align(label_4, LV_ALIGN_CENTER, 0);
 
 
+    deferred_loader_init(tabview_0);
 
 }

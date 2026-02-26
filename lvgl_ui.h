@@ -4,6 +4,7 @@
 #include "lvgl.h"
 #include "data_binding.h"
 #include "obj_registry.h"
+#include "deferred_loader.h"
 
 #ifdef __cplusplus
 extern "C" {

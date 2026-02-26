@@ -196,17 +196,23 @@ static void build_settings_page(lv_obj_t* parent) {
 void create_ui(lv_obj_t* parent) {
     do {
         lv_obj_t* tabview_0 = lv_tabview_create(parent);
+
         do {
             lv_obj_t* tab_home_0 = lv_tabview_add_tab(tabview_0, "Home");
-            create_ui_tab_home_0(tab_home_0);     // ← deferred call
+            deferred_loader_register(tabview_0, tab_home_0, create_ui_tab_home_0);
         } while(0);
+
         do {
             lv_obj_t* tab_settings_0 = lv_tabview_add_tab(tabview_0, "Settings");
-            build_settings_page(tab_settings_0);  // ← deferred call
+            deferred_loader_register(tabview_0, tab_settings_0, build_settings_page);
         } while(0);
+
+        deferred_loader_init(tabview_0);   // installs event handler, populates active tab
     } while(0);
 }
 ```
+
+`deferred_loader_init` immediately populates the currently-active child (tab 0 by default) so the initial view is never blank.  When the user switches tabs, a `LV_EVENT_VALUE_CHANGED` event fires on the tabview: `deferred_loader` calls `create_fn` for the newly-active child and `lv_obj_clean` on the previously-active child, reclaiming its heap between `lv_task_handler()` calls.
 
 **Backend behaviour**
 

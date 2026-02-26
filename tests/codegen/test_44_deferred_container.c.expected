@@ -44,7 +44,8 @@ void create_ui(lv_obj_t* parent) {
 
     lv_obj_set_style_size(obj_1, 200, 100, 0);
     lv_obj_set_style_align(obj_1, LV_ALIGN_CENTER, 0);
-    create_ui_obj_1(obj_1);
+    deferred_loader_register(obj_0, obj_1, create_ui_obj_1);
 
+    deferred_loader_init(obj_0);
 
 }

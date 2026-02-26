@@ -49,18 +49,19 @@ void create_ui(lv_obj_t* parent) {
     // unnamed: obj_1 (obj)
     lv_obj_t* obj_1 = lv_tabview_add_tab(tabview_0, "Tab 1");
 
-    create_tab_1(obj_1);
+    deferred_loader_register(tabview_0, obj_1, create_tab_1);
 
     // unnamed: obj_3 (obj)
     lv_obj_t* obj_3 = lv_tabview_add_tab(tabview_0, "Tab 2");
 
-    create_tab_2(obj_3);
+    deferred_loader_register(tabview_0, obj_3, create_tab_2);
 
     // unnamed: obj_5 (obj)
     lv_obj_t* obj_5 = lv_tabview_add_tab(tabview_0, "Tab 3");
 
-    create_tab_3(obj_5);
+    deferred_loader_register(tabview_0, obj_5, create_tab_3);
 
     lv_tabview_set_active(tabview_0, 2, LV_ANIM_OFF);
+    deferred_loader_init(tabview_0);
 
 }

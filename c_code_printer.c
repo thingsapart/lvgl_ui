@@ -647,7 +647,7 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
         if (current->operations) {
             printf("\n");
             if (current->deferred_fn_name) {
-                // Deferred: emit non-child operations inline, then call the deferred function.
+                // Deferred: emit non-child operations inline, then register with the deferred loader.
                 bool has_non_child_ops = false;
                 for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
                     if (op_node->op_node->type != IR_NODE_OBJECT) { has_non_child_ops = true; break; }
@@ -659,12 +659,26 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
                         }
                     }
                 }
-                // Emit the deferred function call
+                // Register this child with its scroll-container parent for lazy loading.
                 print_indent(content_indent);
-                printf("%s(%s);\n", current->deferred_fn_name, current->c_name);
+                printf("deferred_loader_register(%s, %s, %s);\n",
+                       parent_c_name, current->c_name, current->deferred_fn_name);
             } else {
                 for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
                     print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map);
+                }
+                // If any direct child was deferred, install the lazy-load event handler now.
+                bool has_deferred_children = false;
+                for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
+                    if (op_node->op_node->type == IR_NODE_OBJECT &&
+                        ((IRObject*)op_node->op_node)->deferred_fn_name) {
+                        has_deferred_children = true;
+                        break;
+                    }
+                }
+                if (has_deferred_children) {
+                    print_indent(content_indent);
+                    printf("deferred_loader_init(%s);\n", current->c_name);
                 }
             }
         }
