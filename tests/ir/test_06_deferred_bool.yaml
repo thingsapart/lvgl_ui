@@ -1,0 +1,10 @@
+# IR test: deferred: true
+# When deferred is a boolean true, the function name is auto-generated as create_ui_<c_var>.
+# The IR should show the deferred="create_ui_obj_0" annotation on the object.
+- type: obj
+  size: [200, 100]
+  deferred: true
+  children:
+    - type: label
+      text: "Page content"
+      align: LV_ALIGN_CENTER

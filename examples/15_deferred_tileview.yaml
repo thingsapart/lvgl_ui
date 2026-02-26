@@ -1,0 +1,45 @@
+# Example: Deferred Tileview Pages
+#
+# Same idea as the deferred tabview – each tile's content is extracted into its
+# own static C function.  The tile objects themselves are still created in
+# create_ui() so LVGL can set up the tile grid correctly; only their children
+# are deferred.
+
+- type: tileview
+  size: [100%, 100%]
+  named: main_tileview
+
+  children:
+    # Tile (0,0) – leftmost, can swipe right
+    - init: { lv_tileview_add_tile: [0, 0, LV_DIR_RIGHT] }
+      deferred: create_tile_dashboard
+      children:
+        - type: label
+          text: "Dashboard"
+          align: LV_ALIGN_TOP_MID
+          lv_obj_align: [LV_ALIGN_TOP_MID, 0, 8]
+
+        - type: arc
+          size: [120, 120]
+          align: LV_ALIGN_CENTER
+          value: 65
+          range_max: 100
+
+    # Tile (1,0) – middle, swipe both ways
+    - init: { lv_tileview_add_tile: [1, 0, LV_DIR_LEFT | LV_DIR_RIGHT] }
+      deferred: create_tile_controls
+      children:
+        - type: slider
+          width: 200
+          align: LV_ALIGN_CENTER
+
+        - type: switch
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 50]
+
+    # Tile (2,0) – rightmost, swipe left to return
+    - init: { lv_tileview_add_tile: [2, 0, LV_DIR_LEFT] }
+      deferred: create_tile_status
+      children:
+        - type: label
+          text: "Status\nOK"
+          align: LV_ALIGN_CENTER

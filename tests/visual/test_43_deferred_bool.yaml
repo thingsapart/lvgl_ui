@@ -1,0 +1,11 @@
+# Visual test: deferred: true (auto-named) on a plain container.
+# The lvgl_render backend ignores 'deferred' and renders all content inline.
+# This test ensures deferred: true does NOT break the live renderer.
+- type: obj
+  size: [300, 200]
+  center: []
+  deferred: true
+  children:
+    - type: label
+      text: "Deferred auto-name"
+      align: LV_ALIGN_CENTER

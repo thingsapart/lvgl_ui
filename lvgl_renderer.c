@@ -250,6 +250,10 @@ static void render_single_object(RenderContext* ctx, IRObject* current_obj) {
     }
 
     if (current_obj->operations) {
+        // NOTE: `deferred_fn_name` is intentionally ignored by the lvgl_renderer backend.
+        // The renderer always inlines all children so that the live preview works correctly.
+        // Only the c_code backend uses deferred_fn_name to extract children into a separate
+        // static function for lazy/on-demand loading on resource-constrained targets.
         for (IROperationNode* op_node = current_obj->operations; op_node; op_node = op_node->next) {
             if (ctx->error_occurred) break; // Stop processing operations if a prior one failed
 
@@ -524,10 +528,20 @@ static void evaluate_expression(RenderContext* ctx, IRExpr* expr, RenderValue* o
             else if(strcmp(base_type, "int32_t") == 0) element_size = sizeof(int32_t);
             else if(strcmp(base_type, "int") == 0) element_size = sizeof(int);
             else if(strcmp(base_type, "void*") == 0) element_size = sizeof(void*);
+            // lv_style_prop_t is typedef uint8_t, but its enum values fit in int32_t;
+            // treat _lv_style_id_t and similar enum types as int32_t for safe evaluation.
+            else if(strcmp(base_type, "lv_style_prop_t") == 0) element_size = sizeof(int32_t);
+            else if(strcmp(base_type, "_lv_style_id_t") == 0) element_size = sizeof(int32_t);
+            else if(strcmp(base_type, "uint8_t") == 0)  element_size = sizeof(uint8_t);
+            else if(strcmp(base_type, "uint16_t") == 0) element_size = sizeof(uint16_t);
+            else if(strcmp(base_type, "uint32_t") == 0) element_size = sizeof(uint32_t);
             else {
-                render_abort("Unsupported array base type for renderer");
+                // Unknown array element type: emit a warning and skip (returns NULL).
+                // This mirrors the c_code backend's "/* UNMAPPED_ARRAY */ NULL" output.
+                print_warning("Renderer: unsupported array base type '%s' — skipping array (will pass NULL).", base_type);
                 free(base_type);
-                ctx->error_occurred = true;
+                out_val->type = RENDER_VAL_TYPE_POINTER;
+                out_val->as.p_val = NULL;
                 return;
             }
             free(base_type);
@@ -551,6 +565,8 @@ static void evaluate_expression(RenderContext* ctx, IRExpr* expr, RenderValue* o
                     if (element_size == sizeof(lv_coord_t)) ((lv_coord_t*)c_array)[i] = (lv_coord_t)elem_val.as.i_val;
                     else if (element_size == sizeof(int32_t)) ((int32_t*)c_array)[i] = (int32_t)elem_val.as.i_val;
                     else if (element_size == sizeof(int)) ((int*)c_array)[i] = (int)elem_val.as.i_val;
+                    else if (element_size == sizeof(uint16_t)) ((uint16_t*)c_array)[i] = (uint16_t)elem_val.as.i_val;
+                    else if (element_size == sizeof(uint8_t)) ((uint8_t*)c_array)[i] = (uint8_t)elem_val.as.i_val;
                 } else if (elem_val.type == RENDER_VAL_TYPE_POINTER) {
                     if (element_size == sizeof(void*)) ((void**)c_array)[i] = elem_val.as.p_val;
                 }

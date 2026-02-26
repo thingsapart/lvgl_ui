@@ -1,0 +1,19 @@
+# Visual test: deferred tabview.
+# The lvgl_render backend ignores 'deferred' and renders all tab content inline,
+# letting the visual diff verify that deferred annotations don't break rendering.
+- type: tabview
+  size: [300, 200]
+  center: []
+  children:
+    - init: { lv_tabview_add_tab: ["Home"] }
+      deferred: create_home_tab
+      children:
+        - type: label
+          text: "Home Content"
+          align: LV_ALIGN_CENTER
+    - init: { lv_tabview_add_tab: ["Settings"] }
+      deferred: create_settings_tab
+      children:
+        - type: slider
+          width: 150
+          align: LV_ALIGN_CENTER

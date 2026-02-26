@@ -1,0 +1,21 @@
+# Codegen test: deferred on a plain container (non-tabview use-case).
+# A scrollable panel hosts a deferred sub-screen.  The panel itself is
+# created inline; its children are extracted into create_ui_<c_name>.
+- type: obj
+  width: 320
+  height: 240
+  center: []
+  children:
+    - type: obj
+      deferred: true
+      size: [200, 100]
+      align: LV_ALIGN_CENTER
+      children:
+        - type: label
+          text: "Deferred page"
+          align: LV_ALIGN_CENTER
+        - type: button
+          align: LV_ALIGN_BOTTOM_MID
+          children:
+            - type: label
+              text: "OK"

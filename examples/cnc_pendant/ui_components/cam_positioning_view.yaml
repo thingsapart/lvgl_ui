@@ -1,0 +1,10 @@
+- type: component
+  id: @pcam_positioning_view
+  info: |
+    Camera live-stream based positioning view.
+    ---
+    Wrapper component for the lv_cam_positioning control used in the third tile. Kept as a component so it can be included as a view.
+  content:
+    init: { lv_cam_positioning_create: [] }
+    id: '@cam_positioning'
+    lv_cam_positioning_set_mode: LV_CAM_POS_MODE_POINT

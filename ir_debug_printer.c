@@ -182,6 +182,7 @@ static void debug_print_object_list(IRObject* head, int indent_level) {
         printf("[%s] c_name=\"%s\" json_type=\"%s\" c_type=\"%s\"",
                get_ir_node_type_str(current->base.type), current->c_name, current->json_type, current->c_type);
         if (current->registered_id) printf(" id=\"%s\"", current->registered_id);
+        if (current->deferred_fn_name) printf(" deferred=\"%s\"", current->deferred_fn_name);
         printf("\n");
 
         debug_print_indent(indent_level + 1);

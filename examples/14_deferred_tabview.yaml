@@ -1,0 +1,58 @@
+# Example: Deferred Tabview Pages
+#
+# On memory-constrained MCUs (e.g. ESP32-S3) only the currently visible tab
+# needs to occupy heap.  Marking each tab with `deferred: "fn_name"` tells
+# the c_code backend to emit a separate static function for that tab's content
+# instead of inlining everything into create_ui().
+#
+# At runtime, call lv_obj_clean(tab_obj) + fn_name(tab_obj) whenever the user
+# switches tabs (see docs/ui_spec.md §Deferred Pages for the FreeRTOS helper).
+#
+# The lvgl_renderer / live-preview ignores `deferred` and renders all tabs
+# inline as usual, so the simulator works without changes.
+
+- type: obj
+  size: [480, 320]
+  children:
+    - type: tabview
+      size: [100%, 100%]
+      tab_bar_position: LV_DIR_TOP
+      tab_bar_size: 40
+
+      children:
+        # --- Tab 1: Home ---
+        # deferred: true  would auto-name the function create_ui_<c_var>
+        # deferred: "name" uses the given C identifier (preferred for readability)
+        - init: { lv_tabview_add_tab: ["Home"] }
+          deferred: create_tab_home
+          children:
+            - type: label
+              id: home_title
+              text: "Welcome Home"
+              align: LV_ALIGN_CENTER
+
+            - type: button
+              align: LV_ALIGN_BOTTOM_MID
+              lv_obj_align: [LV_ALIGN_BOTTOM_MID, 0, -10]
+              children:
+                - type: label
+                  text: "Go"
+
+        # --- Tab 2: Settings ---
+        - init: { lv_tabview_add_tab: ["Settings"] }
+          deferred: create_tab_settings
+          children:
+            - type: slider
+              width: 200
+              align: LV_ALIGN_CENTER
+
+            - type: switch
+              lv_obj_align: [LV_ALIGN_CENTER, 0, 50]
+
+        # --- Tab 3: Info ---
+        - init: { lv_tabview_add_tab: ["Info"] }
+          deferred: create_tab_info
+          children:
+            - type: label
+              text: "Build: 1.0.0\nDevice: ESP32-S3\nDisplay: 480x320"
+              align: LV_ALIGN_CENTER

@@ -1,0 +1,23 @@
+# Visual test: tabview with 3 tabs, Tab 3 activated programmatically via lv_tabview_set_active.
+# This verifies that calling lv_tabview_set_active after children are created
+# correctly switches the visible tab in the rendered output.
+- type: tabview
+  size: [300, 220]
+  center: []
+  children:
+    - init: { lv_tabview_add_tab: ["Tab 1"] }
+      children:
+        - type: label
+          text: "Content of Tab 1"
+          align: LV_ALIGN_CENTER
+    - init: { lv_tabview_add_tab: ["Tab 2"] }
+      children:
+        - type: label
+          text: "Content of Tab 2"
+          align: LV_ALIGN_CENTER
+    - init: { lv_tabview_add_tab: ["Tab 3"] }
+      children:
+        - type: label
+          text: "Tab 3 is active!"
+          align: LV_ALIGN_CENTER
+  lv_tabview_set_active: [2, LV_ANIM_OFF]

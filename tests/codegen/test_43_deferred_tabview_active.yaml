@@ -1,0 +1,27 @@
+# Codegen + Visual test: tabview with 3 deferred tabs, Tab 3 activated programmatically.
+# Demonstrates:
+#   - deferred: "fn_name" on all three tabs
+#   - lv_tabview_set_active called AFTER children to switch to tab index 2 (Tab 3)
+- type: tabview
+  size: [320, 240]
+  center: []
+  children:
+    - init: { lv_tabview_add_tab: ["Tab 1"] }
+      deferred: create_tab_1
+      children:
+        - type: label
+          text: "Tab 1 Content"
+          align: LV_ALIGN_CENTER
+    - init: { lv_tabview_add_tab: ["Tab 2"] }
+      deferred: create_tab_2
+      children:
+        - type: label
+          text: "Tab 2 Content"
+          align: LV_ALIGN_CENTER
+    - init: { lv_tabview_add_tab: ["Tab 3"] }
+      deferred: create_tab_3
+      children:
+        - type: label
+          text: "Tab 3 Active!"
+          align: LV_ALIGN_CENTER
+  lv_tabview_set_active: [2, LV_ANIM_OFF]

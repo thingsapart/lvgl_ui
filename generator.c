@@ -781,10 +781,36 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
         ir_operation_list_add(&ir_obj->operations, (IRNode*)reg_call_expr);
     }
 
+    // --- Parse 'deferred' before iterating over properties ---
+    // deferred: true  → auto-generate function name as "create_ui_<c_name>"
+    // deferred: "fn"  → use the provided function name directly
+    {
+        cJSON* deferred_item = cJSON_GetObjectItem(obj_json, "deferred");
+        if (deferred_item) {
+            char* fn_name = NULL;
+            if (cJSON_IsBool(deferred_item) && cJSON_IsTrue(deferred_item)) {
+                // Auto-derive: "create_ui_" + c_name
+                size_t len = strlen("create_ui_") + strlen(ir_obj->c_name) + 1;
+                fn_name = malloc(len);
+                if (fn_name) snprintf(fn_name, len, "create_ui_%s", ir_obj->c_name);
+            } else if (cJSON_IsString(deferred_item) && deferred_item->valuestring && deferred_item->valuestring[0]) {
+                fn_name = strdup(deferred_item->valuestring);
+            }
+            if (fn_name) {
+                // Sanitize to a valid C identifier
+                for (char* p = fn_name; *p; p++) {
+                    if (!isalnum((unsigned char)*p) && *p != '_') *p = '_';
+                }
+                ir_obj->deferred_fn_name = fn_name;
+            }
+        }
+    }
+
     for(cJSON* item = obj_json->child; item && !ctx->error_occurred; item = item->next) {
         const char* key = item->string;
         if (strncmp(key, "//", 2) == 0 || strcmp(key, "type") == 0 || strcmp(key, "init") == 0 ||
-            strcmp(key, "id") == 0 || strcmp(key, "name") == 0 || strcmp(key, "context") == 0) continue;
+            strcmp(key, "id") == 0 || strcmp(key, "name") == 0 || strcmp(key, "context") == 0 ||
+            strcmp(key, "deferred") == 0) continue;
 
         if (strcmp(key, "children") == 0) {
             if (cJSON_IsArray(item)) {

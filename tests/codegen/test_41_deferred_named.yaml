@@ -1,0 +1,19 @@
+# Codegen test: deferred with named functions.
+# Each tab's children are extracted into a separate static 'create_xxx(parent)' function.
+# The tab itself (lv_tabview_add_tab call + the deferred call) stays in create_ui().
+- type: tabview
+  size: [300, 200]
+  center: []
+  children:
+    - init: { lv_tabview_add_tab: ["Home"] }
+      deferred: create_home_tab
+      children:
+        - type: label
+          text: "Home Content"
+          align: LV_ALIGN_CENTER
+    - init: { lv_tabview_add_tab: ["Settings"] }
+      deferred: create_settings_tab
+      children:
+        - type: slider
+          width: 150
+          align: LV_ALIGN_CENTER

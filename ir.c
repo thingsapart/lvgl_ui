@@ -374,6 +374,7 @@ void ir_free(IRNode* node) {
             free(obj->json_type);
             free(obj->c_type);
             free(obj->registered_id);
+            free(obj->deferred_fn_name);
             free(obj->use_view_component_id);
             free_expr(obj->constructor_expr);
             free_operation_list(obj->operations);

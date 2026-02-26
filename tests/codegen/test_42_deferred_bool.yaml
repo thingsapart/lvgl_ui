@@ -1,0 +1,17 @@
+# Codegen test: deferred with boolean true.
+# When deferred: true, the function name is auto-generated as create_ui_<c_var>.
+- type: tabview
+  size: [300, 200]
+  center: []
+  children:
+    - init: { lv_tabview_add_tab: ["Page A"] }
+      deferred: true
+      children:
+        - type: label
+          text: "Page A"
+          align: LV_ALIGN_CENTER
+    - init: { lv_tabview_add_tab: ["Page B"] }
+      children:
+        - type: label
+          text: "Page B"
+          align: LV_ALIGN_CENTER

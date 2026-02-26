@@ -24,12 +24,20 @@ typedef struct MapNode {
 } MapNode;
 
 
+// --- Deferred Object Collection ---
+typedef struct DeferredNode {
+    IRObject* obj;
+    struct DeferredNode* next;
+} DeferredNode;
+
 // --- Forward Declarations ---
 static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_map, MapNode* array_map, bool pass_by_ref_for_struct);
 static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* id_map, MapNode* array_map);
 static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* id_map, MapNode* array_map);
 static void find_and_map_arrays(IRObject* head, MapNode** array_map_head, int* counter);
 static void id_map_dump(IdMapNode* map_head);
+static void collect_deferred_objects(IRObject* head, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr);
+static void emit_deferred_function(IRObject* obj, IdMapNode* global_id_map);
 
 // --- Map Helpers: ID Map ---
 static void id_map_add(IdMapNode** map_head, const char* id, const char* c_name, const char* c_type) {
@@ -475,6 +483,92 @@ static void find_and_map_arrays(IRObject* head, MapNode** array_map, int* counte
 }
 
 
+// --- Deferred Function Helpers ---
+
+// Recursively collect all IRObjects that have a deferred_fn_name set.
+// Appends to the singly-linked list formed by [*list_head_ptr, *list_tail_ptr].
+static void collect_deferred_objects(IRObject* head, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr) {
+    for (IRObject* obj = head; obj; obj = obj->next) {
+        if (obj->deferred_fn_name) {
+            DeferredNode* dn = malloc(sizeof(DeferredNode));
+            if (!dn) continue;
+            dn->obj = obj;
+            dn->next = NULL;
+            if (!*list_head_ptr) {
+                *list_head_ptr = dn;
+                *list_tail_ptr = dn;
+            } else {
+                (*list_tail_ptr)->next = dn;
+                *list_tail_ptr = dn;
+            }
+        }
+        // Recurse into child operations (even if this object itself is deferred,
+        // a deferred child could itself have deferred grandchildren)
+        for (IROperationNode* op = obj->operations; op; op = op->next) {
+            if (op->op_node->type == IR_NODE_OBJECT) {
+                collect_deferred_objects((IRObject*)op->op_node, list_tail_ptr, list_head_ptr);
+            }
+        }
+    }
+}
+
+// Emit one deferred function: static void fn_name(lv_obj_t* parent) { ... }
+// The function body contains only the child objects of `obj` (IR_NODE_OBJECT operations).
+// Non-child operations (style calls etc.) of `obj` itself remain in the caller.
+static void emit_deferred_function(IRObject* obj, IdMapNode* global_id_map) {
+    if (!obj || !obj->deferred_fn_name) return;
+
+    printf("static void %s(lv_obj_t* parent) {\n", obj->deferred_fn_name);
+
+    // Build a local id_map:
+    //  1. Copy all global entries (so @references to other objects still resolve)
+    //  2. Prepend obj->c_name → "parent" last so it shadows the global entry,
+    //     remapping the deferred object's variable name to the function's parameter.
+    IdMapNode* local_id_map = NULL;
+    for (IdMapNode* n = global_id_map; n; n = n->next) {
+        id_map_add(&local_id_map, n->id, n->c_name, n->c_type);
+    }
+    id_map_add(&local_id_map, "parent", "parent", "lv_obj_t*");
+    id_map_add(&local_id_map, obj->c_name, "parent", "lv_obj_t*"); // shadows global entry
+
+    // Build a local array_map for static arrays needed by the children
+    MapNode* local_array_map = NULL;
+    int local_counter = 0;
+    for (IROperationNode* op = obj->operations; op; op = op->next) {
+        if (op->op_node->type == IR_NODE_OBJECT) {
+            find_and_map_arrays((IRObject*)op->op_node, &local_array_map, &local_counter);
+        }
+    }
+
+    // Emit any static arrays required by children
+    if (local_array_map) {
+        print_indent(1);
+        printf("// --- Static Arrays ---\n");
+        for (MapNode* am = local_array_map; am; am = am->next) {
+            const IRExprArray* arr = am->ir_node_ptr;
+            char* base_type = get_array_base_type(arr->base.c_type);
+            print_indent(1);
+            printf("static const %s %s[] = { ", base_type, am->c_name);
+            print_expr_list(arr->elements, "parent", local_id_map, local_array_map);
+            printf(" };\n");
+            free(base_type);
+        }
+        printf("\n");
+    }
+
+    // Emit only the child objects of the deferred object
+    for (IROperationNode* op = obj->operations; op; op = op->next) {
+        if (op->op_node->type == IR_NODE_OBJECT) {
+            print_object_list((IRObject*)op->op_node, 1, "parent", local_id_map, local_array_map);
+        }
+    }
+
+    printf("}\n\n");
+
+    id_map_free(local_id_map);
+    generic_map_free(local_array_map);
+}
+
 static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* id_map, MapNode* array_map) {
     for (IRObject* current = head; current; current = current->next) {
         if(strncmp(current->json_type, "//", 2) == 0) continue;
@@ -552,8 +646,26 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
 
         if (current->operations) {
             printf("\n");
-            for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
-                print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map);
+            if (current->deferred_fn_name) {
+                // Deferred: emit non-child operations inline, then call the deferred function.
+                bool has_non_child_ops = false;
+                for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
+                    if (op_node->op_node->type != IR_NODE_OBJECT) { has_non_child_ops = true; break; }
+                }
+                if (has_non_child_ops) {
+                    for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
+                        if (op_node->op_node->type != IR_NODE_OBJECT) {
+                            print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map);
+                        }
+                    }
+                }
+                // Emit the deferred function call
+                print_indent(content_indent);
+                printf("%s(%s);\n", current->deferred_fn_name, current->c_name);
+            } else {
+                for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
+                    print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map);
+                }
             }
         }
 
@@ -611,6 +723,25 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
             }
         }
         printf("\n");
+    }
+
+    // --- Collect and emit deferred functions (must appear before create_ui in C) ---
+    {
+        DeferredNode* deferred_head = NULL;
+        DeferredNode* deferred_tail = NULL;
+        collect_deferred_objects(root->root_objects, &deferred_tail, &deferred_head);
+        if (deferred_head) {
+            printf("// --- Deferred UI Functions ---\n\n");
+            for (DeferredNode* dn = deferred_head; dn; dn = dn->next) {
+                emit_deferred_function(dn->obj, id_map);
+            }
+            // Free the list nodes (not the IRObjects — those belong to the IR)
+            for (DeferredNode* dn = deferred_head; dn; ) {
+                DeferredNode* next = dn->next;
+                free(dn);
+                dn = next;
+            }
+        }
     }
 
     printf("void create_ui(lv_obj_t* parent) {\n");

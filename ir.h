@@ -201,6 +201,10 @@ typedef struct IRObject {
     char* json_type;        // The "type" from the UI spec ("button", "label", "style", "use-view").
     char* c_type;           // The C type of this object (e.g. "lv_obj_t*", "lv_style_t*")
     char* registered_id;    // If "named" or "id" is present, this is the string key.
+    char* deferred_fn_name; // Non-NULL: extract this object's children into a separate
+                            // 'static void deferred_fn_name(lv_obj_t* parent)' function.
+                            // deferred: true  → auto-name as "create_ui_<c_name>"
+                            // deferred: "fn"  → use the given name directly.
     IRExpr* constructor_expr;
     IROperationNode* operations;
     char* use_view_component_id;

@@ -1,0 +1,10 @@
+# IR test: deferred with a named (string) function.
+# When deferred is a string, the function name is taken verbatim.
+# The IR should show the deferred="my_page_fn" annotation on the object.
+- type: obj
+  size: [200, 100]
+  deferred: "my_page_fn"
+  children:
+    - type: label
+      text: "Named deferred content"
+      align: LV_ALIGN_CENTER
