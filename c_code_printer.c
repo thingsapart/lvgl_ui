@@ -623,12 +623,49 @@ static IRObject* find_ir_obj_by_c_name(IRObject* head, const char* c_name) {
     return NULL;
 }
 
-// Build the list of variables that must be hoisted to file scope so every
-// deferred function can reach them.
+// Walk the IR subtree collecting all malloc-constructed objects.
+// Respects deferred scope boundaries: if `o` has deferred_fn_name, its IR_NODE_OBJECT
+// children belong to that deferred scope (owner_fn_name = o->deferred_fn_name).
+// Objects that are not malloc-constructed are skipped (they live on the LVGL heap or
+// are LVGL widgets managed by LVGL itself — no LVGL_UI_FREE needed).
+static void collect_malloc_vars_for_scope(IRObject* head, const char* owner_fn_name,
+                                           HoistedVarNode** out) {
+    for (IRObject* o = head; o; o = o->next) {
+        // Is this object heap-allocated via malloc?
+        if (o->c_name && o->constructor_expr &&
+            o->constructor_expr->base.type == IR_EXPR_FUNCTION_CALL &&
+            strcmp(((IRExprFunctionCall*)o->constructor_expr)->func_name, "malloc") == 0) {
+            hoisted_var_add(out, o->c_name, o->c_type, true, owner_fn_name);
+        }
+        // Recurse into children, honouring deferred scope boundaries.
+        for (IROperationNode* op = o->operations; op; op = op->next) {
+            if (op->op_node->type == IR_NODE_OBJECT) {
+                IRObject* child = (IRObject*)op->op_node;
+                // If `o` itself is deferred, its IR_NODE_OBJECT children are emitted
+                // inside create_fn — they belong to that deferred scope.
+                const char* child_owner = o->deferred_fn_name ? o->deferred_fn_name : owner_fn_name;
+                collect_malloc_vars_for_scope(child, child_owner, out);
+            }
+        }
+    }
+}
+
+// Build the list of variables that must be hoisted to file scope.
+// Two categories are collected:
+//   1. ALL malloc-constructed objects anywhere in the IR tree (via collect_malloc_vars_for_scope).
+//      These carry a correct owner_fn_name and needs_free=true.
+//   2. Non-malloc cross-scope refs (objects created without malloc but referenced by a
+//      deferred function that can't see them). These get needs_free=false, owner_fn_name=NULL.
 static HoistedVarNode* collect_hoisted_vars(DeferredNode* deferred_list,
                                              IdMapNode* global_id_map,
                                              IRObject* ir_root_objects) {
     HoistedVarNode* hoisted = NULL;
+
+    // Pass 1: hoist every malloc-constructed object in the full tree.
+    collect_malloc_vars_for_scope(ir_root_objects, NULL, &hoisted);
+
+    // Pass 2: hoist any remaining cross-scope refs (non-malloc objects that a
+    // deferred function references from the outer scope).
     for (DeferredNode* dn = deferred_list; dn; dn = dn->next) {
         IRObject* def = dn->obj;
         // Build local set: deferred object itself (→ "parent") + all its children.
@@ -637,21 +674,13 @@ static HoistedVarNode* collect_hoisted_vars(DeferredNode* deferred_list,
         for (IROperationNode* op = def->operations; op; op = op->next)
             if (op->op_node->type == IR_NODE_OBJECT)
                 collect_local_c_names((IRObject*)op->op_node, &local);
-        // Scan child subtrees for external refs.
+        // Scan child subtrees for external refs not already in the hoisted list.
         for (IROperationNode* op = def->operations; op; op = op->next)
             if (op->op_node->type == IR_NODE_OBJECT)
                 scan_subtree_for_external_refs((IRObject*)op->op_node, local, global_id_map, &hoisted);
         c_name_set_free(local);
     }
-    // Refine needs_free: check whether the original IRObject constructor is a malloc call.
-    for (HoistedVarNode* h = hoisted; h; h = h->next) {
-        IRObject* obj = find_ir_obj_by_c_name(ir_root_objects, h->c_name);
-        if (obj && obj->constructor_expr &&
-            obj->constructor_expr->base.type == IR_EXPR_FUNCTION_CALL) {
-            const char* fn = ((IRExprFunctionCall*)obj->constructor_expr)->func_name;
-            h->needs_free = (strcmp(fn, "malloc") == 0);
-        }
-    }
+
     return hoisted;
 }
 
@@ -700,7 +729,7 @@ static void collect_deferred_objects(IRObject* head, DeferredNode** list_tail_pt
 // Emit one deferred function: static void fn_name(lv_obj_t* parent) { ... }
 // The function body contains only the child objects of `obj` (IR_NODE_OBJECT operations).
 // Non-child operations (style calls etc.) of `obj` itself remain in the caller.
-static void emit_deferred_function(IRObject* obj, IdMapNode* global_id_map) {
+static void emit_deferred_function(IRObject* obj, IdMapNode* global_id_map, HoistedVarNode* hoisted_vars) {
     if (!obj || !obj->deferred_fn_name) return;
 
     printf("static void %s(lv_obj_t* parent) {\n", obj->deferred_fn_name);
@@ -741,10 +770,11 @@ static void emit_deferred_function(IRObject* obj, IdMapNode* global_id_map) {
         printf("\n");
     }
 
-    // Emit only the child objects of the deferred object
+    // Emit only the child objects of the deferred object.
+    // Pass hoisted_vars so that file-scope statics get plain assignment (no type prefix).
     for (IROperationNode* op = obj->operations; op; op = op->next) {
         if (op->op_node->type == IR_NODE_OBJECT) {
-            print_object_list((IRObject*)op->op_node, 1, "parent", local_id_map, local_array_map, NULL);
+            print_object_list((IRObject*)op->op_node, 1, "parent", local_id_map, local_array_map, hoisted_vars);
         }
     }
 
@@ -753,11 +783,22 @@ static void emit_deferred_function(IRObject* obj, IdMapNode* global_id_map) {
     // Emit the paired destroy_* function.
     // It cleans the children of the panel but keeps the panel itself alive
     // (so the deferred_loader can call create_* again on the same slot).
+    // It also frees any malloc-constructed objects that belong to this deferred scope.
     char* destroy_name = make_destroy_fn_name(obj->deferred_fn_name);
     if (destroy_name) {
         printf("static void %s(lv_obj_t** obj_ptr) {\n", destroy_name);
         printf("    if (!obj_ptr || !*obj_ptr) return;\n");
         printf("    lv_obj_clean(*obj_ptr);\n");
+        // Free every hoisted var owned by this deferred function.
+        bool any_freed = false;
+        for (HoistedVarNode* h = hoisted_vars; h; h = h->next) {
+            if (h->needs_free && h->owner_fn_name &&
+                strcmp(h->owner_fn_name, obj->deferred_fn_name) == 0) {
+                printf("    LVGL_UI_FREE(%s); %s = NULL;\n", h->c_name, h->c_name);
+                any_freed = true;
+            }
+        }
+        (void)any_freed;
         printf("    *obj_ptr = NULL;\n");
         printf("}\n\n");
         free(destroy_name);
@@ -980,7 +1021,7 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
     if (deferred_head) {
         printf("// --- Deferred UI Functions ---\n\n");
         for (DeferredNode* dn = deferred_head; dn; dn = dn->next) {
-            emit_deferred_function(dn->obj, id_map);
+            emit_deferred_function(dn->obj, id_map, hoisted_vars);
         }
     }
     // Free the DeferredNode list (not the IRObjects — those belong to the IR)
@@ -1022,7 +1063,8 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
     printf("    lv_obj_delete(*root_ptr);\n");
     printf("    *root_ptr = NULL;\n");
     if (hoisted_vars) {
-        printf("    // Free hoisted (file-scope) allocations.\n");
+        printf("    // Free all hoisted (file-scope) allocations.\n");
+        printf("    // destroy_* fns already NULL these after their own frees, so free(NULL) is safe.\n");
         for (HoistedVarNode* h = hoisted_vars; h; h = h->next) {
             if (h->needs_free) {
                 printf("    LVGL_UI_FREE(%s); %s = NULL;\n", h->c_name, h->c_name);
