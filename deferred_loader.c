@@ -2,6 +2,12 @@
 #include "utils.h"
 #include <stdlib.h>
 
+/* lv_async_call lets us schedule work to run after the current event/draw
+ * cycle completes.  This is required when creating or deleting LVGL objects
+ * from inside a VALUE_CHANGED handler that fires mid-scroll-animation,
+ * otherwise LVGL's in-progress draw pass crashes. */
+#include "misc/lv_async.h"
+
 /* ---------------------------------------------------------------------------
  * Internal data structures
  * ---------------------------------------------------------------------------
@@ -26,6 +32,13 @@ typedef struct DeferredParentReg {
 
 /* Global doubly-linked list of all registered parents. */
 static DeferredParentReg* s_parents = NULL;
+
+/* Context passed to lv_async_call so the deferred work knows which parent
+ * and which active child to switch to. */
+typedef struct {
+    DeferredParentReg* preg;
+    lv_obj_t*          active_child;
+} ApplyAsyncCtx;
 
 /* ---------------------------------------------------------------------------
  * Internal helpers
@@ -107,8 +120,27 @@ static void apply_active_child(DeferredParentReg* preg, lv_obj_t* active_child)
 }
 
 /**
+ * lv_async_call callback: runs apply_active_child outside the event/draw cycle.
+ * This avoids crashes that occur when creating LVGL objects mid-scroll-animation.
+ */
+static void apply_active_child_async(void* user_data)
+{
+    ApplyAsyncCtx* ctx = (ApplyAsyncCtx*)user_data;
+    /* Guard: parent may have been destroyed between schedule and execution. */
+    if (find_parent_reg(ctx->preg->parent)) {
+        apply_active_child(ctx->preg, ctx->active_child);
+    }
+    free(ctx);
+}
+
+/**
  * LVGL event handler installed on the scroll-container parent.
  * Handles LV_EVENT_VALUE_CHANGED (page switch) and LV_EVENT_DELETE (cleanup).
+ *
+ * Widget/style creation is NOT done directly here — it is scheduled via
+ * lv_async_call so it executes after the current event and draw pass finish.
+ * This prevents crashes caused by modifying the object tree while LVGL is
+ * mid-way through a scroll animation or draw cycle.
  */
 static void deferred_loader_event_cb(lv_event_t* e)
 {
@@ -120,9 +152,18 @@ static void deferred_loader_event_cb(lv_event_t* e)
 
     if (code == LV_EVENT_VALUE_CHANGED) {
         lv_obj_t* active_child = get_active_child(parent);
-        if (active_child) {
+        if (!active_child) return;
+
+        ApplyAsyncCtx* ctx = malloc(sizeof(ApplyAsyncCtx));
+        if (!ctx) {
+            /* Fallback: run synchronously if allocation fails. */
             apply_active_child(preg, active_child);
+            return;
         }
+        ctx->preg         = preg;
+        ctx->active_child = active_child;
+        lv_async_call(apply_active_child_async, ctx);
+
     } else if (code == LV_EVENT_DELETE) {
         /* The parent widget is being destroyed; free our bookkeeping. */
         free_parent_reg(preg);
@@ -178,8 +219,17 @@ void deferred_loader_init(lv_obj_t* scroll_parent)
     lv_obj_add_event_cb(scroll_parent, deferred_loader_event_cb,
                         LV_EVENT_DELETE, NULL);
 
-    /* Populate active child immediately so the initial view is not blank. */
+    /* Populate active child immediately so the initial view is not blank.
+     *
+     * Some widgets (e.g. lv_tileview) do not report a valid active child
+     * until the user navigates for the first time.  In that case we fall back
+     * to the first registered child so the initial page is never blank. */
     lv_obj_t* active_child = get_active_child(scroll_parent);
+    if (!active_child && preg->first_child) {
+        _dprintf(stderr, "[deferred_loader] get_active_child returned NULL at init; "
+                 "falling back to first registered child.\n");
+        active_child = preg->first_child->child;
+    }
     if (active_child) {
         apply_active_child(preg, active_child);
     }
