@@ -7,4 +7,3 @@
   content:
     init: { lv_cam_positioning_create: [] }
     id: '@cam_positioning'
-    lv_cam_positioning_set_mode: LV_CAM_POS_MODE_POINT
