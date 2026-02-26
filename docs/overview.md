@@ -78,6 +78,7 @@ The IR is defined in `ir.h` and `ir.c`. It's a tree of nodes that represents the
     -   `json_type`: The original type from JSON (e.g., `"label"`).
     -   `c_type`: The actual C type (e.g., `lv_obj_t*`).
     -   `registered_id`: The user-provided ID from JSON (e.g., `@my_label`).
+    -   `deferred_fn_name`: When non-NULL, the children of this object are extracted into a separate `static void` C function instead of being inlined into `create_ui`. Set by the `deferred` YAML property. See the *Deferred UI Functions* section below.
     -   `constructor_expr`: An `IRExpr*` that generates the code to create the object (e.g., a call to `lv_label_create(parent)`).
     -   **`operations`**: This is a crucial linked list of `IROperationNode`s. It contains an ordered sequence of all actions to be performed on or within the context of this object. This includes:
         -   Setup calls (e.g., `lv_label_set_text(...)`).
@@ -98,7 +99,27 @@ The IR is defined in `ir.h` and `ir.c`. It's a tree of nodes that represents the
 
 A backend is a module that consumes the `IRRoot` and produces an output. The `c_code_print_backend` function in `c_code_printer.c` is responsible for generating the final C code.
 
-It works in two passes:
+#### Deferred UI Functions
+
+When an `IRObject` has a non-NULL `deferred_fn_name`, its children are not inlined into `create_ui`. Instead they are emitted as a separate, self-contained `static` helper function that can be called from the application at any time — for example when the user navigates to a tab or page. This is the primary mechanism for **deferred / lazy page loading** on memory-constrained targets such as the ESP32-S3.
+
+The `c_code_print_backend` performs an extra traversal (`collect_deferred_objects`) that walks the entire IR tree and collects all objects with a non-NULL `deferred_fn_name`. For each such object it calls `emit_deferred_function`, which emits:
+
+```c
+static void <deferred_fn_name>(lv_obj_t* parent) {
+    // ... all child widget construction, setup calls, and data binding ...
+}
+```
+
+These functions are emitted *before* `void create_ui(lv_obj_t* parent)`, under a `// --- Deferred UI Functions ---` header comment. Inside `create_ui`, the original object's own setup operations are still emitted inline; only the child construction is replaced by a single call:
+
+```c
+<deferred_fn_name>(<c_name>);   // ← replaces inlined children
+```
+
+The `lvgl_renderer` backend intentionally ignores `deferred_fn_name` and always renders all children inline, so the live SDL preview continues to work without modification.
+
+It works in two passes (plus the deferred pre-pass above):
 
 **Pass 1: Building the ID Map (`build_id_map_recursive`)**
 
@@ -115,6 +136,7 @@ It works in two passes:
     3.  It calls `print_expr` on the `IRObject->constructor_expr`. This generates the assignment line, e.g., `label_0 = lv_label_create(parent);`.
     4.  It iterates through the `IRObject->operations` list. For each operation, it calls `print_node`, which handles printing child objects, setup calls, warnings, etc., in the correct order.
     5.  The recursion for children happens within the `print_node` function when it encounters an `IR_NODE_OBJECT` in the operations list.
+    6.  **Deferred exception:** if the `IRObject` has a non-NULL `deferred_fn_name`, non-child operations are still emitted inline, but instead of recursing into children a single call `<deferred_fn_name>(<c_name>);` is emitted.
 
 **Expression Printing (`print_expr`)**
 

@@ -100,6 +100,7 @@ Widget {
   named: string                // Optional. Registers this widget instance with the given name.
   children: List<Widget>       // Optional. A list of child widgets.
   with: List<WithBlock>        // Optional. Apply properties to a sub-object or expression result, with is a properyy like and can bre repeated.
+  deferred: boolean | string   // Optional. Extract this widget's children into a separate static C function (see below).
   ...properties: PropertyMap   // Any number of widget-specific properties, properties can be repeated.
 }
 ```
@@ -138,6 +139,82 @@ UseView {
   ...properties: PropertyMap   // Optional. Overrides for the component's root widget properties.
 }
 ```
+
+---
+
+#### Deferred UI Functions
+
+The `deferred` property enables **lazy page loading**: the children of a widget are extracted from `create_ui` into a separate `static void` C function that you call from your application only when that content is actually needed (e.g., when the user navigates to a tab or page). This is especially useful on memory-constrained targets like the ESP32-S3 where constructing every page at startup would exhaust the heap.
+
+**Syntax**
+
+| Value | Effect |
+|-------|--------|
+| `deferred: true` | Auto-generate a function named `create_ui_<c_var>` where `<c_var>` is the widget's generated C variable name (e.g. `create_ui_tab_home_0`). |
+| `deferred: "my_fn"` | Use the explicitly given name `my_fn` as the function name. |
+
+The widget itself (constructor + own properties) is still created inside `create_ui`; only its *children* are deferred.
+
+**Example YAML**
+
+```yaml
+- type: tabview
+  children:
+    - named: tab_home
+      deferred: true          # auto-names create_ui_tab_home_0
+      children:
+        - type: label
+          text: "Home Content"
+          align: LV_ALIGN_CENTER
+    - named: tab_settings
+      deferred: "build_settings_page"   # explicit function name
+      children:
+        - type: label
+          text: "Settings"
+```
+
+**Generated C code** (from `c_code` backend)
+
+```c
+// --- Deferred UI Functions ---
+
+static void create_ui_tab_home_0(lv_obj_t* parent) {
+    do {
+        lv_obj_t* label_0 = lv_label_create(parent);
+        lv_label_set_text(label_0, "Home Content");
+        lv_obj_set_style_align(label_0, LV_ALIGN_CENTER, 0);
+    } while(0);
+}
+
+static void build_settings_page(lv_obj_t* parent) {
+    do {
+        lv_obj_t* label_1 = lv_label_create(parent);
+        lv_label_set_text(label_1, "Settings");
+    } while(0);
+}
+
+void create_ui(lv_obj_t* parent) {
+    do {
+        lv_obj_t* tabview_0 = lv_tabview_create(parent);
+        do {
+            lv_obj_t* tab_home_0 = lv_tabview_add_tab(tabview_0, "Home");
+            create_ui_tab_home_0(tab_home_0);     // ← deferred call
+        } while(0);
+        do {
+            lv_obj_t* tab_settings_0 = lv_tabview_add_tab(tabview_0, "Settings");
+            build_settings_page(tab_settings_0);  // ← deferred call
+        } while(0);
+    } while(0);
+}
+```
+
+**Backend behaviour**
+
+| Backend | Behaviour |
+|---------|----------|
+| `c_code` | Emits deferred functions before `create_ui`; replaces inlined children with a call. |
+| `ir_debug_print` | Annotates the object line with `deferred="fn_name"`. |
+| `lvgl_renderer` (live SDL preview) | Ignores `deferred`; always renders children inline so the preview works without any extra calls. |
 
 ---
 
