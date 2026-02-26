@@ -26,16 +26,20 @@
 #include "ui/components/lv_probing_wizard.h"
 #include "ui.h"
 
+// --- Hoisted Variables (shared between create_ui and deferred functions) ---
+static lv_style_t* style2_1 = NULL;
+static lv_style_t* style1_0 = NULL;
+
 void create_ui(lv_obj_t* parent) {
     // style1: style1_0 (style)
-    lv_style_t* style1_0 = LVGL_UI_MALLOC(sizeof(lv_style_t));
+    style1_0 = LVGL_UI_MALLOC(sizeof(lv_style_t));
 
     lv_style_init(style1_0);
     obj_registry_add("style1", style1_0);
     lv_style_set_bg_color(style1_0, lv_color_hex(0xFF0000));
 
     // style2: style2_1 (style)
-    lv_style_t* style2_1 = LVGL_UI_MALLOC(sizeof(lv_style_t));
+    style2_1 = LVGL_UI_MALLOC(sizeof(lv_style_t));
 
     lv_style_init(style2_1);
     obj_registry_add("style2", style2_1);
@@ -56,4 +60,8 @@ void destroy_ui(lv_obj_t** root_ptr) {
     if (!root_ptr || !*root_ptr) return;
     lv_obj_delete(*root_ptr);
     *root_ptr = NULL;
+    // Free all hoisted (file-scope) allocations.
+    // destroy_* fns already NULL these after their own frees, so free(NULL) is safe.
+    LVGL_UI_FREE(style2_1); style2_1 = NULL;
+    LVGL_UI_FREE(style1_0); style1_0 = NULL;
 }

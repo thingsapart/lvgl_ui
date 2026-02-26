@@ -26,9 +26,13 @@
 #include "ui/components/lv_probing_wizard.h"
 #include "ui.h"
 
+// --- Hoisted Variables (shared between create_ui and deferred functions) ---
+static lv_style_t* style_button_red_1 = NULL;
+static lv_style_t* style_btn_0 = NULL;
+
 void create_ui(lv_obj_t* parent) {
     // style_btn: style_btn_0 (style)
-    lv_style_t* style_btn_0 = LVGL_UI_MALLOC(sizeof(lv_style_t));
+    style_btn_0 = LVGL_UI_MALLOC(sizeof(lv_style_t));
 
     lv_style_init(style_btn_0);
     obj_registry_add("style_btn", style_btn_0);
@@ -43,7 +47,7 @@ void create_ui(lv_obj_t* parent) {
     lv_style_set_text_color(style_btn_0, lv_color_hex(0x000000));
 
     // style_button_red: style_button_red_1 (style)
-    lv_style_t* style_button_red_1 = LVGL_UI_MALLOC(sizeof(lv_style_t));
+    style_button_red_1 = LVGL_UI_MALLOC(sizeof(lv_style_t));
 
     lv_style_init(style_button_red_1);
     obj_registry_add("style_button_red", style_button_red_1);
@@ -86,4 +90,8 @@ void destroy_ui(lv_obj_t** root_ptr) {
     if (!root_ptr || !*root_ptr) return;
     lv_obj_delete(*root_ptr);
     *root_ptr = NULL;
+    // Free all hoisted (file-scope) allocations.
+    // destroy_* fns already NULL these after their own frees, so free(NULL) is safe.
+    LVGL_UI_FREE(style_button_red_1); style_button_red_1 = NULL;
+    LVGL_UI_FREE(style_btn_0); style_btn_0 = NULL;
 }

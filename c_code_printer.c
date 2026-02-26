@@ -819,10 +819,12 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
         printf("// %s: %s (%s)\n", current->registered_id ? current->registered_id : "unnamed", current->c_name, current->json_type);
 
         if (strcmp(current->json_type, "font") == 0) {
+            bool font_is_hoisted = hoisted_vars && is_hoisted(hoisted_vars, current->c_name);
             print_indent(content_indent);
             printf("#ifdef LOAD_FONTS_TTF\n");
             print_indent(content_indent);
-            printf("%s %s = ", current->c_type, current->c_name);
+            if (!font_is_hoisted) printf("%s ", current->c_type);
+            printf("%s = ", current->c_name);
             if (current->constructor_expr) {
                 print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
             } else {
@@ -834,13 +836,23 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             printf("#else\n");
             print_indent(content_indent);
             if (current->registered_id) {
-                printf("extern const lv_font_t %s;\n", current->registered_id);
-                print_indent(content_indent);
-                printf("%s %s = &%s;\n",
-                       current->c_type, current->c_name, current->registered_id);
+                if (!font_is_hoisted) {
+                    printf("extern const lv_font_t %s;\n", current->registered_id);
+                    print_indent(content_indent);
+                    printf("%s %s = &%s;\n",
+                           current->c_type, current->c_name, current->registered_id);
+                } else {
+                    printf("extern const lv_font_t %s;\n", current->registered_id);
+                    print_indent(content_indent);
+                    printf("%s = &%s;\n", current->c_name, current->registered_id);
+                }
             } else {
-                printf("%s %s = NULL; /* ERROR: Font for static build must have an 'id' */\n",
-                       current->c_type, current->c_name);
+                if (!font_is_hoisted)
+                    printf("%s %s = NULL; /* ERROR: Font for static build must have an 'id' */\n",
+                           current->c_type, current->c_name);
+                else
+                    printf("%s = NULL; /* ERROR: Font for static build must have an 'id' */\n",
+                           current->c_name);
             }
 
             print_indent(content_indent);
