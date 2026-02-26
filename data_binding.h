@@ -145,4 +145,12 @@ void data_binding_add_observer(const char* state_name, lv_obj_t* widget,
 void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_type_t type, const binding_value_t* cycle_values, uint32_t cycle_value_count, const void* config_data);
 
 
+/**
+ * @brief Returns the last value that was notified for a given state name.
+ * The pointer remains valid until the next call to data_binding_notify_state_changed
+ * for the same state, or until data_binding_init() is called.
+ * Returns NULL if no notification has ever been sent for that state.
+ */
+const binding_value_t* data_binding_get_last_value(const char* state_name);
+
 #endif // DATA_BINDING_H

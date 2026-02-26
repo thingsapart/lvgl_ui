@@ -34,6 +34,125 @@ typedef struct {
 static StateObserverMapping state_observers[MAX_STATES];
 static uint32_t state_observer_count = 0;
 
+// ---------------------------------------------------------------------------
+// Last-value cache
+// Open-addressing hash map, capacity always a power of two.
+// Stores one binding_value_t per state name.  String values are strdup'd so
+// the cache entry owns the string and frees it on overwrite or clear.
+// ---------------------------------------------------------------------------
+
+#define CACHE_INIT_CAPACITY 64u
+
+typedef struct {
+    char*           key;         // NULL → empty slot
+    binding_value_t value;
+    bool            owns_string; // true when value.type==STRING and s_val was strdup'd
+} CacheSlot;
+
+typedef struct {
+    CacheSlot* slots;
+    uint32_t   capacity; // always a power of two
+    uint32_t   count;
+} ValueCache;
+
+static ValueCache s_cache = {0};
+
+static uint32_t fnv1a_hash(const char* s) {
+    uint32_t h = 2166136261u;
+    while (*s) { h ^= (uint8_t)*s++; h *= 16777619u; }
+    return h;
+}
+
+static bool cache_init_if_needed(void) {
+    if (s_cache.slots) return true;
+    s_cache.slots = calloc(CACHE_INIT_CAPACITY, sizeof(CacheSlot));
+    if (!s_cache.slots) return false;
+    s_cache.capacity = CACHE_INIT_CAPACITY;
+    s_cache.count    = 0;
+    return true;
+}
+
+static void cache_slot_free_string(CacheSlot* slot) {
+    if (slot->value.type == BINDING_TYPE_STRING && slot->owns_string) {
+        free((void*)slot->value.as.s_val);
+        slot->value.as.s_val = NULL;
+    }
+    slot->owns_string = false;
+}
+
+static void cache_free(void) {
+    if (!s_cache.slots) return;
+    for (uint32_t i = 0; i < s_cache.capacity; i++) {
+        if (s_cache.slots[i].key) {
+            free(s_cache.slots[i].key);
+            cache_slot_free_string(&s_cache.slots[i]);
+        }
+    }
+    free(s_cache.slots);
+    s_cache.slots    = NULL;
+    s_cache.capacity = 0;
+    s_cache.count    = 0;
+}
+
+// Insert or update a value in the cache.  Strings are deep-copied.
+static void cache_put(const char* key, const binding_value_t* value) {
+    if (!cache_init_if_needed()) return;
+
+    // Grow at 75% load factor (capacity is always a power of two).
+    if (s_cache.count * 4u >= s_cache.capacity * 3u) {
+        uint32_t new_cap   = s_cache.capacity * 2u;
+        CacheSlot* new_slots = calloc(new_cap, sizeof(CacheSlot));
+        if (!new_slots) return;
+        for (uint32_t i = 0; i < s_cache.capacity; i++) {
+            CacheSlot* src = &s_cache.slots[i];
+            if (!src->key) continue;
+            uint32_t h = fnv1a_hash(src->key) & (new_cap - 1);
+            while (new_slots[h].key) h = (h + 1) & (new_cap - 1);
+            new_slots[h] = *src; // shallow copy — strings already owned
+        }
+        free(s_cache.slots);
+        s_cache.slots    = new_slots;
+        s_cache.capacity = new_cap;
+    }
+
+    uint32_t h = fnv1a_hash(key) & (s_cache.capacity - 1);
+    while (s_cache.slots[h].key && strcmp(s_cache.slots[h].key, key) != 0)
+        h = (h + 1) & (s_cache.capacity - 1);
+
+    CacheSlot* slot = &s_cache.slots[h];
+    if (!slot->key) {
+        slot->key = strdup(key);
+        if (!slot->key) return;
+        s_cache.count++;
+    } else {
+        cache_slot_free_string(slot); // free old string before overwriting
+    }
+
+    slot->value = *value;
+    if (value->type == BINDING_TYPE_STRING && value->as.s_val) {
+        slot->value.as.s_val = strdup(value->as.s_val);
+        slot->owns_string    = (slot->value.as.s_val != NULL);
+    }
+}
+
+// Retrieve the last stored value for a key, or NULL if not found.
+static const binding_value_t* cache_get(const char* key) {
+    if (!s_cache.slots || s_cache.count == 0) return NULL;
+    uint32_t h = fnv1a_hash(key) & (s_cache.capacity - 1);
+    uint32_t probed = 0;
+    while (s_cache.slots[h].key && probed < s_cache.capacity) {
+        if (strcmp(s_cache.slots[h].key, key) == 0) return &s_cache.slots[h].value;
+        h = (h + 1) & (s_cache.capacity - 1);
+        probed++;
+    }
+    return NULL;
+}
+
+// Public query — documented in data_binding.h.
+const binding_value_t* data_binding_get_last_value(const char* state_name) {
+    return cache_get(state_name);
+}
+
 // --- Structs for Dialog Action ---
 
 // Carries necessary data to the dialog's own event handlers
@@ -88,8 +207,16 @@ void data_binding_init(void) {
     state_observer_count = 0;
     app_action_handler = NULL;
     app_user_data = NULL;
+
+    // Clear the last-value cache so stale values from the previous UI session
+    // are not replayed into a freshly created widget tree.
+    cache_free();
+
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Data binding system (re)initialized.");
 }
+
+// Forward declaration (used by notify_state_changed before definition).
+static void apply_value_to_observer(Observer* obs, const char* state_name, const binding_value_t* value);
 
 void data_binding_register_action_handler(data_binding_action_handler_t handler, void* user_data) {
     app_action_handler = handler;
@@ -110,164 +237,18 @@ static bool values_equal(const binding_value_t* v1, const binding_value_t* v2) {
 
 void data_binding_notify_state_changed(const char* state_name, binding_value_t new_value) {
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Notification received for state: '%s'", state_name);
+
+    // Update the last-value cache before fanning out so that observers
+    // registered *during* the fan-out (e.g. if a notification triggers UI
+    // construction) already see the new value.
+    cache_put(state_name, &new_value);
+
     for (uint32_t i = 0; i < state_observer_count; ++i) {
         if (strcmp(state_observers[i].state_name, state_name) == 0) {
             for(uint32_t j = 0; j < state_observers[i].observer_count; ++j) {
                 Observer* obs = &state_observers[i].observers[j];
                 if (!lv_obj_is_valid(obs->widget)) continue;
-
-                switch (obs->config.update_type) {
-                    case OBSERVER_TYPE_TEXT: {
-                        char buf[128];
-                        const char* fmt = (const char*)obs->config.config;
-                        if (!fmt) fmt = "%s";
-
-                        switch(new_value.type) {
-                            case BINDING_TYPE_FLOAT:
-                                if (strstr(fmt, "%d") || strstr(fmt, "%i") || strstr(fmt, "%u") || strstr(fmt, "%x")) {
-                                    snprintf(buf, sizeof(buf), fmt, (int)round(new_value.as.f_val));
-                                } else {
-                                    snprintf(buf, sizeof(buf), fmt, new_value.as.f_val);
-                                }
-                                break;
-                            case BINDING_TYPE_BOOL:   snprintf(buf, sizeof(buf), fmt, new_value.as.b_val ? "true" : "false"); break;
-                            case BINDING_TYPE_STRING: snprintf(buf, sizeof(buf), fmt, new_value.as.s_val); break;
-                            default:                  strncpy(buf, "N/A", sizeof(buf)); break;
-                        }
-                        lv_label_set_text(obs->widget, buf);
-                        break;
-                    }
-                    case OBSERVER_TYPE_VALUE: {
-                        if (new_value.type != BINDING_TYPE_FLOAT) {
-                             print_warning("State '%s' sent non-numeric data to a 'value' binding.", state_name);
-                             continue;
-                        }
-
-                        int32_t val = (int32_t)round(new_value.as.f_val);
-                        lv_anim_enable_t anim = obs->config.config ? *(lv_anim_enable_t*)obs->config.config : LV_ANIM_ON;
-                        const lv_obj_class_t * cls = lv_obj_get_class(obs->widget);
-
-                        if (cls == &lv_bar_class) {
-                            lv_bar_set_value(obs->widget, val, anim);
-                        } else if (cls == &lv_slider_class) {
-                            lv_slider_set_value(obs->widget, val, anim);
-                        } else if (cls == &lv_arc_class) {
-                            // lv_arc_set_value doesn't have an anim parameter
-                            lv_arc_set_value(obs->widget, val);
-                        } else {
-                            print_warning("Widget of type <unknown class> does not support 'value' observation.");
-                        }
-                        break;
-                    }
-                    case OBSERVER_TYPE_VISIBLE:
-                    case OBSERVER_TYPE_CHECKED:
-                    case OBSERVER_TYPE_DISABLED: {
-                        bool target_state;
-                        if (obs->config.config_len > 0) { // Map-based
-                            bool found = false;
-                            binding_map_entry_t* map = (binding_map_entry_t*)obs->config.config;
-                            for (size_t k = 0; k < obs->config.config_len; k++) {
-                                if (values_equal(&map[k].key, &new_value)) {
-                                    target_state = map[k].value.b_val;
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found && obs->config.default_value) {
-                                target_state = *(bool*)obs->config.default_value;
-                            } else if (!found) {
-                                continue;
-                            }
-                        } else { // Direct bool mapping
-                            bool is_truthy = (new_value.type == BINDING_TYPE_BOOL && new_value.as.b_val) ||
-                                             (new_value.type == BINDING_TYPE_FLOAT && new_value.as.f_val != 0.0f) ||
-                                             (new_value.type == BINDING_TYPE_STRING && new_value.as.s_val && *new_value.as.s_val != '\0');
-                            bool is_inverse = (obs->config.config == NULL) || !(*(bool*)obs->config.config);
-                            target_state = is_inverse ? !is_truthy : is_inverse;
-                        }
-
-                        lv_obj_flag_t flag = 0;
-                        lv_state_t state = 0;
-                        if (obs->config.update_type == OBSERVER_TYPE_VISIBLE) flag = LV_OBJ_FLAG_HIDDEN;
-                        if (obs->config.update_type == OBSERVER_TYPE_DISABLED) state = LV_STATE_DISABLED;
-                        if (obs->config.update_type == OBSERVER_TYPE_CHECKED) state = LV_STATE_CHECKED;
-
-                        if (flag) { // Visibility is an obj_flag
-                             if (target_state) lv_obj_clear_flag(obs->widget, flag);
-                             else lv_obj_add_flag(obs->widget, flag);
-                        } else if (state) { // Others are states
-                             if (target_state) lv_obj_add_state(obs->widget, state);
-                             else lv_obj_clear_state(obs->widget, state);
-                        }
-                        break;
-                    }
-                    case OBSERVER_TYPE_LED_ON: {
-                        bool target_state;
-                        if (obs->config.config_len > 0) { // Map-based
-                            bool found = false;
-                            binding_map_entry_t* map = (binding_map_entry_t*)obs->config.config;
-                            for (size_t k = 0; k < obs->config.config_len; k++) {
-                                if (values_equal(&map[k].key, &new_value)) {
-                                    target_state = map[k].value.b_val;
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found && obs->config.default_value) {
-                                target_state = *(bool*)obs->config.default_value;
-                            } else if (!found) {
-                                continue;
-                            }
-                        } else { // Direct bool mapping
-                            bool is_truthy = (new_value.type == BINDING_TYPE_BOOL && new_value.as.b_val) ||
-                                             (new_value.type == BINDING_TYPE_FLOAT && new_value.as.f_val != 0.0f) ||
-                                             (new_value.type == BINDING_TYPE_STRING && new_value.as.s_val && *new_value.as.s_val != '\0');
-                            bool is_inverse = (obs->config.config == NULL) || !(*(bool*)obs->config.config);
-                            target_state = is_inverse ? !is_truthy : is_inverse;
-                        }
-
-                        if (target_state) lv_led_on(obs->widget);
-                        else lv_led_off(obs->widget);
-                        break;
-                    }
-                    case OBSERVER_TYPE_STYLE: {
-                        // ** THE FIX **: Do not apply custom styles if the object is disabled,
-                        // as LVGL's disabled style should take precedence.
-                        if (lv_obj_has_state(obs->widget, LV_STATE_DISABLED)) {
-                            // If we previously applied a style, remove it now that the widget is disabled.
-                            if(obs->config.last_applied_style) {
-                                lv_obj_remove_style(obs->widget, obs->config.last_applied_style, 0);
-                                obs->config.last_applied_style = NULL;
-                            }
-                            continue;
-                        }
-
-                        lv_style_t* style_to_apply = NULL;
-                        binding_map_entry_t* map = (binding_map_entry_t*)obs->config.config;
-                        bool found = false;
-                        for (size_t k = 0; k < obs->config.config_len; k++) {
-                             if (values_equal(&map[k].key, &new_value)) {
-                                style_to_apply = (lv_style_t*)map[k].value.p_val;
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found && obs->config.default_value) {
-                            style_to_apply = (lv_style_t*)obs->config.default_value;
-                        }
-
-                        if (obs->config.last_applied_style != style_to_apply) {
-                            if (obs->config.last_applied_style) {
-                                lv_obj_remove_style(obs->widget, obs->config.last_applied_style, 0);
-                            }
-                            if (style_to_apply) {
-                                lv_obj_add_style(obs->widget, style_to_apply, 0);
-                            }
-                            obs->config.last_applied_style = style_to_apply;
-                        }
-                        break;
-                    }
-                }
+                apply_value_to_observer(obs, state_name, &new_value);
             }
             return;
         }
@@ -275,6 +256,120 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
     DEBUG_LOG(LOG_MODULE_DATABINDING, "No observers found for state: '%s'", state_name);
 }
 
+
+// ---------------------------------------------------------------------------
+// apply_value_to_observer
+// Core dispatch: apply one binding_value_t to one Observer.
+// Extracted so it can be called both from the notification fan-out and from
+// add_observer's immediate replay of the last cached value.
+// ---------------------------------------------------------------------------
+static void apply_value_to_observer(Observer* obs, const char* state_name, const binding_value_t* value) {
+    binding_value_t new_value = *value;
+    switch (obs->config.update_type) {
+        case OBSERVER_TYPE_TEXT: {
+            char buf[128];
+            const char* fmt = (const char*)obs->config.config;
+            if (!fmt) fmt = "%s";
+            switch(new_value.type) {
+                case BINDING_TYPE_FLOAT:
+                    if (strstr(fmt, "%d") || strstr(fmt, "%i") || strstr(fmt, "%u") || strstr(fmt, "%x"))
+                        snprintf(buf, sizeof(buf), fmt, (int)round(new_value.as.f_val));
+                    else
+                        snprintf(buf, sizeof(buf), fmt, new_value.as.f_val);
+                    break;
+                case BINDING_TYPE_BOOL:   snprintf(buf, sizeof(buf), fmt, new_value.as.b_val ? "true" : "false"); break;
+                case BINDING_TYPE_STRING: snprintf(buf, sizeof(buf), fmt, new_value.as.s_val); break;
+                default:                  strncpy(buf, "N/A", sizeof(buf)); break;
+            }
+            lv_label_set_text(obs->widget, buf);
+            break;
+        }
+        case OBSERVER_TYPE_VALUE: {
+            if (new_value.type != BINDING_TYPE_FLOAT) {
+                print_warning("State '%s' sent non-numeric data to a 'value' binding.", state_name);
+                return;
+            }
+            int32_t val = (int32_t)round(new_value.as.f_val);
+            lv_anim_enable_t anim = obs->config.config ? *(lv_anim_enable_t*)obs->config.config : LV_ANIM_ON;
+            const lv_obj_class_t* cls = lv_obj_get_class(obs->widget);
+            if      (cls == &lv_bar_class)    lv_bar_set_value(obs->widget, val, anim);
+            else if (cls == &lv_slider_class) lv_slider_set_value(obs->widget, val, anim);
+            else if (cls == &lv_arc_class)    lv_arc_set_value(obs->widget, val);
+            else    print_warning("Widget does not support 'value' observation.");
+            break;
+        }
+        case OBSERVER_TYPE_VISIBLE:
+        case OBSERVER_TYPE_CHECKED:
+        case OBSERVER_TYPE_DISABLED: {
+            bool target_state = false;
+            if (obs->config.config_len > 0) {
+                bool found = false;
+                binding_map_entry_t* map = (binding_map_entry_t*)obs->config.config;
+                for (size_t k = 0; k < obs->config.config_len; k++) {
+                    if (values_equal(&map[k].key, &new_value)) { target_state = map[k].value.b_val; found = true; break; }
+                }
+                if (!found && obs->config.default_value) target_state = *(bool*)obs->config.default_value;
+                else if (!found) return;
+            } else {
+                bool is_truthy = (new_value.type == BINDING_TYPE_BOOL  && new_value.as.b_val) ||
+                                 (new_value.type == BINDING_TYPE_FLOAT && new_value.as.f_val != 0.0f) ||
+                                 (new_value.type == BINDING_TYPE_STRING && new_value.as.s_val && *new_value.as.s_val != '\0');
+                bool is_inverse = (obs->config.config == NULL) || !(*(bool*)obs->config.config);
+                target_state = is_inverse ? !is_truthy : is_inverse;
+            }
+            lv_obj_flag_t flag = 0; lv_state_t state = 0;
+            if (obs->config.update_type == OBSERVER_TYPE_VISIBLE)  flag  = LV_OBJ_FLAG_HIDDEN;
+            if (obs->config.update_type == OBSERVER_TYPE_DISABLED) state = LV_STATE_DISABLED;
+            if (obs->config.update_type == OBSERVER_TYPE_CHECKED)  state = LV_STATE_CHECKED;
+            if (flag)  { if (target_state) lv_obj_clear_flag(obs->widget, flag);  else lv_obj_add_flag(obs->widget,  flag); }
+            else if (state) { if (target_state) lv_obj_add_state(obs->widget, state); else lv_obj_clear_state(obs->widget, state); }
+            break;
+        }
+        case OBSERVER_TYPE_LED_ON: {
+            bool target_state = false;
+            if (obs->config.config_len > 0) {
+                bool found = false;
+                binding_map_entry_t* map = (binding_map_entry_t*)obs->config.config;
+                for (size_t k = 0; k < obs->config.config_len; k++) {
+                    if (values_equal(&map[k].key, &new_value)) { target_state = map[k].value.b_val; found = true; break; }
+                }
+                if (!found && obs->config.default_value) target_state = *(bool*)obs->config.default_value;
+                else if (!found) return;
+            } else {
+                bool is_truthy = (new_value.type == BINDING_TYPE_BOOL  && new_value.as.b_val) ||
+                                 (new_value.type == BINDING_TYPE_FLOAT && new_value.as.f_val != 0.0f) ||
+                                 (new_value.type == BINDING_TYPE_STRING && new_value.as.s_val && *new_value.as.s_val != '\0');
+                bool is_inverse = (obs->config.config == NULL) || !(*(bool*)obs->config.config);
+                target_state = is_inverse ? !is_truthy : is_inverse;
+            }
+            if (target_state) lv_led_on(obs->widget); else lv_led_off(obs->widget);
+            break;
+        }
+        case OBSERVER_TYPE_STYLE: {
+            // Do not apply custom styles when the widget is disabled.
+            if (lv_obj_has_state(obs->widget, LV_STATE_DISABLED)) {
+                if (obs->config.last_applied_style) {
+                    lv_obj_remove_style(obs->widget, obs->config.last_applied_style, 0);
+                    obs->config.last_applied_style = NULL;
+                }
+                return;
+            }
+            lv_style_t* style_to_apply = NULL;
+            binding_map_entry_t* map = (binding_map_entry_t*)obs->config.config;
+            bool found = false;
+            for (size_t k = 0; k < obs->config.config_len; k++) {
+                if (values_equal(&map[k].key, &new_value)) { style_to_apply = (lv_style_t*)map[k].value.p_val; found = true; break; }
+            }
+            if (!found && obs->config.default_value) style_to_apply = (lv_style_t*)obs->config.default_value;
+            if (obs->config.last_applied_style != style_to_apply) {
+                if (obs->config.last_applied_style) lv_obj_remove_style(obs->widget, obs->config.last_applied_style, 0);
+                if (style_to_apply)                 lv_obj_add_style(obs->widget, style_to_apply, 0);
+                obs->config.last_applied_style = style_to_apply;
+            }
+            break;
+        }
+    }
+}
 
 void data_binding_add_observer(const char* state_name, lv_obj_t* widget,
                                observer_update_type_t update_type,
@@ -362,6 +457,18 @@ void data_binding_add_observer(const char* state_name, lv_obj_t* widget,
     lv_obj_add_event_cb(widget, free_observer_config_cb, LV_EVENT_DELETE, &obs->config);
 
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Added observer for state '%s' to widget %p.", state_name, (void*)widget);
+
+    // Replay: if a value for this state was ever notified, apply it to this
+    // newly registered observer immediately.  This makes deferred tabs that
+    // are constructed after create_ui has already received notifications
+    // show the correct state as soon as they appear.
+    const binding_value_t* cached = cache_get(state_name);
+    if (cached) {
+        DEBUG_LOG(LOG_MODULE_DATABINDING,
+                  "Replaying cached value for state '%s' to newly registered observer %p.",
+                  state_name, (void*)widget);
+        apply_value_to_observer(obs, state_name, cached);
+    }
 }
 
 void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_type_t type, const binding_value_t* cycle_values, uint32_t cycle_value_count, const void* config_data) {
