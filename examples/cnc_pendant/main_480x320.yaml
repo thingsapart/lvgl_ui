@@ -10,6 +10,7 @@
 - include: "ui_components/label_text_actionable.yaml"
 - include: "ui_components/probe_view.yaml"
 - include: "ui_components/probing_wizard.yaml"
+- include: "ui_components/cam_positioning_view.yaml"
 - include: "ui_components/title_bar.yaml"
 
 - type: obj
@@ -32,19 +33,28 @@
       children:
         - init: { lv_tileview_add_tile: [0, 0, LV_DIR_RIGHT] }
           add_style: ['@container', 0]
+          deferred: true
           children:
             - type: use-view
               id: '@jog_view'
         - init: { lv_tileview_add_tile: [1, 0, LV_DIR_LEFT | LV_DIR_RIGHT] }
           add_style: ['@container', 0]
+          deferred: true
           children:
             - type: use-view
               id: '@probe_view'
-        - init: { lv_tileview_add_tile: [2, 0, LV_DIR_LEFT] }
+        - init: { lv_tileview_add_tile: [2, 0, LV_DIR_LEFT | LV_DIR_RIGHT] }
           add_style: ['@container', 0]
+          deferred: true
           children:
             - type: use-view
               id: '@probing_wizard'
+        - init: { lv_tileview_add_tile: [3, 0, LV_DIR_LEFT] }
+          add_style: ['@container', 0]
+          deferred: true
+          children:
+            - type: use-view
+              id: '@cam_positioning_view'
 
 # This overlay will appear when the machine is disconnected.
 # It covers the whole screen and prevents interaction with other controls.

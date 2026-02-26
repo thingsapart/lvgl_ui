@@ -103,32 +103,39 @@ A backend is a module that consumes the `IRRoot` and produces an output. The `c_
 
 When an `IRObject` has a non-NULL `deferred_fn_name`, its children are not inlined into `create_ui`. Instead they are emitted as a separate, self-contained `static void fn(lv_obj_t* parent)` helper function that is invoked at runtime by the **deferred loader** — a small generic library (`deferred_loader.c/.h`) — only when that child becomes visible. This is the primary mechanism for **deferred / lazy page loading** on memory-constrained targets such as the ESP32-S3.
 
+**Cross-scope variable hoisting**
+
+A deferred function may reference objects (e.g. styles, fonts) that are declared in `create_ui` scope. The printer detects these cross-scope `@id` references before emitting any code:
+
+1. `collect_hoisted_vars` walks each deferred body and collects any `IR_EXPR_REGISTRY_REF` that resolves to a `c_name` not declared within that deferred function's own subtree.
+2. Each cross-scope variable is added to a `HoistedVarNode` list and promoted to a file-scope `static` declaration (e.g. `static lv_style_t* style_0 = NULL;`).
+3. In `create_ui`, the corresponding variable declaration is suppressed — only the assignment is emitted (e.g. `style_0 = LVGL_UI_MALLOC(sizeof(lv_style_t));`).
+4. `destroy_ui` calls `LVGL_UI_FREE` for any hoisted variable that was heap-allocated (detected by checking whether the original `constructor_expr` is a `malloc` call in the IR).
+
+**Memory allocator macros**
+
+All heap allocations in the generated file use `LVGL_UI_MALLOC` / `LVGL_UI_FREE`, which are emitted as `#ifndef`-guarded macros. By default they map to `malloc`/`free`. When `ESP32_HW` and `BOARD_HAS_PSRAM` are defined the macros automatically switch to `heap_caps_malloc` with `MALLOC_CAP_SPIRAM`, placing all UI memory in external PSRAM. Users may also override the macros globally via build flags.
+
 **Code generation changes (`c_code_printer.c`)**
 
-The `c_code_print_backend` performs an extra traversal (`collect_deferred_objects`) that walks the entire IR tree and collects all objects with a non-NULL `deferred_fn_name`. For each such object it calls `emit_deferred_function`, which emits:
+The `c_code_print_backend` performs the following passes before emitting any code:
 
-```c
-static void <deferred_fn_name>(lv_obj_t* parent) {
-    // ... all child widget construction, setup calls, and data binding ...
-}
+1. `collect_deferred_objects` — walks the full IR tree, building a `DeferredNode` list.
+2. `collect_hoisted_vars` — for each deferred object, finds cross-scope refs and builds the `HoistedVarNode` list (with `needs_free` set by inspecting the constructor IR).
+
+Emit order in the generated file:
+```
+1. Includes + LVGL_UI_MALLOC/FREE macros
+2. Custom includes (from api_spec)
+3. // --- Hoisted Variables ---        (static TYPE* name = NULL;  … one per hoisted var)
+4. // --- Deferred UI Functions ---    (static void create_*(…) + static void destroy_*(…) pairs)
+5. void create_ui(lv_obj_t* parent)   (hoisted vars get plain assignments, no type prefix)
+6. void destroy_ui(lv_obj_t** root_ptr)  (lv_obj_delete + LVGL_UI_FREE for each hoisted alloc)
 ```
 
-These functions are emitted *before* `void create_ui(lv_obj_t* parent)`, under a `// --- Deferred UI Functions ---` header comment.
+Inside `create_ui`, the printer calls `print_object_list` with the `HoistedVarNode*` list so that type declarations are suppressed for hoisted variables (replaced by bare assignments).
 
-Inside `create_ui`, instead of inlining children or calling the deferred function directly, the printer emits a `deferred_loader_register` call for each deferred child, followed by a single `deferred_loader_init` call on the parent once all children have been registered:
-
-```c
-deferred_loader_register(tabview_0, obj_1, create_tab_1);
-deferred_loader_register(tabview_0, obj_3, create_tab_2);
-deferred_loader_register(tabview_0, obj_5, create_tab_3);
-deferred_loader_init(tabview_0);
-```
-
-**Runtime library (`deferred_loader.c/.h`)**
-
-`deferred_loader_init` installs `LV_EVENT_VALUE_CHANGED` and `LV_EVENT_DELETE` handlers on the scroll-container parent, then immediately populates the currently-active child.  On each subsequent `LV_EVENT_VALUE_CHANGED` (fired by LVGL between `lv_task_handler()` calls when the user switches tabs/tiles), the handler calls `create_fn(child)` for the newly-active child and `lv_obj_clean(child)` for the previously-active one.
-
-Supported parent widget types: `lv_tabview` and `lv_tileview`. Adding new types requires only extending the `get_active_child` dispatch function in `deferred_loader.c`.
+After each `static void create_*(…)`, a matching `static void destroy_*(…)` is emitted immediately. The naming rule is: `create_` prefix is replaced with `destroy_`; if the function name does not start with `create_`, `destroy_` is prepended.
 
 The `lvgl_renderer` backend intentionally ignores `deferred_fn_name` and always renders children inline, so the live SDL preview continues to work without modification.
 

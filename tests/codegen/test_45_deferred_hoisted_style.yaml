@@ -1,0 +1,27 @@
+# Codegen test: cross-scope style hoisting.
+# @tab_style is declared at the top level (create_ui scope) but referenced
+# from inside two deferred tab functions.  The generator must hoist
+# tab_style_0 to file scope so both deferred functions can access it, and
+# destroy_ui must free it via LVGL_UI_FREE.
+- type: style
+  id: "@tab_style"
+  bg_color: "#112233"
+  bg_opa: LV_OPA_COVER
+- type: tabview
+  size: [300, 200]
+  center: []
+  children:
+    - init: { lv_tabview_add_tab: ["Home"] }
+      deferred: create_home_tab
+      children:
+        - type: label
+          text: "Home"
+          align: LV_ALIGN_CENTER
+          add_style: ["@tab_style", 0]
+    - init: { lv_tabview_add_tab: ["Settings"] }
+      deferred: create_settings_tab
+      children:
+        - type: label
+          text: "Settings"
+          align: LV_ALIGN_CENTER
+          add_style: ["@tab_style", 0]

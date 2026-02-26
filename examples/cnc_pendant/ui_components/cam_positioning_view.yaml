@@ -1,5 +1,5 @@
 - type: component
-  id: @pcam_positioning_view
+  id: @cam_positioning_view
   info: |
     Camera live-stream based positioning view.
     ---

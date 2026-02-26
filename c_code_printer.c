@@ -30,10 +30,26 @@ typedef struct DeferredNode {
     struct DeferredNode* next;
 } DeferredNode;
 
+// --- Hoisted Variable (cross-scope deferred refs) ---
+// Variables declared in create_ui but referenced inside deferred functions are
+// promoted to file-scope statics so both scopes can see them.
+typedef struct HoistedVarNode {
+    char*  c_name;
+    char*  c_type;
+    bool   needs_free;   // true → LVGL_UI_FREE in destroy_ui
+    struct HoistedVarNode* next;
+} HoistedVarNode;
+
+// C-name string set used during cross-scope detection.
+typedef struct CNameSetNode {
+    char*              c_name;
+    struct CNameSetNode* next;
+} CNameSetNode;
+
 // --- Forward Declarations ---
 static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_map, MapNode* array_map, bool pass_by_ref_for_struct);
-static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* id_map, MapNode* array_map);
-static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* id_map, MapNode* array_map);
+static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* id_map, MapNode* array_map, HoistedVarNode* hoisted_vars);
+static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* id_map, MapNode* array_map, HoistedVarNode* hoisted_vars);
 static void find_and_map_arrays(IRObject* head, MapNode** array_map_head, int* counter);
 static void id_map_dump(IdMapNode* map_head);
 static void collect_deferred_objects(IRObject* head, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr);
@@ -243,7 +259,10 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_ma
             break;
         case IR_EXPR_FUNCTION_CALL: {
             IRExprFunctionCall* call = (IRExprFunctionCall*)expr;
-            printf("%s(", call->func_name);
+            // Remap malloc to the configurable UI allocator.
+            const char* fn_name = (strcmp(call->func_name, "malloc") == 0)
+                                  ? "LVGL_UI_MALLOC" : call->func_name;
+            printf("%s(", fn_name);
             print_expr_list(call->args, parent_c_name, id_map, array_map);
             printf(")");
             break;
@@ -281,11 +300,11 @@ static void print_expr(IRExpr* expr, const char* parent_c_name, IdMapNode* id_ma
     }
 }
 
-static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* id_map, MapNode* array_map) {
+static void print_node(IRNode* node, int indent_level, const char* parent_c_name, const char* target_c_name, IdMapNode* id_map, MapNode* array_map, HoistedVarNode* hoisted_vars) {
     if (!node) return;
     switch(node->type) {
         case IR_NODE_OBJECT:
-            print_object_list((IRObject*)node, indent_level, target_c_name, id_map, array_map);
+            print_object_list((IRObject*)node, indent_level, target_c_name, id_map, array_map, hoisted_vars);
             break;
         case IR_NODE_WARNING:
             print_indent(indent_level);
@@ -487,6 +506,165 @@ static void find_and_map_arrays(IRObject* head, MapNode** array_map, int* counte
 
 // Recursively collect all IRObjects that have a deferred_fn_name set.
 // Appends to the singly-linked list formed by [*list_head_ptr, *list_tail_ptr].
+// ===========================================================================
+// --- Hoisted Variable Helpers ---
+// ===========================================================================
+
+static bool c_name_set_contains(const CNameSetNode* s, const char* name) {
+    for (; s; s = s->next) if (strcmp(s->c_name, name) == 0) return true;
+    return false;
+}
+static void c_name_set_add(CNameSetNode** s, const char* name) {
+    if (!name || c_name_set_contains(*s, name)) return;
+    CNameSetNode* n = malloc(sizeof(CNameSetNode));
+    if (!n) return;
+    n->c_name = strdup(name); n->next = *s; *s = n;
+}
+static void c_name_set_free(CNameSetNode* s) {
+    while (s) { CNameSetNode* nx = s->next; free(s->c_name); free(s); s = nx; }
+}
+
+static bool is_hoisted(const HoistedVarNode* h, const char* c_name) {
+    for (; h; h = h->next) if (strcmp(h->c_name, c_name) == 0) return true;
+    return false;
+}
+static void hoisted_var_add(HoistedVarNode** h, const char* c_name,
+                             const char* c_type, bool needs_free) {
+    if (is_hoisted(*h, c_name)) return;
+    HoistedVarNode* n = malloc(sizeof(HoistedVarNode));
+    if (!n) return;
+    n->c_name = strdup(c_name); n->c_type = strdup(c_type);
+    n->needs_free = needs_free; n->next = *h; *h = n;
+}
+static void hoisted_var_free_list(HoistedVarNode* h) {
+    while (h) { HoistedVarNode* nx = h->next; free(h->c_name); free(h->c_type); free(h); h = nx; }
+}
+
+// Collect every c_name declared inside a subtree (not the root itself).
+static void collect_local_c_names(IRObject* head, CNameSetNode** out) {
+    for (IRObject* o = head; o; o = o->next) {
+        if (o->c_name) c_name_set_add(out, o->c_name);
+        for (IROperationNode* op = o->operations; op; op = op->next)
+            if (op->op_node->type == IR_NODE_OBJECT)
+                collect_local_c_names((IRObject*)op->op_node, out);
+    }
+}
+
+// Walk an expression tree, collecting registry refs that resolve to c_names
+// not present in the local set — these are cross-scope (hoistable) references.
+static void find_external_refs_in_expr(IRExpr* e, const CNameSetNode* local_set,
+                                        IdMapNode* id_map, HoistedVarNode** out) {
+    if (!e) return;
+    switch (e->base.type) {
+        case IR_EXPR_REGISTRY_REF: {
+            const char* name = ((IRExprRegistryRef*)e)->name;
+            if (strcmp(name, "parent") == 0 || strncmp(name, "@$", 2) == 0) break;
+            const char* lookup = (name[0] == '@') ? name + 1 : name;
+            const IdMapNode* node = id_map_get_node(id_map, lookup);
+            if (!node) break;
+            if (!c_name_set_contains(local_set, node->c_name))
+                hoisted_var_add(out, node->c_name, node->c_type, false);
+            break;
+        }
+        case IR_EXPR_FUNCTION_CALL:
+            for (IRExprNode* a = ((IRExprFunctionCall*)e)->args; a; a = a->next)
+                find_external_refs_in_expr(a->expr, local_set, id_map, out);
+            break;
+        case IR_EXPR_IF_BACKEND:
+            find_external_refs_in_expr(((IRIfBackend*)e)->static_expr, local_set, id_map, out);
+            find_external_refs_in_expr(((IRIfBackend*)e)->dynamic_expr, local_set, id_map, out);
+            break;
+        case IR_EXPR_ARRAY:
+            for (IRExprNode* a = ((IRExprArray*)e)->elements; a; a = a->next)
+                find_external_refs_in_expr(a->expr, local_set, id_map, out);
+            break;
+        default: break;
+    }
+}
+
+// Recursively scan an IR subtree for external refs (the body of a deferred fn).
+static void scan_subtree_for_external_refs(IRObject* head, const CNameSetNode* local_set,
+                                            IdMapNode* id_map, HoistedVarNode** out) {
+    for (IRObject* o = head; o; o = o->next) {
+        find_external_refs_in_expr(o->constructor_expr, local_set, id_map, out);
+        for (IROperationNode* op = o->operations; op; op = op->next) {
+            if (op->op_node->type == IR_NODE_OBJECT) {
+                scan_subtree_for_external_refs((IRObject*)op->op_node, local_set, id_map, out);
+            } else {
+                IRNode* n = op->op_node;
+                if (n->type == IR_NODE_OBSERVER)
+                    find_external_refs_in_expr(((IRObserver*)n)->config_expr, local_set, id_map, out);
+                else if (n->type == IR_NODE_ACTION)
+                    find_external_refs_in_expr(((IRAction*)n)->data_expr, local_set, id_map, out);
+                else
+                    find_external_refs_in_expr((IRExpr*)n, local_set, id_map, out);
+            }
+        }
+    }
+}
+
+// Find the IRObject in the IR tree whose c_name matches.
+static IRObject* find_ir_obj_by_c_name(IRObject* head, const char* c_name) {
+    for (IRObject* o = head; o; o = o->next) {
+        if (o->c_name && strcmp(o->c_name, c_name) == 0) return o;
+        for (IROperationNode* op = o->operations; op; op = op->next)
+            if (op->op_node->type == IR_NODE_OBJECT) {
+                IRObject* found = find_ir_obj_by_c_name((IRObject*)op->op_node, c_name);
+                if (found) return found;
+            }
+    }
+    return NULL;
+}
+
+// Build the list of variables that must be hoisted to file scope so every
+// deferred function can reach them.
+static HoistedVarNode* collect_hoisted_vars(DeferredNode* deferred_list,
+                                             IdMapNode* global_id_map,
+                                             IRObject* ir_root_objects) {
+    HoistedVarNode* hoisted = NULL;
+    for (DeferredNode* dn = deferred_list; dn; dn = dn->next) {
+        IRObject* def = dn->obj;
+        // Build local set: deferred object itself (→ "parent") + all its children.
+        CNameSetNode* local = NULL;
+        if (def->c_name) c_name_set_add(&local, def->c_name);
+        for (IROperationNode* op = def->operations; op; op = op->next)
+            if (op->op_node->type == IR_NODE_OBJECT)
+                collect_local_c_names((IRObject*)op->op_node, &local);
+        // Scan child subtrees for external refs.
+        for (IROperationNode* op = def->operations; op; op = op->next)
+            if (op->op_node->type == IR_NODE_OBJECT)
+                scan_subtree_for_external_refs((IRObject*)op->op_node, local, global_id_map, &hoisted);
+        c_name_set_free(local);
+    }
+    // Refine needs_free: check whether the original IRObject constructor is a malloc call.
+    for (HoistedVarNode* h = hoisted; h; h = h->next) {
+        IRObject* obj = find_ir_obj_by_c_name(ir_root_objects, h->c_name);
+        if (obj && obj->constructor_expr &&
+            obj->constructor_expr->base.type == IR_EXPR_FUNCTION_CALL) {
+            const char* fn = ((IRExprFunctionCall*)obj->constructor_expr)->func_name;
+            h->needs_free = (strcmp(fn, "malloc") == 0);
+        }
+    }
+    return hoisted;
+}
+
+// Derive a destroy function name from a create function name.
+//   "create_home_tab" -> "destroy_home_tab"
+//   "build_page"      -> "destroy_build_page"
+static char* make_destroy_fn_name(const char* create_name) {
+    static const char pfx[] = "create_";
+    const char* suffix = (strncmp(create_name, pfx, sizeof(pfx)-1) == 0)
+                         ? create_name + sizeof(pfx) - 1 : create_name;
+    bool used_suffix = (suffix != create_name);
+    size_t len = strlen("destroy_") + strlen(suffix) + 1;
+    char* buf = malloc(len);
+    if (buf) snprintf(buf, len, "destroy_%s", suffix);
+    (void)used_suffix;
+    return buf;
+}
+
+// ===========================================================================
+
 static void collect_deferred_objects(IRObject* head, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr) {
     for (IRObject* obj = head; obj; obj = obj->next) {
         if (obj->deferred_fn_name) {
@@ -559,17 +737,30 @@ static void emit_deferred_function(IRObject* obj, IdMapNode* global_id_map) {
     // Emit only the child objects of the deferred object
     for (IROperationNode* op = obj->operations; op; op = op->next) {
         if (op->op_node->type == IR_NODE_OBJECT) {
-            print_object_list((IRObject*)op->op_node, 1, "parent", local_id_map, local_array_map);
+            print_object_list((IRObject*)op->op_node, 1, "parent", local_id_map, local_array_map, NULL);
         }
     }
 
     printf("}\n\n");
 
+    // Emit the paired destroy_* function.
+    // It cleans the children of the panel but keeps the panel itself alive
+    // (so the deferred_loader can call create_* again on the same slot).
+    char* destroy_name = make_destroy_fn_name(obj->deferred_fn_name);
+    if (destroy_name) {
+        printf("static void %s(lv_obj_t** obj_ptr) {\n", destroy_name);
+        printf("    if (!obj_ptr || !*obj_ptr) return;\n");
+        printf("    lv_obj_clean(*obj_ptr);\n");
+        printf("    *obj_ptr = NULL;\n");
+        printf("}\n\n");
+        free(destroy_name);
+    }
+
     id_map_free(local_id_map);
     generic_map_free(local_array_map);
 }
 
-static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* id_map, MapNode* array_map) {
+static void print_object_list(IRObject* head, int indent_level, const char* parent_c_name, IdMapNode* id_map, MapNode* array_map, HoistedVarNode* hoisted_vars) {
     for (IRObject* current = head; current; current = current->next) {
         if(strncmp(current->json_type, "//", 2) == 0) continue;
 
@@ -618,9 +809,11 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
 
         print_indent(content_indent);
         bool is_pointer = (current->c_type && strchr(current->c_type, '*') != NULL);
+        bool obj_is_hoisted = hoisted_vars && is_hoisted(hoisted_vars, current->c_name);
 
         if (strcmp(current->c_type, "const char*") == 0) {
-            printf("%s %s = ", current->c_type, current->c_name);
+            if (!obj_is_hoisted) printf("%s ", current->c_type);
+            printf("%s = ", current->c_name);
             if (current->constructor_expr) {
                 print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
             } else {
@@ -628,7 +821,8 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             }
             printf(";\n");
         } else if (is_pointer) {
-            printf("%s %s = ", current->c_type, current->c_name);
+            if (!obj_is_hoisted) printf("%s ", current->c_type);
+            printf("%s = ", current->c_name);
             if (current->constructor_expr) {
                 print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
             } else {
@@ -636,7 +830,8 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             }
              printf(";\n");
         } else {
-            printf("%s %s;\n", current->c_type, current->c_name);
+            if (!obj_is_hoisted) printf("%s ", current->c_type);
+            printf("%s;\n", current->c_name);
             if (current->constructor_expr) {
                 print_indent(content_indent);
                 print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
@@ -655,7 +850,7 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
                 if (has_non_child_ops) {
                     for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
                         if (op_node->op_node->type != IR_NODE_OBJECT) {
-                            print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map);
+                            print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map, hoisted_vars);
                         }
                     }
                 }
@@ -665,7 +860,7 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
                        parent_c_name, current->c_name, current->deferred_fn_name);
             } else {
                 for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
-                    print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map);
+                    print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map, hoisted_vars);
                 }
                 // If any direct child was deferred, install the lazy-load event handler now.
                 bool has_deferred_children = false;
@@ -714,6 +909,22 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
     printf("#include \"lvgl_ui.h\"\n");
     printf("#include <stdlib.h> // For malloc\n\n");
 
+    // --- Allocator macros (override by defining before including generated code) ---
+    printf("// --- Memory Allocator (define LVGL_UI_MALLOC/FREE before this file to override) ---\n");
+    printf("#ifndef LVGL_UI_MALLOC\n");
+    printf("  #if defined(ESP32_HW) && defined(BOARD_HAS_PSRAM)\n");
+    printf("    #include \"esp_heap_caps.h\"\n");
+    printf("    #define LVGL_UI_MALLOC(sz) heap_caps_malloc((sz), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)\n");
+    printf("    #define LVGL_UI_FREE(ptr)  heap_caps_free(ptr)\n");
+    printf("  #else\n");
+    printf("    #define LVGL_UI_MALLOC(sz) malloc((sz))\n");
+    printf("    #define LVGL_UI_FREE(ptr)  free(ptr)\n");
+    printf("  #endif\n");
+    printf("#endif\n");
+    printf("#ifndef LVGL_UI_FREE\n");
+    printf("  #define LVGL_UI_FREE(ptr) free(ptr)\n");
+    printf("#endif\n\n");
+
     /* Emit any custom includes requested in the API spec (c_gen). */
     if (api_spec && api_spec->includes_c_gen) {
         const cJSON* inc_node = api_spec->includes_c_gen;
@@ -739,23 +950,37 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
         printf("\n");
     }
 
-    // --- Collect and emit deferred functions (must appear before create_ui in C) ---
-    {
-        DeferredNode* deferred_head = NULL;
-        DeferredNode* deferred_tail = NULL;
-        collect_deferred_objects(root->root_objects, &deferred_tail, &deferred_head);
-        if (deferred_head) {
-            printf("// --- Deferred UI Functions ---\n\n");
-            for (DeferredNode* dn = deferred_head; dn; dn = dn->next) {
-                emit_deferred_function(dn->obj, id_map);
-            }
-            // Free the list nodes (not the IRObjects — those belong to the IR)
-            for (DeferredNode* dn = deferred_head; dn; ) {
-                DeferredNode* next = dn->next;
-                free(dn);
-                dn = next;
-            }
+    // --- Collect deferred objects and hoisted variables ---
+    DeferredNode* deferred_head = NULL;
+    DeferredNode* deferred_tail = NULL;
+    collect_deferred_objects(root->root_objects, &deferred_tail, &deferred_head);
+    HoistedVarNode* hoisted_vars = collect_hoisted_vars(deferred_head, id_map, root->root_objects);
+
+    // --- Emit hoisted variable declarations (file-scope statics) ---
+    if (hoisted_vars) {
+        printf("// --- Hoisted Variables (shared between create_ui and deferred functions) ---\n");
+        for (HoistedVarNode* h = hoisted_vars; h; h = h->next) {
+            bool hv_is_ptr = strchr(h->c_type, '*') != NULL;
+            if (hv_is_ptr)
+                printf("static %s %s = NULL;\n", h->c_type, h->c_name);
+            else
+                printf("static %s %s;\n", h->c_type, h->c_name);
         }
+        printf("\n");
+    }
+
+    // --- Collect and emit deferred create_*/destroy_* pairs (before create_ui in C) ---
+    if (deferred_head) {
+        printf("// --- Deferred UI Functions ---\n\n");
+        for (DeferredNode* dn = deferred_head; dn; dn = dn->next) {
+            emit_deferred_function(dn->obj, id_map);
+        }
+    }
+    // Free the DeferredNode list (not the IRObjects — those belong to the IR)
+    for (DeferredNode* dn = deferred_head; dn; ) {
+        DeferredNode* next = dn->next;
+        free(dn);
+        dn = next;
     }
 
     printf("void create_ui(lv_obj_t* parent) {\n");
@@ -776,14 +1001,30 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
     }
 
     if (root->root_objects) {
-        print_object_list(root->root_objects, 1, "parent", id_map, array_map);
+        print_object_list(root->root_objects, 1, "parent", id_map, array_map, hoisted_vars);
     } else {
         print_indent(1);
         printf("/* (No root objects) */\n");
     }
 
+    printf("}\n\n");
+
+    // --- Emit destroy_ui ---
+    printf("void destroy_ui(lv_obj_t** root_ptr) {\n");
+    printf("    if (!root_ptr || !*root_ptr) return;\n");
+    printf("    lv_obj_delete(*root_ptr);\n");
+    printf("    *root_ptr = NULL;\n");
+    if (hoisted_vars) {
+        printf("    // Free hoisted (file-scope) allocations.\n");
+        for (HoistedVarNode* h = hoisted_vars; h; h = h->next) {
+            if (h->needs_free) {
+                printf("    LVGL_UI_FREE(%s); %s = NULL;\n", h->c_name, h->c_name);
+            }
+        }
+    }
     printf("}\n");
 
     id_map_free(id_map);
     generic_map_free(array_map);
+    hoisted_var_free_list(hoisted_vars);
 }

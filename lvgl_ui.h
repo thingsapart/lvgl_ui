@@ -29,6 +29,18 @@ void lvgl_ui_deinit(void);
  */
 extern void create_ui(lv_obj_t* parent);
 
+/**
+ * @brief Destroys the UI rooted at *root_ptr and reclaims all file-scope
+ * allocations made by create_ui (e.g. hoisted lv_style_t* objects).
+ *
+ * If root_ptr is NULL or *root_ptr is NULL the call is a no-op and LVGL is
+ * assumed to clean up via the parent chain.  On return, *root_ptr is set to
+ * NULL.
+ *
+ * @param root_ptr Pointer to the root lv_obj_t* passed to create_ui.
+ */
+extern void destroy_ui(lv_obj_t** root_ptr);
+
 #ifdef __cplusplus
 }
 #endif

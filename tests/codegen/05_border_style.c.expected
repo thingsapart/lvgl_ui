@@ -4,6 +4,21 @@
 #include "lvgl_ui.h"
 #include <stdlib.h> // For malloc
 
+// --- Memory Allocator (define LVGL_UI_MALLOC/FREE before this file to override) ---
+#ifndef LVGL_UI_MALLOC
+  #if defined(ESP32_HW) && defined(BOARD_HAS_PSRAM)
+    #include "esp_heap_caps.h"
+    #define LVGL_UI_MALLOC(sz) heap_caps_malloc((sz), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+    #define LVGL_UI_FREE(ptr)  heap_caps_free(ptr)
+  #else
+    #define LVGL_UI_MALLOC(sz) malloc((sz))
+    #define LVGL_UI_FREE(ptr)  free(ptr)
+  #endif
+#endif
+#ifndef LVGL_UI_FREE
+  #define LVGL_UI_FREE(ptr) free(ptr)
+#endif
+
 // --- Custom Includes from API Spec ---
 #include "ui/components/lv_cam_positioning.h"
 #include "ui/components/lv_cam_stream.h"
@@ -13,7 +28,7 @@
 
 void create_ui(lv_obj_t* parent) {
     // style: style_0 (style)
-    lv_style_t* style_0 = malloc(sizeof(lv_style_t));
+    lv_style_t* style_0 = LVGL_UI_MALLOC(sizeof(lv_style_t));
 
     lv_style_init(style_0);
     obj_registry_add("style", style_0);
@@ -31,4 +46,10 @@ void create_ui(lv_obj_t* parent) {
     lv_obj_add_style(obj_1, style_0, LV_PART_MAIN);
     lv_obj_center(obj_1);
 
+}
+
+void destroy_ui(lv_obj_t** root_ptr) {
+    if (!root_ptr || !*root_ptr) return;
+    lv_obj_delete(*root_ptr);
+    *root_ptr = NULL;
 }

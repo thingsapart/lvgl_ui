@@ -144,7 +144,7 @@ UseView {
 
 #### Deferred UI Functions
 
-The `deferred` property enables **lazy page loading**: the children of a widget are extracted from `create_ui` into a separate `static void` C function that you call from your application only when that content is actually needed (e.g., when the user navigates to a tab or page). This is especially useful on memory-constrained targets like the ESP32-S3 where constructing every page at startup would exhaust the heap.
+The `deferred` property enables **lazy page loading**: the children of a widget are extracted from `create_ui` into a separate `static void` C function. The `deferred_loader` runtime calls that function only when its panel becomes the active page, and calls `lv_obj_clean` when the user navigates away — freeing heap between `lv_task_handler()` calls. This is especially useful on memory-constrained targets like the ESP32-S3.
 
 **Syntax**
 
@@ -155,72 +155,123 @@ The `deferred` property enables **lazy page loading**: the children of a widget 
 
 The widget itself (constructor + own properties) is still created inside `create_ui`; only its *children* are deferred.
 
-**Example YAML**
+**Example YAML (with a shared style)**
 
 ```yaml
+- type: style
+  id: "@tab_style"
+  bg_color: "#334455"
 - type: tabview
   children:
-    - named: tab_home
-      deferred: true          # auto-names create_ui_tab_home_0
+    - init: { lv_tabview_add_tab: ["Home"] }
+      deferred: create_home_tab
       children:
         - type: label
-          text: "Home Content"
+          text: "Home"
           align: LV_ALIGN_CENTER
-    - named: tab_settings
-      deferred: "build_settings_page"   # explicit function name
+          add_style: ["@tab_style", 0]
+    - init: { lv_tabview_add_tab: ["Settings"] }
+      deferred: create_settings_tab
       children:
         - type: label
           text: "Settings"
+          align: LV_ALIGN_CENTER
+          add_style: ["@tab_style", 0]
 ```
 
 **Generated C code** (from `c_code` backend)
 
 ```c
+// --- Memory Allocator (define LVGL_UI_MALLOC/FREE before this file to override) ---
+#ifndef LVGL_UI_MALLOC
+  #if defined(ESP32_HW) && defined(BOARD_HAS_PSRAM)
+    #include "esp_heap_caps.h"
+    #define LVGL_UI_MALLOC(sz) heap_caps_malloc((sz), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+    #define LVGL_UI_FREE(ptr)  heap_caps_free(ptr)
+  #else
+    #define LVGL_UI_MALLOC(sz) malloc((sz))
+    #define LVGL_UI_FREE(ptr)  free(ptr)
+  #endif
+#endif
+
+// --- Hoisted Variables (shared between create_ui and deferred functions) ---
+static lv_style_t* tab_style_0 = NULL;  // ← promoted to file scope
+
 // --- Deferred UI Functions ---
 
-static void create_ui_tab_home_0(lv_obj_t* parent) {
-    do {
-        lv_obj_t* label_0 = lv_label_create(parent);
-        lv_label_set_text(label_0, "Home Content");
-        lv_obj_set_style_align(label_0, LV_ALIGN_CENTER, 0);
-    } while(0);
+static void create_home_tab(lv_obj_t* parent) {
+    lv_obj_t* label_0 = lv_label_create(parent);
+    lv_label_set_text(label_0, "Home");
+    lv_obj_set_style_align(label_0, LV_ALIGN_CENTER, 0);
+    lv_obj_add_style(label_0, tab_style_0, 0);  // ← file-scope access
 }
 
-static void build_settings_page(lv_obj_t* parent) {
-    do {
-        lv_obj_t* label_1 = lv_label_create(parent);
-        lv_label_set_text(label_1, "Settings");
-    } while(0);
+static void destroy_home_tab(lv_obj_t** obj_ptr) {
+    if (!obj_ptr || !*obj_ptr) return;
+    lv_obj_clean(*obj_ptr);   // removes children, keeps the panel slot alive
+    *obj_ptr = NULL;
 }
+
+// ... same pattern for create_settings_tab / destroy_settings_tab ...
 
 void create_ui(lv_obj_t* parent) {
-    do {
-        lv_obj_t* tabview_0 = lv_tabview_create(parent);
+    tab_style_0 = LVGL_UI_MALLOC(sizeof(lv_style_t));  // ← just assignment, no decl
+    lv_style_init(tab_style_0);
+    lv_style_set_bg_color(tab_style_0, lv_color_hex(0x334455));
 
-        do {
-            lv_obj_t* tab_home_0 = lv_tabview_add_tab(tabview_0, "Home");
-            deferred_loader_register(tabview_0, tab_home_0, create_ui_tab_home_0);
-        } while(0);
+    lv_obj_t* tabview_0 = lv_tabview_create(parent);
+    lv_obj_t* obj_1 = lv_tabview_add_tab(tabview_0, "Home");
+    deferred_loader_register(tabview_0, obj_1, create_home_tab);
+    lv_obj_t* obj_2 = lv_tabview_add_tab(tabview_0, "Settings");
+    deferred_loader_register(tabview_0, obj_2, create_settings_tab);
+    deferred_loader_init(tabview_0);    // installs event handler, populates active tab
+}
 
-        do {
-            lv_obj_t* tab_settings_0 = lv_tabview_add_tab(tabview_0, "Settings");
-            deferred_loader_register(tabview_0, tab_settings_0, build_settings_page);
-        } while(0);
-
-        deferred_loader_init(tabview_0);   // installs event handler, populates active tab
-    } while(0);
+void destroy_ui(lv_obj_t** root_ptr) {
+    if (!root_ptr || !*root_ptr) return;
+    lv_obj_delete(*root_ptr);
+    *root_ptr = NULL;
+    LVGL_UI_FREE(tab_style_0); tab_style_0 = NULL;  // ← frees hoisted allocs
 }
 ```
 
-`deferred_loader_init` immediately populates the currently-active child (tab 0 by default) so the initial view is never blank.  When the user switches tabs, a `LV_EVENT_VALUE_CHANGED` event fires on the tabview: `deferred_loader` calls `create_fn` for the newly-active child and `lv_obj_clean` on the previously-active child, reclaiming its heap between `lv_task_handler()` calls.
+**Cross-scope variable hoisting**
+
+Variables declared in `create_ui` scope (e.g. a top-level style) that are referenced inside a deferred function body are automatically detected and *hoisted* to file-scope `static` variables. This means:
+- Their declaration is moved out of `create_ui` and emitted at file scope, so every deferred function can see them.
+- Their allocation call (`LVGL_UI_MALLOC`) remains in `create_ui` (just without the `type` prefix — it becomes a plain assignment).
+- `destroy_ui` calls `LVGL_UI_FREE` for each hoisted allocation.
+
+**Memory allocator customisation**
+
+`LVGL_UI_MALLOC` / `LVGL_UI_FREE` are emitted as overridable macros in every generated file. To place all UI heap allocations in PSRAM on ESP32 with PSRAM support, define the macros before the generated file is compiled (or let the built-in guard do it automatically when `ESP32_HW` and `BOARD_HAS_PSRAM` are both defined):
+
+```c
+// In your project CMakeLists or build flags (or before #include "create_ui.c"):
+#define LVGL_UI_MALLOC(sz)  heap_caps_malloc((sz), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+#define LVGL_UI_FREE(ptr)   heap_caps_free(ptr)
+```
+
+**destroy_* / destroy_ui lifecycle**
+
+For every `create_*` deferred function the generator emits a paired `destroy_*` function:
+```c
+static void destroy_home_tab(lv_obj_t** obj_ptr);  // lv_obj_clean + NULL
+```
+Call it to explicitly clean a page's children (e.g. from application code before re-creating them). The `deferred_loader` also calls `lv_obj_clean` automatically on tab-switch, so manual calls are only needed outside normal navigation.
+
+`destroy_ui(lv_obj_t** root_ptr)` (declared in `lvgl_ui.h`) tears down the entire UI:
+1. Calls `lv_obj_delete(*root_ptr)` — removes the whole widget tree.
+2. Sets `*root_ptr = NULL`.
+3. Frees every hoisted file-scope allocation.
 
 **Backend behaviour**
 
 | Backend | Behaviour |
 |---------|----------|
-| `c_code` | Emits deferred functions before `create_ui`; replaces inlined children with a call. |
+| `c_code` | Emits hoisted vars, deferred create/destroy pairs, `deferred_loader_register/init` calls, and `destroy_ui`. |
 | `ir_debug_print` | Annotates the object line with `deferred="fn_name"`. |
-| `lvgl_renderer` (live SDL preview) | Ignores `deferred`; always renders children inline so the preview works without any extra calls. |
+| `lvgl_renderer` (live SDL preview) | Ignores `deferred`; always renders children inline so the preview works without modification. |
 
 ---
 
