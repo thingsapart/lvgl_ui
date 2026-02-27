@@ -532,7 +532,10 @@ void data_binding_add_observer(const char* state_name, lv_obj_t* widget,
         obs->config.default_value = NULL;
     }
 
-    lv_obj_add_event_cb(widget, free_observer_config_cb, LV_EVENT_DELETE, &obs->config);
+    DEBUG_LOG(LOG_MODULE_DATABINDING, "Adding observer for state '%s' to widget %p.", state_name, (void*)widget);
+    if (widget != NULL) {
+        lv_obj_add_event_cb(widget, free_observer_config_cb, LV_EVENT_DELETE, &obs->config);
+    }
 
     DEBUG_LOG(LOG_MODULE_DATABINDING, "Added observer for state '%s' to widget %p.", state_name, (void*)widget);
 
