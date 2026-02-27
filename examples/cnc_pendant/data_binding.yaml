@@ -68,6 +68,17 @@
     - tool_dia: 6.0
     - tool_material: 'AL'
 
+    # -- MDI (Manual Data Input) --
+    # MDI.log_changed: full log text; C app appends lines and notifies this state.
+    # The textarea observer replaces all text on each update, so C maintains the buffer.
+    - MDI.log_changed: [string, "[MDI] Ready.\n"]
+    # MDI.is_busy: true while a MDI command is being executed by the machine
+    - MDI.is_busy: false
+    # MDI.busy_timer: tick counter used by the simulator to auto-clear MDI.is_busy
+    - MDI.busy_timer: 0
+    # MDI.mode: sub-status shown in the log area (IDLE / RUNNING / ERROR)
+    - MDI.mode: [string, "IDLE"]
+
     # -- Probe --
     - probe_quick: false
     - probe_w: 100
@@ -197,7 +208,225 @@
       set: { probe_cl: value.float }
     - action.motion.jog.axis_cycle:
         cycle: { motion.jog.axis_selected_str: ["X", "Y", "Z", "Off"] }
+
+    # -----------------------------------------------------------------
+    # MDI simulation actions
+    # In real firmware these would send G-code to the motion controller and
+    # the C handler would append the response to the log buffer, then call
+    # data_binding_notify_state_changed("MDI.log_changed", ...).
+    # Here we simulate state changes + log text so the preview is interactive.
+    # MDI.is_busy is set true; the updates: section auto-clears it after ~3 ticks.
+    # -----------------------------------------------------------------
+
+    # MDI.send: generic send (C handler reads lv_textarea_get_text(mdi_input))
+    - MDI.send:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.mode: "RUNNING"
+          MDI.log_changed: "[MDI] Sending command...\n[OK] Accepted\n"
+
+    # Spindle
+    - MDI.gcode.M3:
+        set:
+          spindle.is_on: true
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.mode: "RUNNING"
+          MDI.log_changed: "> M3 S1000\n[MDI] Spindle CW start @ 1000 rpm\n[OK]\n"
+
+    - MDI.gcode.M4:
+        set:
+          spindle.is_on: true
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.mode: "RUNNING"
+          MDI.log_changed: "> M4 S800\n[MDI] Spindle CCW start @ 800 rpm\n[OK]\n"
+
+    - MDI.gcode.M5:
+        set:
+          spindle.is_on: false
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.mode: "RUNNING"
+          MDI.log_changed: "> M5\n[MDI] Spindle stopped\n[OK]\n"
+
+    # Coolant
+    - MDI.gcode.M8:
+        set:
+          coolant_on: true
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> M8\n[MDI] Coolant ON\n[OK]\n"
+
+    - MDI.gcode.M9:
+        set:
+          coolant_on: false
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> M9\n[MDI] Coolant OFF\n[OK]\n"
+
+    # Pause / stop
+    - MDI.gcode.M0:
+        set:
+          machine.program_is_paused: true
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> M0\n[MDI] Program paused (optional stop)\n[OK]\n"
+
+    - MDI.gcode.M30:
+        set:
+          machine.status_text: "IDLE"
+          machine.program_is_running: false
+          spindle.is_on: false
+          coolant_on: false
+          MDI.is_busy: false
+          MDI.busy_timer: 0
+          MDI.mode: "IDLE"
+          MDI.log_changed: "> M30\n[MDI] Program end + rewind\n[OK]\n"
+
+    - MDI.gcode.M112:
+        set:
+          machine.status_text: "ALARM"
+          machine.program_is_running: false
+          spindle.is_on: false
+          coolant_on: false
+          MDI.is_busy: false
+          MDI.busy_timer: 0
+          MDI.mode: "ERROR"
+          MDI.log_changed: "> M112\n[MDI] EMERGENCY STOP!\n!! Check machine and RESET\n"
+
+    # Coordinate modes
+    - MDI.gcode.G90:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> G90\n[MDI] Absolute positioning mode\n[OK]\n"
+
+    - MDI.gcode.G91:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> G91\n[MDI] Incremental positioning mode\n[OK]\n"
+
+    - MDI.gcode.G92:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> G92\n[MDI] Set current position as WCS origin\n[OK]\n"
+
+    # Homing
+    - MDI.gcode.G28:
+        set:
+          machine.status_text: "HOMING"
+          machine.program_is_running: false
+          homing_axis_x: true
+          homing_axis_y: true
+          homing_axis_z: true
+          motion.homed.x: false
+          motion.homed.y: false
+          motion.homed.z: false
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.mode: "RUNNING"
+          MDI.log_changed: "> G28\n[MDI] Full home sequence started (Z first)\n"
+
+    - MDI.gcode.G28Z:
+        set:
+          machine.status_text: "HOMING"
+          homing_axis_z: true
+          motion.homed.z: false
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.mode: "RUNNING"
+          MDI.log_changed: "> G28 Z0\n[MDI] Z axis home started\n"
+
+    # Tool length offset / Units / Plane
+    - MDI.gcode.G49:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> G49\n[MDI] Tool length offset cancelled\n[OK]\n"
+
+    - MDI.gcode.G20:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> G20\n[MDI] Units set to inches\n[OK]\n"
+
+    - MDI.gcode.G21:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> G21\n[MDI] Units set to millimetres\n[OK]\n"
+
+    - MDI.gcode.G17:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> G17\n[MDI] XY working plane selected\n[OK]\n"
+
+    # Status / Endstops
+    - MDI.gcode.M119:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> M119\n[MDI] Endstop status:\nX_min: open  Y_min: open  Z_min: open\n[OK]\n"
+
+    # Tool commands
+    - MDI.gcode.T0:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> T0\n[MDI] Tool 0 selected\n[OK]\n"
+
+    - MDI.gcode.probe_tool:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> G38.2 Z-20 F50\n[MDI] Tool length probe started\n"
+
+    - MDI.gcode.M6:
+        set:
+          machine.status_text: "MDI"
+          MDI.is_busy: true
+          MDI.busy_timer: 0
+          MDI.log_changed: "> M6\n[MDI] Tool change executed\n[OK]\n"
   updates:
+    # -- MDI Busy Timer --
+    # Auto-clears MDI.is_busy after ~3 simulator ticks so the input is
+    # re-enabled in the preview.  Real firmware clears this from C when
+    # the motion controller ACKs the command.
+    - when:
+        condition: MDI.is_busy
+        then:
+          - inc: { MDI.busy_timer: 1 }
+          - when:
+              condition: [>=, MDI.busy_timer, 3]
+              then:
+                - set:
+                    MDI.is_busy: false
+                    MDI.busy_timer: 0
+                    MDI.mode: "IDLE"
+                    machine.status_text: "IDLE"
+
     # -- Homing Sequence --
     - when:
         condition: [==, machine_mode, "HOMING"]

@@ -12,6 +12,7 @@
 - include: "ui_components/probing_wizard.yaml"
 - include: "ui_components/cam_positioning_view.yaml"
 - include: "ui_components/title_bar.yaml"
+- include: "ui_components/view_mdi.yaml"
 
 - type: obj
   add_style: [@container, 0]
@@ -49,12 +50,18 @@
           children:
             - type: use-view
               id: '@probing_wizard'
-        - init: { lv_tileview_add_tile: [3, 0, LV_DIR_LEFT] }
+        - init: { lv_tileview_add_tile: [3, 0, LV_DIR_LEFT | LV_DIR_RIGHT] }
           add_style: ['@container', 0]
           deferred: true
           children:
             - type: use-view
               id: '@cam_positioning_view'
+        - init: { lv_tileview_add_tile: [4, 0, LV_DIR_LEFT] }
+          add_style: ['@container', 0]
+          deferred: true
+          children:
+            - type: use-view
+              id: '@mdi_view'
 
 # This overlay will appear when the machine is disconnected.
 # It covers the whole screen and prevents interaction with other controls.
