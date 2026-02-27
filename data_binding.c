@@ -341,7 +341,7 @@ static void apply_value_to_observer(Observer* obs, const char* state_name, const
                                  (new_value.type == BINDING_TYPE_FLOAT && new_value.as.f_val != 0.0f) ||
                                  (new_value.type == BINDING_TYPE_STRING && new_value.as.s_val && *new_value.as.s_val != '\0');
                 bool is_inverse = (obs->config.config == NULL) || !(*(bool*)obs->config.config);
-                target_state = is_inverse ? !is_truthy : is_inverse;
+                target_state = is_inverse ? !is_truthy : is_truthy;
             }
             lv_obj_flag_t flag = 0; lv_state_t state = 0;
             if (obs->config.update_type == OBSERVER_TYPE_VISIBLE)  flag  = LV_OBJ_FLAG_HIDDEN;
