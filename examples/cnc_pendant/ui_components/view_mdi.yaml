@@ -1,0 +1,398 @@
+# MDI (Manual Data Input) view for the CNC pendant.
+#
+# Layout (vertical flex):
+#   1. Read-only log textarea   (flex-grow 1)
+#   2. Input row: single-line textarea + "Send" button
+#   3. Tabview with left-side tabs  (flex-grow 1)
+#        Tab 1 [LV_SYMBOL_KEYBOARD]: Full LVGL keyboard linked to the input
+#        Tab 2 [LV_SYMBOL_LIST]:     G-Code shortcut button grid
+#
+# Data-binding wiring
+#   MDI.log_changed  (state)   → log textarea text observer
+#   MDI.input        (action)  → fires VALUE_CHANGED on every keystroke;
+#                                 C handler reads text via the 'mdi_input' named pointer
+#   MDI.send         (action)  → triggered by the Send button; C handler reads
+#                                 lv_textarea_get_text(mdi_input), dispatches command,
+#                                 calls lv_textarea_set_text(mdi_input,"") to clear
+#   MDI.gcode.<CMD>  (action)  → one trigger per G/M-code button – C handler sends
+#                                 the fixed command string to the machine directly
+#- include: "../fonts.yaml"
+#- include: "../styles/global_styles.yaml"
+
+- type: style
+  id: '@mdi_send_btn'
+  bg_color: '#2255aa'
+  bg_opa: 200
+  radius: 4
+
+- type: style
+  id: '@mdi_estop_btn'
+  bg_color: '#aa2222'
+  bg_opa: 240
+  radius: 4
+  text_color: '#ffffff'
+
+- type: style
+  id: '@mdi_gcode_btn'
+  pad_all: 2
+  margin_all: 0
+  radius: 4
+  border_width: 1
+  border_color: '#555555'
+  border_opa: 180
+
+- type: style
+  id: '@mdi_log'
+  bg_color: '#111111'
+  bg_opa: 255
+  text_color: '#aaffaa'
+  text_font: @font_kode_14
+  radius: 4
+  border_width: 1
+  border_color: '#444444'
+  pad_all: 4
+
+- type: component
+  id: '@mdi_view'
+  info: |
+    MDI (Manual Data Input) view.
+    ---
+    Vertical flex layout: log area (top), single-line text input with Send button,
+    then a tabview with an LVGL keyboard (tab 1) and a G-code shortcut grid (tab 2).
+    No context required.
+  content:
+    layout: LV_LAYOUT_FLEX
+    flex_flow: LV_FLEX_FLOW_COLUMN
+    flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START]
+    add_style: ['@container', 0]
+    size: [100%, 100%]
+    pad_all: 4
+    pad_row: 4
+
+    children:
+      - type: textarea
+        id: '@mdi_log_area'
+        #named: mdi_log
+        add_style: ['@mdi_log', 0]
+        width: 100%
+        flex_grow: 1
+        #read_only: true
+        scrollbar_mode: LV_SCROLLBAR_MODE_AUTO
+        text: "                ----  MDI Initalized ----"
+        observes:
+          MDI.log_changed:
+            text: "%s"
+
+      # ---------------------------------------------------------------
+      # 2. Input row: text field + Send button
+      # ---------------------------------------------------------------
+      - layout: LV_LAYOUT_FLEX
+        flex_flow: LV_FLEX_FLOW_ROW
+        flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+        add_style: ['@container', 0]
+        width: 100%
+        height: LV_SIZE_CONTENT
+        pad_all: 0
+        pad_column: 4
+
+        children:
+          # Single-line text input – registered so C code can read / clear its text.
+          # The 'toggle' action fires LV_EVENT_VALUE_CHANGED on every keystroke.
+          # C handler calls lv_textarea_get_text(mdi_input) to get the content.
+          - type: textarea
+            id: '@mdi_input_field'
+            #named: mdi_input
+            add_style: ['@bg_gradient', 0]
+            one_line: true
+            remove_flag: LV_OBJ_FLAG_SCROLLABLE
+            height: 36
+            flex_grow: 1
+            placeholder_text: "Enter G-Code command..."
+            border_width: 1
+            border_color: '#557799'
+            border_opa: 200
+            radius: 4
+            pad_left: 6
+            pad_right: 6
+            action:
+              MDI.input: toggle   # fires on LV_EVENT_VALUE_CHANGED (each keystroke)
+            observes:
+              MDI.is_busy:
+                disabled: { true: true, false: false }
+
+          # Send button – disabled while a command is in-flight
+          - type: button
+            add_style: ['@mdi_send_btn', 0]
+            size: [50, 36]
+            action:
+              MDI.send: trigger
+            observes:
+              MDI.is_busy:
+                disabled: { true: true, false: false }
+            children:
+              - type: label
+                text: LV_SYMBOL_PLAY
+                center: []
+
+      - type: tabview
+        tab_bar_position: LV_DIR_LEFT
+        tab_bar_size: 40
+        add_style: ['@container', 0]
+        width: 100%
+        flex_grow: 1
+        pad_all: 0
+
+        children:
+
+          # Style the left tab bar itself
+          - init: { lv_tabview_get_tab_bar: [] }
+            add_style: ['@container', 0]
+            add_style: ['@bg_gradient', 0]
+            pad_all: 0
+
+          # Style the tab content area
+          - init: { lv_tabview_get_content: [] }
+            remove_flag: LV_OBJ_FLAG_SCROLLABLE
+
+          # -----------------------------------------------------------
+          # Tab 1: LVGL keyboard
+          # -----------------------------------------------------------
+          - init: { lv_tabview_add_tab: [LV_SYMBOL_KEYBOARD] }
+            add_style: ['@container', 0]
+            size: [100%, 100%]
+            pad_all: 0
+
+            children:
+              - type: keyboard
+                id: '@mdi_keyboard'
+                width: 100%
+                height: 100%
+                textarea: '@mdi_input_field'
+                observes:
+                  MDI.is_busy:
+                    disabled: { true: true, false: false }
+
+          # -----------------------------------------------------------
+          # Tab 2: G-Code shortcut grid
+          # The LV_GRID_FR(1) columns make all three columns equal-width.
+          # All rows are 44px tall; add more rows by extending the row array
+          # and adding button children with matching grid_cell coordinates.
+          # -----------------------------------------------------------
+          - init: { lv_tabview_add_tab: [LV_SYMBOL_LIST] }
+            add_style: ['@container', 0]
+            pad_all: 2
+
+            children:
+              - layout: LV_LAYOUT_GRID
+                add_style: ['@container', 0]
+                width: 100%
+                height: LV_SIZE_CONTENT
+                pad_all: 2
+                pad_row: 3
+                pad_column: 3
+                # 3 equal columns; 7 rows of 44px
+                grid_dsc_array:
+                  - [LV_GRID_FR1, LV_GRID_FR1, LV_GRID_FR1, LV_GRID_TEMPLATE_LAST]
+                  - [44, 44, 44, 44, 44, 44, 44, LV_GRID_TEMPLATE_LAST]
+
+                children:
+
+                  # ---- Row 0: Tool commands ----
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 0, 1]
+                    action: { MDI.gcode.T0: trigger }
+                    children:
+                      - type: label
+                        text: "Tool 0"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 0, 1]
+                    action: { MDI.gcode.probe_tool: trigger }
+                    children:
+                      - type: label
+                        text: "Tool Probe"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 2, 1, LV_GRID_ALIGN_STRETCH, 0, 1]
+                    action: { MDI.gcode.M6: trigger }
+                    children:
+                      - type: label
+                        text: "M6 T-Chg"
+                        center: []
+
+                  # ---- Row 1: Spindle ----
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 1, 1]
+                    action: { MDI.gcode.M3: trigger }
+                    children:
+                      - type: label
+                        text: "M3 Spindle"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 1, 1]
+                    action: { MDI.gcode.M4: trigger }
+                    children:
+                      - type: label
+                        text: "M4 Spdl CCW"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 2, 1, LV_GRID_ALIGN_STRETCH, 1, 1]
+                    action: { MDI.gcode.M5: trigger }
+                    children:
+                      - type: label
+                        text: "M5 Spdl Off"
+                        center: []
+
+                  # ---- Row 2: Coolant / Pause ----
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 2, 1]
+                    action: { MDI.gcode.M8: trigger }
+                    children:
+                      - type: label
+                        text: "M8 Coolant"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 2, 1]
+                    action: { MDI.gcode.M9: trigger }
+                    children:
+                      - type: label
+                        text: "M9 Cool.Off"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 2, 1, LV_GRID_ALIGN_STRETCH, 2, 1]
+                    action: { MDI.gcode.M0: trigger }
+                    children:
+                      - type: label
+                        text: "M0 Pause"
+                        center: []
+
+                  # ---- Row 3: Coordinate modes ----
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 3, 1]
+                    action: { MDI.gcode.G90: trigger }
+                    children:
+                      - type: label
+                        text: "G90 Abs"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 3, 1]
+                    action: { MDI.gcode.G91: trigger }
+                    children:
+                      - type: label
+                        text: "G91 Rel"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 2, 1, LV_GRID_ALIGN_STRETCH, 3, 1]
+                    action: { MDI.gcode.G92: trigger }
+                    children:
+                      - type: label
+                        text: "G92 Set WCS"
+                        center: []
+
+                  # ---- Row 4: Homing / TLO ----
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 4, 1]
+                    action: { MDI.gcode.G28: trigger }
+                    children:
+                      - type: label
+                        text: "G28 Home"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 4, 1]
+                    action: { MDI.gcode.G28Z: trigger }
+                    children:
+                      - type: label
+                        text: "G28 Z Home"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 2, 1, LV_GRID_ALIGN_STRETCH, 4, 1]
+                    action: { MDI.gcode.G49: trigger }
+                    children:
+                      - type: label
+                        text: "G49 No TLO"
+                        center: []
+
+                  # ---- Row 5: Units / Plane ----
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 5, 1]
+                    action: { MDI.gcode.G20: trigger }
+                    children:
+                      - type: label
+                        text: "G20 Inches"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 5, 1]
+                    action: { MDI.gcode.G21: trigger }
+                    children:
+                      - type: label
+                        text: "G21 Metric"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 2, 1, LV_GRID_ALIGN_STRETCH, 5, 1]
+                    action: { MDI.gcode.G17: trigger }
+                    children:
+                      - type: label
+                        text: "G17 XY Plane"
+                        center: []
+
+                  # ---- Row 6: Status / Emergency ----
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 6, 1]
+                    action: { MDI.gcode.M119: trigger }
+                    children:
+                      - type: label
+                        text: "M119 Endstop"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    add_style: ['@mdi_estop_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 6, 1]
+                    action: { MDI.gcode.M112: trigger }
+                    children:
+                      - type: label
+                        text: "M112 E-STOP"
+                        center: []
+
+                  - type: button
+                    add_style: ['@mdi_gcode_btn', 0]
+                    grid_cell: [LV_GRID_ALIGN_STRETCH, 2, 1, LV_GRID_ALIGN_STRETCH, 6, 1]
+                    action: { MDI.gcode.M30: trigger }
+                    children:
+                      - type: label
+                        text: "M30 End Prg"
+                        center: []
+
+#- type: use-view
+#  id: @mdi_view
