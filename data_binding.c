@@ -366,7 +366,7 @@ static void apply_value_to_observer(Observer* obs, const char* state_name, const
                                  (new_value.type == BINDING_TYPE_FLOAT && new_value.as.f_val != 0.0f) ||
                                  (new_value.type == BINDING_TYPE_STRING && new_value.as.s_val && *new_value.as.s_val != '\0');
                 bool is_inverse = (obs->config.config == NULL) || !(*(bool*)obs->config.config);
-                target_state = is_inverse ? !is_truthy : is_inverse;
+                target_state = is_inverse ? !is_truthy : is_truthy;
             }
             if (target_state) lv_led_on(obs->widget); else lv_led_off(obs->widget);
             break;
