@@ -250,7 +250,7 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
         if (strcmp(state_observers[i].state_name, state_name) == 0) {
             for(uint32_t j = 0; j < state_observers[i].observer_count; ++j) {
                 Observer* obs = &state_observers[i].observers[j];
-                if (!lv_obj_is_valid(obs->widget)) continue;
+                if (!obs->widget || !lv_obj_is_valid(obs->widget)) continue;
                 apply_value_to_observer(obs, state_name, &new_value);
             }
             return;
@@ -267,6 +267,7 @@ void data_binding_notify_state_changed(const char* state_name, binding_value_t n
 // add_observer's immediate replay of the last cached value.
 // ---------------------------------------------------------------------------
 static void apply_value_to_observer(Observer* obs, const char* state_name, const binding_value_t* value) {
+    if (!obs || !obs->widget) return;
     binding_value_t new_value = *value;
     switch (obs->config.update_type) {
         case OBSERVER_TYPE_TEXT: {
