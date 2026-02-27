@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <math.h>
 
 #define MAX_STATES 128
@@ -575,6 +576,12 @@ static void free_observer_config_cb(lv_event_t* e) {
         free(config->default_value);
         config->config = NULL;
         config->default_value = NULL;
+        /* Also clear the Observer.widget pointer to avoid later dereferencing
+         * of a freed LVGL object. The user_data passed to this callback is
+         * the ObserverConfig member of the Observer struct, so compute the
+         * containing Observer pointer and null its widget. */
+        Observer* obs = (Observer*)((char*)config - offsetof(Observer, config));
+        obs->widget = NULL;
         DEBUG_LOG(LOG_MODULE_DATABINDING, "Freed observer config for widget %p.", (void*)lv_event_get_target(e));
     }
 }
