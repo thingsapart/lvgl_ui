@@ -272,17 +272,20 @@ static void apply_value_to_observer(Observer* obs, const char* state_name, const
         case OBSERVER_TYPE_TEXT: {
             char buf[128];
             const char* fmt = (const char*)obs->config.config;
-            if (!fmt) fmt = "%s";
             const char* text_ptr = buf;
             switch(new_value.type) {
                 case BINDING_TYPE_FLOAT:
+                    if (!fmt) fmt = "%f";
                     if (strstr(fmt, "%d") || strstr(fmt, "%i") || strstr(fmt, "%u") || strstr(fmt, "%x"))
                         snprintf(buf, sizeof(buf), fmt, (int)round(new_value.as.f_val));
                     else
                         snprintf(buf, sizeof(buf), fmt, new_value.as.f_val);
                     break;
-                case BINDING_TYPE_BOOL:   snprintf(buf, sizeof(buf), fmt, new_value.as.b_val ? "true" : "false"); break;
+                case BINDING_TYPE_BOOL:
+                    if (!fmt) fmt = "%s";
+                    snprintf(buf, sizeof(buf), fmt, new_value.as.b_val ? "true" : "false"); break;
                 case BINDING_TYPE_STRING:
+                    if (!fmt) fmt = "%s";
                     /* When the format is a plain pass-through, use the source string
                      * directly so we don't silently truncate it into buf[128]. */
                     if (strcmp(fmt, "%s") == 0) {
