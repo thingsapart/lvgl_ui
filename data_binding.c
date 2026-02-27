@@ -270,6 +270,7 @@ static void apply_value_to_observer(Observer* obs, const char* state_name, const
             char buf[128];
             const char* fmt = (const char*)obs->config.config;
             if (!fmt) fmt = "%s";
+            const char* text_ptr = buf;
             switch(new_value.type) {
                 case BINDING_TYPE_FLOAT:
                     if (strstr(fmt, "%d") || strstr(fmt, "%i") || strstr(fmt, "%u") || strstr(fmt, "%x"))
@@ -278,10 +279,27 @@ static void apply_value_to_observer(Observer* obs, const char* state_name, const
                         snprintf(buf, sizeof(buf), fmt, new_value.as.f_val);
                     break;
                 case BINDING_TYPE_BOOL:   snprintf(buf, sizeof(buf), fmt, new_value.as.b_val ? "true" : "false"); break;
-                case BINDING_TYPE_STRING: snprintf(buf, sizeof(buf), fmt, new_value.as.s_val); break;
+                case BINDING_TYPE_STRING:
+                    /* When the format is a plain pass-through, use the source string
+                     * directly so we don't silently truncate it into buf[128]. */
+                    if (strcmp(fmt, "%s") == 0) {
+                        text_ptr = new_value.as.s_val ? new_value.as.s_val : "";
+                    } else {
+                        snprintf(buf, sizeof(buf), fmt, new_value.as.s_val);
+                    }
+                    break;
                 default:                  strncpy(buf, "N/A", sizeof(buf)); break;
             }
-            lv_label_set_text(obs->widget, buf);
+            /* Use the widget-class–appropriate API: lv_textarea_set_text for
+             * textarea widgets, lv_label_set_text for everything else.
+             * Calling lv_label_set_text on a textarea corrupts its internal
+             * label pointer (lv_textarea_t::label overlaps lv_label_t::text),
+             * leading to heap corruption and hard-to-diagnose crashes. */
+            if (lv_obj_get_class(obs->widget) == &lv_textarea_class) {
+                lv_textarea_set_text(obs->widget, text_ptr);
+            } else {
+                lv_label_set_text(obs->widget, text_ptr);
+            }
             break;
         }
         case OBSERVER_TYPE_VALUE: {

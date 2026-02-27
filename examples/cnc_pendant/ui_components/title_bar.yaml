@@ -46,9 +46,11 @@
         text: "\uF015  "
         pad_right: 0
       - type: led
+        id: @homed_all_led
         size: [15, 15]
         lv_led_off: []
         pad_left: 0
+        ext_click_area: 10
         observes: { motion.homed.all: { led_on: { true: true, false: false, default: false } } }
       - type: label
         add_style: [@titlebar_entry, 0]
