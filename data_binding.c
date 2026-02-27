@@ -228,7 +228,10 @@ static bool values_equal(const binding_value_t* v1, const binding_value_t* v2) {
     if (v1->type != v2->type) return false;
     switch(v1->type) {
         case BINDING_TYPE_BOOL: return v1->as.b_val == v2->as.b_val;
-        case BINDING_TYPE_STRING: return strcmp(v1->as.s_val, v2->as.s_val) == 0;
+        case BINDING_TYPE_STRING:
+            if (v1->as.s_val == NULL && v2->as.s_val == NULL) return true;
+            if (v1->as.s_val == NULL || v2->as.s_val == NULL) return false;
+            return strcmp(v1->as.s_val, v2->as.s_val) == 0;
         // For map keys, we assume exact float matches are intended.
         case BINDING_TYPE_FLOAT: return v1->as.f_val == v2->as.f_val;
         default: return false;
