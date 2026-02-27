@@ -195,7 +195,8 @@ void setup() {
 }
 
 void loop() {
-    lv_timer_handler(); // let LVGL handle its tasks
+    lv_task_handler(); // let LVGL handle its tasks
+    lvgl_ui_task_handler(); // drain deferred-loader queue (required for deferred tabs/tiles)
     delay(5);
 }
 ```

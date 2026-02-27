@@ -146,6 +146,20 @@ UseView {
 
 The `deferred` property enables **lazy page loading**: the children of a widget are extracted from `create_ui` into a separate `static void` C function. The `deferred_loader` runtime calls that function only when its panel becomes the active page, and calls `lv_obj_clean` when the user navigates away — freeing heap between `lv_task_handler()` calls. This is especially useful on memory-constrained targets like the ESP32-S3.
 
+> **Required: call `lvgl_ui_task_handler()` in your main loop**
+>
+> Deferred loading no longer uses `lv_async_call`. Instead, it queues work internally and drains it from `lvgl_ui_task_handler()`. You **must** call this function once per main-loop iteration, immediately after `lv_task_handler()`, otherwise the initial tab/tile content will never be populated and tab-switch events will be silently ignored.
+>
+> ```c
+> while (1) {
+>     lv_task_handler();
+>     lvgl_ui_task_handler(); // required when using deferred components
+>     vTaskDelay(pdMS_TO_TICKS(5));
+> }
+> ```
+>
+> This design avoids `lv_async_call`, which internally calls `lv_malloc` / FreeRTOS mutex APIs that are unsafe to invoke from an ISR or timer callback context (as seen on ESP32-S3 / FreeRTOS targets).
+
 **Syntax**
 
 | Value | Effect |
