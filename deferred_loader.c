@@ -2,12 +2,6 @@
 #include "utils.h"
 #include <stdlib.h>
 
-/* lv_async_call lets us schedule work to run after the current event/draw
- * cycle completes.  This is required when creating or deleting LVGL objects
- * from inside a VALUE_CHANGED handler that fires mid-scroll-animation,
- * otherwise LVGL's in-progress draw pass crashes. */
-#include "misc/lv_async.h"
-
 /* ---------------------------------------------------------------------------
  * Internal data structures
  * ---------------------------------------------------------------------------
@@ -33,15 +27,6 @@ typedef struct DeferredParentReg {
 
 /* Global doubly-linked list of all registered parents. */
 static DeferredParentReg* s_parents = NULL;
-
-/* Context passed to lv_async_call.
- * Stores only the raw parent pointer so the callback can look up the preg
- * safely.  If the parent is deleted before the async fires, free_parent_reg
- * removes it from s_parents and the callback gets NULL from find_parent_reg.
- * Never store the preg* itself here: it may be freed before the async runs. */
-typedef struct {
-    lv_obj_t* parent;
-} ApplyAsyncCtx;
 
 /* ---------------------------------------------------------------------------
  * Internal helpers
@@ -122,57 +107,11 @@ static void apply_active_child(DeferredParentReg* preg, lv_obj_t* active_child)
     }
 }
 
-/**
- * lv_async_call callback: runs apply_active_child outside the event/draw cycle.
- * This avoids crashes caused by creating LVGL objects mid-scroll-animation.
- *
- * Safety guarantees:
- *  - ctx->parent is used only as a key into s_parents.  If the parent was
- *    deleted while the async was pending, free_parent_reg has already removed
- *    the entry from the list, so find_parent_reg returns NULL and we bail.
- *  - async_pending is cleared before doing any work so a VALUE_CHANGED that
- *    fires during create_fn will schedule a fresh async rather than being
- *    silently dropped.
- *  - active_child is re-queried here (not at schedule time) so we always act
- *    on the tile/tab that is actually active when LVGL is quiescent, even if
- *    several VALUE_CHANGED events fired during the scroll animation.
- */
-static void apply_active_child_async(void* user_data)
+/* Mark a parent dirty so lvgl_ui_task_handler() will process it.  Coalesces
+ * multiple VALUE_CHANGED events into one apply — the last active child wins. */
+static void mark_dirty(DeferredParentReg* preg)
 {
-    ApplyAsyncCtx*     ctx  = (ApplyAsyncCtx*)user_data;
-    DeferredParentReg* preg = find_parent_reg(ctx->parent);
-    free(ctx);
-
-    if (!preg) return; /* parent was deleted while async was pending — safe to skip */
-
-    /* Clear the flag BEFORE applying so any VALUE_CHANGED that fires during
-     * create_fn can schedule a new async. */
-    preg->async_pending = false;
-
-    lv_obj_t* active_child = get_active_child(preg->parent);
-    if (!active_child && preg->first_child) {
-        active_child = preg->first_child->child; /* tileview init fallback */
-    }
-    if (active_child) {
-        apply_active_child(preg, active_child);
-    }
-}
-
-/* Schedule an async apply for parent, unless one is already in flight. */
-static void schedule_async(DeferredParentReg* preg)
-{
-    if (preg->async_pending) return; /* coalesce: one async is enough */
-    ApplyAsyncCtx* ctx = malloc(sizeof(ApplyAsyncCtx));
-    if (!ctx) {
-        /* OOM fallback: run synchronously — caller must be outside draw cycle. */
-        lv_obj_t* active_child = get_active_child(preg->parent);
-        if (!active_child && preg->first_child) active_child = preg->first_child->child;
-        if (active_child) apply_active_child(preg, active_child);
-        return;
-    }
-    ctx->parent = preg->parent;
-    preg->async_pending = true;
-    lv_async_call(apply_active_child_async, ctx);
+    preg->async_pending = true;  /* field reused as "dirty" flag */
 }
 
 /**
@@ -187,7 +126,7 @@ static void deferred_loader_event_cb(lv_event_t* e)
     if (!preg) return;
 
     if (code == LV_EVENT_VALUE_CHANGED) {
-        schedule_async(preg);
+        mark_dirty(preg);
     } else if (code == LV_EVENT_DELETE) {
         /* free_parent_reg removes the entry from s_parents before freeing.
          * Any pending async will fire, find_parent_reg returns NULL, and bail. */
@@ -245,7 +184,31 @@ void deferred_loader_init(lv_obj_t* scroll_parent)
     lv_obj_add_event_cb(scroll_parent, deferred_loader_event_cb,
                         LV_EVENT_DELETE, NULL);
 
-    /* Schedule initial population via lv_async_call so that it executes after
-     * create_ui (and the full lv_obj tree construction) has returned. */
-    schedule_async(preg);
+    /* Mark dirty so that the first lvgl_ui_task_handler() call (which the
+     * application must invoke after lv_task_handler()) will populate the
+     * initially-active child.  This avoids any lv_async / lv_malloc / mutex
+     * usage that is unsafe in ISR / FreeRTOS timer context. */
+    mark_dirty(preg);
+}
+
+void deferred_loader_task_handler(void)
+{
+    DeferredParentReg* preg = s_parents;
+    while (preg) {
+        DeferredParentReg* next = preg->next; /* safe: apply may not free preg */
+        if (preg->async_pending) {
+            /* Clear BEFORE applying so a VALUE_CHANGED that fires during
+             * create_fn schedules a fresh pass rather than being dropped. */
+            preg->async_pending = false;
+
+            lv_obj_t* active_child = get_active_child(preg->parent);
+            if (!active_child && preg->first_child) {
+                active_child = preg->first_child->child; /* initial-load fallback */
+            }
+            if (active_child) {
+                apply_active_child(preg, active_child);
+            }
+        }
+        preg = next;
+    }
 }

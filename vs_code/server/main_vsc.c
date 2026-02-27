@@ -18,6 +18,7 @@
 #include "yaml_parser.h"
 #include "lvgl_assert_handler.h"
 #include "ui_sim.h" // ADDED: For UI-Sim
+#include "lvgl_ui.h" // For lvgl_ui_task_handler()
 
 // --- Configuration Defines ---
 #define STDIN_BUFFER_SIZE 65536 // 64KB buffer for input commands
@@ -724,6 +725,9 @@ int main(int argc, char* argv[]) {
             if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Loop end. Calling lv_timer_handler().\n");
             // This will call flush_cb if a redraw is needed.
             lv_timer_handler();
+            // Drain the deferred-loader queue (lazy tab/tile population).
+            // Must run after lv_timer_handler() and outside any ISR/draw cycle.
+            lvgl_ui_task_handler();
         } else {
             if (g_logging_enabled) fprintf(stderr, "SERVER_LOG: Loop end. Skipping lv_timer_handler() because no-timers mode is active.\n");
         }

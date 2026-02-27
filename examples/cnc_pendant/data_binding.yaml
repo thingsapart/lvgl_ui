@@ -149,6 +149,11 @@
           case:
             - [machine.program_is_running, [add, 0, [mul, [div, [sub, chipload, chipload_min], [sub, chipload_max, chipload_min]], 100]]]
             - [true, 0]
+    # -- File lists for UI filelist view (mock data for UI-Sim) --
+    - Job.items: [string, "job_a.ngc\njob_b.ngc\njob_c.ngc\n"]
+    - Macro.items: [string, "home_all\nzero_all\nprobe_tool\n"]
+    - selected_job_index: -1.0
+    - selected_macro_index: -1.0
   actions:
     # -- Machine Control --
     - action.motion.jog.axis_select_x:
@@ -409,6 +414,15 @@
           MDI.is_busy: true
           MDI.busy_timer: 0
           MDI.log_changed: "> M6\n[MDI] Tool change executed\n[OK]\n"
+    # -- Filelist actions (triggered by UI value_changed events) --
+    - Job.execute:
+        set:
+          selected_job_index: value.float
+          machine.status_text: "JOB SELECTED"
+    - Macro.execute:
+        set:
+          selected_macro_index: value.float
+          machine.status_text: "MACRO SELECTED"
   updates:
     # -- MDI Busy Timer --
     # Auto-clears MDI.is_busy after ~3 simulator ticks so the input is
@@ -426,43 +440,6 @@
                     MDI.busy_timer: 0
                     MDI.mode: "IDLE"
                     machine.status_text: "IDLE"
-
-    # -- Homing Sequence --
-    - when:
-        condition: [==, machine_mode, "HOMING"]
-        then:
-          # Step 1: Home Z axis if requested and not already done
-          - when:
-              condition: [and, homing_axis_z, !motion.homed.z]
-              then:
-                - dec: { pos_z: 2.5 } # Move towards zero
-                - when:
-                    condition: [<=, pos_z, 0]
-                    then:
-                      - set: { pos_z: 0, motion.homed.z: true }
-          # Step 2: Home X and Y axes if requested, but only after Z is done
-          - when:
-              condition: [and, [or, homing_axis_x, homing_axis_y], motion.homed.z]
-              then:
-                - when:
-                    condition: [and, homing_axis_x, !motion.homed.x]
-                    then:
-                      - dec: { pos_x: 2.5 }
-                      - when:
-                          condition: [<=, pos_x, 0]
-                          then: { set: { pos_x: 0, motion.homed.x: true } }
-                - when:
-                    condition: [and, homing_axis_y, !motion.homed.y]
-                    then:
-                      - dec: { pos_y: 2.5 }
-                      - when:
-                          condition: [<=, pos_y, 0]
-                          then: {set: { pos_y: 0, motion.homed.y: true }}
-          # Step 3: Finish Homing Cycle when all requested axes are done
-          - when:
-              condition: [and, [==, homing_axis_x, motion.homed.x], [==, homing_axis_y, motion.homed.y], [==, homing_axis_z, motion.homed.z]]
-              then:
-                - set: { machine.status_text: "IDLE", homing_axis_x: false, homing_axis_y: false, homing_axis_z: false }
 
     # -- Program Execution and Movement --
     - when:

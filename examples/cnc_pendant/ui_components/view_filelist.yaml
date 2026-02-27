@@ -17,6 +17,14 @@
 #   Macro.execute (action, value_changed)          → value = selected row index
 
 # -----------------------------------------------------------------------
+# Standalone Testing Only
+# -----------------------------------------------------------------------
+# - include: "../fonts.yaml"
+# - include: "../styles/global_styles.yaml"
+# - include: "../data_bintylesding.yaml"
+# -----------------------------------------------------------------------
+
+# -----------------------------------------------------------------------
 # Styles
 # -----------------------------------------------------------------------
 
@@ -38,6 +46,7 @@
   border_color: '#333333'
   border_width: 1
   border_opa: 200
+  text_font: @font_kode_20
 
 - type: style
   id: '@filelist_table_cell_selected'
@@ -138,3 +147,7 @@
                     items: null
                 action:
                   Macro.execute: value_changed
+
+# --- Standalone Testing Only ---
+# - type: use-view
+#  id: @filelist_view

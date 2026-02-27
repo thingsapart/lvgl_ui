@@ -39,8 +39,8 @@ void deferred_loader_register(lv_obj_t* scroll_parent,
  *
  * Installs LV_EVENT_VALUE_CHANGED and LV_EVENT_DELETE handlers on the parent
  * so that children are created/destroyed as the active page changes.
- * Also immediately populates the currently-active child so the initial view
- * shows content.
+ * Marks the parent dirty so that the first deferred_loader_task_handler() call
+ * populates the currently-active child.
  *
  * Must be called after all deferred_loader_register() calls for the same
  * parent.
@@ -48,6 +48,22 @@ void deferred_loader_register(lv_obj_t* scroll_parent,
  * @param scroll_parent  The same widget passed to deferred_loader_register().
  */
 void deferred_loader_init(lv_obj_t* scroll_parent);
+
+/**
+ * @brief Process all pending deferred-load work.
+ *
+ * Must be called by the application once per main loop iteration, immediately
+ * after lv_task_handler().  Running here (outside LVGL's draw/event cycle and
+ * outside any ISR) is safe for object creation, lv_malloc, and FreeRTOS
+ * primitives.
+ *
+ * Typical usage:
+ * @code
+ *   lv_task_handler();
+ *   lvgl_ui_task_handler(); // or call deferred_loader_task_handler() directly
+ * @endcode
+ */
+void deferred_loader_task_handler(void);
 
 #ifdef __cplusplus
 }

@@ -16,8 +16,13 @@
 #                                 calls lv_textarea_set_text(mdi_input,"") to clear
 #   MDI.gcode.<CMD>  (action)  → one trigger per G/M-code button – C handler sends
 #                                 the fixed command string to the machine directly
+
+# -----------------------------------------------------------------------
+# Standalone Testing Only
+# -----------------------------------------------------------------------
 #- include: "../fonts.yaml"
 #- include: "../styles/global_styles.yaml"
+# -----------------------------------------------------------------------
 
 - type: style
   id: '@mdi_send_btn'
@@ -394,5 +399,6 @@
                         text: "M30 End Prg"
                         center: []
 
+# --- Standalone Testing Only ---
 #- type: use-view
 #  id: @mdi_view

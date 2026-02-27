@@ -10,3 +10,7 @@ void lvgl_ui_deinit(void) {
     // data_binding doesn't have a separate deinit; its resources are freed
     // when the associated widgets are deleted, which triggers LV_EVENT_DELETE.
 }
+
+void lvgl_ui_task_handler(void) {
+    deferred_loader_task_handler();
+}
