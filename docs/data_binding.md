@@ -58,6 +58,46 @@ You define an action on a widget using the `action` key. The value is a map wher
         *   `text`: The title text to display on the dialog.
         *   `format`: A `printf`-style format string for the label that shows the slider's current value (e.g., `"%g%%"`).
 
+5.  **`value_changed`**: Listens on `LV_EVENT_VALUE_CHANGED` and automatically extracts the widget's **current value**, dispatching it to the action handler. The value type depends on the widget:
+
+    | Widget | Value sent | Type |
+    |--------|-----------|------|
+    | `lv_table` | 0-based selected row index | `BINDING_TYPE_FLOAT` |
+    | `lv_slider` | slider value | `BINDING_TYPE_FLOAT` |
+    | `lv_arc` | arc value | `BINDING_TYPE_FLOAT` |
+    | `lv_dropdown` | 0-based selected option index | `BINDING_TYPE_FLOAT` |
+    | `lv_roller` | 0-based selected option index | `BINDING_TYPE_FLOAT` |
+    | `lv_spinbox` | spinbox integer value | `BINDING_TYPE_FLOAT` |
+    | `lv_switch` / `lv_checkbox` | checked state | `BINDING_TYPE_BOOL` |
+
+    This action is complementary to the `toggle` action (which is also fine for switches/checkboxes) and is the intended partner for the `items` observer on tables:
+
+    ```yaml
+    - type: table
+      observes:
+        Job.items:
+          items: null        # populates the table rows from a newline-delimited string
+      action:
+        Job.execute: value_changed  # fires with selected row index
+    ```
+
+    In your C handler:
+    ```c
+    if (strcmp(action_name, "Job.execute") == 0) {
+        uint32_t row = (uint32_t)value.as.f_val; // 0-based index
+        launch_job(app, row);
+    }
+    ```
+
+    Works equally for other widgets:
+    ```yaml
+    - type: slider
+      action: { settings.brightness: value_changed }  # fires with float slider value
+
+    - type: dropdown
+      action: { settings.mode: value_changed }  # fires with float selected index
+    ```
+
 ### Implementing the Action Handler in C
 
 To receive these actions in your application, you must implement a single handler function and register it.
@@ -217,6 +257,28 @@ The `observes` key contains a map of `state_name` keys to one or more **bindings
 *   **`checked`**: Toggles the widget's checked state (`LV_STATE_CHECKED`). The configuration must be a map from state values to booleans.
 *   **`disabled`**: Toggles the widget's disabled state (`LV_STATE_DISABLED`). The configuration must be a map from state values to booleans.
 *   **`led_on`**: Turns an LVGL `led` object on/off using `lv_led_on()` and `lv_led_off()`. The configuration must be a map from state values to booleans (or a direct boolean), similar to `visible` and `checked`.
+
+*   **`items`**: Populates a list-like widget — currently `lv_table` — from a **newline-delimited string** of item labels. Each line in the string becomes one row in the table. When the state changes the entire table is cleared and repopulated; the vertical scroll position is saved and restored so the operator's current view is preserved as much as possible.
+
+    The table is configured as a single-column table and the column width is auto-sized to the widget's content width at the time the data arrives.
+
+    ```yaml
+    - type: table
+      id: '@jobs_table'
+      observes:
+        Job.items:
+          items: null   # no config required; `null` is the conventional value
+    ```
+
+    Sending state from C:
+    ```c
+    // Build a newline-delimited list of job names
+    const char* items = "job_001.nc\njob_002.nc\nfixture_probe.nc";
+    data_binding_notify_state_changed("Job.items",
+        (binding_value_t){.type = BINDING_TYPE_STRING, .as.s_val = items});
+    ```
+
+    The `items` observer is most useful together with the `value_changed` action — see the **Action Types** section above.
 
 ### Notifying the UI of State Changes in C
 

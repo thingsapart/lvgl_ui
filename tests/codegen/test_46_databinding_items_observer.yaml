@@ -1,0 +1,10 @@
+# Test: `items` observer populates an lv_table from a newline-delimited string state.
+# The observer is registered with OBSERVER_TYPE_ITEMS (7) and no config args.
+
+- type: table
+  id: '@jobs_table'
+  size: [200, 180]
+  center: []
+  observes:
+    Job.items:
+      items: null

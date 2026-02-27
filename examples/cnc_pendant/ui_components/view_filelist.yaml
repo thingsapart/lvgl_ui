@@ -1,0 +1,140 @@
+# File List view for the CNC pendant.
+#
+# Layout: tabview with left-side icon tabs
+#   Tab 1 [LV_SYMBOL_SD_CARD]: Job files provided by the machine interface
+#   Tab 2 [LV_SYMBOL_DRIVE]:   Macros provided by the machine interface
+#
+# Each tab contains a single-column lv_table that is populated via the new
+# `items` observer binding.  When the operator taps a row the `value_changed`
+# action fires, delivering the 0-based row index as a BINDING_TYPE_FLOAT to
+# the application's action handler.
+#
+# Data-binding wiring
+#   Job.items    (state, STRING newline-delimited) → items observer on jobs table
+#   Job.execute  (action, value_changed)           → value = selected row index
+#
+#   Macro.items  (state, STRING newline-delimited) → items observer on macros table
+#   Macro.execute (action, value_changed)          → value = selected row index
+
+# -----------------------------------------------------------------------
+# Styles
+# -----------------------------------------------------------------------
+
+- type: style
+  id: '@filelist_table'
+  bg_color: '#111111'
+  bg_opa: 255
+  text_color: '#ebebcb'
+  border_width: 0
+  radius: 0
+  pad_all: 0
+
+- type: style
+  id: '@filelist_table_cell'
+  pad_top: 9
+  pad_bottom: 9
+  pad_left: 10
+  pad_right: 6
+  border_color: '#333333'
+  border_width: 1
+  border_opa: 200
+
+- type: style
+  id: '@filelist_table_cell_selected'
+  bg_color: '#2255aa'
+  bg_opa: 200
+  text_color: '#ffffff'
+
+# -----------------------------------------------------------------------
+# Component
+# -----------------------------------------------------------------------
+
+- type: component
+  id: '@filelist_view'
+  info: |
+    File list view – Jobs and Macros.
+    Left tab bar; each tab holds a single-column lv_table populated via the
+    `items` observer.  Selecting a row fires a `value_changed` action.
+    ---
+    State inputs:
+      Job.items   (STRING, newline-delimited list of job names)
+      Macro.items (STRING, newline-delimited list of macro names)
+    Actions out:
+      Job.execute   – value_changed, value = row index (BINDING_TYPE_FLOAT)
+      Macro.execute – value_changed, value = row index (BINDING_TYPE_FLOAT)
+    No context required.
+  content:
+    layout: LV_LAYOUT_FLEX
+    flex_flow: LV_FLEX_FLOW_COLUMN
+    flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START]
+    add_style: ['@container', 0]
+    size: [100%, 100%]
+    pad_all: 0
+
+    children:
+      - type: tabview
+        id: '@filelist_tabview'
+        tab_bar_position: LV_DIR_LEFT
+        tab_bar_size: 44
+        add_style: ['@container', 0]
+        size: [100%, 100%]
+        pad_all: 0
+
+        children:
+
+          # Style the left tab bar strip
+          - init: { lv_tabview_get_tab_bar: [] }
+            add_style: ['@container', 0]
+            add_style: ['@bg_gradient', 0]
+            pad_all: 4
+            pad_row: 6
+
+          # Tab content area – no extra scrollbar on the container itself
+          - init: { lv_tabview_get_content: [] }
+            add_style: ['@container', 0]
+            pad_all: 0
+            remove_flag: LV_OBJ_FLAG_SCROLLABLE
+
+          # -----------------------------------------------------------
+          # Tab 1: Jobs  [LV_SYMBOL_SD_CARD]
+          # -----------------------------------------------------------
+          - init: { lv_tabview_add_tab: [LV_SYMBOL_SD_CARD] }
+            add_style: ['@container', 0]
+            size: [100%, 100%]
+            pad_all: 0
+
+            children:
+              - type: table
+                id: '@filelist_jobs_table'
+                add_style: ['@filelist_table', 0]
+                add_style: ['@filelist_table_cell', LV_PART_ITEMS]
+                add_style: ['@filelist_table_cell_selected', "LV_PART_ITEMS | LV_STATE_PRESSED"]
+                size: [100%, 100%]
+                scrollbar_mode: LV_SCROLLBAR_MODE_AUTO
+                observes:
+                  Job.items:
+                    items: null
+                action:
+                  Job.execute: value_changed
+
+          # -----------------------------------------------------------
+          # Tab 2: Macros  [LV_SYMBOL_DRIVE]
+          # -----------------------------------------------------------
+          - init: { lv_tabview_add_tab: [LV_SYMBOL_DRIVE] }
+            add_style: ['@container', 0]
+            size: [100%, 100%]
+            pad_all: 0
+
+            children:
+              - type: table
+                id: '@filelist_macros_table'
+                add_style: ['@filelist_table', 0]
+                add_style: ['@filelist_table_cell', LV_PART_ITEMS]
+                add_style: ['@filelist_table_cell_selected', "LV_PART_ITEMS | LV_STATE_PRESSED"]
+                size: [100%, 100%]
+                scrollbar_mode: LV_SCROLLBAR_MODE_AUTO
+                observes:
+                  Macro.items:
+                    items: null
+                action:
+                  Macro.execute: value_changed

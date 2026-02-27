@@ -48,7 +48,16 @@ typedef enum {
     ACTION_TYPE_TRIGGER,        // Simple, stateless event
     ACTION_TYPE_TOGGLE,         // Toggles between bool true/false (0/1)
     ACTION_TYPE_CYCLE,          // Cycles through a list of predefined values
-    ACTION_TYPE_NUMERIC_DIALOG, // Opens a modal dialog to input a number
+    ACTION_TYPE_NUMERIC_DIALOG,   // Opens a modal dialog to input a number
+    ACTION_TYPE_VALUE_CHANGED,     // Listens on LV_EVENT_VALUE_CHANGED and automatically
+                                   // extracts the widget's current value:
+                                   //   lv_table   → selected row index   (BINDING_TYPE_FLOAT)
+                                   //   lv_slider  → slider value          (BINDING_TYPE_FLOAT)
+                                   //   lv_arc     → arc value             (BINDING_TYPE_FLOAT)
+                                   //   lv_dropdown→ selected option index (BINDING_TYPE_FLOAT)
+                                   //   lv_roller  → selected option index (BINDING_TYPE_FLOAT)
+                                   //   lv_spinbox → spinbox value         (BINDING_TYPE_FLOAT)
+                                   //   lv_switch / lv_checkbox → checked state (BINDING_TYPE_BOOL)
 } action_type_t;
 
 /**
@@ -62,6 +71,8 @@ typedef enum {
     OBSERVER_TYPE_DISABLED,
     OBSERVER_TYPE_LED_ON,
     OBSERVER_TYPE_VALUE, // For sliders, bars, arcs, etc.
+    OBSERVER_TYPE_ITEMS, // For lv_table: newline-delimited string of item labels.
+                         // Clears and repopulates the widget rows; scroll position preserved.
 } observer_update_type_t;
 
 

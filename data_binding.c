@@ -394,6 +394,58 @@ static void apply_value_to_observer(Observer* obs, const char* state_name, const
             }
             break;
         }
+        case OBSERVER_TYPE_ITEMS: {
+            // Populates an lv_table with newline-delimited item labels.
+            // Clears the table and repopulates it, preserving the scroll position.
+            if (new_value.type != BINDING_TYPE_STRING) {
+                print_warning("State '%s' sent non-string data to an 'items' binding.", state_name);
+                return;
+            }
+            if (lv_obj_get_class(obs->widget) != &lv_table_class) {
+                print_warning("'items' observer is only supported for lv_table widgets (state '%s').", state_name);
+                return;
+            }
+            const char* src = new_value.as.s_val ? new_value.as.s_val : "";
+
+            // Count non-empty lines (a trailing \n does not add an extra empty row)
+            uint32_t row_cnt = 0;
+            if (*src != '\0') {
+                row_cnt = 1;
+                for (const char* p = src; *p; p++) {
+                    if (*p == '\n' && *(p + 1) != '\0') row_cnt++;
+                }
+            }
+
+            // Save scroll position before rebuilding rows
+            int32_t scroll_y = lv_obj_get_scroll_y(obs->widget);
+
+            lv_table_set_column_count(obs->widget, 1);
+            lv_table_set_row_count(obs->widget, row_cnt);
+
+            // Make the single column fill the widget's content width
+            int32_t col_w = lv_obj_get_content_width(obs->widget);
+            if (col_w > 0) lv_table_set_column_width(obs->widget, 0, col_w);
+
+            // Populate cell values
+            if (row_cnt > 0) {
+                char* buf = strdup(src);
+                if (buf) {
+                    char* saveptr = NULL;
+                    char* token = strtok_r(buf, "\n", &saveptr);
+                    uint32_t row = 0;
+                    while (token && row < row_cnt) {
+                        lv_table_set_cell_value(obs->widget, row, 0, token);
+                        token = strtok_r(NULL, "\n", &saveptr);
+                        row++;
+                    }
+                    free(buf);
+                }
+            }
+
+            // Restore scroll position
+            lv_obj_scroll_to_y(obs->widget, scroll_y, LV_ANIM_OFF);
+            break;
+        }
     }
 }
 
@@ -515,6 +567,8 @@ void data_binding_add_action(lv_obj_t* widget, const char* action_name, action_t
     lv_event_code_t code = LV_EVENT_CLICKED;
 
     if (type == ACTION_TYPE_TOGGLE) {
+        code = LV_EVENT_VALUE_CHANGED;
+    } else if (type == ACTION_TYPE_VALUE_CHANGED) {
         code = LV_EVENT_VALUE_CHANGED;
     } else if (type == ACTION_TYPE_CYCLE) {
         if (!cycle_values || cycle_value_count == 0) {
@@ -792,6 +846,38 @@ static void generic_action_event_cb(lv_event_t* e) {
                 user_data->current_index = (user_data->current_index + 1) % user_data->value_count;
             }
             break;
+        case ACTION_TYPE_VALUE_CHANGED: {
+            // Inspect widget class and extract its "current value" automatically.
+            lv_obj_t* target = lv_event_get_target(e);
+            const lv_obj_class_t* cls = lv_obj_get_class(target);
+            if (cls == &lv_table_class) {
+                uint32_t row = 0, col = 0;
+                lv_table_get_selected_cell(target, &row, &col);
+                val.type = BINDING_TYPE_FLOAT;
+                val.as.f_val = (float)row;
+            } else if (cls == &lv_slider_class) {
+                val.type = BINDING_TYPE_FLOAT;
+                val.as.f_val = (float)lv_slider_get_value(target);
+            } else if (cls == &lv_arc_class) {
+                val.type = BINDING_TYPE_FLOAT;
+                val.as.f_val = (float)lv_arc_get_value(target);
+            } else if (cls == &lv_dropdown_class) {
+                val.type = BINDING_TYPE_FLOAT;
+                val.as.f_val = (float)lv_dropdown_get_selected(target);
+            } else if (cls == &lv_roller_class) {
+                val.type = BINDING_TYPE_FLOAT;
+                val.as.f_val = (float)lv_roller_get_selected(target);
+            } else if (cls == &lv_spinbox_class) {
+                val.type = BINDING_TYPE_FLOAT;
+                val.as.f_val = (float)lv_spinbox_get_value(target);
+            } else if (cls == &lv_switch_class || cls == &lv_checkbox_class) {
+                val.type = BINDING_TYPE_BOOL;
+                val.as.b_val = lv_obj_has_state(target, LV_STATE_CHECKED);
+            } else {
+                print_warning("ACTION_TYPE_VALUE_CHANGED fired on an unsupported widget class.");
+            }
+            break;
+        }
         case ACTION_TYPE_NUMERIC_DIALOG: // Should not be reached
             break;
     }

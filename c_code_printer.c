@@ -316,7 +316,10 @@ static void print_node(IRNode* node, int indent_level, const char* parent_c_name
             print_indent(indent_level);
             printf("data_binding_add_observer(\"%s\", %s, %d, ", obs->state_name, target_c_name, obs->update_type);
 
-            if (obs->config_expr->base.type == IR_EXPR_LITERAL) {
+            if (obs->update_type == OBSERVER_TYPE_ITEMS) {
+                // Items observer needs no config; the runtime handler uses the value directly.
+                printf("NULL, 0, NULL");
+            } else if (obs->config_expr->base.type == IR_EXPR_LITERAL) {
                 IRExprLiteral* lit = (IRExprLiteral*)obs->config_expr;
                 if (lit->is_string) {
                     print_c_string_literal(lit->value, lit->len);

@@ -1,0 +1,38 @@
+# Test: `value_changed` action on several widget types.
+# Each widget registers ACTION_TYPE_VALUE_CHANGED (4) on LV_EVENT_VALUE_CHANGED.
+# The runtime extracts the appropriate typed value per widget class.
+
+- type: table
+  id: '@file_table'
+  size: [200, 120]
+  lv_obj_align: [LV_ALIGN_TOP_LEFT, 10, 10]
+  action:
+    File.select: value_changed
+
+- type: slider
+  id: '@brightness_slider'
+  width: 200
+  lv_obj_align: [LV_ALIGN_TOP_LEFT, 10, 150]
+  action:
+    Settings.brightness: value_changed
+
+- type: arc
+  id: '@speed_arc'
+  size: [100, 100]
+  lv_obj_align: [LV_ALIGN_TOP_LEFT, 230, 10]
+  action:
+    Motor.speed: value_changed
+
+- type: dropdown
+  id: '@mode_dropdown'
+  lv_obj_align: [LV_ALIGN_TOP_LEFT, 230, 150]
+  options: "Mode A\nMode B\nMode C"
+  action:
+    Settings.mode: value_changed
+
+- type: roller
+  id: '@axis_roller'
+  lv_obj_align: [LV_ALIGN_TOP_LEFT, 10, 300]
+  lv_roller_set_options: ["X\nY\nZ", LV_ROLLER_MODE_NORMAL]
+  action:
+    Jog.axis: value_changed

@@ -845,6 +845,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                         else if (strcmp(binding_key, "disabled") == 0) update_type = OBSERVER_TYPE_DISABLED;
                         else if (strcmp(binding_key, "led_on") == 0) update_type = OBSERVER_TYPE_LED_ON;
                         else if (strcmp(binding_key, "value") == 0) update_type = OBSERVER_TYPE_VALUE;
+                        else if (strcmp(binding_key, "items") == 0) update_type = OBSERVER_TYPE_ITEMS;
                         else {
                             print_warning("Unknown binding type '%s' for observable '%s'.", binding_key, state_name);
                             continue;
@@ -870,6 +871,7 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                     if (cJSON_IsString(act_item)) {
                         if (strcmp(act_item->valuestring, "trigger") == 0) action_type = ACTION_TYPE_TRIGGER;
                         else if (strcmp(act_item->valuestring, "toggle") == 0) action_type = ACTION_TYPE_TOGGLE;
+                        else if (strcmp(act_item->valuestring, "value_changed") == 0) action_type = ACTION_TYPE_VALUE_CHANGED;
                         else {
                              print_warning("Unknown action type string '%s' for action '%s'.", act_item->valuestring, action_name);
                              continue;
