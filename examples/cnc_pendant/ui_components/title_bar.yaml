@@ -81,4 +81,8 @@
             add_style: [@container, 0]
             size: [100%, 100%]
             ext_click_area: 20
-            lv_dropdown_set_options: ["Jog/Pos\nProbe\nProbe Wiz"]
+            lv_dropdown_set_options: ["Jog/Pos\nProbe\nProbe Wiz\nCamera\nMDI\nJobs/Macros\nStatus\nI/O Panel\nSetings\n"]
+            action:
+              View.select: value_changed
+            observes: 
+              ui.active_tile_index: value

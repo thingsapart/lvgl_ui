@@ -13,7 +13,7 @@
 #include "generator.h"
 #include "lvgl_renderer.h"
 #include "registry.h"
-#include "utils.h"
+#include "lvgl_ui_utils.h"
 #include "cJSON.h"
 #include "yaml_parser.h"
 #include "lvgl_assert_handler.h"

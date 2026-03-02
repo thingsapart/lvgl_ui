@@ -1,7 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "utils.h"
+#include "lvgl_ui_utils.h"
 #include <limits.h>
 #include <string.h>
 #include <ctype.h>

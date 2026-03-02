@@ -1,5 +1,5 @@
 #include "data_binding.h"
-#include "utils.h" // For print_warning
+#include "lvgl_ui_utils.h" // For print_warning
 #include "debug_log.h"
 #include "ui_sim.h"
 #include <stdlib.h>
@@ -318,9 +318,10 @@ static void apply_value_to_observer(Observer* obs, const char* state_name, const
             int32_t val = (int32_t)round(new_value.as.f_val);
             lv_anim_enable_t anim = obs->config.config ? *(lv_anim_enable_t*)obs->config.config : LV_ANIM_ON;
             const lv_obj_class_t* cls = lv_obj_get_class(obs->widget);
-            if      (cls == &lv_bar_class)    lv_bar_set_value(obs->widget, val, anim);
-            else if (cls == &lv_slider_class) lv_slider_set_value(obs->widget, val, anim);
-            else if (cls == &lv_arc_class)    lv_arc_set_value(obs->widget, val);
+            if      (cls == &lv_bar_class)      lv_bar_set_value(obs->widget, val, anim);
+            else if (cls == &lv_slider_class)   lv_slider_set_value(obs->widget, val, anim);
+            else if (cls == &lv_arc_class)      lv_arc_set_value(obs->widget, val);
+            else if (cls == &lv_dropdown_class) lv_dropdown_set_selected(obs->widget, val);
             else    print_warning("Widget does not support 'value' observation.");
             break;
         }

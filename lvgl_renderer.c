@@ -2,7 +2,7 @@
 #include "data_binding.h"
 #include "debug_log.h"
 #include "registry.h"
-#include "utils.h"
+#include "lvgl_ui_utils.h"
 #include "generator.h"
 #include "viewer/view_inspector.h"
 #include "ui_sim.h" // ADDED: For UI-Sim lifecycle management

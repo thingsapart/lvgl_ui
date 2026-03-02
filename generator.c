@@ -3,7 +3,7 @@
 #include "api_spec.h"
 #include "registry.h"
 #include "debug_log.h"
-#include "utils.h"
+#include "lvgl_ui_utils.h"
 #include "yaml_parser.h"
 #include "ui_sim.h" // ADDED: For UI-Sim processing
 #include <stdio.h>

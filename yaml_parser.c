@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <limits.h>
-#include "utils.h"
+#include "lvgl_ui_utils.h"
 
 #define YAML_PARSER_MAX_DEPTH 64
 #define YAML_PARSER_MAX_LINE_LEN 1024

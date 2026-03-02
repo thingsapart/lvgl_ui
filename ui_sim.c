@@ -1,6 +1,6 @@
 #include "ui_sim.h"
 #include "debug_log.h"
-#include "utils.h"
+#include "lvgl_ui_utils.h"
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>

@@ -354,7 +354,7 @@ RenderValue dynamic_lvgl_call_ir(const char* func_name, void* target_obj, struct
  */
 #include "lvgl_dispatch.h"
 #include "ir.h"
-#include "utils.h" // For ir_node_get_... helpers
+#include "lvgl_ui_utils.h" // For ir_node_get_... helpers
 #include "api_spec.h"
 #include <string.h>
 #include <stdlib.h>

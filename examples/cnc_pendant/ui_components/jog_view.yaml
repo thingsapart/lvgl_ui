@@ -73,7 +73,7 @@
               override_state: set_speed_override
           - type: use-view
             id: '@jog_feed'
-            observes: { machine.program_is_running: { visible: { true: false, false: true } } }
+            observes: { machine.spindle_is_running: { visible: { true: false, false: true } } }
             context:
               unit: MM
               label: JOG
@@ -81,12 +81,12 @@
               pad: 18
           - type: use-view
             id: '@chipload_scale'
-            observes: { machine.program_is_running: { visible: { true: true, false: false } } }
+            observes: { machine.spindle_is_running: { visible: { true: true, false: false } } }
             context:
               unit: /MIN
               label: Chipload
               letter: C
               pad: 4
-              range_min: -50
+              range_min: 0
               range_max: 150
-              rate_value: chipload_disp
+              rate_value: machine.chipload_relative

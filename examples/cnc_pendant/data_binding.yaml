@@ -149,11 +149,47 @@
           case:
             - [machine.program_is_running, [add, 0, [mul, [div, [sub, chipload, chipload_min], [sub, chipload_max, chipload_min]], 100]]]
             - [true, 0]
+
+    # -- New canonical chipload observables (used by chipload_scale and view_job_status) --
+    # machine.chipload: current chipload in mm/tooth
+    - machine.chipload: { derived_expr: [add, 0.0, chipload] }
+    # machine.chipload_relative: 0-150 scale where 100 = chipload_max (optimal).
+    # Values above 100 mean over-loaded (up to 150); 0 when spindle is off.
+    - machine.chipload_relative:
+        derived_expr:
+          case:
+            - [spindle.is_on, [clamp, [mul, [div, chipload, chipload_max], 100], 0, 150]]
+            - [true, 0]
+    # machine.spindle_is_running: true while spindle is on
+    - machine.spindle_is_running:
+        derived_expr:
+          case:
+            - [spindle.is_on, true]
+            - [true, false]
+    # Canonical tool properties
+    - tool.diameter_mm: { derived_expr: [add, 0.0, tool_dia] }
+    - tool.flute_count: { derived_expr: [add, 0.0, tool_n_flutes] }
+
+    # -- Job Status View derived values --
+    # Seconds remaining: clamped to [0, total]
+    - program_time_remaining:
+        derived_expr: [clamp, [sub, program_total_time, program_elapsed_time], 0, program_total_time]
+
+    # Feed rate as 0-100 % of feed_max
+    - feedrate_display_pct:
+        derived_expr: [clamp, [mul, [div, motion.feedrate_current, feed_max], 100], 0, 100]
+
+    # Spindle RPM as 0-100 % of spindle_rpm_max
+    - spindle_display_pct:
+        derived_expr: [clamp, [mul, [div, spindle.speed_rpm, spindle_rpm_max], 100], 0, 100]
     # -- File lists for UI filelist view (mock data for UI-Sim) --
     - Job.items: [string, "job_a.ngc\njob_b.ngc\njob_c.ngc\n"]
     - Macro.items: [string, "home_all\nzero_all\nprobe_tool\n"]
     - selected_job_index: -1.0
     - selected_macro_index: -1.0
+
+    # -- Job Status View --
+    - job.name: [string, "job_a.ngc"]  # Name of the currently selected / active job
   actions:
     # -- Machine Control --
     - action.motion.jog.axis_select_x:

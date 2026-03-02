@@ -1,5 +1,5 @@
 #include "obj_registry.h"
-#include "utils.h" // For print_warning
+#include "lvgl_ui_tils.h" // For print_warning
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

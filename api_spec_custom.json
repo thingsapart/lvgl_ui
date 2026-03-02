@@ -1,7 +1,5 @@
 {
-  "constants": {
-    "LV_FONT_DEFAULT": "LV_FONT_DEFAULT"
-  },
+  "constants": {},
   "enums": {
     "lv_cam_pos_mode_t": {
       "LV_CAM_POS_MODE_NONE": 0,
@@ -14,6 +12,13 @@
       "LV_CAM_STREAM_FIT_COVER": 1,
       "LV_CAM_STREAM_FIT_FILL": 2,
       "LV_CAM_STREAM_FIT_NONE": 3
+    },
+    "io_category_t": {
+      "IO_CAT_INPUTS": 0,
+      "IO_CAT_OUTPUTS": 1,
+      "IO_CAT_SENSORS": 2,
+      "IO_CAT_ACTUATORS": 3,
+      "IO_CAT__COUNT": 4
     },
     "lv_probing_wizard_mode_t": {
       "LV_PROBING_WIZARD_MODE_RECTANGLE": 0,
@@ -108,6 +113,24 @@
         "lv_obj_t *obj"
       ]
     },
+    "lv_cam_positioning_wizard_cancel": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_cam_positioning_clear_status_text": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
     "lv_cam_stream_create": {
       "return_type": "lv_obj_t*",
       "args": [
@@ -164,6 +187,35 @@
       ],
       "args_named": [
         "lv_obj_t *obj"
+      ]
+    },
+    "lv_cnc_io_panel_create": {
+      "return_type": "lv_obj_t*",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *parent"
+      ]
+    },
+    "lv_cnc_io_panel_destroy": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *panel"
+      ]
+    },
+    "lv_cnc_io_panel_set_category": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "io_category_t"
+      ],
+      "args_named": [
+        "lv_obj_t *panel",
+        "io_category_t cat"
       ]
     },
     "lv_probing_wizard_register_stub_callbacks": {
@@ -368,6 +420,55 @@
       "args_named": [
         "lv_obj_t * obj"
       ]
+    },
+    "lv_settings_create": {
+      "return_type": "lv_obj_t*",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *parent"
+      ]
+    },
+    "lv_settings_refresh": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_settings_encoder_input": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "int32_t"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "int32_t diff"
+      ]
+    },
+    "lv_settings_has_encoder_focus": {
+      "return_type": "bool",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_settings_encoder_navigate": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "int32_t"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "int32_t dir"
+      ]
     }
   },
   "widgets": {},
@@ -379,8 +480,10 @@
     "c_gen": [
       "ui/components/lv_cam_positioning.h",
       "ui/components/lv_cam_stream.h",
+      "ui/components/lv_cnc_io_panel.h",
       "ui/components/lv_probing_wizard_stubs.h",
       "ui/components/lv_probing_wizard.h",
+      "ui/components/lv_settings.h",
       "ui.h"
     ]
   }

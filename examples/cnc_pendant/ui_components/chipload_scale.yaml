@@ -3,7 +3,9 @@
   info: |
     Chipload display combining a labeled scale and tool info.
     ---
-    Left column is `labeled_scale` and right column shows tool properties and min/max chipload. Context variables: $rate_value, $range_min, $range_max.
+    Left column is `labeled_scale` and right column shows tool properties and current chipload.
+    Context variables: $rate_value (→ machine.chipload_relative), $range_min, $range_max.
+    Observes: machine.chipload, tool.diameter_mm, tool.flute_count, tool_material.
   content:
     size: [100%, 100%]
     add_style: ['@container_transp', 0]
@@ -19,7 +21,7 @@
       - type: use-view
         id: @labeled_scale
 
-      # Right Column: units, override
+      # Right Column: tool info + current chipload value
       - layout: LV_LAYOUT_FLEX
         add_style: ['@container_transp', 0]
         flex_flow: LV_FLEX_FLOW_COLUMN
@@ -36,20 +38,14 @@
             add_style: [@indicator_yellow, 0]
             observes: { tool_material: { text: "%s" } }
           - type: label
+            text_font: '@font_kode_14'
             add_style: [@indicator_yellow, 0]
-            observes: { tool_dia: { text: "%g mm" } }
+            observes: { tool.diameter_mm: { text: "%g mm" } }
           - type: label
             text_font: '@font_kode_14'
             add_style: [@indicator_yellow, 0]
-            observes: { tool_n_flutes: { text: "%g-FL" } }
-          - add_style: [@flex_y, 0]
-            add_style: [@container_transp, 0]
-            size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
-            pad_row: 0
-            children:
-              - type: label
-                text_font: '@font_kode_14'
-                observes: { chipload_min: { text: "%0.2f" } }
-              - type: label
-                text_font: '@font_kode_14'
-                observes: { chipload_max: { text: "%0.2f" } }
+            observes: { tool.flute_count: { text: "%g FL" } }
+          - type: label
+            text_font: '@font_kode_14'
+            add_style: [@indicator_yellow, 0]
+            observes: { machine.chipload: { text: "%0.3f" } }

@@ -4,7 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
-#include "utils.h"
+#include "lvgl_ui_utils.h"
 
 // Helper to safely strdup, returning NULL if input is NULL
 static char* safe_strdup(const char* s) {

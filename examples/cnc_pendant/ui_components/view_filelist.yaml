@@ -21,7 +21,7 @@
 # -----------------------------------------------------------------------
 # - include: "../fonts.yaml"
 # - include: "../styles/global_styles.yaml"
-# - include: "../data_bintylesding.yaml"
+# - include: "../data_binding.yaml"
 # -----------------------------------------------------------------------
 
 # -----------------------------------------------------------------------
@@ -33,7 +33,8 @@
   bg_color: '#111111'
   bg_opa: 255
   text_color: '#ebebcb'
-  border_width: 0
+  border_width: 1
+  size: [100%, 100%]
   radius: 0
   pad_all: 0
 
@@ -46,7 +47,7 @@
   border_color: '#333333'
   border_width: 1
   border_opa: 200
-  text_font: @font_kode_20
+  text_font: @font_kode_14
 
 - type: style
   id: '@filelist_table_cell_selected'
@@ -86,7 +87,6 @@
         tab_bar_position: LV_DIR_LEFT
         tab_bar_size: 44
         add_style: ['@container', 0]
-        size: [100%, 100%]
         pad_all: 0
 
         children:
@@ -109,7 +109,6 @@
           # -----------------------------------------------------------
           - init: { lv_tabview_add_tab: [LV_SYMBOL_SD_CARD] }
             add_style: ['@container', 0]
-            size: [100%, 100%]
             pad_all: 0
 
             children:
@@ -118,8 +117,9 @@
                 add_style: ['@filelist_table', 0]
                 add_style: ['@filelist_table_cell', LV_PART_ITEMS]
                 add_style: ['@filelist_table_cell_selected', "LV_PART_ITEMS | LV_STATE_PRESSED"]
-                size: [100%, 100%]
+                lv_table_set_column_width: [0, 100%]
                 scrollbar_mode: LV_SCROLLBAR_MODE_AUTO
+                scroll_dir: LV_DIR_VER
                 observes:
                   Job.items:
                     items: null
@@ -131,7 +131,6 @@
           # -----------------------------------------------------------
           - init: { lv_tabview_add_tab: [LV_SYMBOL_DRIVE] }
             add_style: ['@container', 0]
-            size: [100%, 100%]
             pad_all: 0
 
             children:
@@ -140,8 +139,9 @@
                 add_style: ['@filelist_table', 0]
                 add_style: ['@filelist_table_cell', LV_PART_ITEMS]
                 add_style: ['@filelist_table_cell_selected', "LV_PART_ITEMS | LV_STATE_PRESSED"]
-                size: [100%, 100%]
+                lv_table_set_column_width: [0, 100%]
                 scrollbar_mode: LV_SCROLLBAR_MODE_AUTO
+                scroll_dir: LV_DIR_VER
                 observes:
                   Macro.items:
                     items: null
@@ -150,4 +150,4 @@
 
 # --- Standalone Testing Only ---
 # - type: use-view
-#  id: @filelist_view
+#   id: @filelist_view

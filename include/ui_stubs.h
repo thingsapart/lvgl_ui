@@ -17,6 +17,14 @@ typedef enum {
 } lv_cam_stream_fit_t;
 
 typedef enum {
+    IO_CAT_INPUTS = 0,
+    IO_CAT_OUTPUTS = 1,
+    IO_CAT_SENSORS = 2,
+    IO_CAT_ACTUATORS = 3,
+    IO_CAT__COUNT = 4,
+} io_category_t;
+
+typedef enum {
     LV_PROBING_WIZARD_MODE_RECTANGLE = 0,
     LV_PROBING_WIZARD_MODE_CIRCLE = 1,
     LV_PROBING_WIZARD_MODE_CORNER = 2,
@@ -79,6 +87,14 @@ static inline bool lv_cam_positioning_has_grid(lv_obj_t *obj) {
     return 0;
 }
 
+static inline void lv_cam_positioning_wizard_cancel(lv_obj_t *obj) {
+    (void)0;
+}
+
+static inline void lv_cam_positioning_clear_status_text(lv_obj_t *obj) {
+    (void)0;
+}
+
 static inline lv_obj_t* lv_cam_stream_create(lv_obj_t *parent) {
     return 0;
 }
@@ -101,6 +117,18 @@ static inline void lv_cam_stream_refresh(lv_obj_t *obj) {
 
 static inline lv_obj_t* lv_cam_stream_get_image_obj(lv_obj_t *obj) {
     return 0;
+}
+
+static inline lv_obj_t* lv_cnc_io_panel_create(lv_obj_t *parent) {
+    return 0;
+}
+
+static inline void lv_cnc_io_panel_destroy(lv_obj_t *panel) {
+    (void)0;
+}
+
+static inline void lv_cnc_io_panel_set_category(lv_obj_t *panel, io_category_t cat) {
+    (void)0;
 }
 
 static inline void lv_probing_wizard_register_stub_callbacks(lv_obj_t * obj) {
@@ -177,6 +205,26 @@ static inline bool lv_probing_wizard_get_is_inside(lv_obj_t * obj) {
 
 static inline lv_probing_wizard_corner_t lv_probing_wizard_get_corner_type(lv_obj_t * obj) {
     return 0;
+}
+
+static inline lv_obj_t* lv_settings_create(lv_obj_t *parent) {
+    return 0;
+}
+
+static inline void lv_settings_refresh(lv_obj_t *obj) {
+    (void)0;
+}
+
+static inline void lv_settings_encoder_input(lv_obj_t *obj, int32_t diff) {
+    (void)0;
+}
+
+static inline bool lv_settings_has_encoder_focus(lv_obj_t *obj) {
+    return 0;
+}
+
+static inline void lv_settings_encoder_navigate(lv_obj_t *obj, int32_t dir) {
+    (void)0;
 }
 
 #endif /* UI_STUBS_H_ */

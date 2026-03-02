@@ -3,7 +3,7 @@
 #include <string.h>
 #include <cJSON.h>
 
-#include "utils.h"
+#include "lvgl_ui_utils.h"
 #include "api_spec.h"
 #include "generator.h"
 #include "ir.h"

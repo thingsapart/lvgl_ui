@@ -2,7 +2,7 @@
 #include <stdlib.h> // For malloc, calloc, free, NULL
 #include <string.h> // For strdup, strcmp
 #include <stdio.h> // For perror, fprintf, stderr
-#include "utils.h" // For render_abort, print_warning, levenshtein_distance
+#include "lvgl_ui_utils.h" // For render_abort, print_warning, levenshtein_distance
 #include "debug_log.h"
 
 // --- Global Configuration (from main.c) ---

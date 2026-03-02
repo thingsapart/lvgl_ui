@@ -1,7 +1,7 @@
 #include "c_code_printer.h"
 #include "ir.h"
 #include "api_spec.h"
-#include "utils.h" // For render_abort
+#include "lvgl_ui_utils.h" // For render_abort
 #include "data_binding.h" // For NumericDialogConfig
 #include <stdio.h>
 #include <stdlib.h>

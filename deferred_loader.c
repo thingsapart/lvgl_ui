@@ -1,5 +1,5 @@
 #include "deferred_loader.h"
-#include "utils.h"
+#include "lvgl_ui_utils.h"
 #include <stdlib.h>
 
 /* ---------------------------------------------------------------------------
