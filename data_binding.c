@@ -321,7 +321,15 @@ static void apply_value_to_observer(Observer* obs, const char* state_name, const
             if      (cls == &lv_bar_class)      lv_bar_set_value(obs->widget, val, anim);
             else if (cls == &lv_slider_class)   lv_slider_set_value(obs->widget, val, anim);
             else if (cls == &lv_arc_class)      lv_arc_set_value(obs->widget, val);
-            else if (cls == &lv_dropdown_class) lv_dropdown_set_selected(obs->widget, val);
+            // else if (cls == &lv_dropdown_class) lv_dropdown_set_selected(obs->widget, val);
+            else if (cls == &lv_dropdown_class) {
+                /* Only call set_selected when the index actually changes to
+                 * avoid a re-entrant VALUE_CHANGED → View.select → tileview
+                 * → notify → observer loop. LVGL already guards internally,
+                 * but the explicit check avoids firing the action handler. */
+                if (lv_dropdown_get_selected(obs->widget) != (uint32_t)val)
+                    lv_dropdown_set_selected(obs->widget, (uint32_t)val);
+            }
             else    print_warning("Widget does not support 'value' observation.");
             break;
         }
