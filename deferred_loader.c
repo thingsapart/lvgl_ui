@@ -88,21 +88,28 @@ static lv_obj_t* get_active_child(lv_obj_t* parent)
  */
 static void apply_active_child(DeferredParentReg* preg, lv_obj_t* active_child)
 {
+    /* Pass 1: clean all stale tiles first so their heap is returned before
+     * the active tile is created.  Without this, scrolling toward a tile
+     * that is earlier in the registration list creates the new tile while the
+     * old one is still allocated — both tiles live in LVGL heap simultaneously,
+     * exhausting it and causing lv_malloc_zeroed() to return NULL
+     * → lv_style_init(NULL) → StoreProhibited crash. */
     for (DeferredChildReg* c = preg->first_child; c; c = c->next) {
-        if (c->child == active_child) {
-            if (!c->populated) {
-                _dprintf(stderr, "[deferred_loader] Creating children for %p\n",
-                         (void*)c->child);
-                c->create_fn(c->child);
-                c->populated = true;
-            }
-        } else {
-            if (c->populated) {
-                _dprintf(stderr, "[deferred_loader] Cleaning children for %p\n",
-                         (void*)c->child);
-                lv_obj_clean(c->child);
-                c->populated = false;
-            }
+        if (c->child != active_child && c->populated) {
+            _dprintf(stderr, "[deferred_loader] Cleaning children for %p\n",
+                     (void*)c->child);
+            lv_obj_clean(c->child);
+            c->populated = false;
+        }
+    }
+
+    /* Pass 2: create the active tile (heap is now free). */
+    for (DeferredChildReg* c = preg->first_child; c; c = c->next) {
+        if (c->child == active_child && !c->populated) {
+            _dprintf(stderr, "[deferred_loader] Creating children for %p\n",
+                     (void*)c->child);
+            c->create_fn(c->child);
+            c->populated = true;
         }
     }
 }
