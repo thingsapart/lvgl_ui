@@ -1,0 +1,15 @@
+# Test: include inside an ifdef branch — included file's components must be
+# registered and usable via use-view (regression: expand_includes_in_array
+# didn't recurse into ifdef branch arrays).
+- define: "USE_WIDGET"
+- ifdef:
+    USE_WIDGET:
+      - include: "data/ifdef_branch_component.yaml"
+      - type: use-view
+        id: '@included_comp'
+        context:
+          lbl: "included widget"
+    else:
+      - type: label
+        text: "no widget"
+        center: []

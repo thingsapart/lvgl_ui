@@ -57,6 +57,7 @@
   border_color: '#444444'
   pad_all: 4
 
+
 - type: component
   id: '@mdi_view'
   info: |
@@ -77,7 +78,7 @@
     children:
       - type: textarea
         id: '@mdi_log_area'
-        #named: mdi_log
+        named: mdi_log
         add_style: ['@mdi_log', 0]
         width: 100%
         flex_grow: 1
@@ -106,7 +107,7 @@
           # C handler calls lv_textarea_get_text(mdi_input) to get the content.
           - type: textarea
             id: '@mdi_input_field'
-            #named: mdi_input
+            named: mdi_input
             add_style: ['@bg_gradient', 0]
             one_line: true
             remove_flag: LV_OBJ_FLAG_SCROLLABLE
@@ -140,12 +141,18 @@
                 center: []
 
       - type: tabview
-        tab_bar_position: LV_DIR_LEFT
-        tab_bar_size: 40
         add_style: ['@container', 0]
         width: 100%
         flex_grow: 1
         pad_all: 0
+        tab_bar_size: 40
+        
+        ifdef:
+          UI_LARGE:
+            - { lv_tabview_set_tab_bar_position: [LV_DIR_BOTTOM] }
+            - { lv_tabview_set_tab_bar_size: 30 }
+          else:
+            - { lv_tabview_set_tab_bar_position: [LV_DIR_LEFT] }
 
         children:
 

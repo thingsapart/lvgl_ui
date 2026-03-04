@@ -3,6 +3,8 @@
 #include "lvgl.h"
 #include "lvgl_ui.h"
 #include <stdlib.h> // For malloc
+#include <stdio.h>  // For snprintf
+#include <string.h> // For strlen/getenv handling
 
 // --- Memory Allocator (define LVGL_UI_MALLOC/FREE before this file to override) ---
 #ifndef LVGL_UI_MALLOC
@@ -19,11 +21,29 @@
   #define LVGL_UI_FREE(ptr) free(ptr)
 #endif
 
+// --- OOM / Home-path helpers ---
+static void lvgl_ui_handle_oom(const char* where) {
+    LV_LOG_ERROR("LVGL UI: OOM at %s", where);
+#ifdef LVGL_UI_OOM_FOREVER
+    for(;;) { /* spin */ }
+#else
+    volatile int* _p = (volatile int*)0; *_p = 0; /* force crash */
+#endif
+}
+
+static char* lvgl_ui_expand_home_path(const char* rest) {
+    const char* _h = getenv("HOME");
+    if (_h) { size_t _n = strlen(_h) + strlen(rest) + 2; char* _buf = LVGL_UI_MALLOC(_n); if (!_buf) { lvgl_ui_handle_oom("expand_home_path"); return NULL; } snprintf(_buf, _n, "%s%s", _h, rest); return _buf; }
+    return (char*)rest; /* fallback: return literal rest when HOME unavailable */
+}
+
 // --- Custom Includes from API Spec ---
 #include "ui/components/lv_cam_positioning.h"
 #include "ui/components/lv_cam_stream.h"
+#include "ui/components/lv_cnc_io_panel.h"
 #include "ui/components/lv_probing_wizard_stubs.h"
 #include "ui/components/lv_probing_wizard.h"
+#include "ui/components/lv_settings.h"
 #include "ui.h"
 
 void create_ui(lv_obj_t* parent) {

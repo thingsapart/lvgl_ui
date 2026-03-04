@@ -236,6 +236,22 @@ const cJSON* registry_get_component(const Registry* reg, const char* name) {
     return NULL;
 }
 
+void registry_free_vars_since(Registry* reg, VarRegistryNode* snapshot) {
+    if (!reg) return;
+    // Free all VarRegistryNode entries prepended after 'snapshot' was taken,
+    // then restore the head back to that snapshot.
+    VarRegistryNode* cur = reg->generated_vars;
+    while (cur && cur != snapshot) {
+        VarRegistryNode* next = cur->next;
+        free(cur->name);
+        free(cur->c_var_name);
+        free(cur->c_type);
+        free(cur);
+        cur = next;
+    }
+    reg->generated_vars = snapshot;
+}
+
 void registry_add_generated_var(Registry* reg, const char* name, const char* c_var_name, const char* c_type) {
     if (!reg || !name || !c_var_name) return; // c_type can be null
     const char* key = (name[0] == '@') ? name + 1 : name;

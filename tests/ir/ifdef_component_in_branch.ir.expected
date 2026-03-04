@@ -1,0 +1,31 @@
+[IR_NODE_ROOT]
+  [IR_NODE_DEFINE] symbol="UI_SMALL"
+  [IR_NODE_IFDEF] 
+    [BRANCH 0] condition="UI_SMALL"
+      [IR_NODE_OBJECT]       [IR_NODE_OBJECT] c_name="label_0" json_type="label" c_type="lv_obj_t*"
+        [CONSTRUCTOR_EXPR]
+          [IR_EXPR_FUNCTION_CALL] type: <lv_obj_t*> func_name="lv_label_create"
+            [ARGS]
+              [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=parent
+        [OPERATIONS]
+          [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_label_set_text"
+            [ARGS]
+              [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=label_0
+              [IR_EXPR_LITERAL] type: <const char*> value=hello from branch is_string=true
+          [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_center"
+            [ARGS]
+              [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=label_0
+    [BRANCH 1] condition=else
+      [IR_NODE_OBJECT]       [IR_NODE_OBJECT] c_name="label_0" json_type="label" c_type="lv_obj_t*"
+        [CONSTRUCTOR_EXPR]
+          [IR_EXPR_FUNCTION_CALL] type: <lv_obj_t*> func_name="lv_label_create"
+            [ARGS]
+              [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=parent
+        [OPERATIONS]
+          [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_label_set_text"
+            [ARGS]
+              [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=label_0
+              [IR_EXPR_LITERAL] type: <const char*> value=fallback is_string=true
+          [IR_EXPR_FUNCTION_CALL] type: <void> func_name="lv_obj_center"
+            [ARGS]
+              [IR_EXPR_REGISTRY_REF] type: <lv_obj_t*> name=label_0

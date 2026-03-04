@@ -31,6 +31,11 @@ typedef struct IRNode {
         IR_NODE_OBSERVER,
         IR_NODE_ACTION,
 
+        // Preprocessor / conditional nodes (must stay BEFORE IR_EXPR_LITERAL
+        // so the `type >= IR_EXPR_LITERAL` expression-check excludes them)
+        IR_NODE_DEFINE,        // - define: "SYMBOL"
+        IR_NODE_IFDEF,         // - ifdef: { COND: [...], else: [...] }
+
         // Expression nodes
         IR_EXPR_LITERAL,
         IR_EXPR_ENUM,
@@ -194,6 +199,30 @@ typedef struct IROperationNode {
     struct IROperationNode* next;
 } IROperationNode;
 
+// --- Preprocessor / Conditional Nodes ---
+
+// Represents: - define: "SYMBOL"
+// lvgl_render: adds SYMBOL to the runtime defines set.
+// c_code:      emits a comment; the user provides the -DSYMBOL flag externally.
+typedef struct {
+    IRNode base;
+    char* symbol;
+} IRDefine;
+
+// One branch of an ifdef block: condition_string -> operations
+typedef struct IRIfdefBranch {
+    char* condition;         // NULL for the "else" branch
+    IROperationNode* ops;    // Items in this branch (objects + nested ops)
+    struct IRIfdefBranch* next;
+} IRIfdefBranch;
+
+// Represents: - ifdef: { COND: [...], else: [...] }
+// Branches are in declaration order; the "else" branch (condition==NULL) last.
+typedef struct {
+    IRNode base;
+    IRIfdefBranch* branches;
+} IRIfdef;
+
 // Represents a widget, style, or other UI object from the spec
 typedef struct IRObject {
     IRNode base;
@@ -225,7 +254,8 @@ typedef struct IRComponent {
 typedef struct {
     IRNode base;
     IRComponent* components;
-    IRObject* root_objects;
+    IRObject* root_objects;    // Objects at root level (for analysis traversals)
+    IROperationNode* root_ops; // Ordered root-level ops: objects + define/ifdef nodes
 } IRRoot;
 
 
@@ -255,6 +285,9 @@ IRComponent* ir_new_component_def(const char* id, IRObject* root_widget);
 IRProperty* ir_new_property(const char* name, IRExpr* value);
 IRWithBlock* ir_new_with_block(IRExpr* target, IRExprNode* calls, IRObject* children);
 IRWarning* ir_new_warning(const char* message);
+IRDefine*  ir_new_define(const char* symbol);
+IRIfdefBranch* ir_new_ifdef_branch(const char* condition); // NULL condition = "else"
+IRIfdef*   ir_new_ifdef(IRIfdefBranch* branches);
 IRObserver* ir_new_observer(const char* state_name, observer_update_type_t update_type, IRExpr* config_expr);
 IRAction* ir_new_action(const char* action_name, action_type_t action_type, IRExpr* data);
 

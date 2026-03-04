@@ -1,0 +1,12 @@
+- type: component
+  id: '@settings_view'
+  content:
+    id: @settings_panel_contaoner
+    size: [100%, 100%]
+    add_style: [@container, 0]
+    children:
+      - init: { lv_settings_create: [] }
+        id: @settings_panel
+        name: io_panel
+        add_style: [@container, 0]
+        size: [100%, 100%]

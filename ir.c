@@ -184,6 +184,26 @@ IRWarning* ir_new_warning(const char* message) {
     return warn;
 }
 
+IRDefine* ir_new_define(const char* symbol) {
+    IRDefine* def = calloc(1, sizeof(IRDefine));
+    def->base.type = IR_NODE_DEFINE;
+    def->symbol = safe_strdup(symbol);
+    return def;
+}
+
+IRIfdefBranch* ir_new_ifdef_branch(const char* condition) {
+    IRIfdefBranch* br = calloc(1, sizeof(IRIfdefBranch));
+    br->condition = condition ? safe_strdup(condition) : NULL; // NULL = else
+    return br;
+}
+
+IRIfdef* ir_new_ifdef(IRIfdefBranch* branches) {
+    IRIfdef* ifn = calloc(1, sizeof(IRIfdef));
+    ifn->base.type = IR_NODE_IFDEF;
+    ifn->branches = branches;
+    return ifn;
+}
+
 IRObserver* ir_new_observer(const char* state_name, observer_update_type_t update_type, IRExpr* config_expr) {
     IRObserver* obs = calloc(1, sizeof(IRObserver));
     obs->base.type = IR_NODE_OBSERVER;
@@ -365,6 +385,18 @@ void ir_free(IRNode* node) {
         case IR_NODE_ROOT: {
             IRRoot* root = (IRRoot*)node;
             free_component_def_list(root->components);
+            // Free root_ops FIRST (while root_objects objects are still valid).
+            // IR_NODE_OBJECT entries in root_ops are borrowed refs — do NOT free
+            // the pointed-to objects here; they are owned by root_objects below.
+            for (IROperationNode* op = root->root_ops; op; ) {
+                IROperationNode* next = op->next;
+                if (op->op_node && op->op_node->type != IR_NODE_OBJECT) {
+                    ir_free(op->op_node); // frees define/ifdef nodes
+                }
+                free(op); // free the wrapper node itself
+                op = next;
+            }
+            // Now free the objects (and their children/operations).
             free_object_list(root->root_objects);
             break;
         }
@@ -404,6 +436,23 @@ void ir_free(IRNode* node) {
         case IR_NODE_WARNING: {
             IRWarning* warn = (IRWarning*)node;
             free(warn->message);
+            break;
+        }
+        case IR_NODE_DEFINE: {
+            IRDefine* def = (IRDefine*)node;
+            free(def->symbol);
+            break;
+        }
+        case IR_NODE_IFDEF: {
+            IRIfdef* ifn = (IRIfdef*)node;
+            IRIfdefBranch* br = ifn->branches;
+            while (br) {
+                IRIfdefBranch* next_br = br->next;
+                free(br->condition);
+                free_operation_list(br->ops); // frees owned objects in branches
+                free(br);
+                br = next_br;
+            }
             break;
         }
         case IR_NODE_OBSERVER: {

@@ -1,0 +1,10 @@
+- type: component
+  id: '@io_panel_view'
+  content:
+    id: @io_panel_cont
+    size: [100%, 100%]
+    children:
+      - init: { lv_cnc_io_panel_create: [] }
+        id: @io_panel
+        name: io_panel
+        size: [100%, 100%]

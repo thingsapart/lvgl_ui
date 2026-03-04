@@ -26,7 +26,9 @@ typedef struct MapNode {
 
 // --- Deferred Object Collection ---
 typedef struct DeferredNode {
-    IRObject* obj;
+    IRObject*       obj;
+    IRIfdef*        guard_ifdef;   // NULL = emit unconditionally
+    IRIfdefBranch*  guard_branch;  // which branch within guard_ifdef
     struct DeferredNode* next;
 } DeferredNode;
 
@@ -331,6 +333,57 @@ static void print_node(IRNode* node, int indent_level, const char* parent_c_name
             print_indent(indent_level);
             printf("// [GENERATOR HINT] %s\n", ((IRWarning*)node)->message);
             break;
+        case IR_NODE_DEFINE: {
+            // For the c_code backend a `define` is only a renderer hint.
+            // Emit a comment so the user knows the expected build flag.
+            IRDefine* def = (IRDefine*)node;
+            print_indent(indent_level);
+            printf("/* define: %s  (set at compile time via -D%s) */\n\n", def->symbol, def->symbol);
+            break;
+        }
+        case IR_NODE_IFDEF: {
+            // Emit #ifdef / #elif / #else / #endif blocks.
+            IRIfdef* ifn = (IRIfdef*)node;
+            bool first = true;
+            for (IRIfdefBranch* br = ifn->branches; br; br = br->next) {
+                if (br->condition) {
+                    if (first) {
+                        print_indent(indent_level);
+                        printf("#ifdef %s\n", br->condition);
+                    } else {
+                        print_indent(indent_level);
+                        printf("#elif defined(%s)\n", br->condition);
+                    }
+                    first = false;
+                } else {
+                    // else branch — condition is NULL
+                    if (first) {
+                        // ifdef with only an else (unusual but allowed)
+                        print_indent(indent_level);
+                        printf("#if 1 /* always (else-only ifdef) */\n");
+                        first = false;
+                    } else {
+                        print_indent(indent_level);
+                        printf("#else\n");
+                    }
+                }
+                // Emit ops inside this branch
+                for (IROperationNode* bop = br->ops; bop; bop = bop->next) {
+                    IRNode* bn = bop->op_node;
+                    if (bn->type == IR_NODE_OBJECT) {
+                        // Objects in ifdef branches have ->next == NULL (no siblings chain)
+                        print_object_list((IRObject*)bn, indent_level, parent_c_name, id_map, array_map, hoisted_vars);
+                    } else {
+                        print_node(bn, indent_level, parent_c_name, target_c_name, id_map, array_map, hoisted_vars);
+                    }
+                }
+            }
+            if (!first) {
+                print_indent(indent_level);
+                printf("#endif\n\n");
+            }
+            break;
+        }
         case IR_NODE_OBSERVER: {
             IRObserver* obs = (IRObserver*)node;
             print_indent(indent_level);
@@ -465,6 +518,8 @@ static void print_node(IRNode* node, int indent_level, const char* parent_c_name
 
 // --- Traversal and Code Generation Logic ---
 
+static void build_id_map_from_ops(IROperationNode* ops, IdMapNode** map_head);
+
 static void build_id_map_recursive(IRObject* head, IdMapNode** map_head) {
     for (IRObject* current = head; current; current = current->next) {
         if (current->registered_id && current->c_name && current->c_type) {
@@ -477,7 +532,24 @@ static void build_id_map_recursive(IRObject* head, IdMapNode** map_head) {
         for (IROperationNode* op = current->operations; op; op = op->next) {
             if (op->op_node->type == IR_NODE_OBJECT) {
                 build_id_map_recursive((IRObject*)op->op_node, map_head);
+            } else if (op->op_node->type == IR_NODE_IFDEF) {
+                IRIfdef* ifn = (IRIfdef*)op->op_node;
+                for (IRIfdefBranch* br = ifn->branches; br; br = br->next)
+                    build_id_map_from_ops(br->ops, map_head);
             }
+        }
+    }
+}
+
+// Scan an arbitrary ops list (including ifdef branches) for objects to add to id_map.
+static void build_id_map_from_ops(IROperationNode* ops, IdMapNode** map_head) {
+    for (IROperationNode* op = ops; op; op = op->next) {
+        if (op->op_node->type == IR_NODE_OBJECT) {
+            build_id_map_recursive((IRObject*)op->op_node, map_head);
+        } else if (op->op_node->type == IR_NODE_IFDEF) {
+            IRIfdef* ifn = (IRIfdef*)op->op_node;
+            for (IRIfdefBranch* br = ifn->branches; br; br = br->next)
+                build_id_map_from_ops(br->ops, map_head);
         }
     }
 }
@@ -512,15 +584,35 @@ static void find_and_map_in_expr(IRExpr* expr, MapNode** array_map, int* counter
     }
 }
 
+static void find_and_map_arrays_in_ops(IROperationNode* ops, MapNode** array_map, int* counter);
+
 static void find_and_map_arrays(IRObject* head, MapNode** array_map, int* counter) {
     for (IRObject* current = head; current; current = current->next) {
         find_and_map_in_expr(current->constructor_expr, array_map, counter);
         for (IROperationNode* op = current->operations; op; op = op->next) {
             if (op->op_node->type == IR_NODE_OBJECT) {
                 find_and_map_arrays((IRObject*)op->op_node, array_map, counter);
-            } else {
+            } else if (op->op_node->type == IR_NODE_IFDEF) {
+                IRIfdef* ifn = (IRIfdef*)op->op_node;
+                for (IRIfdefBranch* br = ifn->branches; br; br = br->next)
+                    find_and_map_arrays_in_ops(br->ops, array_map, counter);
+            } else if (op->op_node->type != IR_NODE_DEFINE) {
                 find_and_map_in_expr((IRExpr*)op->op_node, array_map, counter);
             }
+        }
+    }
+}
+
+static void find_and_map_arrays_in_ops(IROperationNode* ops, MapNode** array_map, int* counter) {
+    for (IROperationNode* op = ops; op; op = op->next) {
+        if (op->op_node->type == IR_NODE_OBJECT) {
+            find_and_map_arrays((IRObject*)op->op_node, array_map, counter);
+        } else if (op->op_node->type == IR_NODE_IFDEF) {
+            IRIfdef* ifn = (IRIfdef*)op->op_node;
+            for (IRIfdefBranch* br = ifn->branches; br; br = br->next)
+                find_and_map_arrays_in_ops(br->ops, array_map, counter);
+        } else if (op->op_node->type != IR_NODE_DEFINE) {
+            find_and_map_in_expr((IRExpr*)op->op_node, array_map, counter);
         }
     }
 }
@@ -574,9 +666,18 @@ static void hoisted_var_free_list(HoistedVarNode* h) {
 static void collect_local_c_names(IRObject* head, CNameSetNode** out) {
     for (IRObject* o = head; o; o = o->next) {
         if (o->c_name) c_name_set_add(out, o->c_name);
-        for (IROperationNode* op = o->operations; op; op = op->next)
+        for (IROperationNode* op = o->operations; op; op = op->next) {
             if (op->op_node->type == IR_NODE_OBJECT)
                 collect_local_c_names((IRObject*)op->op_node, out);
+            else if (op->op_node->type == IR_NODE_IFDEF) {
+                IRIfdef* ifn = (IRIfdef*)op->op_node;
+                for (IRIfdefBranch* br = ifn->branches; br; br = br->next) {
+                    for (IROperationNode* bop = br->ops; bop; bop = bop->next)
+                        if (bop->op_node->type == IR_NODE_OBJECT)
+                            collect_local_c_names((IRObject*)bop->op_node, out);
+                }
+            }
+        }
     }
 }
 
@@ -620,13 +721,21 @@ static void scan_subtree_for_external_refs(IRObject* head, const CNameSetNode* l
         for (IROperationNode* op = o->operations; op; op = op->next) {
             if (op->op_node->type == IR_NODE_OBJECT) {
                 scan_subtree_for_external_refs((IRObject*)op->op_node, local_set, id_map, out);
+            } else if (op->op_node->type == IR_NODE_IFDEF) {
+                IRIfdef* ifn = (IRIfdef*)op->op_node;
+                for (IRIfdefBranch* br = ifn->branches; br; br = br->next) {
+                    for (IROperationNode* bop = br->ops; bop; bop = bop->next) {
+                        if (bop->op_node->type == IR_NODE_OBJECT)
+                            scan_subtree_for_external_refs((IRObject*)bop->op_node, local_set, id_map, out);
+                    }
+                }
             } else {
                 IRNode* n = op->op_node;
                 if (n->type == IR_NODE_OBSERVER)
                     find_external_refs_in_expr(((IRObserver*)n)->config_expr, local_set, id_map, out);
                 else if (n->type == IR_NODE_ACTION)
                     find_external_refs_in_expr(((IRAction*)n)->data_expr, local_set, id_map, out);
-                else
+                else if (n->type != IR_NODE_DEFINE && n->type != IR_NODE_WARNING)
                     find_external_refs_in_expr((IRExpr*)n, local_set, id_map, out);
             }
         }
@@ -671,6 +780,14 @@ static void collect_malloc_vars_for_scope(IRObject* head, const char* owner_fn_n
                 // inside create_fn — they belong to that deferred scope.
                 const char* child_owner = o->deferred_fn_name ? o->deferred_fn_name : owner_fn_name;
                 collect_malloc_vars_for_scope(child, child_owner, out);
+            } else if (op->op_node->type == IR_NODE_IFDEF) {
+                IRIfdef* ifn = (IRIfdef*)op->op_node;
+                for (IRIfdefBranch* br = ifn->branches; br; br = br->next) {
+                    for (IROperationNode* bop = br->ops; bop; bop = bop->next) {
+                        if (bop->op_node->type == IR_NODE_OBJECT)
+                            collect_malloc_vars_for_scope((IRObject*)bop->op_node, owner_fn_name, out);
+                    }
+                }
             }
         }
     }
@@ -727,12 +844,19 @@ static char* make_destroy_fn_name(const char* create_name) {
 
 // ===========================================================================
 
-static void collect_deferred_objects(IRObject* head, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr) {
+static void collect_deferred_from_ops_impl(IROperationNode* ops, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr, IRIfdef* guard_ifdef, IRIfdefBranch* guard_branch);
+static void collect_deferred_objects_impl(IRObject* head, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr, IRIfdef* guard_ifdef, IRIfdefBranch* guard_branch);
+static void collect_deferred_from_ops(IROperationNode* ops, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr);
+
+static void collect_deferred_objects_impl(IRObject* head, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr,
+                                          IRIfdef* guard_ifdef, IRIfdefBranch* guard_branch) {
     for (IRObject* obj = head; obj; obj = obj->next) {
         if (obj->deferred_fn_name) {
             DeferredNode* dn = malloc(sizeof(DeferredNode));
             if (!dn) continue;
             dn->obj = obj;
+            dn->guard_ifdef  = guard_ifdef;
+            dn->guard_branch = guard_branch;
             dn->next = NULL;
             if (!*list_head_ptr) {
                 *list_head_ptr = dn;
@@ -742,14 +866,45 @@ static void collect_deferred_objects(IRObject* head, DeferredNode** list_tail_pt
                 *list_tail_ptr = dn;
             }
         }
-        // Recurse into child operations (even if this object itself is deferred,
-        // a deferred child could itself have deferred grandchildren)
         for (IROperationNode* op = obj->operations; op; op = op->next) {
             if (op->op_node->type == IR_NODE_OBJECT) {
-                collect_deferred_objects((IRObject*)op->op_node, list_tail_ptr, list_head_ptr);
+                collect_deferred_objects_impl((IRObject*)op->op_node, list_tail_ptr, list_head_ptr,
+                                             guard_ifdef, guard_branch);
+            } else if (op->op_node->type == IR_NODE_IFDEF) {
+                IRIfdef* ifn = (IRIfdef*)op->op_node;
+                for (IRIfdefBranch* br = ifn->branches; br; br = br->next) {
+                    /* Propagate outermost guard; don't override if already inside one */
+                    IRIfdef*       eff_ifdef  = guard_ifdef  ? guard_ifdef  : ifn;
+                    IRIfdefBranch* eff_branch = guard_ifdef  ? guard_branch : br;
+                    collect_deferred_from_ops_impl(br->ops, list_tail_ptr, list_head_ptr, eff_ifdef, eff_branch);
+                }
             }
         }
     }
+}
+
+static void collect_deferred_objects(IRObject* head, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr) {
+    collect_deferred_objects_impl(head, list_tail_ptr, list_head_ptr, NULL, NULL);
+}
+
+static void collect_deferred_from_ops_impl(IROperationNode* ops, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr,
+                                           IRIfdef* guard_ifdef, IRIfdefBranch* guard_branch) {
+    for (IROperationNode* op = ops; op; op = op->next) {
+        if (op->op_node->type == IR_NODE_OBJECT) {
+            collect_deferred_objects_impl((IRObject*)op->op_node, list_tail_ptr, list_head_ptr, guard_ifdef, guard_branch);
+        } else if (op->op_node->type == IR_NODE_IFDEF) {
+            IRIfdef* ifn = (IRIfdef*)op->op_node;
+            for (IRIfdefBranch* br = ifn->branches; br; br = br->next) {
+                IRIfdef*       eff_ifdef  = guard_ifdef  ? guard_ifdef  : ifn;
+                IRIfdefBranch* eff_branch = guard_ifdef  ? guard_branch : br;
+                collect_deferred_from_ops_impl(br->ops, list_tail_ptr, list_head_ptr, eff_ifdef, eff_branch);
+            }
+        }
+    }
+}
+
+static void collect_deferred_from_ops(IROperationNode* ops, DeferredNode** list_tail_ptr, DeferredNode** list_head_ptr) {
+    collect_deferred_from_ops_impl(ops, list_tail_ptr, list_head_ptr, NULL, NULL);
 }
 
 // Emit one deferred function: static void fn_name(lv_obj_t* parent) { ... }
@@ -896,6 +1051,7 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
         print_indent(content_indent);
         bool is_pointer = (current->c_type && strchr(current->c_type, '*') != NULL);
         bool obj_is_hoisted = hoisted_vars && is_hoisted(hoisted_vars, current->c_name);
+        bool ctor_is_void_fn = (current->constructor_expr && current->constructor_expr->base.type == IR_EXPR_FUNCTION_CALL && current->constructor_expr->c_type && strcmp(current->constructor_expr->c_type, "void") == 0);
 
         if (strcmp(current->c_type, "const char*") == 0) {
             if (!obj_is_hoisted) printf("%s ", current->c_type);
@@ -907,14 +1063,29 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
             }
             printf(";\n");
         } else if (is_pointer) {
-            if (!obj_is_hoisted) printf("%s ", current->c_type);
-            printf("%s = ", current->c_name);
-            if (current->constructor_expr) {
-                print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
+            if (ctor_is_void_fn) {
+                const IdMapNode* parent_node = id_map_get_node(id_map, parent_c_name);
+                const char* parent_type = (parent_node && parent_node->c_type) ? parent_node->c_type : (current->c_type ? current->c_type : "lv_obj_t*");
+                if (!obj_is_hoisted) {
+                    printf("%s %s = %s;\n", parent_type, current->c_name, parent_c_name);
+                } else {
+                    printf("%s = %s;\n", current->c_name, parent_c_name);
+                }
+                if (current->constructor_expr) {
+                    print_indent(content_indent);
+                    print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
+                    printf(";\n");
+                }
             } else {
-                printf("NULL");
+                if (!obj_is_hoisted) printf("%s ", current->c_type);
+                printf("%s = ", current->c_name);
+                if (current->constructor_expr) {
+                    print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
+                } else {
+                    printf("NULL");
+                }
+                 printf(";\n");
             }
-             printf(";\n");
             /* If this pointer was allocated via malloc, emit a NULL-check and
              * a configured OOM handler so generated code is safer on OOM. */
             if (current->constructor_expr && current->constructor_expr->base.type == IR_EXPR_FUNCTION_CALL) {
@@ -929,17 +1100,43 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
                 }
             }
         } else {
-            if (!obj_is_hoisted) printf("%s ", current->c_type);
-            printf("%s;\n", current->c_name);
-            if (current->constructor_expr) {
-                print_indent(content_indent);
-                print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
-                printf(";\n");
+            if (ctor_is_void_fn) {
+                const IdMapNode* parent_node = id_map_get_node(id_map, parent_c_name);
+                const char* parent_type = (parent_node && parent_node->c_type) ? parent_node->c_type : (current->c_type ? current->c_type : "lv_obj_t*");
+                if (!obj_is_hoisted) {
+                    size_t plen = strlen(parent_type);
+                    if (plen > 0 && parent_type[plen-1] == '*') {
+                        char tmp[256];
+                        size_t copy_len = plen - 1;
+                        if (copy_len > sizeof(tmp)-1) copy_len = sizeof(tmp)-1;
+                        strncpy(tmp, parent_type, copy_len);
+                        tmp[copy_len] = '\0';
+                        printf("%s *%s = %s;\n", tmp, current->c_name, parent_c_name);
+                    } else {
+                        printf("%s %s = %s;\n", parent_type, current->c_name, parent_c_name);
+                    }
+                } else {
+                    printf("%s = %s;\n", current->c_name, parent_c_name);
+                }
+                if (current->constructor_expr) {
+                    print_indent(content_indent);
+                    print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
+                    printf(";\n");
+                }
+            } else {
+                if (!obj_is_hoisted) printf("%s ", current->c_type);
+                printf("%s;\n", current->c_name);
+                if (current->constructor_expr) {
+                    print_indent(content_indent);
+                    print_expr(current->constructor_expr, parent_c_name, id_map, array_map, false);
+                    printf(";\n");
+                }
             }
         }
 
         if (current->operations) {
             printf("\n");
+            const char* ops_target = ctor_is_void_fn ? parent_c_name : current->c_name;
             if (current->deferred_fn_name) {
                 // Deferred: emit non-child operations inline, then register with the deferred loader.
                 bool has_non_child_ops = false;
@@ -949,17 +1146,17 @@ static void print_object_list(IRObject* head, int indent_level, const char* pare
                 if (has_non_child_ops) {
                     for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
                         if (op_node->op_node->type != IR_NODE_OBJECT) {
-                            print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map, hoisted_vars);
+                            print_node(op_node->op_node, content_indent, parent_c_name, ops_target, id_map, array_map, hoisted_vars);
                         }
                     }
                 }
                 // Register this child with its scroll-container parent for lazy loading.
                 print_indent(content_indent);
                 printf("deferred_loader_register(%s, %s, %s);\n",
-                       parent_c_name, current->c_name, current->deferred_fn_name);
+                       parent_c_name, ops_target, current->deferred_fn_name);
             } else {
                 for (IROperationNode* op_node = current->operations; op_node; op_node = op_node->next) {
-                    print_node(op_node->op_node, content_indent, parent_c_name, current->c_name, id_map, array_map, hoisted_vars);
+                    print_node(op_node->op_node, content_indent, parent_c_name, ops_target, id_map, array_map, hoisted_vars);
                 }
                 // If any direct child was deferred, install the lazy-load event handler now.
                 bool has_deferred_children = false;
@@ -995,6 +1192,8 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
     int static_counter = 0;
 
     build_id_map_recursive(root->root_objects, &id_map);
+    // Also scan ifdef branches in root_ops (objects there aren't in root_objects)
+    build_id_map_from_ops(root->root_ops, &id_map);
     id_map_add(&id_map, "parent", "parent", "lv_obj_t*");
     /* Ensure default LVGL font identifiers are known to the C-code backend */
     id_map_add(&id_map, "LV_FONT_DEFAULT", "LV_FONT_DEFAULT", "lv_font_t*");
@@ -1002,6 +1201,8 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
     id_map_add(&id_map, "@LV_FONT_DEFAULT", "LV_FONT_DEFAULT", "lv_font_t*");
     id_map_add(&id_map, "@lv_font_default", "LV_FONT_DEFAULT", "lv_font_t*");
     find_and_map_arrays(root->root_objects, &array_map, &static_counter);
+    // Also scan ifdef branch objects
+    find_and_map_arrays_in_ops(root->root_ops, &array_map, &static_counter);
 
     printf("/* AUTO-GENERATED by the 'c_code' backend */\n\n");
     printf("#include \"lvgl.h\"\n");
@@ -1075,6 +1276,8 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
     DeferredNode* deferred_head = NULL;
     DeferredNode* deferred_tail = NULL;
     collect_deferred_objects(root->root_objects, &deferred_tail, &deferred_head);
+    // Also collect from ifdef branches
+    collect_deferred_from_ops(root->root_ops, &deferred_tail, &deferred_head);
     HoistedVarNode* hoisted_vars = collect_hoisted_vars(deferred_head, id_map, root->root_objects);
 
     // --- Emit hoisted variable declarations (file-scope statics) ---
@@ -1093,9 +1296,34 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
     // --- Collect and emit deferred create_*/destroy_* pairs (before create_ui in C) ---
     if (deferred_head) {
         printf("// --- Deferred UI Functions ---\n\n");
+        IRIfdef*       cur_guard_ifdef  = NULL;
+        IRIfdefBranch* cur_guard_branch = NULL;
         for (DeferredNode* dn = deferred_head; dn; dn = dn->next) {
+            // Handle transitions between ifdef guards
+            if (dn->guard_ifdef != cur_guard_ifdef) {
+                if (cur_guard_ifdef) printf("#endif /* deferred fn guard */\n\n");
+                cur_guard_ifdef  = dn->guard_ifdef;
+                cur_guard_branch = NULL;
+            }
+            if (cur_guard_ifdef && dn->guard_branch != cur_guard_branch) {
+                if (cur_guard_branch == NULL) {
+                    // Open first branch
+                    if (dn->guard_branch->condition)
+                        printf("#ifdef %s\n\n", dn->guard_branch->condition);
+                    else
+                        printf("#if 1 /* else-only ifdef */\n\n");
+                } else {
+                    // Transition to next branch
+                    if (dn->guard_branch->condition)
+                        printf("#elif defined(%s)\n\n", dn->guard_branch->condition);
+                    else
+                        printf("#else\n\n");
+                }
+                cur_guard_branch = dn->guard_branch;
+            }
             emit_deferred_function(dn->obj, id_map, hoisted_vars);
         }
+        if (cur_guard_ifdef) printf("#endif /* deferred fn guard */\n\n");
     }
     // Free the DeferredNode list (not the IRObjects — those belong to the IR)
     for (DeferredNode* dn = deferred_head; dn; ) {
@@ -1121,7 +1349,32 @@ void c_code_print_backend(IRRoot* root, const ApiSpec* api_spec) {
         printf("\n");
     }
 
-    if (root->root_objects) {
+    if (root->root_ops) {
+        // Use root_ops for output: preserves interleaved ordering of objects,
+        // defines and ifdefs.
+        bool any_output = false;
+        for (IROperationNode* op = root->root_ops; op; op = op->next) {
+            IRNode* n = op->op_node;
+            if (n->type == IR_NODE_OBJECT) {
+                // Objects in root_ops also live in root_objects (->next chain).
+                // Temporarily unlink from siblings so print_object_list prints
+                // only this single object.
+                IRObject* obj = (IRObject*)n;
+                IRObject* saved_next = obj->next;
+                obj->next = NULL;
+                print_object_list(obj, 1, "parent", id_map, array_map, hoisted_vars);
+                obj->next = saved_next;
+                any_output = true;
+            } else if (n->type == IR_NODE_DEFINE || n->type == IR_NODE_IFDEF) {
+                print_node(n, 1, "parent", "parent", id_map, array_map, hoisted_vars);
+                any_output = true;
+            }
+        }
+        if (!any_output) {
+            print_indent(1);
+            printf("/* (No root objects) */\n");
+        }
+    } else if (root->root_objects) {
         print_object_list(root->root_objects, 1, "parent", id_map, array_map, hoisted_vars);
     } else {
         print_indent(1);

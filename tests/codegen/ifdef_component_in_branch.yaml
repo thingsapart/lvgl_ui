@@ -1,0 +1,19 @@
+# Test: component defined inside an ifdef branch must be resolvable by use-view
+# inside the same branch (regression: pre-pass didn't recurse into ifdef branches).
+- define: "UI_SMALL"
+- ifdef:
+    UI_SMALL:
+      - type: component
+        id: '@branch_label'
+        content:
+          type: label
+          text: $msg
+          center: []
+      - type: use-view
+        id: '@branch_label'
+        context:
+          msg: "hello from branch"
+    else:
+      - type: label
+        text: "fallback"
+        center: []

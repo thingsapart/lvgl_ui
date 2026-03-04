@@ -1,0 +1,559 @@
+# Job Status view for the CNC pendant.
+#
+# Layout (480×285 after titlebar):
+#
+#   ┌─────────────────────────────────────────────────┐
+#   │  JOB: job_a.ngc                        RUNNING  │ ← 26 px header
+#   ├─────────────────────┬───────────────────────────┤
+#   │     PROGRESS        │         F · S · C         │
+#   │                     │  ╔═══════════════╗        │
+#   │   ╔════════════╗    │  ║ chipload zone ║        │
+#   │   ║     72%    ║    │  ║  ╔═════════╗  ║        │
+#   │   ║ 127s left  ║    │  ║  ║ spindle ║  ║        │
+#   │   ║ 5s elapsed ║    │  ║  ║ ╔═════╗ ║  ║        │
+#   │   ╚════════════╝    │  ║  ║ ║feed ║ ║  ║        │
+#   └─────────────────────┴──╚══╚═╚═════╝═╝══╝────────┘
+#
+# Progress arc (left):  270° cyan arc, large % + time-remaining in centre.
+# Chipload arc (outer): five coloured zone bands (thin outer ring) +
+#                       bright indicator arc overlay.  Scale: 0-150.
+#                       Zones: blue  0-50,  cyan 50-75,  green 75-110,
+#                              yellow 110-125, red 125-150.
+# Spindle arc (middle): bright blue, observes spindle_display_pct.
+# Feed arc    (inner):  orange, observes feedrate_display_pct.
+# Centre of feed arc:   three live value labels F / S / C.
+#
+# Data-binding inputs:
+#   job.name                 string  – current job filename
+#   program_progress         0-100   – % complete
+#   program_time_remaining   float   – seconds remaining
+#   program_elapsed_time     float   – seconds elapsed
+#   program_status           string  – RUNNING / PAUSED / IDLE …
+#   motion.feedrate_current  float   – mm/min
+#   feedrate_display_pct     0-100   – feed as % of feed_max
+#   spindle.speed_rpm        float   – RPM
+#   spindle_display_pct      0-100   – spindle as % of spindle_rpm_max
+#   machine.chipload         float   – mm/tooth
+#   machine.chipload_relative 0-150  – chipload zone indicator (100=optimal)
+
+# -----------------------------------------------------------------------
+# Standalone Testing Only
+# -----------------------------------------------------------------------
+#- include: "../fonts.yaml"
+#- include: "../styles/global_styles.yaml"
+#- include: "../data_binding.yaml"
+# -----------------------------------------------------------------------
+
+# ═══════════════════════════════════════════════════════════════════════
+# Local Styles
+# ═══════════════════════════════════════════════════════════════════════
+
+# Panel card background: deep-blue with faint shadow/glow
+- type: style
+  id: '@js_panel'
+  bg_color: '#0e1a2e'
+  bg_opa: 245
+  bg_grad_color: '#070f1c'
+  bg_grad_dir: LV_GRAD_DIR_VER
+  radius: 10
+  border_width: 1
+  border_color: '#1e3050'
+  border_opa: 190
+  shadow_width: 20
+  shadow_color: '#001a3a'
+  shadow_opa: 170
+  shadow_spread: 3
+  shadow_offset_y: 4
+  pad_all: 0
+
+# Muted section title
+- type: style
+  id: '@js_section_title'
+  text_color: '#acacac'
+  text_font: '@font_kode_14'
+
+# Large progress percentage (cyan)
+- type: style
+  id: '@js_progress_value'
+  text_color: '#00e8ff'
+  text_font: '@font_kode_30'
+
+# Small sub-labels
+- type: style
+  id: '@js_sub_label'
+  text_color: '#bcbcbc'
+  text_font: '@font_kode_14'
+
+# Hides the arc knob
+- type: style
+  id: '@js_knob_hidden'
+  bg_opa: 0
+  border_opa: 0
+  outline_opa: 0
+
+# Hides the indicator arc (used on static zone arcs)
+- type: style
+  id: '@js_arc_no_indicator'
+  arc_opa: 0
+
+# ── Progress arc ──────────────────────────────────────────────────
+- type: style
+  id: '@js_arc_progress_main'
+  arc_color: '#040e1c'
+  arc_width: 16
+
+- type: style
+  id: '@js_arc_progress_indicator'
+  arc_color: '#00e8ff'
+  arc_width: 16
+  arc_rounded: true
+
+# ── Feed arc (inner, orange) ──────────────────────────────────────
+- type: style
+  id: '@js_arc_feed_main'
+  arc_color: '#140800'
+  arc_width: 9
+
+- type: style
+  id: '@js_arc_feed_indicator'
+  arc_color: '#ff8800'
+  arc_width: 9
+  arc_rounded: true
+
+# ── Spindle arc (middle, cyan-blue) ──────────────────────────────
+- type: style
+  id: '@js_arc_spindle_main'
+  arc_color: '#001020'
+  arc_width: 11
+
+- type: style
+  id: '@js_arc_spindle_indicator'
+  arc_color: '#22aaff'
+  arc_width: 11
+  arc_rounded: true
+
+# ── Chipload background track (dark under zone bands) ────────────
+- type: style
+  id: '@js_arc_chipload_bg_main'
+  arc_color: '#050d18'
+  arc_width: 13
+
+# Chipload indicator – transparent main so zone bands show through
+- type: style
+  id: '@js_arc_chipload_main'
+  arc_opa: 0
+
+- type: style
+  id: '@js_arc_chipload_indicator'
+  arc_color: '#c0ffd0'
+  arc_width: 13
+  arc_rounded: true
+
+# ── Chipload zone band arcs (thin outer ring, width 5) ────────────
+- type: style
+  id: '@js_arc_zone_blue'
+  arc_color: '#1133cc'
+  arc_width: 5
+
+- type: style
+  id: '@js_arc_zone_cyan'
+  arc_color: '#009988'
+  arc_width: 5
+
+- type: style
+  id: '@js_arc_zone_green'
+  arc_color: '#22aa22'
+  arc_width: 5
+
+- type: style
+  id: '@js_arc_zone_yellow'
+  arc_color: '#cc8800'
+  arc_width: 5
+
+- type: style
+  id: '@js_arc_zone_red'
+  arc_color: '#cc2200'
+  arc_width: 5
+
+# ── Centre metric value label colours ────────────────────────────
+- type: style
+  id: '@js_val_feed'
+  text_color: '#ff8800'
+  text_font: '@font_kode_14'
+
+- type: style
+  id: '@js_val_spindle'
+  text_color: '#22aaff'
+  text_font: '@font_kode_14'
+
+- type: style
+  id: '@js_val_chipload'
+  text_color: '#88ffaa'
+  text_font: '@font_kode_14'
+
+# ═══════════════════════════════════════════════════════════════════════
+# Component
+# ═══════════════════════════════════════════════════════════════════════
+
+- type: component
+  id: '@job_status_view'
+  info: |
+    Stylized Job Status view (480×320 optimised).
+    ---
+    Left  – circular progress arc with % complete and time remaining.
+    Right – three nested arcs: Feed (orange, innermost),
+              Spindle (cyan, middle), Chipload (zoned, outermost).
+    Chipload zone bands (thin outer ring, scale 0-150, 100=optimal):
+      0-50   = blue   (under-loaded)
+      50-75  = cyan   (transitioning)
+      75-110 = green  (optimal)
+      110-125= yellow (above optimal)
+      125-150= red    (over-loaded)
+    ---
+    Observes: job.name, program_progress, program_time_remaining,
+      program_elapsed_time, program_status, motion.feedrate_current,
+      feedrate_display_pct, spindle.speed_rpm, spindle_display_pct,
+      machine.chipload, machine.chipload_relative.
+  content:
+    # ── Root: full-screen deep-blue gradient ──────────────────────
+    size: [100%, 100%]
+    layout: LV_LAYOUT_FLEX
+    flex_flow: LV_FLEX_FLOW_COLUMN
+    bg_color: '#080e18'
+    bg_opa: 255
+    bg_grad_color: '#0c1525'
+    bg_grad_dir: LV_GRAD_DIR_VER
+    text_color: '#c8d8f0'
+    border_width: 0
+    pad_all: 0
+    pad_row: 0
+    remove_flag: LV_OBJ_FLAG_SCROLLABLE
+
+    children:
+
+      # ── Header: job name (left) + live status (right) ──────────
+      - size: [100%, 26]
+        add_style: ['@container_transp', 0]
+        layout: LV_LAYOUT_FLEX
+        flex_flow: LV_FLEX_FLOW_ROW
+        flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+        pad_left: 10
+        pad_right: 10
+        pad_top: 4
+        pad_bottom: 2
+        pad_column: 6
+        remove_flag: LV_OBJ_FLAG_SCROLLABLE
+
+        children:
+          - type: label
+            text: "JOB"
+            add_style: ['@js_section_title', 0]
+
+          - type: label
+            text_font: '@font_kode_14'
+            text_color: '#88bbdd'
+            flex_grow: 1
+            observes:
+              job.name:
+                text: "%s"
+
+          - type: label
+            text_font: '@font_kode_14'
+            text_color: '#44cc88'
+            observes:
+              program_status:
+                text: "%s"
+
+      # ── Main content row ──────────────────────────────────────
+      - flex_grow: 1
+        size: [100%, 100%]
+        add_style: ['@container_transp', 0]
+        layout: LV_LAYOUT_FLEX
+        flex_flow: LV_FLEX_FLOW_ROW
+        pad_all: 6
+        pad_column: 6
+        remove_flag: LV_OBJ_FLAG_SCROLLABLE
+
+        children:
+
+          # ══════════════════════════════════════════════════════
+          # LEFT PANEL – Progress Gauge
+          # ══════════════════════════════════════════════════════
+          - flex_grow: 1
+            size: [50%, 100%]
+            add_style: ['@js_panel', 0]
+            layout: LV_LAYOUT_FLEX
+            flex_flow: LV_FLEX_FLOW_COLUMN
+            flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+            pad_all: 8
+            pad_row: 4
+            remove_flag: LV_OBJ_FLAG_SCROLLABLE
+
+            children:
+              # Panel title
+              - type: label
+                add_style: ['@js_section_title', 0]
+                text: "PROGRESS"
+                width: 100%
+                text_align: LV_TEXT_ALIGN_CENTER
+
+              # Arc container (no layout → absolute positioning)
+              - flex_grow: 1
+                size: [100%, 100%]
+                bg_opa: 0
+                pad_all: 0
+                remove_flag: LV_OBJ_FLAG_SCROLLABLE
+
+                children:
+                  # Progress arc – children float at centre
+                  - type: arc
+                    size: [200, 200]
+                    lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                    bg_angles: [135, 405]
+                    range: [0, 100]
+                    value: 0
+                    add_style: ['@js_arc_progress_main', LV_PART_MAIN]
+                    add_style: ['@js_arc_progress_indicator', LV_PART_INDICATOR]
+                    add_style: ['@js_knob_hidden', LV_PART_KNOB]
+                    remove_flag: LV_OBJ_FLAG_CLICKABLE
+                    remove_flag: LV_OBJ_FLAG_SCROLLABLE
+                    observes:
+                      program_progress: 'value'
+                    children:
+                      # Centred label cluster inside the arc
+                      - add_style: ['@container_transp', 0]
+                        size: [125, LV_SIZE_CONTENT]
+                        lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                        layout: LV_LAYOUT_FLEX
+                        flex_flow: LV_FLEX_FLOW_COLUMN
+                        flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+                        remove_flag: LV_OBJ_FLAG_SCROLLABLE
+                        pad_row: 3
+                        children:
+                          # Big % value
+                          - type: label
+                            add_style: ['@js_progress_value', 0]
+                            text: "0%%"
+                            text_align: LV_TEXT_ALIGN_CENTER
+                            observes:
+                              program_progress:
+                                text: "%.0f%%"
+                          # Time remaining
+                          - type: label
+                            add_style: ['@js_sub_label', 0]
+                            text: "0s left"
+                            text_align: LV_TEXT_ALIGN_CENTER
+                            observes:
+                              program_time_remaining:
+                                text: "%.0fs left"
+                          # Elapsed time footnote below the arc
+                          - type: label
+                            add_style: ['@js_sub_label', 0]
+                            text: "0s elapsed"
+                            width: 100%
+                            text_align: LV_TEXT_ALIGN_CENTER
+                            observes:
+                              program_elapsed_time:
+                                text: "%.0fs elapsed"
+
+          # ══════════════════════════════════════════════════════
+          # RIGHT PANEL – Feed / Spindle / Chipload Nested Arcs
+          # ══════════════════════════════════════════════════════
+          - flex_grow: 1
+            size: [50%, 100%]
+            add_style: ['@js_panel', 0]
+            layout: LV_LAYOUT_FLEX
+            flex_flow: LV_FLEX_FLOW_COLUMN
+            flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+            pad_all: 8
+            pad_row: 4
+            remove_flag: LV_OBJ_FLAG_SCROLLABLE
+
+            children:
+              # Panel title
+              - type: label
+                add_style: ['@js_section_title', 0]
+                text: "F / S / C"
+                width: 100%
+                text_align: LV_TEXT_ALIGN_CENTER
+
+              # Nested arc container (no layout → absolute positioning)
+              - flex_grow: 1
+                size: [100%, 100%]
+                bg_opa: 0
+                pad_all: 0
+                remove_flag: LV_OBJ_FLAG_SCROLLABLE
+
+                children:
+
+                  # ────────────────────────────────────────────────
+                  # Chipload: dark base track (drawn first / lowest)
+                  # ────────────────────────────────────────────────
+                  - type: arc
+                    size: [200, 200]
+                    lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                    bg_angles: [135, 405]
+                    range: [0, 100]
+                    value: 0
+                    remove_flag: LV_OBJ_FLAG_CLICKABLE
+                    add_style: ['@js_arc_chipload_bg_main', LV_PART_MAIN]
+                    add_style: ['@js_arc_no_indicator', LV_PART_INDICATOR]
+                    add_style: ['@js_knob_hidden', LV_PART_KNOB]
+
+                  # ────────────────────────────────────────────────
+                  # Chipload zone bands (thin outer ring, 5 px wide)
+                  # Scale: 0-150, sweep 270° (135°→405°), 1.8°/unit
+                  #   0-50   → 135°-225°  (blue,   under-loaded)
+                  #   50-75  → 225°-270°  (cyan,   transitioning)
+                  #   75-110 → 270°-333°  (green,  optimal)
+                  #   110-125→ 333°-360°  (yellow, above optimal)
+                  #   125-150→ 360°-405°  (red,    over-loaded)
+                  # ────────────────────────────────────────────────
+
+                  # Zone 1 – blue (0-50)
+                  - type: arc
+                    size: [200, 200]
+                    lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                    bg_angles: [135, 225]
+                    range: [0, 150]
+                    value: 0
+                    remove_flag: LV_OBJ_FLAG_CLICKABLE
+                    add_style: ['@js_arc_zone_blue', LV_PART_MAIN]
+                    add_style: ['@js_arc_no_indicator', LV_PART_INDICATOR]
+                    add_style: ['@js_knob_hidden', LV_PART_KNOB]
+
+                  # Zone 2 – cyan (50-75)
+                  - type: arc
+                    size: [200, 200]
+                    lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                    bg_angles: [225, 270]
+                    range: [0, 150]
+                    value: 0
+                    remove_flag: LV_OBJ_FLAG_CLICKABLE
+                    add_style: ['@js_arc_zone_cyan', LV_PART_MAIN]
+                    add_style: ['@js_arc_no_indicator', LV_PART_INDICATOR]
+                    add_style: ['@js_knob_hidden', LV_PART_KNOB]
+
+                  # Zone 3 – green (75-110)
+                  - type: arc
+                    size: [200, 200]
+                    lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                    bg_angles: [270, 333]
+                    range: [0, 150]
+                    value: 0
+                    remove_flag: LV_OBJ_FLAG_CLICKABLE
+                    add_style: ['@js_arc_zone_green', LV_PART_MAIN]
+                    add_style: ['@js_arc_no_indicator', LV_PART_INDICATOR]
+                    add_style: ['@js_knob_hidden', LV_PART_KNOB]
+
+                  # Zone 4 – yellow (110-125)
+                  - type: arc
+                    size: [200, 200]
+                    lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                    bg_angles: [333, 360]
+                    range: [0, 150]
+                    value: 0
+                    remove_flag: LV_OBJ_FLAG_CLICKABLE
+                    add_style: ['@js_arc_zone_yellow', LV_PART_MAIN]
+                    add_style: ['@js_arc_no_indicator', LV_PART_INDICATOR]
+                    add_style: ['@js_knob_hidden', LV_PART_KNOB]
+
+                  # Zone 5 – red (125-150)
+                  - type: arc
+                    size: [200, 200]
+                    lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                    bg_angles: [360, 405]
+                    range: [0, 150]
+                    value: 0
+                    remove_flag: LV_OBJ_FLAG_CLICKABLE
+                    add_style: ['@js_arc_zone_red', LV_PART_MAIN]
+                    add_style: ['@js_arc_no_indicator', LV_PART_INDICATOR]
+                    add_style: ['@js_knob_hidden', LV_PART_KNOB]
+
+                  # ────────────────────────────────────────────────
+                  # Chipload indicator (over zone bands; transparent
+                  # main track so zone colours remain visible ahead)
+                  # ────────────────────────────────────────────────
+                  - type: arc
+                    size: [200, 200]
+                    lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                    bg_angles: [135, 405]
+                    range: [0, 150]
+                    value: 0
+                    add_style: ['@js_arc_chipload_main', LV_PART_MAIN]
+                    add_style: ['@js_arc_chipload_indicator', LV_PART_INDICATOR]
+                    add_style: ['@js_knob_hidden', LV_PART_KNOB]
+                    remove_flag: LV_OBJ_FLAG_CLICKABLE
+                    remove_flag: LV_OBJ_FLAG_SCROLLABLE
+                    observes:
+                      machine.chipload_relative: 'value'
+
+                  # ────────────────────────────────────────────────
+                  # Spindle RPM – middle ring (158×158)
+                  # ────────────────────────────────────────────────
+                  - type: arc
+                    size: [158, 158]
+                    lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                    bg_angles: [135, 405]
+                    range: [0, 100]
+                    value: 0
+                    add_style: ['@js_arc_spindle_main', LV_PART_MAIN]
+                    add_style: ['@js_arc_spindle_indicator', LV_PART_INDICATOR]
+                    add_style: ['@js_knob_hidden', LV_PART_KNOB]
+                    remove_flag: LV_OBJ_FLAG_CLICKABLE
+                    remove_flag: LV_OBJ_FLAG_SCROLLABLE
+                    observes:
+                      spindle_display_pct: 'value'
+
+                  # ────────────────────────────────────────────────
+                  # Feed rate – inner ring (116×116)
+                  # Centre labels live inside this arc as children.
+                  # ────────────────────────────────────────────────
+                  - type: arc
+                    size: [116, 116]
+                    lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                    bg_angles: [135, 405]
+                    range: [0, 100]
+                    value: 0
+                    add_style: ['@js_arc_feed_main', LV_PART_MAIN]
+                    add_style: ['@js_arc_feed_indicator', LV_PART_INDICATOR]
+                    add_style: ['@js_knob_hidden', LV_PART_KNOB]
+                    remove_flag: LV_OBJ_FLAG_CLICKABLE
+                    remove_flag: LV_OBJ_FLAG_SCROLLABLE
+                    observes:
+                      feedrate_display_pct: 'value'
+                    children:
+                      # Live value labels centred inside the innermost arc
+                      - add_style: ['@container_transp', 0]
+                        size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+                        lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+                        layout: LV_LAYOUT_FLEX
+                        flex_flow: LV_FLEX_FLOW_COLUMN
+                        flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+                        remove_flag: LV_OBJ_FLAG_SCROLLABLE
+                        pad_row: 1
+                        children:
+                          - type: label
+                            add_style: ['@js_val_feed', 0]
+                            text: "F:0"
+                            text_align: LV_TEXT_ALIGN_CENTER
+                            observes:
+                              motion.feedrate_current:
+                                text: "F:%.0f"
+                          - type: label
+                            add_style: ['@js_val_spindle', 0]
+                            text: "S:0"
+                            text_align: LV_TEXT_ALIGN_CENTER
+                            observes:
+                              spindle.speed_rpm:
+                                text: "S:%.0f"
+                          - type: label
+                            add_style: ['@js_val_chipload', 0]
+                            text: "C:0.000"
+                            text_align: LV_TEXT_ALIGN_CENTER
+                            observes:
+                              machine.chipload:
+                                text: "C:%0.3f"
+
+#- type: use-view
+#  id: @job_status_view

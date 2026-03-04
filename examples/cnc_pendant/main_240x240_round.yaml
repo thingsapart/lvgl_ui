@@ -1,0 +1,403 @@
+# main_240x240_round.yaml – layout for 240×240 round display
+#
+# Three nested arc gauges centred on the round face:
+#   outer  – Chipload (five zone-colour bands + indicator, scale 0-150)
+#   middle – Spindle RPM  (0-100 %)
+#   inner  – Feed rate    (0-100 %)
+#
+# Centre of the innermost arc shows live X / Y / Z work-coordinates
+# plus current feed (mm/min) and spindle RPM.
+#
+# Arc sizes:
+#   Chipload  216×216   arc_width 10
+#   Spindle   172×172   arc_width 10   gap (216-172)/2 = 22 px
+#   Feed      128×128   arc_width 10   gap (172-128)/2 = 22 px
+#   Centre text area: ~90 px inner diameter
+#
+# Pre-requisites (included by cnc_pendant.yaml):
+#   data_binding.yaml, fonts.yaml, styles/global_styles.yaml
+#
+# Chipload zone bands (270° sweep, 135°→405°, 1.8°/unit):
+#   0-50    → 135°-225°  blue    (under-loaded)
+#   50-75   → 225°-270°  cyan    (transitioning)
+#   75-110  → 270°-333°  green   (optimal)
+#   110-125 → 333°-360°  yellow  (above optimal)
+#   125-150 → 360°-405°  red     (over-loaded)
+
+# ═══════════════════════════════════════════════════════════════════════
+# Local Styles
+# ═══════════════════════════════════════════════════════════════════════
+
+# Hides arc knob
+- type: style
+  id: '@r240_knob_hidden'
+  bg_opa: 0
+  border_opa: 0
+  outline_opa: 0
+
+# Hides indicator arc (used on static zone-band track arcs)
+- type: style
+  id: '@r240_no_indicator'
+  arc_opa: 0
+
+# ── Chipload outer ring (216×216) ─────────────────────────────────────
+
+- type: style
+  id: '@r240_arc_chipload_bg_main'
+  arc_color: '#050d18'
+  arc_width: 10
+
+- type: style
+  id: '@r240_arc_chipload_main'
+  arc_opa: 0
+
+- type: style
+  id: '@r240_arc_chipload_indicator'
+  arc_color: '#c0ffd0'
+  arc_width: 10
+  arc_rounded: true
+
+# ── Chipload zone bands (thin outer ring, 5 px wide) ──────────────────
+
+- type: style
+  id: '@r240_arc_zone_blue'
+  arc_color: '#1133cc'
+  arc_width: 5
+
+- type: style
+  id: '@r240_arc_zone_cyan'
+  arc_color: '#009988'
+  arc_width: 5
+
+- type: style
+  id: '@r240_arc_zone_green'
+  arc_color: '#22aa22'
+  arc_width: 5
+
+- type: style
+  id: '@r240_arc_zone_yellow'
+  arc_color: '#cc8800'
+  arc_width: 5
+
+- type: style
+  id: '@r240_arc_zone_red'
+  arc_color: '#cc2200'
+  arc_width: 5
+
+# ── Spindle middle ring (172×172) ─────────────────────────────────────
+
+- type: style
+  id: '@r240_arc_spindle_main'
+  arc_color: '#001020'
+  arc_width: 10
+
+- type: style
+  id: '@r240_arc_spindle_indicator'
+  arc_color: '#22aaff'
+  arc_width: 10
+  arc_rounded: true
+
+# ── Feed inner ring (128×128) ──────────────────────────────────────────
+
+- type: style
+  id: '@r240_arc_feed_main'
+  arc_color: '#140800'
+  arc_width: 10
+
+- type: style
+  id: '@r240_arc_feed_indicator'
+  arc_color: '#ff8800'
+  arc_width: 10
+  arc_rounded: true
+
+# ── Centre value label colours ────────────────────────────────────────
+
+- type: style
+  id: '@r240_axis_label'
+  text_color: '#888888'
+  text_font: '@font_kode_20'
+
+- type: style
+  id: '@r240_val_axis'
+  text_color: '#44ee44'
+  text_font: '@font_kode_20'
+  text_align: LV_TEXT_ALIGN_RIGHT
+
+- type: style
+  id: '@r240_val_feed'
+  text_color: '#ff8800'
+  text_font: '@font_kode_20'
+  text_align: LV_TEXT_ALIGN_CENTER
+
+- type: style
+  id: '@r240_val_spindle'
+  text_color: '#22aaff'
+  text_font: '@font_kode_20'
+  text_align: LV_TEXT_ALIGN_CENTER
+
+- type: style
+  id: '@r240_status_label'
+  text_color: '#888888'
+  text_font: '@font_kode_20'
+  text_align: LV_TEXT_ALIGN_CENTER
+
+# ═══════════════════════════════════════════════════════════════════════
+# Root screen object  (240×240)
+# ═══════════════════════════════════════════════════════════════════════
+
+- size: [240, 240]
+  bg_color: '#080e18'
+  bg_opa: 255
+  bg_grad_color: '#0c1525'
+  bg_grad_dir: LV_GRAD_DIR_VER
+  text_color: '#c8d8f0'
+  border_width: 0
+  pad_all: 0
+  remove_flag: LV_OBJ_FLAG_SCROLLABLE
+  layout: LV_LAYOUT_FLEX
+  flex_flow: LV_FLEX_FLOW_COLUMN
+  flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+  children:
+
+    # ── Gauge area (220×220) – all arcs are z-stacked by LV_ALIGN_CENTER
+    - size: [220, 220]
+      add_style: ['@container_transp', 0]
+      remove_flag: LV_OBJ_FLAG_SCROLLABLE
+      children:
+
+        # ── Chipload: dark base track (drawn first / lowest z-order) ──
+        - type: arc
+          size: [216, 216]
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+          bg_angles: [135, 405]
+          range: [0, 100]
+          value: 0
+          remove_flag: LV_OBJ_FLAG_CLICKABLE
+          add_style: ['@r240_arc_chipload_bg_main', LV_PART_MAIN]
+          add_style: ['@r240_no_indicator', LV_PART_INDICATOR]
+          add_style: ['@r240_knob_hidden', LV_PART_KNOB]
+
+        # ── Chipload zone bands (thin outer ring, 5 px) ───────────────
+        # Zone 1 – blue (0-50)
+        - type: arc
+          size: [216, 216]
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+          bg_angles: [135, 225]
+          range: [0, 150]
+          value: 0
+          remove_flag: LV_OBJ_FLAG_CLICKABLE
+          add_style: ['@r240_arc_zone_blue', LV_PART_MAIN]
+          add_style: ['@r240_no_indicator', LV_PART_INDICATOR]
+          add_style: ['@r240_knob_hidden', LV_PART_KNOB]
+
+        # Zone 2 – cyan (50-75)
+        - type: arc
+          size: [216, 216]
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+          bg_angles: [225, 270]
+          range: [0, 150]
+          value: 0
+          remove_flag: LV_OBJ_FLAG_CLICKABLE
+          add_style: ['@r240_arc_zone_cyan', LV_PART_MAIN]
+          add_style: ['@r240_no_indicator', LV_PART_INDICATOR]
+          add_style: ['@r240_knob_hidden', LV_PART_KNOB]
+
+        # Zone 3 – green (75-110)
+        - type: arc
+          size: [216, 216]
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+          bg_angles: [270, 333]
+          range: [0, 150]
+          value: 0
+          remove_flag: LV_OBJ_FLAG_CLICKABLE
+          add_style: ['@r240_arc_zone_green', LV_PART_MAIN]
+          add_style: ['@r240_no_indicator', LV_PART_INDICATOR]
+          add_style: ['@r240_knob_hidden', LV_PART_KNOB]
+
+        # Zone 4 – yellow (110-125)
+        - type: arc
+          size: [216, 216]
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+          bg_angles: [333, 360]
+          range: [0, 150]
+          value: 0
+          remove_flag: LV_OBJ_FLAG_CLICKABLE
+          add_style: ['@r240_arc_zone_yellow', LV_PART_MAIN]
+          add_style: ['@r240_no_indicator', LV_PART_INDICATOR]
+          add_style: ['@r240_knob_hidden', LV_PART_KNOB]
+
+        # Zone 5 – red (125-150)
+        - type: arc
+          size: [216, 216]
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+          bg_angles: [360, 405]
+          range: [0, 150]
+          value: 0
+          remove_flag: LV_OBJ_FLAG_CLICKABLE
+          add_style: ['@r240_arc_zone_red', LV_PART_MAIN]
+          add_style: ['@r240_no_indicator', LV_PART_INDICATOR]
+          add_style: ['@r240_knob_hidden', LV_PART_KNOB]
+
+        # ── Chipload indicator (over zone bands; transparent main track)
+        - type: arc
+          size: [216, 216]
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+          bg_angles: [135, 405]
+          range: [0, 150]
+          value: 0
+          remove_flag: LV_OBJ_FLAG_CLICKABLE
+          remove_flag: LV_OBJ_FLAG_SCROLLABLE
+          add_style: ['@r240_arc_chipload_main', LV_PART_MAIN]
+          add_style: ['@r240_arc_chipload_indicator', LV_PART_INDICATOR]
+          add_style: ['@r240_knob_hidden', LV_PART_KNOB]
+          observes:
+            machine.chipload_relative: 'value'
+
+        # ── Spindle RPM – middle ring (172×172) ───────────────────────
+        - type: arc
+          size: [172, 172]
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+          bg_angles: [135, 405]
+          range: [0, 100]
+          value: 0
+          remove_flag: LV_OBJ_FLAG_CLICKABLE
+          remove_flag: LV_OBJ_FLAG_SCROLLABLE
+          add_style: ['@r240_arc_spindle_main', LV_PART_MAIN]
+          add_style: ['@r240_arc_spindle_indicator', LV_PART_INDICATOR]
+          add_style: ['@r240_knob_hidden', LV_PART_KNOB]
+          observes:
+            spindle_display_pct: 'value'
+
+        # ── Feed rate – inner ring (128×128) ──────────────────────────
+        - type: arc
+          size: [128, 128]
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+          bg_angles: [135, 405]
+          range: [0, 100]
+          value: 0
+          remove_flag: LV_OBJ_FLAG_CLICKABLE
+          remove_flag: LV_OBJ_FLAG_SCROLLABLE
+          add_style: ['@r240_arc_feed_main', LV_PART_MAIN]
+          add_style: ['@r240_arc_feed_indicator', LV_PART_INDICATOR]
+          add_style: ['@r240_knob_hidden', LV_PART_KNOB]
+          observes:
+            feedrate_display_pct: 'value'
+
+        # ── Centre panel: X/Y/Z work positions + F/S live values ──────
+        - add_style: ['@container_transp', 0]
+          size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+          lv_obj_align: [LV_ALIGN_CENTER, 0, 0]
+          layout: LV_LAYOUT_FLEX
+          flex_flow: LV_FLEX_FLOW_COLUMN
+          flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+          remove_flag: LV_OBJ_FLAG_SCROLLABLE
+          pad_row: 1
+          children:
+
+            # X work coordinate
+            - add_style: ['@container_transp', 0]
+              size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+              layout: LV_LAYOUT_FLEX
+              flex_flow: LV_FLEX_FLOW_ROW
+              flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+              remove_flag: LV_OBJ_FLAG_SCROLLABLE
+              pad_column: 2
+              children:
+                - type: label
+                  add_style: ['@r240_axis_label', 0]
+                  text: "X"
+                - type: label
+                  add_style: ['@r240_val_axis', 0]
+                  text: "   0.00"
+                  observes:
+                    motion.position.work_x:
+                      text: "%7.2f"
+
+            # Y work coordinate
+            - add_style: ['@container_transp', 0]
+              size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+              layout: LV_LAYOUT_FLEX
+              flex_flow: LV_FLEX_FLOW_ROW
+              flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+              remove_flag: LV_OBJ_FLAG_SCROLLABLE
+              pad_column: 2
+              children:
+                - type: label
+                  add_style: ['@r240_axis_label', 0]
+                  text: "Y"
+                - type: label
+                  add_style: ['@r240_val_axis', 0]
+                  text: "   0.00"
+                  observes:
+                    motion.position.work_y:
+                      text: "%7.2f"
+
+            # Z work coordinate
+            - add_style: ['@container_transp', 0]
+              size: [LV_SIZE_CONTENT, LV_SIZE_CONTENT]
+              layout: LV_LAYOUT_FLEX
+              flex_flow: LV_FLEX_FLOW_ROW
+              flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+              remove_flag: LV_OBJ_FLAG_SCROLLABLE
+              pad_column: 2
+              children:
+                - type: label
+                  add_style: ['@r240_axis_label', 0]
+                  text: "Z"
+                - type: label
+                  add_style: ['@r240_val_axis', 0]
+                  text: "   0.00"
+                  observes:
+                    motion.position.work_z:
+                      text: "%7.2f"
+
+            # Thin separator
+            - size: [64, 1]
+              bg_color: '#334455'
+              bg_opa: 180
+              border_width: 0
+              pad_all: 0
+              margin_top: 1
+              margin_bottom: 1
+
+            # Feed rate actual value (mm/min)
+            - type: label
+              add_style: ['@r240_val_feed', 0]
+              text: "F:0"
+              observes:
+                motion.feedrate_current:
+                  text: "F:%.0f"
+
+            # Spindle RPM actual value
+            - type: label
+              add_style: ['@r240_val_spindle', 0]
+              text: "S:0"
+              observes:
+                spindle.speed_rpm:
+                  text: "S:%.0f"
+
+            # Thin separator
+            - size: [64, 1]
+              bg_color: '#334455'
+              bg_opa: 180
+              border_width: 0
+              pad_all: 0
+              margin_top: 1
+              margin_bottom: 1
+
+            # ── Machine status label (top, 20 px) ─────────────────────────────
+            - size: [240, 20]
+              add_style: ['@container_transp', 0]
+              layout: LV_LAYOUT_FLEX
+              flex_flow: LV_FLEX_FLOW_ROW
+              flex_align: [LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
+              pad_top: 2
+              pad_bottom: 0
+              remove_flag: LV_OBJ_FLAG_SCROLLABLE
+              children:
+                - type: label
+                  add_style: ['@r240_status_label', 0]
+                  text: "IDLE"
+                  observes:
+                    machine.status_text:
+                      text: "%s"

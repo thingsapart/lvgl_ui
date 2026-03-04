@@ -18,7 +18,7 @@ static bool enabled_modules[LOG_MODULE_COUNT] = {
   false,       // LOG_MODULE_API_SPEC
   true,        // LOG_MODULE_IR
   false,       // LOG_MODULE_REGISTRY
-  true,        // LOG_MODULE_GENERATOR
+  false,       // LOG_MODULE_GENERATOR
   true,        // LOG_MODULE_CODEGEN
   true,        // LOG_MODULE_RENDERER
   true,        // LOG_MODULE_DISPATCH

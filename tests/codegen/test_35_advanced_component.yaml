@@ -1,4 +1,7 @@
 # A component for a "card" that takes a title, an icon, and a value.
+- type: style
+  id: @font_large
+
 - type: component
   id: '@info_card'
   content:

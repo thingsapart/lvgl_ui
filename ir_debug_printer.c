@@ -23,6 +23,8 @@ static const char* get_ir_node_type_str(int type) {
         case IR_NODE_WARNING: return "IR_NODE_WARNING";
         case IR_NODE_OBSERVER: return "IR_NODE_OBSERVER";
         case IR_NODE_ACTION: return "IR_NODE_ACTION";
+        case IR_NODE_DEFINE: return "IR_NODE_DEFINE";
+        case IR_NODE_IFDEF: return "IR_NODE_IFDEF";
         case IR_EXPR_LITERAL: return "IR_EXPR_LITERAL";
         case IR_EXPR_ENUM: return "IR_EXPR_ENUM";
         case IR_EXPR_FUNCTION_CALL: return "IR_EXPR_FUNCTION_CALL";
@@ -116,6 +118,25 @@ static void debug_print_node(IRNode* node, int indent_level) {
         case IR_NODE_WARNING: {
              printf("message=\"%s\"\n", ((IRWarning*)node)->message);
              break;
+        }
+        case IR_NODE_DEFINE: {
+            printf("symbol=\"%s\"\n", ((IRDefine*)node)->symbol);
+            break;
+        }
+        case IR_NODE_IFDEF: {
+            printf("\n");
+            IRIfdef* ifn = (IRIfdef*)node;
+            int br_idx = 0;
+            for (IRIfdefBranch* br = ifn->branches; br; br = br->next, br_idx++) {
+                debug_print_indent(indent_level + 1);
+                if (br->condition)
+                    printf("[BRANCH %d] condition=\"%s\"\n", br_idx, br->condition);
+                else
+                    printf("[BRANCH %d] condition=else\n", br_idx);
+                for (IROperationNode* op = br->ops; op; op = op->next)
+                    debug_print_node(op->op_node, indent_level + 2);
+            }
+            break;
         }
         case IR_NODE_OBSERVER: {
             IRObserver* obs = (IRObserver*)node;
@@ -215,7 +236,23 @@ void ir_debug_print_backend(IRRoot* root, const ApiSpec* api_spec) {
         return;
     }
     printf("[%s]\n", get_ir_node_type_str(root->base.type));
-    if (root->root_objects) {
+    if (root->root_ops) {
+        // Print in ordered ops sequence so define/ifdef appear at the right position.
+        // For IR_NODE_OBJECT entries we temporarily nil ->next to print only that one
+        // object (objects in root_ops are also linked via root_objects ->next chain).
+        for (IROperationNode* op = root->root_ops; op; op = op->next) {
+            IRNode* n = op->op_node;
+            if (n->type == IR_NODE_OBJECT) {
+                IRObject* obj = (IRObject*)n;
+                IRObject* saved = obj->next;
+                obj->next = NULL;
+                debug_print_object_list(obj, 1);
+                obj->next = saved;
+            } else {
+                debug_print_node(n, 1);
+            }
+        }
+    } else if (root->root_objects) {
         debug_print_object_list(root->root_objects, 1);
     } else {
         debug_print_indent(1);

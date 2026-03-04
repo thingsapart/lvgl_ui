@@ -1,0 +1,8 @@
+# Sub-file included from inside an ifdef branch.
+# Defines a component; used by ifdef_include_in_branch.yaml via use-view.
+- type: component
+  id: '@included_comp'
+  content:
+    type: label
+    text: $lbl
+    center: []

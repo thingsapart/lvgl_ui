@@ -1,7 +1,21 @@
 # Split include-based main file for cnc_pendant
+#
+# Layout selection via defines.
+# Change 'UI_MEDIUM' below to select a different layout:
+#   UI_MEDIUM     – 480×320 landscape (default)
+#   UI_LARGE      – tablet portrait
+#   UI_TINY_ROUND – 240×240 round display
 - include: "data_binding.yaml"
 - include: "fonts.yaml"
 - include: "styles/global_styles.yaml"
 
-- include: "main_480x320.yaml"
-#- include: "main_tablet_portrait.yaml"
+- define: "UI_LARGE"
+- ifdef:
+    UI_MEDIUM:
+      - include: "main_480x320.yaml"
+    UI_LARGE:
+      - include: "main_tablet_portrait.yaml"
+    UI_TINY_ROUND:
+      - include: "main_240x240_round.yaml"
+    else:
+      - include: "main_480x320.yaml"

@@ -58,6 +58,10 @@ void registry_print_components(const Registry* reg);
 void registry_add_generated_var(Registry* reg, const char* name, const char* c_var_name, const char* c_type);
 const char* registry_get_generated_var(const Registry* reg, const char* name);
 const char* registry_get_c_type_for_id(const Registry* reg, const char* name);
+// Frees all VarRegistryNode entries added after 'snapshot' was taken and
+// restores generated_vars to that snapshot.  Used to scope the registry
+// to individual ifdef branches.
+void registry_free_vars_since(Registry* reg, VarRegistryNode* snapshot);
 
 
 // --- Pointer Registry ---

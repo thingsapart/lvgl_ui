@@ -3,6 +3,8 @@
 #include "lvgl.h"
 #include "lvgl_ui.h"
 #include <stdlib.h> // For malloc
+#include <stdio.h>  // For snprintf
+#include <string.h> // For strlen/getenv handling
 
 // --- Memory Allocator (define LVGL_UI_MALLOC/FREE before this file to override) ---
 #ifndef LVGL_UI_MALLOC
@@ -19,40 +21,70 @@
   #define LVGL_UI_FREE(ptr) free(ptr)
 #endif
 
+// --- OOM / Home-path helpers ---
+static void lvgl_ui_handle_oom(const char* where) {
+    LV_LOG_ERROR("LVGL UI: OOM at %s", where);
+#ifdef LVGL_UI_OOM_FOREVER
+    for(;;) { /* spin */ }
+#else
+    volatile int* _p = (volatile int*)0; *_p = 0; /* force crash */
+#endif
+}
+
+static char* lvgl_ui_expand_home_path(const char* rest) {
+    const char* _h = getenv("HOME");
+    if (_h) { size_t _n = strlen(_h) + strlen(rest) + 2; char* _buf = LVGL_UI_MALLOC(_n); if (!_buf) { lvgl_ui_handle_oom("expand_home_path"); return NULL; } snprintf(_buf, _n, "%s%s", _h, rest); return _buf; }
+    return (char*)rest; /* fallback: return literal rest when HOME unavailable */
+}
+
 // --- Custom Includes from API Spec ---
 #include "ui/components/lv_cam_positioning.h"
 #include "ui/components/lv_cam_stream.h"
+#include "ui/components/lv_cnc_io_panel.h"
 #include "ui/components/lv_probing_wizard_stubs.h"
 #include "ui/components/lv_probing_wizard.h"
+#include "ui/components/lv_settings.h"
 #include "ui.h"
 
+// --- Hoisted Variables (shared between create_ui and deferred functions) ---
+static lv_style_t* font_large_0 = NULL;
+
 void create_ui(lv_obj_t* parent) {
-    // unnamed: obj_0 (obj)
-    lv_obj_t* obj_0 = lv_obj_create(parent);
+    // font_large: font_large_0 (style)
+    font_large_0 = LVGL_UI_MALLOC(sizeof(lv_style_t));
+    if (font_large_0 == NULL) {
+        lvgl_ui_handle_oom("font_large_0");
+    }
 
-    lv_obj_set_style_layout(obj_0, LV_LAYOUT_FLEX, 0);
-    lv_obj_set_style_flex_flow(obj_0, LV_FLEX_FLOW_COLUMN, 0);
-    lv_obj_set_style_size(obj_0, 150, LV_SIZE_CONTENT, 0);
-    lv_obj_set_style_pad_all(obj_0, 10, 0);
-    lv_obj_set_style_radius(obj_0, 5, 0);
-    lv_obj_set_style_bg_color(obj_0, lv_palette_lighten(LV_PALETTE_GREY, 2), 0);
-    // unnamed: label_1 (label)
-    lv_obj_t* label_1 = lv_label_create(obj_0);
+    lv_style_init(font_large_0);
+    obj_registry_add("font_large", font_large_0);
 
-    lv_label_set_text(label_1, "Temperature");
+    // unnamed: obj_1 (obj)
+    lv_obj_t* obj_1 = lv_obj_create(parent);
 
+    lv_obj_set_style_layout(obj_1, LV_LAYOUT_FLEX, 0);
+    lv_obj_set_style_flex_flow(obj_1, LV_FLEX_FLOW_COLUMN, 0);
+    lv_obj_set_style_size(obj_1, 150, LV_SIZE_CONTENT, 0);
+    lv_obj_set_style_pad_all(obj_1, 10, 0);
+    lv_obj_set_style_radius(obj_1, 5, 0);
+    lv_obj_set_style_bg_color(obj_1, lv_palette_lighten(LV_PALETTE_GREY, 2), 0);
     // unnamed: label_2 (label)
-    lv_obj_t* label_2 = lv_label_create(obj_0);
+    lv_obj_t* label_2 = lv_label_create(obj_1);
 
-    lv_label_set_text(label_2, "\xef\x8c\x84");
-    lv_obj_set_style_text_font(label_2, /* unresolved_ref: @font_large */ NULL, 0);
+    lv_label_set_text(label_2, "Temperature");
 
     // unnamed: label_3 (label)
-    lv_obj_t* label_3 = lv_label_create(obj_0);
+    lv_obj_t* label_3 = lv_label_create(obj_1);
 
-    lv_label_set_text(label_3, "23.5 C");
+    lv_label_set_text(label_3, "\xef\x8c\x84");
+    lv_obj_set_style_text_font(label_3, font_large_0, 0);
 
-    lv_obj_set_pos(obj_0, 10, 10);
+    // unnamed: label_4 (label)
+    lv_obj_t* label_4 = lv_label_create(obj_1);
+
+    lv_label_set_text(label_4, "23.5 C");
+
+    lv_obj_set_pos(obj_1, 10, 10);
 
 }
 
@@ -60,4 +92,7 @@ void destroy_ui(lv_obj_t** root_ptr) {
     if (!root_ptr || !*root_ptr) return;
     lv_obj_delete(*root_ptr);
     *root_ptr = NULL;
+    // Free all hoisted (file-scope) allocations.
+    // destroy_* fns already NULL these after their own frees, so free(NULL) is safe.
+    LVGL_UI_FREE(font_large_0); font_large_0 = NULL;
 }

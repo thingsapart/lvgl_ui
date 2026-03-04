@@ -1,0 +1,14 @@
+# Test: define + ifdef in IR debug output
+- define: "UI_SMALL"
+- type: label
+  text: "common"
+  center: []
+- ifdef:
+    UI_SMALL:
+      - type: label
+        text: "small"
+        center: []
+    else:
+      - type: label
+        text: "other"
+        center: []

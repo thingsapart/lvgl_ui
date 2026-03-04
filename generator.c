@@ -86,6 +86,44 @@ static char* interpolate_home_path(const char* path) {
 static void prefix_ids_recursive(cJSON* node, const char* prefix);
 
 /**
+ * Recursively register all 'type: component' items found in an array and
+ * inside any nested ifdef branch arrays.  Called as a pre-pass so that
+ * use-view directives can find components defined inside ifdef branches.
+ */
+static void preregister_components_recursive(Registry* reg, cJSON* array) {
+    if (!array || !cJSON_IsArray(array)) return;
+    cJSON* item = NULL;
+    cJSON_ArrayForEach(item, array) {
+        if (!cJSON_IsObject(item)) continue;
+        /* Register component definitions */
+        cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item, "type");
+        if (type_item && cJSON_IsString(type_item) &&
+                strcmp(type_item->valuestring, "component") == 0) {
+            cJSON* id_item      = cJSON_GetObjectItemCaseSensitive(item, "id");
+            cJSON* content_item = cJSON_GetObjectItemCaseSensitive(item, "root");
+            if (!content_item)
+                content_item = cJSON_GetObjectItemCaseSensitive(item, "content");
+            if (id_item && cJSON_IsString(id_item) &&
+                    content_item && cJSON_IsObject(content_item)) {
+                registry_add_component(reg, id_item->valuestring, content_item);
+                DEBUG_LOG(LOG_MODULE_GENERATOR,
+                          "Registered component (recursive): %s", id_item->valuestring);
+            }
+        }
+        /* Recurse into ifdef branch arrays */
+        cJSON* ifdef_item = cJSON_GetObjectItemCaseSensitive(item, "ifdef");
+        if (ifdef_item && cJSON_IsObject(ifdef_item)) {
+            cJSON* br = ifdef_item->child;
+            while (br) {
+                if (cJSON_IsArray(br))
+                    preregister_components_recursive(reg, br);
+                br = br->next;
+            }
+        }
+    }
+}
+
+/**
  * Expand top-level include directives in an array by replacing the include
  * entry with the array contents of the included file. Returns true on
  * success, false on fatal error (render_abort called).
@@ -99,7 +137,21 @@ static bool expand_includes_in_array(cJSON* array, const char* base_path) {
         if (!item) { i++; continue; }
 
         cJSON* include_item = cJSON_GetObjectItem(item, "include");
-        if (!include_item) { i++; continue; }
+        if (!include_item) {
+            /* Recurse into ifdef branch arrays so includes inside branches
+             * are also expanded before the component pre-pass runs. */
+            cJSON* ifdef_obj = cJSON_GetObjectItem(item, "ifdef");
+            if (ifdef_obj && cJSON_IsObject(ifdef_obj)) {
+                cJSON* br = ifdef_obj->child;
+                while (br) {
+                    if (cJSON_IsArray(br)) {
+                        if (!expand_includes_in_array(br, base_path)) return false;
+                    }
+                    br = br->next;
+                }
+            }
+            i++; continue;
+        }
 
         // Ensure include is standalone
         int other_keys = 0;
@@ -242,43 +294,15 @@ IRRoot* generate_ir_from_ui_spec(const cJSON* ui_spec_root, const ApiSpec* api_s
         return NULL;
     }
 
-    // Pre-pass to find and register all components
-    cJSON* item_json = NULL;
-    cJSON_ArrayForEach(item_json, ui_spec_root) {
-        if (cJSON_IsObject(item_json)) {
-            cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item_json, "type");
-            if (type_item && cJSON_IsString(type_item)) {
-                if (strcmp(type_item->valuestring, "component") == 0) {
-                    cJSON* id_item = cJSON_GetObjectItemCaseSensitive(item_json, "id");
-                    cJSON* content_item = cJSON_GetObjectItemCaseSensitive(item_json, "root");
-                    if (!content_item) content_item = cJSON_GetObjectItemCaseSensitive(item_json, "content");
-                    if (id_item && cJSON_IsString(id_item) && content_item && cJSON_IsObject(content_item)) {
-                        registry_add_component(ctx.registry, id_item->valuestring, content_item);
-                        DEBUG_LOG(LOG_MODULE_GENERATOR, "Registered component: %s", id_item->valuestring);
-                    } else {
-                      if (!id_item) {
-                        print_warning("Found 'component' with missing 'id'.");
-                      } else if (!cJSON_IsString(id_item)) {
-                        print_warning("Found 'component' with 'id' that is not a string.");
-                      }
-                      if (!content_item) {
-                        print_warning("Found 'component' with missing 'root'/'content'.");
-
-                      } else if (!cJSON_IsObject(content_item)) {
-                        print_warning("Found 'component' with 'root'/'content' that is not an object (got array or scalar instead).");
-                      }
-                    }
-                }
-            }
-        }
-    }
+    // Pre-pass to find and register all components (including those inside ifdef branches)
+    preregister_components_recursive(ctx.registry, (cJSON*)ui_spec_root);
 
 
     const char* root_parent_name = "parent";
     registry_add_generated_var(ctx.registry, root_parent_name, root_parent_name, "lv_obj_t*");
 
 
-    process_ui_spec_array(&ctx, (cJSON*)ui_spec_root, ".", &ir_root->root_objects, NULL, root_parent_name, NULL);
+    process_ui_spec_array(&ctx, (cJSON*)ui_spec_root, ".", &ir_root->root_objects, &ir_root->root_ops, root_parent_name, NULL);
 
 
     registry_free(ctx.registry);
@@ -342,32 +366,12 @@ IRRoot* generate_ir_from_string_with_base_path(const char* ui_spec_string, const
     IRRoot* ir_root = ir_new_root();
     GenContext ctx = { .api_spec = api_spec, .registry = registry_create(), .var_counter = 0, .error_occurred = false };
 
-    // Pre-pass for components...
-    cJSON* item_json = NULL;
-    cJSON_ArrayForEach(item_json, ui_spec_json) {
-        if (cJSON_IsObject(item_json)) {
-            cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item_json, "type");
-            if (type_item && cJSON_IsString(type_item) && strcmp(type_item->valuestring, "component") == 0) {
-                cJSON* id_item = cJSON_GetObjectItemCaseSensitive(item_json, "id");
-                cJSON* content_item = cJSON_GetObjectItemCaseSensitive(item_json, "root");
-                if (!content_item) content_item = cJSON_GetObjectItemCaseSensitive(item_json, "content");
-                if (id_item && cJSON_IsString(id_item) && content_item && cJSON_IsObject(content_item)) {
-                    registry_add_component(ctx.registry, id_item->valuestring, content_item);
-                } else {
-                    if (!id_item || !cJSON_IsString(id_item))
-                        print_warning("Found 'component' with missing or non-string 'id'.");
-                    if (!content_item)
-                        print_warning("Found 'component' with missing 'root'/'content'.");
-                    else if (!cJSON_IsObject(content_item))
-                        print_warning("Found 'component' with 'root'/'content' that is not an object (got array or scalar instead).");
-                }
-            }
-        }
-    }
+    // Pre-pass for components (includes those inside ifdef branches)
+    preregister_components_recursive(ctx.registry, ui_spec_json);
 
     const char* root_parent_name = "parent";
     registry_add_generated_var(ctx.registry, root_parent_name, root_parent_name, "lv_obj_t*");
-    process_ui_spec_array(&ctx, ui_spec_json, base_path, &ir_root->root_objects, NULL, root_parent_name, NULL);
+    process_ui_spec_array(&ctx, ui_spec_json, base_path, &ir_root->root_objects, &ir_root->root_ops, root_parent_name, NULL);
 
     registry_free(ctx.registry);
     cJSON_Delete(ui_spec_json);
@@ -894,6 +898,114 @@ static IRObject* parse_object(GenContext* ctx, cJSON* obj_json, const char* pare
                     }
                     ir_operation_list_add(&ir_obj->operations, (IRNode*)ir_new_action(action_name, action_type, data_expr));
                 }
+            }
+        } else if (strcmp(key, "ifdef") == 0) {
+            // Inline ifdef inside an object's attribute list.
+            // Format:
+            //   ifdef:
+            //     SOME_DEFINE:
+            //       - { func_name: [arg, ...] }
+            //     else:
+            //       - { func_name: [arg, ...] }
+            if (!cJSON_IsObject(item)) {
+                print_warning("'ifdef' attribute value must be an object mapping conditions to arrays.");
+            } else {
+                IRIfdef* ifdef_node = ir_new_ifdef(NULL);
+                IRIfdefBranch* last_br = NULL;
+                IRIfdefBranch* else_br = NULL;
+
+                cJSON* branch_val = item->child;
+                while (branch_val && !ctx->error_occurred) {
+                    const char* bkey = branch_val->string;
+                    if (!bkey || strncmp(bkey, "//", 2) == 0) { branch_val = branch_val->next; continue; }
+                    bool is_else = (strcmp(bkey, "else") == 0);
+                    IRIfdefBranch* branch = ir_new_ifdef_branch(is_else ? NULL : bkey);
+
+                    if (cJSON_IsArray(branch_val)) {
+                        // Each array item is an object like { func_name: [args...] }.
+                        // Process each key-value pair as a property/method call on ir_obj.
+                        cJSON* call_item = branch_val->child;
+                        while (call_item && !ctx->error_occurred) {
+                            if (cJSON_IsObject(call_item)) {
+                                cJSON* prop = call_item->child;
+                                while (prop && !ctx->error_occurred) {
+                                    const char* pkey = prop->string;
+                                    if (!pkey || strncmp(pkey, "//", 2) == 0) { prop = prop->next; continue; }
+
+                                    const PropertyDefinition* prop_def_br = api_spec_find_property(ctx->api_spec, ir_obj->json_type, pkey);
+                                    const char* func_name_br = (prop_def_br && prop_def_br->setter)
+                                        ? prop_def_br->setter
+                                        : (api_spec_has_function(ctx->api_spec, pkey) ? pkey : NULL);
+
+                                    if (!func_name_br) {
+                                        char warn[256];
+                                        snprintf(warn, sizeof(warn), "In ifdef branch: could not resolve property/method '%s' for type '%s'.", pkey, ir_obj->json_type);
+                                        ir_operation_list_add(&branch->ops, (IRNode*)ir_new_warning(warn));
+                                        api_spec_free_property(prop_def_br);
+                                        prop = prop->next; continue;
+                                    }
+                                    const FunctionDefinition* func_def_br = api_spec_find_function(ctx->api_spec, func_name_br);
+                                    if (!func_def_br) {
+                                        char warn[256];
+                                        snprintf(warn, sizeof(warn), "In ifdef branch: could not find function '%s'.", func_name_br);
+                                        ir_operation_list_add(&branch->ops, (IRNode*)ir_new_warning(warn));
+                                        api_spec_free_property(prop_def_br);
+                                        prop = prop->next; continue;
+                                    }
+
+                                    const FunctionArg* first_arg_br = func_def_br->args_head;
+                                    bool expects_target_br = (first_arg_br && first_arg_br->type && strstr(first_arg_br->type, "_t*"));
+                                    IRExprNode* final_args_br = NULL;
+                                    const FunctionArg* expected_arg_br = func_def_br->args_head;
+
+                                    if (expects_target_br) {
+                                        ir_expr_list_add(&final_args_br, ir_new_expr_registry_ref(ir_obj->c_name, ir_obj->c_type));
+                                        if (expected_arg_br) expected_arg_br = expected_arg_br->next;
+                                    }
+
+                                    if (cJSON_IsArray(prop)) {
+                                        cJSON* val_item = prop->child;
+                                        while (val_item) {
+                                            const char* exp_type = expected_arg_br ? expected_arg_br->type : "unknown";
+                                            IRExpr* expr = unmarshal_value(ctx, val_item, new_scope_context, exp_type, parent_c_name, ir_obj->c_name, ir_obj);
+                                            ir_expr_list_add(&final_args_br, expr);
+                                            if (expected_arg_br) expected_arg_br = expected_arg_br->next;
+                                            val_item = val_item->next;
+                                        }
+                                    } else {
+                                        const char* exp_type = expected_arg_br ? expected_arg_br->type : "unknown";
+                                        IRExpr* expr = unmarshal_value(ctx, prop, new_scope_context, exp_type, parent_c_name, ir_obj->c_name, ir_obj);
+                                        ir_expr_list_add(&final_args_br, expr);
+                                    }
+
+                                    process_and_validate_call(ctx, func_name_br, &final_args_br, ir_obj);
+                                    const char* ret_type_br = api_spec_get_function_return_type(ctx->api_spec, func_name_br);
+                                    ir_operation_list_add(&branch->ops, (IRNode*)ir_new_expr_func_call(func_name_br, final_args_br, ret_type_br));
+                                    api_spec_free_property(prop_def_br);
+                                    prop = prop->next;
+                                }
+                            }
+                            call_item = call_item->next;
+                        }
+                    } else {
+                        print_warning("ifdef branch value must be an array.");
+                    }
+
+                    if (is_else) {
+                        else_br = branch;
+                    } else {
+                        if (!ifdef_node->branches) { ifdef_node->branches = branch; last_br = branch; }
+                        else { last_br->next = branch; last_br = branch; }
+                    }
+                    branch_val = branch_val->next;
+                }
+
+                if (else_br) {
+                    if (!ifdef_node->branches) ifdef_node->branches = else_br;
+                    else last_br->next = else_br;
+                }
+
+                ir_operation_list_add(&ir_obj->operations, (IRNode*)ifdef_node);
             }
         } else {
             const PropertyDefinition* prop_def = api_spec_find_property(ctx->api_spec, ir_obj->json_type, key);
@@ -1695,6 +1807,114 @@ static void process_ui_spec_array(GenContext* ctx, cJSON* array_json, const char
                     }
                 }
             else if (cJSON_IsObject(item_json)) {
+
+            // --- Handle "define" directive ---
+            cJSON* define_item = cJSON_GetObjectItemCaseSensitive(item_json, "define");
+            if (define_item) {
+                if (!cJSON_IsString(define_item)) {
+                    print_warning("'define' directive value must be a string symbol.");
+                } else {
+                    IRDefine* def_node = ir_new_define(define_item->valuestring);
+                    if (operation_list_head)
+                        ir_operation_list_add(operation_list_head, (IRNode*)def_node);
+                    else
+                        free(def_node); // nobody to receive it; discard safely
+                }
+                continue;
+            }
+
+            // --- Handle "ifdef" directive ---
+            // Only treat as a standalone ifdef block when the item has no "type" key.
+            // If "type" is present the item is a widget with an inline ifdef attribute;
+            // parse_object will handle the ifdef key inside the property loop.
+            cJSON* ifdef_item = cJSON_GetObjectItemCaseSensitive(item_json, "ifdef");
+            if (ifdef_item && !cJSON_GetObjectItemCaseSensitive(item_json, "type")) {
+                if (!cJSON_IsObject(ifdef_item)) {
+                    print_warning("'ifdef' directive value must be an object mapping conditions to arrays.");
+                } else {
+                    IRIfdef* ifdef_node = ir_new_ifdef(NULL);
+                    IRIfdefBranch* last_br = NULL;
+                    IRIfdefBranch* else_br = NULL;
+
+                    // --- Per-branch registry + counter scoping ---
+                    // Branches are mutually exclusive at compile time (#ifdef/#elif/#else).
+                    // Each branch must start with:
+                    //   (a) the same var_counter so equal-positioned objects (e.g. a
+                    //       shared global_styles.yaml) get identical C names in every branch;
+                    //   (b) a clean generated_vars registry containing only pre-ifdef
+                    //       entries, so a lookup inside branch B can't accidentally
+                    //       return a c_name that was registered in branch A.
+                    int branch_start_counter  = ctx->var_counter;
+                    int branch_max_counter    = ctx->var_counter;
+                    VarRegistryNode* pre_ifdef_vars = ctx->registry->generated_vars;
+
+                    cJSON* branch_val = ifdef_item->child;
+                    while (branch_val && !ctx->error_occurred) {
+                        const char* key = branch_val->string;
+                        if (!key || strncmp(key, "//", 2) == 0) {
+                            branch_val = branch_val->next;
+                            continue;
+                        }
+                        bool is_else = (strcmp(key, "else") == 0);
+                        IRIfdefBranch* branch = ir_new_ifdef_branch(is_else ? NULL : key);
+
+                        // Restore both the counter and the registry to their
+                        // pre-ifdef state so this branch gets a clean slate.
+                        ctx->var_counter = branch_start_counter;
+                        registry_free_vars_since(ctx->registry, pre_ifdef_vars);
+
+                        if (cJSON_IsArray(branch_val)) {
+                            // Recursively process items in this branch.
+                            // object_list_head=NULL: branch objects are NOT added to parent
+                            // object_list — they live only in branch->ops.
+                            process_ui_spec_array(ctx, branch_val, current_base_path,
+                                                  NULL, &branch->ops,
+                                                  parent_c_name, ui_context);
+                        } else {
+                            print_warning("ifdef branch value must be an array.");
+                        }
+
+                        // Keep a high-water mark so items after this ifdef won't
+                        // collide with names generated inside any branch.
+                        if (ctx->var_counter > branch_max_counter)
+                            branch_max_counter = ctx->var_counter;
+
+                        if (is_else) {
+                            else_br = branch;
+                        } else {
+                            if (!ifdef_node->branches) {
+                                ifdef_node->branches = branch;
+                                last_br = branch;
+                            } else {
+                                last_br->next = branch;
+                                last_br = branch;
+                            }
+                        }
+                        branch_val = branch_val->next;
+                    }
+                    // Restore registry to pre-ifdef state (discard last branch's entries).
+                    registry_free_vars_since(ctx->registry, pre_ifdef_vars);
+                    // Advance counter past the highest value reached by any branch so
+                    // items after this ifdef don't collide with names inside branches.
+                    ctx->var_counter = branch_max_counter;
+
+                    // Append else branch last (if present)
+                    if (else_br) {
+                        if (!ifdef_node->branches) {
+                            ifdef_node->branches = else_br;
+                        } else {
+                            last_br->next = else_br;
+                        }
+                    }
+
+                    if (operation_list_head)
+                        ir_operation_list_add(operation_list_head, (IRNode*)ifdef_node);
+                    else
+                        ir_free((IRNode*)ifdef_node);
+                }
+                continue;
+            }
+
              cJSON* type_item = cJSON_GetObjectItemCaseSensitive(item_json, "type");
             if (type_item && cJSON_IsString(type_item)) {
                 if (strcmp(type_item->valuestring, "component") == 0) continue;

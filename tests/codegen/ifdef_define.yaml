@@ -1,0 +1,18 @@
+# Test: define + ifdef conditional compilation
+- define: "UI_MEDIUM"
+- type: label
+  text: "always shown"
+  center: []
+- ifdef:
+    UI_MEDIUM:
+      - type: label
+        text: "medium ui"
+        center: []
+    UI_LARGE:
+      - type: label
+        text: "large ui"
+        center: []
+    else:
+      - type: label
+        text: "default ui"
+        center: []
