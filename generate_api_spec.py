@@ -197,7 +197,7 @@ class LVGLApiParser:
         except Exception as e:
             print(f"Error while evaluating complex constants with compiler: {e}", file=sys.stderr)
 
-        
+
         # Normalize and try to resolve aliases (identifiers pointing to other constants),
         # accept function aliases and pointer-like entries as non-numeric and skip them.
         function_names = {f.get('name') for f in self.spec.get('functions', []) if f.get('name')}

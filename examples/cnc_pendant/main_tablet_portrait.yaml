@@ -15,6 +15,7 @@
 - include: "ui_components/view_filelist.yaml"
 - include: "ui_components/view_job_status.yaml"
 - include: "ui_components/view_io_panel.yaml"
+- include: "ui_components/view_machine_gcode.yaml"
 
 # Root container, vertical layout
 # Local style: apply to rows to change height easily (change 285 below)
@@ -40,7 +41,8 @@
     - type: obj
       add_style: ['@container', 0]
       add_style: ['@flex_x', 0]
-      add_style: ['@tablet_row', 0]
+      # add_style: ['@tablet_row', 0]
+      size: [100%, 280]
       # Change the numeric height here to adjust all rows (except keyboard)
       children:
         - add_style: ['@container_transp', 0]
@@ -60,46 +62,49 @@
     # Row 2: Movement Queue Preview (placeholder for future widget)
     - type: obj
       add_style: ['@container', 0]
-      add_style: ['@tablet_row', 0]
-      height: 8
+      # add_style: ['@tablet_row', 0]
+      # size: [100%, 400]
+      width: 100%
+      flex_grow: 3
       pad_all: 8
       children:
-        - type: label
-          text: "Movement Queue Preview (placeholder: iso, top, sides, multi)"
-          text_font: '@font_kode_20'
-          center: []
+        - type: use-view
+          id: @machine_gcode_view
 
     # Row 3: Probing Wizard / Mos Probe (left)  | Cam Positioning (right)
-    - type: obj
-      id: '@probe_row'
-      add_style: ['@container', 0]
-      add_style: ['@flex_x', 0]
-      add_style: ['@tablet_row', 0]
-      size: [100%, 285]
-      # Hide probe-row while on-screen keyboard is active
-      # observes:
-      # ui.mdi_input_active:
-      #    visible: { true: false, false: true }
-      children:
-        - flex_grow: 1
-          add_style: ['@container', 0]
-          children:
-            - type: use-view
-              id: '@probing_wizard'
+    #- type: obj
+    #  id: '@probe_row'
+    #  add_style: ['@container', 0]
+    #  add_style: ['@flex_x', 0]
+    #  add_style: ['@tablet_row', 0]
+    #  size: [100%, 285]
+    #  # Hide probe-row while on-screen keyboard is active
+    #  # observes:
+    #  # ui.mdi_input_active:
+    #  #    visible: { true: false, false: true }
+    #  children:
+    #    - flex_grow: 1
+    #      add_style: ['@container', 0]
+    #      size: [45%, 100%]
+    #      children:
+    #        - type: use-view
+    #          id: '@probing_wizard'
+    #          size: [100%, 100%]
+    #
+    #    - size: [55%, 100%]
+    #      add_style: ['@container', 0]
+    #      children:
+    #        - type: use-view
+    #          id: '@cam_positioning_view'
 
-        - size: [55%, 100%]
-          add_style: ['@container', 0]
-          children:
-            - type: use-view
-              id: '@cam_positioning_view'
-
-    # Row 4: Tabview with MDI / G-Code Buffer / Files+Macros / IO-Panel
+    # Row 3: Tabview with MDI / G-Code Buffer / Files+Macros / IO-Panel
     # '/' separated in the user's note → implemented as a tabview with deferred children
     - type: obj
       add_style: ['@container', 0]
-      add_style: ['@tablet_row', 0]
+      #add_style: ['@tablet_row', 0]
       # size: [100%, 350]
-      flex_grow: 5
+      width: 100%
+      flex_grow: 3
       children:
         - type: tabview
           tab_bar_position: LV_DIR_TOP
@@ -117,6 +122,20 @@
             # Style the tab content area
             - init: { lv_tabview_get_content: [] }
               remove_flag: LV_OBJ_FLAG_SCROLLABLE
+
+            - init: { lv_tabview_add_tab: ["Probe/Camera"] }
+              deferred: true
+              add_style: ['@container', 0]
+              children:
+                #- type: use-view
+                #  id: '@cam_positioning_view'
+
+            - init: { lv_tabview_add_tab: ["Probe/Manual"] }
+              deferred: true
+              add_style: ['@container', 0]
+              children:
+                - type: use-view
+                  id: '@probing_wizard'
 
             - init: { lv_tabview_add_tab: ["MDI"] }
               deferred: true

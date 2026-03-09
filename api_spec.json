@@ -1937,6 +1937,15 @@
       "IO_CAT_ACTUATORS": 3,
       "IO_CAT__COUNT": 4
     },
+    "lv_gcode_viewer_view_t": {
+      "LV_GCVIEW_TOP": 0,
+      "LV_GCVIEW_FRONT": 1,
+      "LV_GCVIEW_RIGHT": 2,
+      "LV_GCVIEW_LEFT": 3,
+      "LV_GCVIEW_BACK": 4,
+      "LV_GCVIEW_ISOMETRIC": 5,
+      "LV_GCVIEW_COUNT": 6
+    },
     "lv_probing_wizard_mode_t": {
       "LV_PROBING_WIZARD_MODE_RECTANGLE": 0,
       "LV_PROBING_WIZARD_MODE_CIRCLE": 1,
@@ -15606,6 +15615,135 @@
       "args_named": [
         "lv_obj_t *panel",
         "io_category_t cat"
+      ]
+    },
+    "lv_gcode_viewer_create": {
+      "return_type": "lv_obj_t*",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *parent"
+      ]
+    },
+    "lv_gcode_viewer_clear": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_gcode_viewer_mark_done": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_gcode_viewer_set_view": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "lv_gcode_viewer_view_t"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "lv_gcode_viewer_view_t mode"
+      ]
+    },
+    "lv_gcode_viewer_get_view": {
+      "return_type": "lv_gcode_viewer_view_t",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_gcode_viewer_next_view": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_gcode_viewer_fit": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
+      ]
+    },
+    "lv_gcode_viewer_zoom": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "float"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "float factor"
+      ]
+    },
+    "lv_gcode_viewer_set_grid": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "bool"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "bool show"
+      ]
+    },
+    "lv_gcode_viewer_set_limits": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "bool"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "bool show"
+      ]
+    },
+    "lv_gcode_viewer_set_position": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "bool"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "bool show"
+      ]
+    },
+    "lv_gcode_viewer_set_wcs_origin": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*",
+        "bool"
+      ],
+      "args_named": [
+        "lv_obj_t *obj",
+        "bool show"
+      ]
+    },
+    "lv_gcode_viewer_invalidate": {
+      "return_type": "void",
+      "args": [
+        "lv_obj_t*"
+      ],
+      "args_named": [
+        "lv_obj_t *obj"
       ]
     },
     "lv_probing_wizard_register_stub_callbacks": {
@@ -31083,9 +31221,11 @@
       "ui/components/lv_cam_positioning.h",
       "ui/components/lv_cam_stream.h",
       "ui/components/lv_cnc_io_panel.h",
+      "ui/components/lv_gcode_viewer.h",
       "ui/components/lv_probing_wizard_stubs.h",
       "ui/components/lv_probing_wizard.h",
       "ui/components/lv_settings.h",
+      "ui/components/lv_ui_spec_utils.h",
       "ui.h"
     ]
   }

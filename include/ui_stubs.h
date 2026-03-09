@@ -25,6 +25,16 @@ typedef enum {
 } io_category_t;
 
 typedef enum {
+    LV_GCVIEW_TOP = 0,
+    LV_GCVIEW_FRONT = 1,
+    LV_GCVIEW_RIGHT = 2,
+    LV_GCVIEW_LEFT = 3,
+    LV_GCVIEW_BACK = 4,
+    LV_GCVIEW_ISOMETRIC = 5,
+    LV_GCVIEW_COUNT = 6,
+} lv_gcode_viewer_view_t;
+
+typedef enum {
     LV_PROBING_WIZARD_MODE_RECTANGLE = 0,
     LV_PROBING_WIZARD_MODE_CIRCLE = 1,
     LV_PROBING_WIZARD_MODE_CORNER = 2,
@@ -128,6 +138,58 @@ static inline void lv_cnc_io_panel_destroy(lv_obj_t *panel) {
 }
 
 static inline void lv_cnc_io_panel_set_category(lv_obj_t *panel, io_category_t cat) {
+    (void)0;
+}
+
+static inline lv_obj_t* lv_gcode_viewer_create(lv_obj_t *parent) {
+    return 0;
+}
+
+static inline void lv_gcode_viewer_clear(lv_obj_t *obj) {
+    (void)0;
+}
+
+static inline void lv_gcode_viewer_mark_done(lv_obj_t *obj) {
+    (void)0;
+}
+
+static inline void lv_gcode_viewer_set_view(lv_obj_t *obj, lv_gcode_viewer_view_t mode) {
+    (void)0;
+}
+
+static inline lv_gcode_viewer_view_t lv_gcode_viewer_get_view(lv_obj_t *obj) {
+    return 0;
+}
+
+static inline void lv_gcode_viewer_next_view(lv_obj_t *obj) {
+    (void)0;
+}
+
+static inline void lv_gcode_viewer_fit(lv_obj_t *obj) {
+    (void)0;
+}
+
+static inline void lv_gcode_viewer_zoom(lv_obj_t *obj, float factor) {
+    (void)0;
+}
+
+static inline void lv_gcode_viewer_set_grid(lv_obj_t *obj, bool show) {
+    (void)0;
+}
+
+static inline void lv_gcode_viewer_set_limits(lv_obj_t *obj, bool show) {
+    (void)0;
+}
+
+static inline void lv_gcode_viewer_set_position(lv_obj_t *obj, bool show) {
+    (void)0;
+}
+
+static inline void lv_gcode_viewer_set_wcs_origin(lv_obj_t *obj, bool show) {
+    (void)0;
+}
+
+static inline void lv_gcode_viewer_invalidate(lv_obj_t *obj) {
     (void)0;
 }
 

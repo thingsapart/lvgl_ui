@@ -1,0 +1,14 @@
+- type: component
+  id: '@machine_gcode_view'
+  info: |
+    Machine and G-Code View
+    ---
+    Shows isometric, left, right, front, back views of simulated g-code (that is available).
+  content:
+    add_style: ['@container', 0]
+    size: [100%, 100%]
+    children:
+      - init: { lv_gcode_viewer_create: [] }
+        id: @gcode_viewer
+        add_style: ['@container', 0]
+        size: [100%, 100%]

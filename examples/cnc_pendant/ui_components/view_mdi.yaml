@@ -106,7 +106,7 @@
           # The 'toggle' action fires LV_EVENT_VALUE_CHANGED on every keystroke.
           # C handler calls lv_textarea_get_text(mdi_input) to get the content.
           - type: textarea
-            id: '@mdi_input_field'
+            id: @mdi_input_field
             named: mdi_input
             add_style: ['@bg_gradient', 0]
             one_line: true
@@ -149,10 +149,11 @@
         
         ifdef:
           UI_LARGE:
-            - { lv_tabview_set_tab_bar_position: [LV_DIR_BOTTOM] }
-            - { lv_tabview_set_tab_bar_size: 30 }
+            - { lv_tabview_set_tab_bar_position: [LV_DIR_LEFT] }
+            - { lv_tabview_set_tab_bar_size: 25 }
           else:
             - { lv_tabview_set_tab_bar_position: [LV_DIR_LEFT] }
+            - { lv_tabview_set_tab_bar_size: 25 }
 
         children:
 
@@ -164,6 +165,7 @@
 
           # Style the tab content area
           - init: { lv_tabview_get_content: [] }
+            add_style: ['@container', 0]
             remove_flag: LV_OBJ_FLAG_SCROLLABLE
 
           # -----------------------------------------------------------
@@ -179,7 +181,13 @@
                 id: '@mdi_keyboard'
                 width: 100%
                 height: 100%
-                textarea: '@mdi_input_field'
+                textarea: @mdi_input_field
+                lv_keyboard_set_popovers: true
+                lv_keyboard_set_mode: LV_KEYBOARD_MODE_TEXT_UPPER
+                style_radius: [3, LV_PART_ITEMS]
+                style_pad_column: [2, LV_PART_MAIN]
+                style_pad_row: [2, LV_PART_MAIN]
+                style_pad_all: [2, LV_PART_MAIN]
                 observes:
                   MDI.is_busy:
                     disabled: { true: true, false: false }

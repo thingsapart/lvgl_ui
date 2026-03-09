@@ -15,7 +15,7 @@ typedef struct {
     float max_val;
     float initial_val;
     char* format_str;
-    char* text;
+    const char* text;
 } NumericDialogConfig;
 
 /**
