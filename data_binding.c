@@ -805,6 +805,7 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
 
     lv_obj_t *cont = lv_obj_create(content);
     lv_obj_set_size(cont, lv_pct(100), LV_SIZE_CONTENT);
+    lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE); /* prevent scroll stealing slider drags */
     lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_CENTER,  LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_all(cont, 5, 0);
@@ -823,6 +824,7 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
     lv_obj_t* scale_cont = lv_obj_create(cont);
     lv_obj_set_width(scale_cont, lv_pct(100));
     lv_obj_set_height(scale_cont, LV_SIZE_CONTENT);
+    lv_obj_clear_flag(scale_cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_remove_style(scale_cont, NULL, LV_PART_SCROLLBAR | LV_STATE_ANY);
     lv_obj_set_style_bg_opa(scale_cont, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(scale_cont, 0, 0);
@@ -856,8 +858,7 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
 
     // Add event handlers
     lv_obj_add_event_cb(slider, slider_value_changed_cb, LV_EVENT_VALUE_CHANGED, data);
-    // Disabled for now - not working right.
-    //lv_obj_add_event_cb(slider, slider_released_cb, LV_EVENT_RELEASED, data);
+    lv_obj_add_event_cb(slider, slider_released_cb, LV_EVENT_RELEASED, data);
     lv_obj_add_event_cb(mbox, dialog_event_cb, LV_EVENT_ALL, data);
     lv_obj_add_event_cb(ok_btn, mb_ok_event_cb, LV_EVENT_CLICKED, data);
     lv_obj_add_event_cb(cncl_btn, mb_close_cb, LV_EVENT_CLICKED, mbox);
