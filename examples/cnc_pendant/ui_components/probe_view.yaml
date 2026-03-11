@@ -182,7 +182,7 @@
             add_style: [@flex_x, 0]
             add_style: [@bg_group, 0]
             size: [100%, LV_SIZE_CONTENT]
-            max_width: 100
+            max_width: 150
             flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
             pad_all: 3
             children:
