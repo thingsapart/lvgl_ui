@@ -687,6 +687,13 @@ static void slider_released_cb(lv_event_t* e) {
     DialogEventData* data = lv_event_get_user_data(e);
     lv_obj_t* slider = data->slider;
 
+    /* Only adjust range when the user has finished interacting with the
+     * slider. Guard against intermediate events by checking the event code
+     * and that the slider is no longer in the PRESSED state. */
+    lv_event_code_t code = lv_event_get_code(e);
+    if (!(code == LV_EVENT_RELEASED || code == LV_EVENT_PRESS_LOST)) return;
+    if (lv_obj_has_state(slider, LV_STATE_PRESSED)) return;
+
     int32_t current_val = lv_slider_get_value(slider);
     int32_t min_val = lv_slider_get_min_value(slider);
     int32_t max_val = lv_slider_get_max_value(slider);
@@ -839,6 +846,7 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
     // Add event handlers
     lv_obj_add_event_cb(slider, slider_value_changed_cb, LV_EVENT_VALUE_CHANGED, data);
     lv_obj_add_event_cb(slider, slider_released_cb, LV_EVENT_RELEASED, data);
+    lv_obj_add_event_cb(slider, slider_released_cb, LV_EVENT_PRESS_LOST, data);
     lv_obj_add_event_cb(mbox, dialog_event_cb, LV_EVENT_ALL, data);
     lv_obj_add_event_cb(ok_btn, mb_ok_event_cb, LV_EVENT_CLICKED, data);
     lv_obj_add_event_cb(cncl_btn, mb_close_cb, LV_EVENT_CLICKED, mbox);
