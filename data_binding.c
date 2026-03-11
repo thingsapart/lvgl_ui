@@ -684,13 +684,7 @@ static void update_scale_labels(DialogEventData* data) {
 }
 
 static void slider_released_cb(lv_event_t* e) {
-    /* Only adjust the numeric-dialog slider range when the user has
-     * finished dragging.  The previous implementation attempted to grow
-     * when the value hit the extreme ends, but this was triggered
-     * repeatedly during a drag and the range changes would force the
-     * thumb back to a small value (often "1").  The new behaviour:
-     *
-     *  * Increase the top end only when the value equals the current max
+    /*  * Increase the top end only when the value equals the current max
      *    at release.
      *  * Decrease the top end only when the value is well below the
      *    midpoint (10% less than half the span, or at least one unit
@@ -725,7 +719,7 @@ static void slider_released_cb(lv_event_t* e) {
                     new_max = max_val + 1;
             }
             lv_slider_set_range(slider, min_val, new_max);
-            lv_slider_set_value(slider, current_val, LV_ANIM_OFF);
+            //lv_slider_set_value(slider, current_val, LV_ANIM_OFF);
             update_scale_labels(data);
             adjusting = false;
             return;
@@ -742,7 +736,7 @@ static void slider_released_cb(lv_event_t* e) {
             int32_t new_max = min_val + span/2; /* shrink to half span */
             if (new_max > min_val && new_max < max_val) {
                 lv_slider_set_range(slider, min_val, new_max);
-                lv_slider_set_value(slider, current_val, LV_ANIM_OFF);
+                //lv_slider_set_value(slider, current_val, LV_ANIM_OFF);
                 update_scale_labels(data);
             }
         }
