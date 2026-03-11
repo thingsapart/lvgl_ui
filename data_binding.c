@@ -684,52 +684,71 @@ static void update_scale_labels(DialogEventData* data) {
 }
 
 static void slider_released_cb(lv_event_t* e) {
+    /* Only adjust the numeric-dialog slider range when the user has
+     * finished dragging.  The previous implementation attempted to grow
+     * when the value hit the extreme ends, but this was triggered
+     * repeatedly during a drag and the range changes would force the
+     * thumb back to a small value (often "1").  The new behaviour:
+     *
+     *  * Increase the top end only when the value equals the current max
+     *    at release.
+     *  * Decrease the top end only when the value is well below the
+     *    midpoint (10% less than half the span, or at least one unit
+     *    lower for tiny ranges) at release.
+     *  * Always preserve the current value after adjusting the range.
+     *  * Guard against re‑entrancy since changing the range fires events
+     *    that could re‑invoke this callback.
+     */
     DialogEventData* data = lv_event_get_user_data(e);
     lv_obj_t* slider = data->slider;
 
-    /* Only adjust range when the user has finished interacting with the
-     * slider. Guard against intermediate events by checking the event code
-     * and that the slider is no longer in the PRESSED state. */
-    lv_event_code_t code = lv_event_get_code(e);
-    if (!(code == LV_EVENT_RELEASED || code == LV_EVENT_PRESS_LOST)) return;
-    if (lv_obj_has_state(slider, LV_STATE_PRESSED)) return;
+    /* quickly bail if someone else is already modifying the range */
+    static bool adjusting = false;
+    if (adjusting) return;
+    adjusting = true;
 
     int32_t current_val = lv_slider_get_value(slider);
-    int32_t min_val = lv_slider_get_min_value(slider);
-    int32_t max_val = lv_slider_get_max_value(slider);
+    int32_t min_val     = lv_slider_get_min_value(slider);
+    int32_t max_val     = lv_slider_get_max_value(slider);
 
-    // Expand up when hitting the max
-    if (current_val >= max_val) {
-        int32_t new_max = (max_val == 0) ? 100 : max_val * 2;
-        lv_slider_set_range(slider, min_val, new_max);
-        lv_slider_set_value(slider, current_val, LV_ANIM_OFF); // Preserve value
-        update_scale_labels(data);
-        return;
-    }
-
-    // Shrink down only when the value falls below a sensible threshold.
-    // Threshold = max * 0.4 (i.e. 10% less than half of max). For small
-    // max values where 10% would be fractional, subtract at least 1.
-    int32_t shrink_sub = (int32_t)floor(0.1 * (double)max_val);
-    if (shrink_sub < 1) shrink_sub = 1;
-    int32_t threshold = (int32_t)floor((double)max_val * 0.5) - shrink_sub;
-    if (threshold <= min_val) threshold = min_val + 1;
-
-    if (current_val <= threshold) {
-        int32_t range = max_val - min_val;
-        if (range > 1) {
-            int32_t new_max = min_val + (range / 2);
-            if (new_max <= current_val) {
-                // Ensure the new range still includes the current value
-                new_max = current_val;
+    int32_t span = max_val - min_val;
+    if (span > 1) {
+        /* ***** grow ***** */
+        if (current_val >= max_val) {
+            int32_t new_max;
+            if (max_val == min_val) {
+                /* should never happen, but avoid zero span */
+                new_max = max_val + 100;
+            } else {
+                new_max = max_val * 2;
+                if (new_max <= max_val) /* guard overflow */
+                    new_max = max_val + 1;
             }
+            lv_slider_set_range(slider, min_val, new_max);
+            lv_slider_set_value(slider, current_val, LV_ANIM_OFF);
+            update_scale_labels(data);
+            adjusting = false;
+            return;
+        }
+
+        /* ***** shrink ***** */
+        /* threshold = half the current span minus 10% (at least 1) */
+        int32_t half    = min_val + span/2;
+        int32_t tenth   = span / 10;
+        if (tenth < 1) tenth = 1;
+        int32_t threshold = half - tenth;
+
+        if (current_val <= threshold) {
+            int32_t new_max = min_val + span/2; /* shrink to half span */
             if (new_max > min_val && new_max < max_val) {
                 lv_slider_set_range(slider, min_val, new_max);
-                lv_slider_set_value(slider, current_val, LV_ANIM_OFF); // Preserve value
+                lv_slider_set_value(slider, current_val, LV_ANIM_OFF);
                 update_scale_labels(data);
             }
         }
     }
+
+    adjusting = false;
 }
 
 static void update_slider_label(DialogEventData* data) {
@@ -740,6 +759,7 @@ static void update_slider_label(DialogEventData* data) {
 
 static void slider_value_changed_cb(lv_event_t* e) {
     DialogEventData* data = lv_event_get_user_data(e);
+    /* Only update the visible label; auto‑range is handled on release. */
     update_slider_label(data);
 }
 
@@ -846,7 +866,6 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
     // Add event handlers
     lv_obj_add_event_cb(slider, slider_value_changed_cb, LV_EVENT_VALUE_CHANGED, data);
     lv_obj_add_event_cb(slider, slider_released_cb, LV_EVENT_RELEASED, data);
-    lv_obj_add_event_cb(slider, slider_released_cb, LV_EVENT_PRESS_LOST, data);
     lv_obj_add_event_cb(mbox, dialog_event_cb, LV_EVENT_ALL, data);
     lv_obj_add_event_cb(ok_btn, mb_ok_event_cb, LV_EVENT_CLICKED, data);
     lv_obj_add_event_cb(cncl_btn, mb_close_cb, LV_EVENT_CLICKED, mbox);

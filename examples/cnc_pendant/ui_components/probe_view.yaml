@@ -147,6 +147,17 @@
           - type: use-view
             id: @label_text_actionable
             context:
+              label: 'Z-Dive:'
+              text: '2 mm'
+              observable: probe_z_dive
+              fmt: '%g mm'
+              action: set_probe_z_dive
+              min: 1
+              max: 20
+              initial: 2
+          - type: use-view
+            id: @label_text_actionable
+            context:
               label: 'Clearance:'
               text: '5 mm'
               observable: probe_cl
@@ -171,6 +182,7 @@
             add_style: [@flex_x, 0]
             add_style: [@bg_group, 0]
             size: [100%, LV_SIZE_CONTENT]
+            max_width: 100
             flex_align: [LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER]
             pad_all: 3
             children:
