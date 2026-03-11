@@ -719,29 +719,26 @@ static void slider_released_cb(lv_event_t* e) {
                     new_max = max_val + 1;
             }
             lv_slider_set_range(slider, min_val, new_max);
-            //lv_slider_set_value(slider, current_val, LV_ANIM_OFF);
             update_scale_labels(data);
-            adjusting = false;
-            return;
-        }
+        } else {
+            /* ***** shrink ***** */
+            /* threshold = half the current span minus 10% (at least 1) */
+            int32_t half    = min_val + span/2;
+            int32_t tenth   = span / 10;
+            if (tenth < 1) tenth = 1;
+            int32_t threshold = half - tenth;
 
-        /* ***** shrink ***** */
-        /* threshold = half the current span minus 10% (at least 1) */
-        int32_t half    = min_val + span/2;
-        int32_t tenth   = span / 10;
-        if (tenth < 1) tenth = 1;
-        int32_t threshold = half - tenth;
-
-        if (current_val <= threshold) {
-            int32_t new_max = min_val + span/2; /* shrink to half span */
-            if (new_max > min_val && new_max < max_val) {
-                lv_slider_set_range(slider, min_val, new_max);
-                //lv_slider_set_value(slider, current_val, LV_ANIM_OFF);
-                update_scale_labels(data);
+            if (current_val <= threshold) {
+                int32_t new_max = min_val + span/2; /* shrink to half span */
+                if (new_max > min_val && new_max < max_val) {
+                    lv_slider_set_range(slider, min_val, new_max);
+                    update_scale_labels(data);
+                }
             }
         }
     }
 
+    lv_slider_set_value(slider, current_val, LV_ANIM_OFF);
     adjusting = false;
 }
 
@@ -859,7 +856,8 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
 
     // Add event handlers
     lv_obj_add_event_cb(slider, slider_value_changed_cb, LV_EVENT_VALUE_CHANGED, data);
-    lv_obj_add_event_cb(slider, slider_released_cb, LV_EVENT_RELEASED, data);
+    // Disabled for now - not working right.
+    //lv_obj_add_event_cb(slider, slider_released_cb, LV_EVENT_RELEASED, data);
     lv_obj_add_event_cb(mbox, dialog_event_cb, LV_EVENT_ALL, data);
     lv_obj_add_event_cb(ok_btn, mb_ok_event_cb, LV_EVENT_CLICKED, data);
     lv_obj_add_event_cb(cncl_btn, mb_close_cb, LV_EVENT_CLICKED, mbox);
