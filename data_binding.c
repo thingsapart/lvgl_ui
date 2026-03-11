@@ -186,6 +186,12 @@ typedef struct {
 static data_binding_action_handler_t app_action_handler = NULL;
 static void* app_user_data = NULL;
 
+/* Set to true while apply_value_to_observer is making a programmatic widget
+ * update (e.g. lv_slider_set_value called by an observer).  generic_action_event_cb
+ * checks this flag and returns immediately so that machine-state updates don't
+ * look like user-initiated actions and feed back into the action handler. */
+static bool s_inhibit_actions = false;
+
 // --- Forward Declarations for Event Callbacks ---
 static void generic_action_event_cb(lv_event_t* e);
 static void free_action_user_data_cb(lv_event_t* e);
@@ -318,6 +324,11 @@ static void apply_value_to_observer(Observer* obs, const char* state_name, const
             int32_t val = (int32_t)round(new_value.as.f_val);
             lv_anim_enable_t anim = obs->config.config ? *(lv_anim_enable_t*)obs->config.config : LV_ANIM_ON;
             const lv_obj_class_t* cls = lv_obj_get_class(obs->widget);
+            /* Suppress action callbacks while we are doing a programmatic
+             * update so that machine-state echoes don't re-fire as user
+             * actions (e.g. observer sets slider → VALUE_CHANGED → action
+             * handler → app thinks it was a user drag). */
+            s_inhibit_actions = true;
             if      (cls == &lv_bar_class)      lv_bar_set_value(obs->widget, val, anim);
             else if (cls == &lv_slider_class)   lv_slider_set_value(obs->widget, val, anim);
             else if (cls == &lv_arc_class)      lv_arc_set_value(obs->widget, val);
@@ -331,6 +342,7 @@ static void apply_value_to_observer(Observer* obs, const char* state_name, const
                     lv_dropdown_set_selected(obs->widget, (uint32_t)val);
             }
             else    print_warning("Widget does not support 'value' observation.");
+            s_inhibit_actions = false;
             break;
         }
         case OBSERVER_TYPE_VISIBLE:
@@ -799,6 +811,7 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
     // --- Add custom content ---
     lv_obj_t* content = lv_msgbox_get_content(mbox);
     lv_obj_set_size(content, lv_pct(100), LV_SIZE_CONTENT);
+    lv_obj_clear_flag(content, LV_OBJ_FLAG_SCROLLABLE); /* prevent gesture-stealing on the msgbox content pane */
     lv_obj_set_flex_flow(content, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(content, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_gap(content, 10, 0);
@@ -870,6 +883,10 @@ static void create_and_show_numeric_dialog(ActionUserData* user_data) {
 
 
 static void generic_action_event_cb(lv_event_t* e) {
+    /* Ignore events that were triggered programmatically by an observer update
+     * so that machine-state changes don't look like user-initiated actions. */
+    if (s_inhibit_actions) return;
+
     ActionUserData* user_data = lv_event_get_user_data(e);
     binding_value_t val = {.type = BINDING_TYPE_NULL};
 
