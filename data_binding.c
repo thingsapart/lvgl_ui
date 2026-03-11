@@ -691,19 +691,35 @@ static void slider_released_cb(lv_event_t* e) {
     int32_t min_val = lv_slider_get_min_value(slider);
     int32_t max_val = lv_slider_get_max_value(slider);
 
-    if (current_val == max_val) {
-        int32_t new_max = max_val == 0 ? 100 : max_val * 2;
+    // Expand up when hitting the max
+    if (current_val >= max_val) {
+        int32_t new_max = (max_val == 0) ? 100 : max_val * 2;
         lv_slider_set_range(slider, min_val, new_max);
-        lv_slider_set_value(slider, current_val, LV_ANIM_OFF); // Restore value
+        lv_slider_set_value(slider, current_val, LV_ANIM_OFF); // Preserve value
         update_scale_labels(data);
-    } else if (current_val == min_val) {
+        return;
+    }
+
+    // Shrink down only when the value falls below a sensible threshold.
+    // Threshold = max * 0.4 (i.e. 10% less than half of max). For small
+    // max values where 10% would be fractional, subtract at least 1.
+    int32_t shrink_sub = (int32_t)floor(0.1 * (double)max_val);
+    if (shrink_sub < 1) shrink_sub = 1;
+    int32_t threshold = (int32_t)floor((double)max_val * 0.5) - shrink_sub;
+    if (threshold <= min_val) threshold = min_val + 1;
+
+    if (current_val <= threshold) {
         int32_t range = max_val - min_val;
-        if (range > 1) { // Only shrink if there's room to do so
+        if (range > 1) {
             int32_t new_max = min_val + (range / 2);
-            if (new_max > min_val) {
-                 lv_slider_set_range(slider, min_val, new_max);
-                 lv_slider_set_value(slider, current_val, LV_ANIM_OFF); // Restore value
-                 update_scale_labels(data);
+            if (new_max <= current_val) {
+                // Ensure the new range still includes the current value
+                new_max = current_val;
+            }
+            if (new_max > min_val && new_max < max_val) {
+                lv_slider_set_range(slider, min_val, new_max);
+                lv_slider_set_value(slider, current_val, LV_ANIM_OFF); // Preserve value
+                update_scale_labels(data);
             }
         }
     }

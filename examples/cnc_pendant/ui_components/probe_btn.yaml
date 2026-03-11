@@ -3,7 +3,8 @@
   info: |
     Probe grid button.
     ---
-    Small square button showing an image; context: $row, $col, $path (image src). Used by probe grid views.
+    Small square button showing an image; context: $row, $col, $path (image src), $action (action to execute). 
+    Used by probe grid views.
   content:
     add_style: [@container_transp, 0]
     grid_cell: [LV_GRID_ALIGN_CENTER, $col, 1, LV_GRID_ALIGN_CENTER, $row, 1]
@@ -18,6 +19,7 @@
         shadow_opa: 100
         shadow_spread: 3
         pad_all: 1
+        action: { $action: trigger }
         children:
           - type: image
             src: $path

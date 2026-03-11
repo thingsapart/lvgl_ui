@@ -15,13 +15,16 @@
     add_style: [@bg_group, 0]
     size: [100%, LV_SIZE_CONTENT]
     pad_all: 3
+    pad_bottom: 8
+    pad_top: 8
     children:
       - type: label
         flex_grow: 5
         text: $label/Label text
       - type: label
         add_style: [@text_actionable, 0]
-        flex_grow: 2
+        size: [LV_SIZE_CONTENT, 20]
         text: $text
+        set_ext_click_area: 10
         observes: { $observable: { text: "$fmt/format string for observable" } }
         action: { $action: { numeric_input_dialog: { format: "%d mm", min: "$min/min numeric input", max: "$max/max numeric input", initial: "$initial/initial numeric input", text: "$label/input label"} } }
